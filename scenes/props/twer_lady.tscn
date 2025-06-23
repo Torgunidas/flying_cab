@@ -1,0 +1,79 @@
+[gd_scene load_steps=13 format=3 uid="uid://c5ycq1rxx7fud"]
+
+[ext_resource type="Texture2D" uid="uid://dti8cthx6bn0d" path="res://Assets/character/Twerking Brunette sheet.png" id="1_fkt7r"]
+[ext_resource type="Script" uid="uid://d1obn43fxr2v2" path="res://scripts/info_board.gd" id="1_kmnhj"]
+[ext_resource type="Resource" uid="uid://bkqjbam1as1un" path="res://dialogues/twerk_lady.tres" id="2_jigqf"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kmnhj"]
+atlas = ExtResource("1_fkt7r")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jigqf"]
+atlas = ExtResource("1_fkt7r")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_huq7l"]
+atlas = ExtResource("1_fkt7r")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xiek5"]
+atlas = ExtResource("1_fkt7r")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_umisl"]
+atlas = ExtResource("1_fkt7r")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vhybl"]
+atlas = ExtResource("1_fkt7r")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wxrcp"]
+atlas = ExtResource("1_fkt7r")
+region = Rect2(384, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_d4g82"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kmnhj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jigqf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_huq7l")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xiek5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_umisl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vhybl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wxrcp")
+}],
+"loop": false,
+"name": &"dat_ass",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xhpnl"]
+size = Vector2(50, 36)
+
+[node name="TwerkLady" type="Area2D"]
+script = ExtResource("1_kmnhj")
+dialog_resource = ExtResource("2_jigqf")
+
+[node name="AnimationPlayer" type="AnimatedSprite2D" parent="."]
+position = Vector2(-0.250001, -15.75)
+scale = Vector2(0.710938, 0.710938)
+sprite_frames = SubResource("SpriteFrames_d4g82")
+animation = &"dat_ass"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-1, -2)
+shape = SubResource("RectangleShape2D_xhpnl")

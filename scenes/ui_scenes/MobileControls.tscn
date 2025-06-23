@@ -1,0 +1,175 @@
+[gd_scene load_steps=12 format=3 uid="uid://cdy48vkvvc6ew"]
+
+[ext_resource type="Texture2D" uid="uid://nkkivycjfrrx" path="res://Assets/ui/button.png" id="1_0i7bk"]
+[ext_resource type="Script" uid="uid://c6bsqbwsh1ytd" path="res://scripts/mobile_controls.gd" id="1_c6u6f"]
+[ext_resource type="Texture2D" uid="uid://twambiud5l10" path="res://Assets/ui/hand1.png" id="3_hon3h"]
+[ext_resource type="Texture2D" uid="uid://cmd2awv6sgcwy" path="res://Assets/ui/hand2.png" id="4_oueyw"]
+[ext_resource type="Texture2D" uid="uid://owhfx7samawh" path="res://Assets/ui/chicago-city-black-silhouette-logo-icon.png" id="5_awbvr"]
+[ext_resource type="Texture2D" uid="uid://bj8njiaxbbuyo" path="res://Assets/ui/quest.png" id="6_vvc32"]
+[ext_resource type="FontFile" uid="uid://bi7srqvr2p0ft" path="res://Assets/fonts/CyberpunkCraftpixPixel.otf" id="7_4nitx"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_pf44a"]
+font = ExtResource("7_4nitx")
+font_size = 35
+font_color = Color(0.768627, 0.466667, 0.945098, 1)
+outline_size = 10
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_glo62"]
+font = ExtResource("7_4nitx")
+font_size = 35
+font_color = Color(0.768627, 0.466667, 0.945098, 1)
+outline_size = 10
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_4nitx"]
+font = ExtResource("7_4nitx")
+font_size = 35
+font_color = Color(0.768627, 0.466667, 0.945098, 1)
+outline_size = 10
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_vvc32"]
+font = ExtResource("7_4nitx")
+font_size = 35
+font_color = Color(0.769269, 0.465341, 0.944931, 1)
+outline_size = 10
+outline_color = Color(0, 0, 0, 1)
+
+[node name="MobileControls" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_c6u6f")
+hp_label_path = NodePath("StatusPanel/VBoxContainer/CarStatus/HPLabel")
+fuel_label_path = NodePath("StatusPanel/VBoxContainer/CarStatus/FuelLabel")
+money_label_path = NodePath("StatusPanel/VBoxContainer/PlayerStatus/MoneyLabel")
+life_label_path = NodePath("StatusPanel/VBoxContainer/PlayerStatus/LifeLabel")
+car_status_path = NodePath("StatusPanel/VBoxContainer/CarStatus")
+player_status_path = NodePath("StatusPanel/VBoxContainer/PlayerStatus")
+enter_button_path = NodePath("MainControl/BottomContainer/ButtonRow/enter_button")
+
+[node name="MainControl" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="BottomContainer" type="VBoxContainer" parent="MainControl"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ButtonRow" type="HBoxContainer" parent="MainControl/BottomContainer"]
+layout_mode = 2
+
+[node name="UpButton" type="TouchScreenButton" parent="MainControl/BottomContainer/ButtonRow"]
+modulate = Color(1, 1, 1, 0.282353)
+position = Vector2(295, -227)
+scale = Vector2(1.912, 1.912)
+texture_normal = ExtResource("1_0i7bk")
+action = "thrust_up"
+
+[node name="enter_button" type="TouchScreenButton" parent="MainControl/BottomContainer/ButtonRow"]
+visible = false
+position = Vector2(128, -245)
+scale = Vector2(0.177734, 0.177734)
+texture_normal = ExtResource("3_hon3h")
+texture_pressed = ExtResource("4_oueyw")
+action = "toggle_action"
+
+[node name="RightButton" type="TouchScreenButton" parent="MainControl/BottomContainer/ButtonRow"]
+modulate = Color(1, 1, 1, 0.282353)
+position = Vector2(-93, -249)
+rotation = 1.5708
+scale = Vector2(1.912, 1.912)
+texture_normal = ExtResource("1_0i7bk")
+action = "thrust_right"
+
+[node name="LeftButton" type="TouchScreenButton" parent="MainControl/BottomContainer/ButtonRow"]
+modulate = Color(1, 1, 1, 0.282353)
+position = Vector2(-468, -32.9999)
+rotation = -1.5708
+scale = Vector2(1.91208, 1.98919)
+texture_normal = ExtResource("1_0i7bk")
+action = "thrust_left"
+
+[node name="HPContainer" type="Control" parent="MainControl"]
+z_index = 10
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -59.0
+offset_top = -231.0
+offset_right = -19.0
+offset_bottom = -191.0
+grow_horizontal = 0
+
+[node name="toggle_map" type="TouchScreenButton" parent="MainControl"]
+position = Vector2(72, -126)
+scale = Vector2(0.1, 0.1)
+texture_normal = ExtResource("5_awbvr")
+action = "toggle_map"
+
+[node name="quest_log" type="TouchScreenButton" parent="MainControl"]
+position = Vector2(-16, -128)
+scale = Vector2(0.1, 0.1)
+texture_normal = ExtResource("6_vvc32")
+action = "quest_log"
+
+[node name="LifeContainer" type="Control" parent="MainControl"]
+layout_mode = 1
+anchor_left = -0.45
+anchor_top = -0.637
+anchor_right = -0.45
+anchor_bottom = -0.637
+offset_left = -59.0
+offset_top = 213.0
+offset_right = 17.0
+offset_bottom = 233.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="StatusPanel" type="Panel" parent="."]
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="StatusPanel"]
+layout_mode = 0
+offset_right = 151.0
+offset_bottom = 102.0
+
+[node name="PlayerStatus" type="VBoxContainer" parent="StatusPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="LifeLabel" type="Label" parent="StatusPanel/VBoxContainer/PlayerStatus"]
+z_index = 10
+layout_mode = 2
+text = "Life:"
+label_settings = SubResource("LabelSettings_pf44a")
+
+[node name="MoneyLabel" type="Label" parent="StatusPanel/VBoxContainer/PlayerStatus"]
+layout_mode = 2
+text = "$"
+label_settings = SubResource("LabelSettings_glo62")
+
+[node name="CarStatus" type="VBoxContainer" parent="StatusPanel/VBoxContainer"]
+visible = false
+layout_mode = 2
+
+[node name="HPLabel" type="Label" parent="StatusPanel/VBoxContainer/CarStatus"]
+z_index = 10
+layout_mode = 2
+text = "Car:"
+label_settings = SubResource("LabelSettings_4nitx")
+
+[node name="FuelLabel" type="Label" parent="StatusPanel/VBoxContainer/CarStatus"]
+z_index = 10
+layout_mode = 2
+text = "Fuel:"
+label_settings = SubResource("LabelSettings_vvc32")

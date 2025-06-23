@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3 uid="uid://buu64iqt2hjnq"]
+
+[ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="1_0swvf"]
+
+[resource]
+script = ExtResource("1_0swvf")
+id = "1"
+title = "Dostarcz pacjenta"
+description = "Do roboty"
+start_target = "quest_giver"
+objective = "Go to point 2"
+reward = 150
+next_quest_id = "2"
+metadata/_custom_type_script = "uid://b0fshn7oxrpms"

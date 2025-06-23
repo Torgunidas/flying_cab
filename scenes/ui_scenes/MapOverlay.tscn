@@ -1,0 +1,48 @@
+[gd_scene load_steps=3 format=3 uid="uid://bdgpc6q6ajqrk"]
+
+[ext_resource type="Script" uid="uid://d26tha5hyxt27" path="res://scripts/ui_logic/MapOverlay.gd" id="1_icqhu"]
+[ext_resource type="Texture2D" uid="uid://owhfx7samawh" path="res://Assets/ui/chicago-city-black-silhouette-logo-icon.png" id="2_7xec7"]
+
+[node name="MapOverlay" type="CanvasLayer" groups=["map_overlay"]]
+process_mode = 3
+layer = 12
+script = ExtResource("1_icqhu")
+marker_scale = 0.2
+
+[node name="MapRoot" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarkerPlayer" type="Control" parent="MapRoot"]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="QuestMarkers" type="Control" parent="MapRoot"]
+anchors_preset = 0
+
+[node name="ColorRect" type="ColorRect" parent="MapRoot"]
+layout_mode = 0
+offset_right = 1004.0
+offset_bottom = 1588.0
+color = Color(0, 0, 0, 0.501961)
+
+[node name="MapViewport" type="TextureRect" parent="MapRoot"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MiniVP" type="SubViewport" parent="MapRoot/MapViewport"]
+
+[node name="MiniCamera" type="Camera2D" parent="MapRoot/MapViewport/MiniVP"]
+
+[node name="map_button" type="TouchScreenButton" parent="."]
+z_index = 15
+position = Vector2(42, 1041)
+scale = Vector2(0.1, 0.1)
+texture_normal = ExtResource("2_7xec7")
+action = "toggle_map"

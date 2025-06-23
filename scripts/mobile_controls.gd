@@ -1,0 +1,86 @@
+extends CanvasLayer
+class_name MobileControls      # ← pozwala w Inspektorze widzieć klasę
+
+# ───────────────────────────── 1. EXPORTY ─────────────────────────────
+@export var hp_label_path      : NodePath      # Label z HP auta
+@export var fuel_label_path    : NodePath      # Label z paliwem
+@export var money_label_path   : NodePath      # Label z kasą gracza
+@export var life_label_path    : NodePath      # Label z życiem gracza
+
+@export var car_status_path    : NodePath      # HBox z HP+Fuel
+@export var player_status_path : NodePath      # HBox z Life+Money
+@export var enter_button_path  : NodePath      # Przycisk „enter / interact”
+
+# ───────────────────────── 2. ON-READY REFERENCJE ─────────────────────
+@onready var hp_label      : Label   = get_node_or_null(hp_label_path)
+@onready var fuel_label    : Label   = get_node_or_null(fuel_label_path)
+@onready var money_label   : Label   = get_node_or_null(money_label_path)
+@onready var life_label    : Label   = get_node_or_null(life_label_path)
+
+@onready var car_status_box    : Control = get_node_or_null(car_status_path)
+@onready var player_status_box : Control = get_node_or_null(player_status_path)
+@onready var enter_button      : TouchScreenButton  = get_node_or_null(enter_button_path)
+
+# ───────────────────────────── 3. READY ───────────────────────────────
+func _ready() -> void:
+	_assert_widgets()
+	set_mode("foot")
+	if enter_button:
+		enter_button.visible = false
+
+	# ① spróbuj pobrać autoload o nazwie „GameState”
+	var gs : Node = get_node_or_null("/root/GameState")
+
+	# ② jeśli był nazwany inaczej – wypisz ostrzeżenie
+	if gs == null:
+		push_warning("Nie znaleziono autoloadu 'GameState' w /root/ – sprawdź nazwę w Project Settings → Autoload.")
+		return
+
+	# ③ od razu pokaż saldo i podłącz się pod sygnał
+	update_money_display(gs.get_money())
+	gs.money_changed.connect(update_money_display)   # ← bez self., bo to Callable w Godot 4
+
+
+# ───────────────────────── 4. PUBLICZNE METODY HUD ────────────────────
+func update_hp_display(current: int, max_val: int) -> void:
+	if hp_label:
+		hp_label.text = "HP: %d / %d" % [current, max_val]
+
+func update_fuel_display(current: float, max_val: float) -> void:
+	if fuel_label:
+		var pct := int((current / max_val) * 100.0)
+		fuel_label.text = "Fuel: %d%%" % pct
+
+func update_life_display(current: int, max_val: int) -> void:
+	if life_label:
+		life_label.text = "♥ %d / %d" % [current, max_val]
+
+func update_money_display(amount: int) -> void:
+	if money_label:
+		money_label.text = "$ %d" % amount
+
+func set_enter_visible(visible: bool) -> void:
+	if enter_button:
+		enter_button.visible = visible
+
+# ───────────────────────── 5. PRZEŁĄCZANIE TRYBU ─────────────────────
+func set_mode(mode: String) -> void:
+	match mode:
+		"vehicle":
+			if car_status_box:
+				car_status_box.visible = true
+		"foot":
+			if car_status_box:
+				car_status_box.visible = false
+		_:
+			push_warning("MobileControls.set_mode(): unknown mode '%s'" % mode)
+
+# ───────────────────────── 6. WALIDACJA ŚCIEŻEK ──────────────────────
+func _assert_widgets() -> void:
+	assert(hp_label,          "hp_label_path nieprzypisany!")
+	assert(fuel_label,        "fuel_label_path nieprzypisany!")
+	assert(money_label,       "money_label_path nieprzypisany!")
+	assert(life_label,        "life_label_path nieprzypisany!")
+	assert(car_status_box,    "car_status_path nieprzypisany!")
+	assert(player_status_box, "player_status_path nieprzypisany!")
+	assert(enter_button,      "enter_button_path nieprzypisany!")

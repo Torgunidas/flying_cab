@@ -1,0 +1,56 @@
+[gd_scene load_steps=9 format=3 uid="uid://45otf815c3ep"]
+
+[ext_resource type="Script" uid="uid://cex62rev3v6wp" path="res://scripts/GameRoot.gd" id="1_hhdyj"]
+[ext_resource type="PackedScene" uid="uid://b1w3en2rhgah7" path="res://scenes/level_1.tscn" id="2_85ppi"]
+[ext_resource type="Script" uid="uid://cceselni45py6" path="res://scripts/ActorStateMachine.gd" id="3_hctk7"]
+[ext_resource type="PackedScene" uid="uid://bg4sfyddje54y" path="res://scenes/player_character.tscn" id="4_b2pxe"]
+[ext_resource type="PackedScene" uid="uid://bdnrbmsvcncyt" path="res://scenes/ui_scenes/DialogManager.tscn" id="4_wyfcf"]
+[ext_resource type="PackedScene" uid="uid://cdy48vkvvc6ew" path="res://scenes/ui_scenes/MobileControls.tscn" id="5_j6dpx"]
+[ext_resource type="PackedScene" uid="uid://bdgpc6q6ajqrk" path="res://scenes/ui_scenes/MapOverlay.tscn" id="6_76q5s"]
+[ext_resource type="Script" uid="uid://c11fgeuovgklx" path="res://scripts/CameraController.gd" id="6_wyfcf"]
+
+[node name="GameplayRoot" type="Node2D" groups=["gameroot"]]
+script = ExtResource("1_hhdyj")
+initial_level = ExtResource("2_85ppi")
+player_scene = ExtResource("4_b2pxe")
+
+[node name="DialogManager" parent="." instance=ExtResource("4_wyfcf")]
+
+[node name="MobileControls" parent="." instance=ExtResource("5_j6dpx")]
+
+[node name="LifeContainer" parent="MobileControls/MainControl" index="4"]
+offset_left = -22.0
+
+[node name="MapOverlay" parent="." instance=ExtResource("6_76q5s")]
+
+[node name="ActorStateMachine" type="Node2D" parent="."]
+script = ExtResource("3_hctk7")
+
+[node name="environment" type="Node2D" parent="."]
+
+[node name="world" parent="environment" instance=ExtResource("2_85ppi")]
+
+[node name="CarNew" parent="environment/world" index="15"]
+fare_rate = null
+fare_penalty_ratio = null
+
+[node name="CameraController" type="Camera2D" parent="."]
+zoom = Vector2(3, 3)
+script = ExtResource("6_wyfcf")
+
+[editable path="MobileControls"]
+[editable path="environment/world"]
+[editable path="environment/world/npcs/NPCpassanger1"]
+[editable path="environment/world/npcs/NPCpassanger"]
+[editable path="environment/world/npcs/NPCpassanger2"]
+[editable path="environment/world/taxi_deliveries/DeliveryPoint"]
+[editable path="environment/world/taxi_deliveries/DeliveryPoint2"]
+[editable path="environment/world/taxi_deliveries_far_right/DeliveryPoint"]
+[editable path="environment/world/car_npc_1"]
+[editable path="environment/world/car_npc_2"]
+[editable path="environment/world/car_npc"]
+[editable path="environment/world/GasStation"]
+[editable path="environment/world/GasStation2"]
+[editable path="environment/world/PassengerSpawnPoint"]
+[editable path="environment/world/PassengerSpawnPoint3"]
+[editable path="environment/world/PassengerSpawnPoint4"]

@@ -1,0 +1,114 @@
+[gd_resource type="Resource" script_class="DialogBook" load_steps=19 format=3 uid="uid://bgbx5xfo8cjr2"]
+
+[ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_lamtk"]
+[ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_af65v"]
+[ext_resource type="Script" uid="uid://c4sn7n4x1gvpe" path="res://scripts/dialogues/DialogBook.gd" id="2_n8rwf"]
+[ext_resource type="Script" uid="uid://cke3kl33pylr5" path="res://scripts/dialogues/DialogAction.gd" id="3_ff7u3"]
+[ext_resource type="Script" uid="uid://2aako6y61wi5" path="res://scripts/dialogues/DialogRequirement.gd" id="4_hlxla"]
+
+[sub_resource type="Resource" id="Resource_5d3ry"]
+script = ExtResource("2_af65v")
+text = "Pogadajmy"
+actions = Array[ExtResource("3_ff7u3")]([])
+goto_page = 1
+requirements = Array[ExtResource("4_hlxla")]([])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_sbi4u"]
+script = ExtResource("3_ff7u3")
+type = "add_money"
+amount = 200
+quest_id = ""
+anim_name = ""
+loop_count = 1
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_ytf3h"]
+script = ExtResource("2_af65v")
+text = "Daj hajs i spadam"
+actions = Array[ExtResource("3_ff7u3")]([SubResource("Resource_sbi4u")])
+goto_page = -1
+requirements = Array[ExtResource("4_hlxla")]([])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_mf6n7"]
+script = ExtResource("4_hlxla")
+type = "active_quest"
+amount = 0
+cmp = ">"
+quest_id = "2"
+metadata/_custom_type_script = "uid://2aako6y61wi5"
+
+[sub_resource type="Resource" id="Resource_2du86"]
+script = ExtResource("2_af65v")
+text = "Wiem coś o berries"
+actions = Array[ExtResource("3_ff7u3")]([])
+goto_page = 2
+requirements = Array[ExtResource("4_hlxla")]([SubResource("Resource_mf6n7")])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_ff7u3"]
+script = ExtResource("1_lamtk")
+npc_text = "Dzień dobry"
+answers = Array[ExtResource("2_af65v")]([SubResource("Resource_5d3ry"), SubResource("Resource_ytf3h"), SubResource("Resource_2du86")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
+[sub_resource type="Resource" id="Resource_hlxla"]
+script = ExtResource("3_ff7u3")
+type = "add_money"
+amount = 200
+quest_id = ""
+anim_name = ""
+loop_count = 1
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_l82rh"]
+script = ExtResource("2_af65v")
+text = "Daj więcej kasy"
+actions = Array[ExtResource("3_ff7u3")]([SubResource("Resource_hlxla")])
+goto_page = -1
+requirements = Array[ExtResource("4_hlxla")]([])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_5p3ng"]
+script = ExtResource("1_lamtk")
+npc_text = "O czym chcesz rozmawiać?"
+answers = Array[ExtResource("2_af65v")]([SubResource("Resource_l82rh")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
+[sub_resource type="Resource" id="Resource_d1v3a"]
+script = ExtResource("3_ff7u3")
+type = "finish_quest"
+amount = 0
+quest_id = "2"
+anim_name = ""
+loop_count = 1
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_h6cwj"]
+script = ExtResource("3_ff7u3")
+type = "add_money"
+amount = 3000
+quest_id = ""
+anim_name = ""
+loop_count = 1
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_4fye5"]
+script = ExtResource("2_af65v")
+text = "A masz. Mi one niepotrzebne"
+actions = Array[ExtResource("3_ff7u3")]([SubResource("Resource_d1v3a"), SubResource("Resource_h6cwj")])
+goto_page = -1
+requirements = Array[ExtResource("4_hlxla")]([])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_4sg4d"]
+script = ExtResource("1_lamtk")
+npc_text = "Oddawaj moje wiśnie!"
+answers = Array[ExtResource("2_af65v")]([SubResource("Resource_4fye5")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
+[resource]
+script = ExtResource("2_n8rwf")
+pages = Array[ExtResource("1_lamtk")]([SubResource("Resource_ff7u3"), SubResource("Resource_5p3ng"), SubResource("Resource_4sg4d")])
+metadata/_custom_type_script = "uid://c4sn7n4x1gvpe"

@@ -1,0 +1,54 @@
+[gd_scene load_steps=3 format=3 uid="uid://bdnrbmsvcncyt"]
+
+[ext_resource type="Script" uid="uid://cqnhbxv8b8rfq" path="res://scripts/ui_logic/DialogManager.gd" id="1_wd3pl"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_71k06"]
+bg_color = Color(0.670588, 0.196078, 0.584314, 0.588235)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.0588235, 0, 0.87451, 1)
+
+[node name="DialogManager" type="CanvasLayer"]
+layer = 15
+script = ExtResource("1_wd3pl")
+
+[node name="DialogPanel" type="PanelContainer" parent="."]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 1.0
+offset_top = -378.0
+offset_right = 1.0
+offset_bottom = -278.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_71k06")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="DialogPanel"]
+layout_mode = 2
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="NPCText" type="Label" parent="DialogPanel/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+
+[node name="AnswerA" type="Button" parent="DialogPanel/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+
+[node name="AnswerB" type="Button" parent="DialogPanel/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+
+[node name="AnswerC" type="Button" parent="DialogPanel/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 30

@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://chi7cwi30oi3f"]
+
+[ext_resource type="Script" uid="uid://dbnyqvwdxw8ot" path="res://scripts/taxi_syst/PassengerSpawnPoint.gd" id="1_ctcb2"]
+[ext_resource type="PackedScene" uid="uid://olwgn62rj0m8" path="res://scenes/npc_passanger_male.tscn" id="2_rd0ij"]
+
+[node name="PassengerSpawnPoint" type="Node2D"]
+script = ExtResource("1_ctcb2")
+passenger_scene = ExtResource("2_rd0ij")
+
+[node name="SpawnPos" type="Marker2D" parent="."]
+
+[node name="Waypoint" type="Marker2D" parent="."]
+
+[node name="SpawnTimer" type="Timer" parent="."]
+autostart = true

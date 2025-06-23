@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3 uid="uid://bvk6c025h6onw"]
+
+[ext_resource type="Script" uid="uid://cugwvxai3nfbg" path="res://scripts/taxi_syst/DeliveryPoint.gd" id="1_64afl"]
+[ext_resource type="Texture2D" uid="uid://b2gh22klv5i8d" path="res://Assets/ui/taxi_marker.png" id="1_f7y2o"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_oaexx"]
+size = Vector2(69.4656, 12.29)
+
+[node name="DeliveryPoint" type="Area2D"]
+script = ExtResource("1_64afl")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+scale = Vector2(1.31, 1.31)
+shape = SubResource("RectangleShape2D_oaexx")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+visible = false
+scale = Vector2(0.271739, 0.271739)
+texture = ExtResource("1_f7y2o")
+
+[node name="PassengerWaypoint" type="Marker2D" parent="."]

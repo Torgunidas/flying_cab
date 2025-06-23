@@ -1,0 +1,83 @@
+[gd_scene load_steps=8 format=3 uid="uid://m0hpbrn74oeo"]
+
+[ext_resource type="Script" uid="uid://cceselni45py6" path="res://scripts/ActorStateMachine.gd" id="1_w4n7h"]
+[ext_resource type="Script" uid="uid://cex62rev3v6wp" path="res://scripts/GameRoot.gd" id="2_uo83g"]
+[ext_resource type="PackedScene" uid="uid://b1w3en2rhgah7" path="res://scenes/level_1.tscn" id="3_xcu0v"]
+[ext_resource type="PackedScene" uid="uid://bg4sfyddje54y" path="res://scenes/player_character.tscn" id="4_4fkfo"]
+[ext_resource type="PackedScene" uid="uid://cdy48vkvvc6ew" path="res://scenes/ui_scenes/MobileControls.tscn" id="5_2555f"]
+[ext_resource type="Script" uid="uid://c11fgeuovgklx" path="res://scripts/CameraController.gd" id="6_pc0od"]
+
+[sub_resource type="GDScript" id="GDScript_cfdpx"]
+script/source = "extends Node2D
+class_name GameplayRoot
+
+# The level scene to load under this root
+@export var initial_level: PackedScene
+# The player prefab to instance
+@export var player_scene: PackedScene
+# Node under which the level will be instanced
+@export var environment_parent: NodePath
+# Name of the spawn point in the level
+@export var player_spawn_name: String = \"PlayerSpawn\"
+
+@onready var env_parent = get_node(environment_parent)
+
+func _ready() -> void:
+	_load_level(initial_level)
+
+func _load_level(level_scene: PackedScene) -> void:
+	# 1) Clear existing environment
+	for child in env_parent.get_children():
+		child.queue_free()
+
+	# 2) Instance the level scene
+	var level_inst = level_scene.instantiate()
+	env_parent.add_child(level_inst)
+
+	# 3) Instance the player prefab
+	var player_inst = player_scene.instantiate()
+	env_parent.add_child(player_inst)
+
+	# 4) Move player to spawn point in the level
+	var spawn = level_inst.get_node_or_null(player_spawn_name)
+	if spawn and spawn is Node2D:
+		player_inst.global_position = spawn.global_position
+	else:
+		push_error(\"Spawn point '%s' not found in level\" % player_spawn_name)
+
+	# 5) Collect vehicles by group
+	var vehicles = level_inst.get_nodes_in_group(\"vehicles\")
+
+	# 6) Initialize the ActorStateMachine dynamically
+	var sm_node = get_node_or_null(\"ActorStateMachine\")
+	if sm_node and sm_node.has_method(\"initialize\"):
+		sm_node.call(\"initialize\", player_inst, vehicles, get_node(\"CameraController\"))
+	else:
+		push_error(\"ActorStateMachine node or initialize() not found\")
+"
+
+[node name="GameplayRoot" type="Node2D"]
+script = ExtResource("1_w4n7h")
+metadata/_custom_type_script = "uid://cceselni45py6"
+
+[node name="environment" type="Node2D" parent="."]
+script = ExtResource("2_uo83g")
+metadata/_custom_type_script = "uid://cex62rev3v6wp"
+
+[node name="levels" type="Node" parent="environment"]
+
+[node name="level1" parent="environment/levels" instance=ExtResource("3_xcu0v")]
+
+[node name="ActorStateMachine" type="Node2D" parent="."]
+script = SubResource("GDScript_cfdpx")
+initial_level = ExtResource("3_xcu0v")
+player_scene = ExtResource("4_4fkfo")
+environment_parent = NodePath("..")
+metadata/_custom_type_script = "uid://cceselni45py6"
+
+[node name="MobileControls" parent="." instance=ExtResource("5_2555f")]
+
+[node name="CameraController" type="Camera2D" parent="."]
+script = ExtResource("6_pc0od")
+
+[editable path="environment/levels/level1"]

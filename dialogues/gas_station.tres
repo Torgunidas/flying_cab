@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="DialogData" load_steps=3 format=3 uid="uid://cpgg00bvewcjh"]
+
+[ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="1_brxqc"]
+[ext_resource type="Script" uid="uid://dkvjsh0ocuvpa" path="res://scripts/dialogues/dialogdata.gd" id="1_hrf5r"]
+
+[resource]
+script = ExtResource("1_hrf5r")
+npc_text = "Welcome on AutoGas! State your request."
+answers = Array[ExtResource("1_brxqc")]([])
+metadata/_custom_type_script = "uid://dkvjsh0ocuvpa"

@@ -1,0 +1,32 @@
+[gd_scene load_steps=4 format=3 uid="uid://cw8vwwrivo1cb"]
+
+[ext_resource type="Texture2D" uid="uid://occh7h5k5hke" path="res://Assets/ui/quest_obj.png" id="2_mph5l"]
+
+[sub_resource type="GDScript" id="GDScript_6k7mr"]
+script/source = "extends Area2D
+class_name QuestMarker
+
+@export var icon     : Texture2D: set = _set_icon     # ← ta linia kluczowa
+@export var quest_id : String
+var quest_node : Node2D = null          # ustawiane z MapOverlay
+
+@onready var sprite : Sprite2D = $Sprite   # lub TextureRect
+
+func _set_icon(tex: Texture2D) -> void:
+	icon = tex
+	sprite.texture = tex
+"
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pdd15"]
+size = Vector2(20, 28)
+
+[node name="QuestMarker" type="Area2D"]
+script = SubResource("GDScript_6k7mr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -1)
+shape = SubResource("RectangleShape2D_pdd15")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.135, 0.135)
+texture = ExtResource("2_mph5l")

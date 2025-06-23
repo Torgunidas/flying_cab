@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=4 uid="uid://4wyoe73yrvip"]
+
+[ext_resource type="TileSet" uid="uid://dv1s41vxk3fuv" path="res://Assets/TileSets/business_district.tres" id="1_2lwhi"]
+[ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_5lfu7"]
+[ext_resource type="PackedScene" uid="uid://ck11xu7tdgsxn" path="res://scenes/props/door_fancy.tscn" id="2_wps23"]
+[ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="4_jlb1q"]
+
+[node name="PlayersHome" type="Node2D"]
+script = ExtResource("1_5lfu7")
+
+[node name="TileMapLayer" type="TileMapLayer" parent="."]
+position = Vector2(0, 21)
+tile_map_data = PackedByteArray("AAD3/wAAQQACAAYAAAD4/wAAQQADAAYAAAD5/wAAQQAEAAYAAAD6/wAAQQAFAAYAAAD7/wAAQQAGAAYAAAD8/wAAQQAHAAYAAAD9/wAAQQAIAAYAAAD+/wAAQQAJAAYAAAD//wAAQQAKAAYAAAAAAAAAQQACAAYAAAABAAAAQQADAAYAAAACAAAAQQAEAAYAAAADAAAAQQAFAAYAAAAEAAAAQQAGAAYAAAAFAAAAQQAHAAYAAAAGAAAAQQAIAAYAAAAHAAAAQQAJAAYAAAAIAAAAQQAKAAYAAAAJAAAAQQACAAYAAAAKAAAAQQADAAYAAAALAAAAQQAEAAYAAAAMAAAAQQAFAAYAAAANAAAAQQAGAAYAAAAOAAAAQQAHAAYAAAAPAAAAQQAIAAYAAAAQAAAAQQAJAAYAAAARAAAAQQAKAAYAAAA=")
+tile_set = ExtResource("1_2lwhi")
+
+[node name="Door" parent="." instance=ExtResource("2_wps23")]
+position = Vector2(62, -11)
+target_level_path = "uid://b0piubrnoxlkq"
+
+[node name="Label" type="Label" parent="."]
+offset_top = -73.0
+offset_right = 166.0
+offset_bottom = 23.0
+text = "To jest szopa testowa"
+
+[node name="PlayerSpawn" parent="." instance=ExtResource("4_jlb1q")]
+position = Vector2(7, -3)

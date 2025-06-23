@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3 uid="uid://bjo1aiieu71if"]
+
+[ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="1_1csd5"]
+
+[resource]
+script = ExtResource("1_1csd5")
+id = "2"
+title = "Bring Berries"
+description = "Berries are good"
+start_target = "quest_giver"
+objective = "Go right"
+reward = 0
+metadata/_custom_type_script = "uid://b0fshn7oxrpms"

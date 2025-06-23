@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://co383hag7ftvi"]
+
+[node name="Quest_desc" type="CanvasLayer"]
+
+[node name="Description" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Content" type="VBoxContainer" parent="Description"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Quest_name" type="Label" parent="Description/Content"]
+layout_mode = 2
+text = "Find blue Fiat"
+
+[node name="Quest_description" type="Label" parent="Description/Content"]
+layout_mode = 2
+text = "Follow the pointing finger"

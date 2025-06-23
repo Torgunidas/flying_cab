@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="DialogData" load_steps=9 format=3 uid="uid://bkqjbam1as1un"]
+
+[ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="1_7ktfn"]
+[ext_resource type="Script" uid="uid://dkvjsh0ocuvpa" path="res://scripts/dialogues/dialogdata.gd" id="1_l721g"]
+[ext_resource type="Script" uid="uid://cke3kl33pylr5" path="res://scripts/dialogues/DialogAction.gd" id="2_a1ffj"]
+[ext_resource type="Script" uid="uid://2aako6y61wi5" path="res://scripts/dialogues/DialogRequirement.gd" id="3_6tc5l"]
+
+[sub_resource type="Resource" id="Resource_0r4pe"]
+script = ExtResource("2_a1ffj")
+type = "start_animation"
+amount = 0
+quest_id = ""
+anim_name = "dat_ass"
+loop_count = 8
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_a1ffj"]
+script = ExtResource("2_a1ffj")
+type = "deduct_money"
+amount = 1
+quest_id = ""
+anim_name = ""
+loop_count = 1
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_6g6pg"]
+script = ExtResource("1_7ktfn")
+text = "Shake dat ting!"
+actions = Array[ExtResource("2_a1ffj")]([SubResource("Resource_0r4pe"), SubResource("Resource_a1ffj")])
+goto_page = -1
+requirements = Array[ExtResource("3_6tc5l")]([])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_6tc5l"]
+script = ExtResource("1_7ktfn")
+text = "Later, sweety... Wait here for me"
+actions = Array[ExtResource("2_a1ffj")]([])
+goto_page = -1
+requirements = Array[ExtResource("3_6tc5l")]([])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[resource]
+script = ExtResource("1_l721g")
+npc_text = "Hi hon! Wanna a bit sunshine?"
+answers = Array[ExtResource("1_7ktfn")]([SubResource("Resource_6g6pg"), SubResource("Resource_6tc5l")])
+metadata/_custom_type_script = "uid://dkvjsh0ocuvpa"

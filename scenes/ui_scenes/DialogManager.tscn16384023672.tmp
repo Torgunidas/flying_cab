@@ -1,0 +1,63 @@
+[gd_scene load_steps=3 format=3 uid="uid://bdnrbmsvcncyt"]
+
+[ext_resource type="Texture2D" uid="uid://twambiud5l10" path="res://Assets/ui/hand1.png" id="1_alnt1"]
+[ext_resource type="Script" uid="uid://cqnhbxv8b8rfq" path="res://scripts/ui_logic/DialogManager.gd" id="1_wd3pl"]
+
+[node name="DialogManager" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_wd3pl")
+
+[node name="DialogPanel" type="PanelContainer" parent="."]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -136.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="Content" type="VBoxContainer" parent="DialogPanel"]
+layout_mode = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="DialogPanel/Content"]
+position = Vector2(485, 749)
+texture = ExtResource("1_alnt1")
+
+[node name="NPCText" type="Label" parent="DialogPanel/Content"]
+layout_mode = 2
+text = "npc"
+
+[node name="Answers" type="VBoxContainer" parent="DialogPanel"]
+layout_mode = 2
+
+[node name="Answer1" type="Button" parent="DialogPanel/Answers"]
+layout_mode = 2
+text = "test1"
+
+[node name="Answer1_tap" type="TouchScreenButton" parent="DialogPanel/Answers/Answer1"]
+position = Vector2(194, 17)
+action = "1"
+
+[node name="Answer2" type="Button" parent="DialogPanel/Answers"]
+layout_mode = 2
+text = "test2"
+
+[node name="Answer2_tap" type="TouchScreenButton" parent="DialogPanel/Answers/Answer2"]
+position = Vector2(198, 20)
+action = "2"
+
+[node name="Answer3" type="Button" parent="DialogPanel/Answers"]
+layout_mode = 2
+text = "test3"
+
+[node name="Answer3_tap" type="TouchScreenButton" parent="DialogPanel/Answers/Answer3"]
+position = Vector2(198, 18)
+action = "3"
+
+[node name="Answer4" type="Button" parent="DialogPanel/Answers"]
+layout_mode = 2
+text = "test4"
+
+[node name="Answer4_tap" type="TouchScreenButton" parent="DialogPanel/Answers/Answer4"]
+position = Vector2(204, 18)
+action = "4"

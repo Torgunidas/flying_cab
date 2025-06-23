@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="DialogData" load_steps=10 format=3 uid="uid://b265nsgpbasgb"]
+
+[ext_resource type="Script" uid="uid://dkvjsh0ocuvpa" path="res://scripts/dialogues/dialogdata.gd" id="1_og1ou"]
+[ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="1_oyos3"]
+[ext_resource type="Script" uid="uid://cke3kl33pylr5" path="res://scripts/dialogues/DialogAction.gd" id="2_eyd71"]
+[ext_resource type="Script" uid="uid://2aako6y61wi5" path="res://scripts/dialogues/DialogRequirement.gd" id="3_cwi0n"]
+
+[sub_resource type="Resource" id="Resource_o0xtl"]
+script = ExtResource("2_eyd71")
+type = "add_money"
+amount = 100
+quest_id = null
+anim_name = null
+npc_text_id = null
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_jc6og"]
+script = ExtResource("1_oyos3")
+text = "Daj hajs (100$)"
+actions = Array[ExtResource("2_eyd71")]([SubResource("Resource_o0xtl")])
+requirements = Array[ExtResource("3_cwi0n")]([])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_oyos3"]
+script = ExtResource("2_eyd71")
+type = "npc_text"
+amount = null
+quest_id = null
+anim_name = null
+npc_text_id = null
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_eyd71"]
+script = ExtResource("1_oyos3")
+text = "Powiedz coś więcej"
+actions = Array[ExtResource("2_eyd71")]([SubResource("Resource_oyos3")])
+requirements = Array[ExtResource("3_cwi0n")]([])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_cwi0n"]
+script = ExtResource("1_oyos3")
+text = "..."
+actions = Array[ExtResource("2_eyd71")]([])
+requirements = Array[ExtResource("3_cwi0n")]([])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[resource]
+script = ExtResource("1_og1ou")
+npc_text = "Sprzedam Opla. Zaliczka 50💰."
+answers = Array[ExtResource("1_oyos3")]([SubResource("Resource_jc6og"), SubResource("Resource_eyd71"), SubResource("Resource_cwi0n")])
+metadata/_custom_type_script = "uid://dkvjsh0ocuvpa"

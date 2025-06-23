@@ -1,0 +1,30 @@
+[gd_scene load_steps=4 format=3 uid="uid://ntl83wtq8lea"]
+
+[ext_resource type="Script" uid="uid://qs74vax8lq2s" path="res://scripts/taxi_syst/TaxiMarker.gd" id="1_2cv0g"]
+[ext_resource type="Texture2D" uid="uid://b2gh22klv5i8d" path="res://Assets/ui/taxi_marker.png" id="1_x4r4a"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_2cv0g"]
+font_color = Color(0, 1, 0, 1)
+
+[node name="TaxiMarker" type="Node2D"]
+script = ExtResource("1_2cv0g")
+
+[node name="Pointer" type="Node2D" parent="."]
+
+[node name="TaxiMarker" type="Sprite2D" parent="Pointer"]
+scale = Vector2(0.18, 0.18)
+texture = ExtResource("1_x4r4a")
+offset = Vector2(-1.25283, 38.2398)
+
+[node name="FareLabel" type="Label" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -23.0
+offset_right = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+label_settings = SubResource("LabelSettings_2cv0g")

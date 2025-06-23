@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3 uid="uid://ck2u2egic02ex"]
+
+[ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="1_06y1y"]
+
+[resource]
+script = ExtResource("1_06y1y")
+id = "3"
+title = "Long journey"
+description = "Take a box to far away place"
+start_target = "quest_giver"
+objective = "Go to the yellow hall"
+reward = 10000
+metadata/_custom_type_script = "uid://b0fshn7oxrpms"

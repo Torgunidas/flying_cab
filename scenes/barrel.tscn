@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://craalwqp10m3e"]
+
+[ext_resource type="Texture2D" uid="uid://5y4w6cbgrbb3" path="res://Assets/Free Industrial Zone Tileset/3 Objects/Barrel2.png" id="1_n8un1"]
+[ext_resource type="Script" uid="uid://ca8f3gfsdwx7k" path="res://scripts/barrel.gd" id="1_ptqd7"]
+
+[node name="fuel_barrel" type="Area2D"]
+collision_mask = 7
+script = ExtResource("1_ptqd7")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_n8un1")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="."]
+polygon = PackedVector2Array(-9, -13, -9, 13, 9, 13, 9, -13)
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
