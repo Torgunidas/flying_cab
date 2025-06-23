@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="DialogBook" load_steps=11 format=3 uid="uid://c05xhamxoed8"]
+
+[ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_lykcv"]
+[ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_j1485"]
+[ext_resource type="Script" uid="uid://cke3kl33pylr5" path="res://scripts/dialogues/DialogAction.gd" id="3_ak6t7"]
+[ext_resource type="Script" uid="uid://2aako6y61wi5" path="res://scripts/dialogues/DialogRequirement.gd" id="4_l3jy2"]
+[ext_resource type="Script" uid="uid://c4sn7n4x1gvpe" path="res://scripts/dialogues/DialogBook.gd" id="5_74q86"]
+
+[sub_resource type="Resource" id="Resource_ydf1u"]
+script = ExtResource("2_j1485")
+text = "..."
+actions = Array[ExtResource("3_ak6t7")]([])
+goto_page = -1
+requirements = Array[ExtResource("4_l3jy2")]([])
+
+[sub_resource type="Resource" id="Resource_ubs2s"]
+script = ExtResource("2_j1485")
+text = "..."
+actions = Array[ExtResource("3_ak6t7")]([])
+goto_page = -1
+requirements = Array[ExtResource("4_l3jy2")]([])
+
+[sub_resource type="Resource" id="Resource_2ehj0"]
+script = ExtResource("2_j1485")
+text = "odpowiedz test 1"
+actions = Array[ExtResource("3_ak6t7")]([])
+goto_page = -1
+requirements = Array[ExtResource("4_l3jy2")]([])
+
+[sub_resource type="Resource" id="Resource_v1mlh"]
+script = ExtResource("2_j1485")
+text = "2"
+actions = Array[ExtResource("3_ak6t7")]([])
+goto_page = -1
+requirements = Array[ExtResource("4_l3jy2")]([])
+
+[sub_resource type="Resource" id="Resource_xck70"]
+script = ExtResource("1_lykcv")
+npc_text = "Test 1"
+answers = Array[ExtResource("2_j1485")]([SubResource("Resource_ydf1u"), SubResource("Resource_ubs2s"), SubResource("Resource_2ehj0"), SubResource("Resource_v1mlh")])
+
+[resource]
+script = ExtResource("5_74q86")
+pages = Array[ExtResource("1_lykcv")]([SubResource("Resource_xck70")])

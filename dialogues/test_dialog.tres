@@ -11,13 +11,14 @@ type = "add_money"
 amount = 100
 quest_id = null
 anim_name = null
-npc_text_id = null
+loop_count = 1
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_jc6og"]
 script = ExtResource("1_oyos3")
 text = "Daj hajs (100$)"
 actions = Array[ExtResource("2_eyd71")]([SubResource("Resource_o0xtl")])
+goto_page = -1
 requirements = Array[ExtResource("3_cwi0n")]([])
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
@@ -27,13 +28,14 @@ type = "npc_text"
 amount = null
 quest_id = null
 anim_name = null
-npc_text_id = null
+loop_count = 1
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_eyd71"]
 script = ExtResource("1_oyos3")
 text = "Powiedz coś więcej"
 actions = Array[ExtResource("2_eyd71")]([SubResource("Resource_oyos3")])
+goto_page = -1
 requirements = Array[ExtResource("3_cwi0n")]([])
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
@@ -41,6 +43,7 @@ metadata/_custom_type_script = "uid://enivet37mn8j"
 script = ExtResource("1_oyos3")
 text = "..."
 actions = Array[ExtResource("2_eyd71")]([])
+goto_page = -1
 requirements = Array[ExtResource("3_cwi0n")]([])
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
