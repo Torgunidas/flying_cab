@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="DialogBook" load_steps=9 format=3 uid="uid://5dj0fmwhxwav"]
+
+[ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_jbr8m"]
+[ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_nce38"]
+[ext_resource type="Script" uid="uid://cke3kl33pylr5" path="res://scripts/dialogues/DialogAction.gd" id="3_406y0"]
+[ext_resource type="Script" uid="uid://2aako6y61wi5" path="res://scripts/dialogues/DialogRequirement.gd" id="4_0h1f0"]
+[ext_resource type="Script" uid="uid://c4sn7n4x1gvpe" path="res://scripts/dialogues/DialogBook.gd" id="5_2qglo"]
+
+[sub_resource type="Resource" id="Resource_bsxls"]
+script = ExtResource("4_0h1f0")
+type = "money_req"
+amount = 0
+cmp = ">"
+quest_id = ""
+
+[sub_resource type="Resource" id="Resource_y53nm"]
+script = ExtResource("2_nce38")
+text = "..."
+actions = Array[ExtResource("3_406y0")]([])
+goto_page = -1
+requirements = Array[ExtResource("4_0h1f0")]([SubResource("Resource_bsxls")])
+
+[sub_resource type="Resource" id="Resource_plh4e"]
+script = ExtResource("1_jbr8m")
+npc_text = ""
+answers = Array[ExtResource("2_nce38")]([SubResource("Resource_y53nm")])
+
+[resource]
+script = ExtResource("5_2qglo")
+pages = Array[ExtResource("1_jbr8m")]([SubResource("Resource_plh4e")])

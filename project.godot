@@ -32,6 +32,10 @@ window/size/mode=1
 window/stretch/mode="canvas_items"
 window/handheld/orientation=1
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/dialog_editor/plugin.cfg", "res://addons/dialog_manager/plugin.cfg")
+
 [input]
 
 thrust_up={

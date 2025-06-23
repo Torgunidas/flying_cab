@@ -1,6 +1,6 @@
 [gd_scene load_steps=15 format=3 uid="uid://hpvw63teeco5"]
 
-[ext_resource type="Script" uid="uid://bh83vltiu7u8v" path="res://scripts/gas_staion.gd" id="1_npads"]
+[ext_resource type="Script" uid="uid://bh83vltiu7u8v" path="res://scripts/gas_station.gd" id="1_npads"]
 [ext_resource type="Texture2D" uid="uid://diaavfkhi5h32" path="res://Assets/market_street/3 Objects/Vending machines/2.png" id="1_yidqh"]
 [ext_resource type="FontFile" uid="uid://bi7srqvr2p0ft" path="res://Assets/fonts/CyberpunkCraftpixPixel.otf" id="2_i7i8m"]
 [ext_resource type="Texture2D" uid="uid://5ilnf4d31k20" path="res://Assets/market_street/3 Objects/Terrace/5.png" id="2_npads"]

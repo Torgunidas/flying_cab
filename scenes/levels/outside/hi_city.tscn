@@ -2405,12 +2405,20 @@ position = Vector2(-302, -280)
 [node name="car_limo2" parent="cars" instance=ExtResource("11_5ee40")]
 position = Vector2(-8359, -471)
 
-[node name="Door" parent="." instance=ExtResource("16_iumgf")]
+[node name="Door_home" parent="." instance=ExtResource("16_iumgf")]
 position = Vector2(-8192, -487)
 target_level_path = "uid://b0piubrnoxlkq"
 spawn_point_name = "tutaj_gracz"
 
-[node name="exit_home" type="Node2D" parent="Door"]
+[node name="exit_home" type="Node2D" parent="Door_home"]
+position = Vector2(-3, 11)
+
+[node name="Door_szopa" parent="." instance=ExtResource("16_iumgf")]
+position = Vector2(-8031, -487)
+target_level_path = "uid://b0piubrnoxlkq"
+spawn_point_name = "tutaj_gracz"
+
+[node name="exit_szopa" type="Node2D" parent="Door_szopa"]
 position = Vector2(-3, 11)
 
 [connection signal="body_entered" from="DeathBoundary" to="." method="_on_death_boundary_body_entered"]
