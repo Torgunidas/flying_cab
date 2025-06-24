@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=4 uid="uid://c6wgvur21jgyx"]
+[gd_scene load_steps=30 format=4 uid="uid://c6wgvur21jgyx"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_u2gg1"]
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="2_gqf4i"]
@@ -22,6 +22,7 @@
 [ext_resource type="Texture2D" uid="uid://dh1rogn48w08e" path="res://residential_area.png" id="20_y03cu"]
 [ext_resource type="PackedScene" uid="uid://dxy70spuym5s" path="res://scenes/props/info_board.tscn" id="21_r6178"]
 [ext_resource type="PackedScene" uid="uid://chi7cwi30oi3f" path="res://scenes/taxi_system_scenes/PassengerSpawnPoint.tscn" id="21_s5ica"]
+[ext_resource type="Resource" uid="uid://c05xhamxoed8" path="res://dialogues/test_edytora_2.tres" id="23_qobc6"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_umyuv"]
 size = Vector2(3497, 20)
@@ -2397,6 +2398,10 @@ position = Vector2(-70, 0)
 
 [node name="InfoBoard" parent="." instance=ExtResource("21_r6178")]
 position = Vector2(-302, -280)
+
+[node name="InfoBoard2" parent="." instance=ExtResource("21_r6178")]
+position = Vector2(-7936, -480)
+dialog_resource = ExtResource("23_qobc6")
 
 [node name="drop_points_E" type="Node2D" parent="."]
 
