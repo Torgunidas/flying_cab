@@ -20,9 +20,9 @@
 [ext_resource type="PackedScene" uid="uid://jhvhgsllotq5" path="res://scenes/props/door_normal.tscn" id="18_3leuv"]
 [ext_resource type="TileSet" uid="uid://bn0n8x6jgfyyw" path="res://Assets/TileSets/industrial.tres" id="19_05nhu"]
 [ext_resource type="Texture2D" uid="uid://dh1rogn48w08e" path="res://residential_area.png" id="20_y03cu"]
-[ext_resource type="PackedScene" uid="uid://dxy70spuym5s" path="res://scenes/props/info_board.tscn" id="21_r6178"]
 [ext_resource type="PackedScene" uid="uid://chi7cwi30oi3f" path="res://scenes/taxi_system_scenes/PassengerSpawnPoint.tscn" id="21_s5ica"]
-[ext_resource type="Resource" uid="uid://c05xhamxoed8" path="res://dialogues/test_edytora_2.tres" id="23_qobc6"]
+[ext_resource type="PackedScene" uid="uid://ntl83wtq8lea" path="res://scenes/ui_scenes/taxi_marker.tscn" id="23_q242y"]
+[ext_resource type="PackedScene" uid="uid://bvk6c025h6onw" path="res://scenes/taxi_system_scenes/DeliveryPoint.tscn" id="23_qobc6"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_umyuv"]
 size = Vector2(3497, 20)
@@ -977,16 +977,10 @@ position = Vector2(1084.5, 0)
 scale = Vector2(20, 1)
 shape = SubResource("RectangleShape2D_umyuv")
 
-[node name="CarNew" parent="." instance=ExtResource("5_umyuv")]
-position = Vector2(-639, -260)
-
 [node name="ParallaxBackground2" type="ParallaxBackground" parent="."]
 
 [node name="ParallaxLayer" type="ParallaxLayer" parent="ParallaxBackground2"]
 motion_mirroring = Vector2(600, 0)
-
-[node name="car_limo" parent="." instance=ExtResource("11_5ee40")]
-position = Vector2(-522, -263)
 
 [node name="GasStation" parent="." instance=ExtResource("10_nvfoa")]
 position = Vector2(1275, -1360)
@@ -2392,38 +2386,37 @@ position = Vector2(16, 1)
 position = Vector2(-828, -265)
 wait_time_min = 5.0
 wait_time_max = 10.0
+delivery_groups = Array[NodePath]([NodePath("../../drop_points_E")])
 
 [node name="Waypoint" parent="passangers_E/PassengerSpawnPoint" index="1"]
 position = Vector2(-70, 0)
 
-[node name="InfoBoard" parent="." instance=ExtResource("21_r6178")]
-position = Vector2(-302, -280)
-
-[node name="InfoBoard2" parent="." instance=ExtResource("21_r6178")]
-position = Vector2(-7936, -480)
-dialog_resource = ExtResource("23_qobc6")
-
 [node name="drop_points_E" type="Node2D" parent="."]
+
+[node name="DeliveryPoint" parent="drop_points_E" instance=ExtResource("23_qobc6")]
+position = Vector2(88, -264)
 
 [node name="cars" type="Node2D" parent="."]
 
 [node name="car_limo2" parent="cars" instance=ExtResource("11_5ee40")]
 position = Vector2(-8359, -471)
+taxi_marker_scene = ExtResource("23_q242y")
 
-[node name="Door_home" parent="." instance=ExtResource("16_iumgf")]
+[node name="CarNew" parent="cars" instance=ExtResource("5_umyuv")]
+position = Vector2(-639, -260)
+
+[node name="car_limo" parent="cars" instance=ExtResource("11_5ee40")]
+position = Vector2(-522, -263)
+taxi_marker_scene = ExtResource("23_q242y")
+
+[node name="entrances" type="Node2D" parent="."]
 position = Vector2(-8192, -487)
+
+[node name="Door_home" parent="entrances" instance=ExtResource("16_iumgf")]
 target_level_path = "uid://b0piubrnoxlkq"
 spawn_point_name = "tutaj_gracz"
 
-[node name="exit_home" type="Node2D" parent="Door_home"]
-position = Vector2(-3, 11)
-
-[node name="Door_szopa" parent="." instance=ExtResource("16_iumgf")]
-position = Vector2(-8031, -487)
-target_level_path = "uid://b0piubrnoxlkq"
-spawn_point_name = "tutaj_gracz"
-
-[node name="exit_szopa" type="Node2D" parent="Door_szopa"]
+[node name="exit_home" type="Node2D" parent="entrances/Door_home"]
 position = Vector2(-3, 11)
 
 [connection signal="body_entered" from="DeathBoundary" to="." method="_on_death_boundary_body_entered"]

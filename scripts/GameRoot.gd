@@ -6,6 +6,8 @@ signal level_loaded(level: Node2D, player: Node2D)   # ← zostaw, jeśli Mapa z
 @export var initial_level    : PackedScene
 @export var player_scene     : PackedScene
 @export var environment_parent: NodePath = "environment"
+@export var interior_zoom: Vector2 = Vector2(5, 5)
+@export var exterior_zoom: Vector2 = Vector2(3, 3)
 
 @onready var env_parent := get_node_or_null(environment_parent)
 func _ready() -> void:
@@ -52,7 +54,11 @@ func _load_level(level_scene: PackedScene) -> void:
 	# 4) ustawiamy kamerę
 	var cam := get_node_or_null("CameraController") as Camera2D
 	if cam:
-		cam.set_follow_target(cam.get_path_to(player))
+				cam.set_follow_target(cam.get_path_to(player))
+				if level_inst.is_in_group("interiors"):
+						cam.zoom = interior_zoom
+				else:
+						cam.zoom = exterior_zoom
 
 	# 5) FSM
 	var asm := get_node_or_null("ActorStateMachine")

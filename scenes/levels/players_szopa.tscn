@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://ck11xu7tdgsxn" path="res://scenes/props/door_fancy.tscn" id="2_wps23"]
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="4_jlb1q"]
 
-[node name="PlayersHome" type="Node2D"]
+[node name="PlayersHome" type="Node2D" groups=["interiors"]]
 script = ExtResource("1_5lfu7")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
