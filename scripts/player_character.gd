@@ -43,10 +43,7 @@ func _ready() -> void:
 	await(get_tree().process_frame)  # czekamy, aż wszystkie pojazdy dodadzą się do grupy
 
 	var cars = get_tree().get_nodes_in_group("vehicles")
-	if cars.size() == 0:
-		push_error("Nie znaleziono pojazdu w grupie 'vehicles'")
-	else:
-		for v: CharacterBody2D in cars:
+	for v: CharacterBody2D in cars:
 			add_collision_exception_with(v)
 			v.add_collision_exception_with(self)
 			
