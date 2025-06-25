@@ -1,0 +1,8 @@
+Yellow cab:
+
+FF6C23 - pomarańczowy
+FFD12D - żółty
+FFF0AA - jasny żółty
+
+Thrusters:
+8CFFDE - niebieski thrust

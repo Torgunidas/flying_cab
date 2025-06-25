@@ -1,0 +1,409 @@
+[gd_scene load_steps=67 format=3 uid="uid://fadt8dhpoe5q"]
+
+[ext_resource type="Script" uid="uid://woesj8gxqw73" path="res://scripts/car.gd" id="1_vhjpo"]
+[ext_resource type="PackedScene" uid="uid://olwgn62rj0m8" path="res://scenes/npc_passanger_male.tscn" id="2_5gayy"]
+[ext_resource type="PackedScene" uid="uid://ntl83wtq8lea" path="res://scenes/ui_scenes/taxi_marker.tscn" id="3_e6o62"]
+[ext_resource type="Texture2D" uid="uid://bwr3xjxmyjbtx" path="res://Assets/Car colection/car-constructor-pixel-art/5 Effects/4.png" id="4_vhjpo"]
+[ext_resource type="Texture2D" uid="uid://cw1u21c2ifdpe" path="res://Assets/Car colection/car-constructor-pixel-art/2 Chassis/Hovers/4.png" id="5_vhjpo"]
+[ext_resource type="Texture2D" uid="uid://c5o7cextmd8dq" path="res://Assets/Car colection/car-constructor-pixel-art/1 Bodies/11_2.png" id="6_vhjpo"]
+[ext_resource type="Texture2D" uid="uid://cpiexsct2wexi" path="res://Assets/Car colection/car-constructor-pixel-art/1 Bodies/11.png" id="7_5gayy"]
+[ext_resource type="Texture2D" uid="uid://cjhw2ic416jjs" path="res://Assets/Car colection/car-constructor-pixel-art/5 Effects/3_2.png" id="8_e6o62"]
+[ext_resource type="AudioStream" uid="uid://chavkj2mihy8h" path="res://Assets/sfx/explo.mp3" id="9_rn5w3"]
+[ext_resource type="Texture2D" uid="uid://btt0svdar0dhc" path="res://Assets/fires/Hot Red Fire/Hot Red Fire1.png" id="10_mk8jj"]
+[ext_resource type="Texture2D" uid="uid://d3f3kd7pd0fre" path="res://Assets/fires/Hot Red Fire/Hot Red Fire2.png" id="11_t2yfq"]
+[ext_resource type="Texture2D" uid="uid://c6sbcyfest3ye" path="res://Assets/fires/Hot Red Fire/Hot Red Fire3.png" id="12_hqe2u"]
+[ext_resource type="Texture2D" uid="uid://dabv0t4c1aljm" path="res://Assets/fires/Hot Red Fire/Hot Red Fire4.png" id="13_8rnay"]
+[ext_resource type="Texture2D" uid="uid://cxlfh72gc0n23" path="res://Assets/fires/Hot Red Fire/Hot Red Fire5.png" id="14_jq2wv"]
+[ext_resource type="Texture2D" uid="uid://brlqvjc8mokw6" path="res://Assets/fires/Hot Red Fire/Hot Red Fire6.png" id="15_cjgkg"]
+[ext_resource type="Texture2D" uid="uid://4kx4vtqwkwao" path="res://Assets/fires/Hot Red Fire/Hot Red Fire7.png" id="16_dybys"]
+[ext_resource type="Texture2D" uid="uid://bya0s3sgomgb6" path="res://Assets/fires/Hot Red Fire/Hot Red Fire8.png" id="17_af4ed"]
+[ext_resource type="Texture2D" uid="uid://dl8pjpvcunwbt" path="res://Assets/fires/Hot Red Fire/Hot Red Fire9.png" id="18_r7dpa"]
+[ext_resource type="Texture2D" uid="uid://bk0dbtb1mv0bf" path="res://Assets/fires/Hot Red Fire/Hot Red Fire10.png" id="19_3s4kl"]
+[ext_resource type="Texture2D" uid="uid://c4mejj3aewqca" path="res://Assets/fires/Hot Red Fire/Hot Red Fire11.png" id="20_b8cmd"]
+[ext_resource type="Texture2D" uid="uid://b3fg8mdov8ek6" path="res://Assets/fires/Hot Red Fire/Hot Red Fire12.png" id="21_56fyh"]
+[ext_resource type="Texture2D" uid="uid://d1pmmr3bkx452" path="res://Assets/fires/Hot Red Fire/Hot Red Fire13.png" id="22_ccesq"]
+[ext_resource type="Texture2D" uid="uid://c0ymm2s3q02rn" path="res://Assets/fires/Hot Red Fire/Hot Red Fire14.png" id="23_rmhs5"]
+[ext_resource type="Texture2D" uid="uid://dnfpt4pxeny5i" path="res://Assets/fires/Hot Red Fire/Hot Red Fire15.png" id="24_3uj3q"]
+[ext_resource type="Texture2D" uid="uid://b84phkp8mp46o" path="res://Assets/fires/Hot Red Fire/Hot Red Fire16.png" id="25_7mc4l"]
+[ext_resource type="Texture2D" uid="uid://b3vsykr7pk3cv" path="res://Assets/fires/Hot Red Fire/Hot Red Fire17.png" id="26_8j0yi"]
+[ext_resource type="Texture2D" uid="uid://daxj33mmrbsbb" path="res://Assets/fires/Hot Red Fire/Hot Red Fire18.png" id="27_0gdje"]
+[ext_resource type="Texture2D" uid="uid://bx8fremc53u34" path="res://Assets/fires/Hot Red Fire/Hot Red Fire19.png" id="28_04bt4"]
+[ext_resource type="Texture2D" uid="uid://be0f3pt3pxgbl" path="res://Assets/fires/Hot Red Fire/Hot Red Fire20.png" id="29_4q7em"]
+[ext_resource type="Texture2D" uid="uid://bprrma8wy6rx4" path="res://Assets/fires/Hot Red Fire/Hot Red Fire21.png" id="30_fq8p2"]
+[ext_resource type="Texture2D" uid="uid://cisb2en3poqeh" path="res://Assets/fires/Hot Red Fire/Hot Red Fire22.png" id="31_4c1p5"]
+[ext_resource type="Texture2D" uid="uid://gt6q8fnhajt2" path="res://Assets/fires/Hot Red Fire/Hot Red Fire23.png" id="32_7ibrj"]
+[ext_resource type="Texture2D" uid="uid://slvvf8cs0tpx" path="res://Assets/fires/Hot Red Fire/Hot Red Fire24.png" id="33_ftoxl"]
+[ext_resource type="Texture2D" uid="uid://ca08gcy8agho" path="res://Assets/fires/Hot Red Fire/Hot Red Fire25.png" id="34_h224j"]
+[ext_resource type="Texture2D" uid="uid://dxtusqjiwuh81" path="res://Assets/fires/Hot Red Fire/Hot Red Fire26.png" id="35_4iv4v"]
+[ext_resource type="Texture2D" uid="uid://drcfnfrvplvao" path="res://Assets/fires/Hot Red Fire/Hot Red Fire27.png" id="36_e0ldx"]
+[ext_resource type="Texture2D" uid="uid://cqv5dup31bbrl" path="res://Assets/fires/Hot Red Fire/Hot Red Fire28.png" id="37_3aouj"]
+[ext_resource type="Texture2D" uid="uid://bk2e7ppyrv7jq" path="res://Assets/fires/Hot Red Fire/Hot Red Fire29.png" id="38_colh5"]
+[ext_resource type="Texture2D" uid="uid://cfbddwrycyv7t" path="res://Assets/fires/Hot Red Fire/Hot Red Fire30.png" id="39_4djdk"]
+[ext_resource type="Texture2D" uid="uid://cl8m5v7xm4oe6" path="res://Assets/explosion pack 1/explosion pack 1/Bonus/From explosions pack 2/explosion-b/explosion-b.png" id="40_xocjs"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5gayy"]
+atlas = ExtResource("4_vhjpo")
+region = Rect2(0, 0, 20, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e6o62"]
+atlas = ExtResource("4_vhjpo")
+region = Rect2(20, 0, 20, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uta7o"]
+atlas = ExtResource("4_vhjpo")
+region = Rect2(40, 0, 20, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_haxor"]
+atlas = ExtResource("4_vhjpo")
+region = Rect2(60, 0, 20, 20)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ga80a"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5gayy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_e6o62")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uta7o")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_haxor")
+}],
+"loop": true,
+"name": &"thrust",
+"speed": 10.0
+}]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uhr4o"]
+atlas = ExtResource("8_e6o62")
+region = Rect2(0, 0, 20, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hw4f0"]
+atlas = ExtResource("8_e6o62")
+region = Rect2(20, 0, 20, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_itdqd"]
+atlas = ExtResource("8_e6o62")
+region = Rect2(40, 0, 20, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rn5w3"]
+atlas = ExtResource("8_e6o62")
+region = Rect2(60, 0, 20, 20)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_4i15a"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uhr4o")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hw4f0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_itdqd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rn5w3")
+}],
+"loop": true,
+"name": &"thrust",
+"speed": 15.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8jbes"]
+size = Vector2(95, 26.5)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_0aaoe"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("10_mk8jj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_t2yfq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_hqe2u")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_8rnay")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_jq2wv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_cjgkg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_dybys")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_af4ed")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_r7dpa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_3s4kl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_b8cmd")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_56fyh")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_ccesq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_rmhs5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_3uj3q")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_7mc4l")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_8j0yi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27_0gdje")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28_04bt4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_4q7em")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_fq8p2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31_4c1p5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32_7ibrj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("33_ftoxl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_h224j")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35_4iv4v")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_e0ldx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("37_3aouj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("38_colh5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("39_4djdk")
+}],
+"loop": true,
+"name": &"default",
+"speed": 15.0
+}]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cp34m"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(80, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qan03"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(160, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q0x31"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(240, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7bujf"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(320, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_674ip"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(400, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_by4ao"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(480, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8wskw"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(560, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ne700"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(640, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3eqls"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(720, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ny8tk"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(800, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lx8lc"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(880, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yar4g"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(960, 0, 80, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mtrmc"]
+atlas = ExtResource("40_xocjs")
+region = Rect2(0, 0, 80, 48)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_aw44k"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cp34m")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qan03")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_q0x31")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7bujf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_674ip")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_by4ao")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8wskw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ne700")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3eqls")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ny8tk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lx8lc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yar4g")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mtrmc")
+}],
+"loop": false,
+"name": &"default",
+"speed": 13.0
+}]
+
+[node name="Car_yellow_cab" type="CharacterBody2D"]
+collision_mask = 5
+script = ExtResource("1_vhjpo")
+thrust_force = 600.0
+horizontal_thrust = 300.0
+max_fall_speed = 300.0
+ceiling_penalty = 40.0
+max_horizontal_speed = 420.0
+max_hp = 400
+damage_tolerance = 160.0
+max_fuel = 600.0
+npc_scene = ExtResource("2_5gayy")
+taxi_marker_scene = ExtResource("3_e6o62")
+ground_boost_multiplier = 5.0
+ground_boost_duration = 0.05
+ground_boost_vertical_multiplier = 1.0
+
+[node name="car_body" type="Sprite2D" parent="."]
+
+[node name="rear_thrust_anim" type="AnimatedSprite2D" parent="car_body"]
+visible = false
+position = Vector2(-31, 12)
+sprite_frames = SubResource("SpriteFrames_ga80a")
+animation = &"thrust"
+
+[node name="rear_thrust" type="Sprite2D" parent="car_body"]
+position = Vector2(-30.9453, -3.40281)
+rotation = 0.00234696
+scale = Vector2(0.286779, 0.560562)
+texture = ExtResource("5_vhjpo")
+
+[node name="front_thrust_anim" type="AnimatedSprite2D" parent="car_body"]
+visible = false
+position = Vector2(5, 11)
+sprite_frames = SubResource("SpriteFrames_ga80a")
+animation = &"thrust"
+frame_progress = 0.682861
+
+[node name="front_thrust" type="Sprite2D" parent="car_body"]
+position = Vector2(3.48536, -4.00722)
+rotation = 0.00130835
+scale = Vector2(0.448916, 0.611111)
+texture = ExtResource("5_vhjpo")
+
+[node name="door_open" type="Sprite2D" parent="car_body"]
+visible = false
+position = Vector2(0, -13)
+texture = ExtResource("6_vhjpo")
+
+[node name="chasis" type="Sprite2D" parent="car_body"]
+position = Vector2(0, -13)
+texture = ExtResource("7_5gayy")
+
+[node name="horizontal_thrust_anim" type="AnimatedSprite2D" parent="car_body"]
+visible = false
+position = Vector2(-55, -9)
+scale = Vector2(1.35, 1.28571)
+sprite_frames = SubResource("SpriteFrames_4i15a")
+animation = &"thrust"
+frame_progress = 0.553299
+
+[node name="PivotCheck_front" type="RayCast2D" parent="car_body"]
+unique_name_in_owner = true
+position = Vector2(16, 0)
+target_position = Vector2(0, 12)
+
+[node name="PivotCheck_rear" type="RayCast2D" parent="car_body"]
+unique_name_in_owner = true
+position = Vector2(-27, 0)
+target_position = Vector2(0, 12)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-2, -12.75)
+shape = SubResource("RectangleShape2D_8jbes")
+
+[node name="death_sound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("9_rn5w3")
+
+[node name="car_death" type="AnimatedSprite2D" parent="."]
+visible = false
+position = Vector2(1, -18)
+scale = Vector2(2.01563, 1.92401)
+sprite_frames = SubResource("SpriteFrames_0aaoe")
+autoplay = "default"
+
+[node name="death_boom" type="AnimatedSprite2D" parent="car_death"]
+z_index = 1
+position = Vector2(-1.19209e-07, 6.23697)
+scale = Vector2(0.564968, 0.564968)
+sprite_frames = SubResource("SpriteFrames_aw44k")
+
+[node name="DeathTimer" type="Timer" parent="."]
+wait_time = 1.3
+one_shot = true
