@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://cfol60xahev3c"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ohdfx"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_18fb1"]
+
+[node name="MayaSister" type="Node2D"]
+
+[node name="Portrait" type="Node2D" parent="."]
+
+[node name="Body" type="Node2D" parent="."]
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="Body"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Body/CharacterBody2D"]
+shape = SubResource("RectangleShape2D_ohdfx")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="Body/CharacterBody2D"]
+sprite_frames = SubResource("SpriteFrames_18fb1")
