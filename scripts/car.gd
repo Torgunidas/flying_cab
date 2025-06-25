@@ -67,6 +67,7 @@ var passenger_count : int = 0
 # -----------------------
 @export var ground_stop_delay: float = 0.6
 var _no_thrust_timer: float = 0.0
+@export var ground_friction_multiplier: float = 4.0
 
 # -----------------------
 # Boost przy starcie z podłoża
@@ -239,12 +240,13 @@ func _physics_process(delta: float) -> void:
 
 	# -------- INERTIAL FALL / WRACK --------
 	if not controls_enabled and not _is_dead:
-		if inertial_fall:
-			velocity.y = min(velocity.y + _level.gravity_force * delta, max_fall_speed)
-			velocity.x = lerp(velocity.x, 0.0, _level.air_resistance * delta)
-			move_and_slide()
-			
-		return
+				if inertial_fall:
+						velocity.y = min(velocity.y + _level.gravity_force * delta, max_fall_speed)
+						velocity.x = lerp(velocity.x, 0.0, _level.air_resistance * delta)
+						move_and_slide()
+						_handle_ground_stop(delta)
+
+				return
 	if _is_dead:
 		velocity.y = min(velocity.y + _level.gravity_force * delta, max_fall_speed)
 		move_and_slide()
@@ -345,11 +347,14 @@ func _apply_horizontal_thrust(delta: float, air_resistance: float) -> void:
 		thrust *= ground_boost_multiplier
 
 	if _btn_pressed("thrust_left"):
-		velocity.x -= thrust * delta
+				velocity.x -= thrust * delta
 	elif _btn_pressed("thrust_right"):
-		velocity.x += thrust * delta
+				velocity.x += thrust * delta
 	else:
-		velocity.x = lerp(velocity.x, 0.0, air_resistance * delta)
+			var res := air_resistance
+			if is_on_floor():
+					res *= ground_friction_multiplier
+			velocity.x = lerp(velocity.x, 0.0, res * delta)
 
 	velocity.x = clamp(velocity.x, -max_horizontal_speed, max_horizontal_speed)
 	current_fuel = clamp(

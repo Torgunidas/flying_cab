@@ -159,6 +159,7 @@ func enter_vehicle(target_vehicle: CharacterBody2D = null) -> void:
 	set_controls_enabled(false)
 	vehicle.set_inertial_fall(false)
 	vehicle.set_controls_enabled(true)
+	vehicle.set_player_input_enabled(true)
 	# sygnał śmierci — tylko tego pojazdu
 	if not vehicle.is_connected("died", Callable(self, "_on_vehicle_died")):
 		vehicle.connect("died", Callable(self, "_on_vehicle_died"))
@@ -186,6 +187,7 @@ func exit_vehicle() -> void:
 		vehicle.disconnect("died", Callable(self, "_on_vehicle_died"))
 	in_vehicle = false
 	vehicle.set_controls_enabled(false)
+	vehicle.set_player_input_enabled(false)
 	vehicle.set_inertial_fall(true)
 	set_controls_enabled(true)
 	_set_zoom(zoom_on_foot)

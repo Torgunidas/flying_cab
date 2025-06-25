@@ -30,10 +30,6 @@ script = ExtResource("3_hctk7")
 
 [node name="world" parent="environment" instance=ExtResource("2_85ppi")]
 
-[node name="CarNew" parent="environment/world" index="15"]
-fare_rate = null
-fare_penalty_ratio = null
-
 [node name="CameraController" type="Camera2D" parent="."]
 zoom = Vector2(3, 3)
 script = ExtResource("6_wyfcf")
