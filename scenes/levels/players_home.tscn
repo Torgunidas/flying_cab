@@ -1,12 +1,11 @@
-[gd_scene load_steps=8 format=4 uid="uid://b0piubrnoxlkq"]
+[gd_scene load_steps=7 format=4 uid="uid://b0piubrnoxlkq"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_1tkwu"]
 [ext_resource type="TileSet" uid="uid://dv1s41vxk3fuv" path="res://Assets/TileSets/business_district.tres" id="1_gxj05"]
 [ext_resource type="PackedScene" uid="uid://ck11xu7tdgsxn" path="res://scenes/props/door_fancy.tscn" id="2_7pxda"]
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="4_pnta0"]
 [ext_resource type="Texture2D" uid="uid://bi88hj6bluhcv" path="res://Assets/interior_players_house.png" id="5_1tkwu"]
-[ext_resource type="Texture2D" uid="uid://ccav6ry6ek7f4" path="res://Assets/character/maya_sister/ChatGPT Image 26 cze 2025, 01_17_01.png" id="6_636f2"]
-[ext_resource type="Texture2D" uid="uid://ctkamq5wa4sw5" path="res://Assets/character/maya_sister/ChatGPT Image 26 cze 2025, 01_49_28.png" id="7_apte8"]
+[ext_resource type="PackedScene" uid="uid://cfol60xahev3c" path="res://scenes/characters/maya_sister.tscn" id="6_636f2"]
 
 [node name="PlayersHome" type="Node2D" groups=["interiors"]]
 script = ExtResource("1_1tkwu")
@@ -45,12 +44,5 @@ position = Vector2(330, 1)
 scale = Vector2(0.156413, 0.114746)
 texture = ExtResource("5_1tkwu")
 
-[node name="ChatGptImage26Cze2025,011701" type="Sprite2D" parent="."]
-position = Vector2(302, 2)
-scale = Vector2(0.0205078, 0.0205078)
-texture = ExtResource("6_636f2")
-
-[node name="ChatGptImage26Cze2025,014928" type="Sprite2D" parent="."]
-position = Vector2(302.625, 1.93749)
-scale = Vector2(0.020752, 0.020752)
-texture = ExtResource("7_apte8")
+[node name="MayaSister" parent="." instance=ExtResource("6_636f2")]
+position = Vector2(303, 4)
