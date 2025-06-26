@@ -4,6 +4,7 @@ class_name MapOverlay
 @export var toggle_map := "toggle_map"
 @export var map_size      := Vector2i(512, 512)
 @export var camera_zoom   := Vector2(1, 1)
+@export var interior_map_zoom := Vector2(1, 1)
 
 # --- PAN / ZOOM ---
 @export var zoom_step      := 0
@@ -193,6 +194,10 @@ func _on_level_loaded(level: Node2D, player: Node2D) -> void:
 
 	# ─── Center mini-map camera na GRACZU ───────────────────────
 	mini_cam.position = player.global_position
+	if level.is_in_group("interiors"):
+			mini_cam.zoom = interior_map_zoom
+	else:
+			mini_cam.zoom = camera_zoom
 
 	# ─── Odświeżamy markery: używamy current_player_target ───────
 	_clear_player_markers()
@@ -342,37 +347,43 @@ func world_to_map(p: Vector2) -> Vector2:
 # --- CAMERA LIMITS ----------------------------------------------------
 # MapOverlay.gd  ──────────────────────────────────────────────────────────
 func _setup_camera_limits(level: Node) -> void:
-	# ❶ Zbierz granice ze wszystkich TileMapLayer-ów
-	var world_rect    : Rect2        # pusty na start
-	var first_non_empty := true
+	 # ❶ Zbierz granice ze wszystkich TileMapLayer-ów oraz węzłów z grupy "level_bounds"
+	var world_rect : Rect2
+	var found := false
 
-	# Przechodzimy rekurencyjnie po całym drzewie levelu
+		# Przechodzimy rekurencyjnie po całym drzewie levelu
 	for n in level.get_children(true):
+		var rect = null
+
 		if n is TileMapLayer:
-			var used : Rect2i = n.get_used_rect()
-			if used.size == Vector2i.ZERO:
-				continue  # warstwa pusta – pomijamy
+					var used : Rect2i = n.get_used_rect()
+					if used.size != Vector2i.ZERO:
+								var tl_local : Vector2 = n.map_to_local(used.position)
+								var br_local : Vector2 = n.map_to_local(used.position + used.size)
+								rect = Rect2(tl_local, br_local - tl_local)
+								rect.position = n.to_global(rect.position)
 
-			# Zamień koordy siatki na lokalne piksele
-			var tl_local : Vector2 = n.map_to_local(used.position)
-			var br_local : Vector2 = n.map_to_local(used.position + used.size)
-			var layer_rect := Rect2(tl_local, br_local - tl_local)
+		elif n.is_in_group("level_bounds") and n is Node2D:
+					if n is Sprite2D:
+								rect = n.get_rect()
+								rect.position = n.to_global(rect.position)
+					elif n.has_method("get_rect"):
+								rect = n.call("get_rect")
+								rect.position = n.to_global(rect.position)
 
-			# Przelicz na współrzędne świata (globalne)
-			layer_rect.position = n.to_global(layer_rect.position)
+		if rect:
+					world_rect = rect if not found else world_rect.merge(rect)
+					found = true
 
-			world_rect = layer_rect if first_non_empty else world_rect.merge(layer_rect)
-			first_non_empty = false
-
-	if first_non_empty:
-		push_error("MapOverlay: żadna TileMapLayer nie zawiera kafelków!")
+	if not found:
+		push_warning("MapOverlay: no level bounds found; camera limits unchanged.")
 		return
 
-	# ❷ Ustaw limity mini-kamery
-	mini_cam.limit_left   = world_rect.position.x
-	mini_cam.limit_top    = world_rect.position.y
-	mini_cam.limit_right  = world_rect.position.x + world_rect.size.x
-	mini_cam.limit_bottom = world_rect.position.y + world_rect.size.y
+		# ❷ Ustaw limity mini-kamery
+		mini_cam.limit_left   = world_rect.position.x
+		mini_cam.limit_top    = world_rect.position.y
+		mini_cam.limit_right  = world_rect.position.x + world_rect.size.x
+		mini_cam.limit_bottom = world_rect.position.y + world_rect.size.y
 
 
 

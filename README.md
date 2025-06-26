@@ -106,6 +106,14 @@ Uruchom poziom. Po wejściu w StartTrigger quest pojawi się w QuestLog, a aktua
 
 Marker „!” będzie widoczny nad węzłem z grupy quest_goal, jeżeli quest jest aktywny. Po wejściu w EndTrigger quest zostanie ukończony i (jeśli zadano) pojawi się RewardBox.
 
+### Mini‑mapa we wnętrzach
+
+Sceny należące do grupy `interiors` korzystają z innego powiększenia mini‑mapy.
+Aby MapOverlay mógł prawidłowo ustawić limity kamery w takich poziomach,
+należy dodać węzeł (np. `Sprite2D` lub `Node2D`) w grupie `level_bounds`
+określający rozmiar planszy.
+
+
 
 ## Licencja
 
