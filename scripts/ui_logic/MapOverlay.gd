@@ -138,7 +138,7 @@ func _add_quest_giver_marker(target: Node2D) -> void:
 	m.expand_mode   = TextureRect.EXPAND_IGNORE_SIZE
 	m.size          = icon.get_size()            # naturalny rozmiar
 	m.scale         = Vector2(marker_scale, marker_scale)  # globalna skala
-	m.pivot_offset  = icon.get_size() * 0.5 * marker_scale
+	m.pivot_offset  = Vector2.ZERO
 	m.mouse_filter  = Control.MOUSE_FILTER_IGNORE
 	m.z_index       = 100
 
@@ -168,7 +168,7 @@ func _add_goal_marker(goal_node: Node2D) -> void:
 	m.expand_mode   = TextureRect.EXPAND_IGNORE_SIZE
 	m.size          = icon.get_size()
 	m.scale         = Vector2(marker_scale, marker_scale)
-	m.pivot_offset  = icon.get_size() * 0.5 * marker_scale
+	m.pivot_offset  = Vector2.ZERO
 	m.mouse_filter  = Control.MOUSE_FILTER_IGNORE
 	m.z_index       = 100
 	quest_root.add_child(m)
@@ -227,7 +227,7 @@ func _add_player_marker(target: Node2D) -> void:
 	m.expand_mode   = TextureRect.EXPAND_IGNORE_SIZE
 	m.size          = icon.get_size()
 	m.scale         = Vector2(marker_scale, marker_scale)
-	m.pivot_offset  = icon.get_size() * 0.5 * marker_scale
+	m.pivot_offset  = Vector2.ZERO
 	m.mouse_filter  = Control.MOUSE_FILTER_IGNORE
 	m.z_index       = 100
 

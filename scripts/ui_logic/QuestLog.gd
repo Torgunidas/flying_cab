@@ -1,6 +1,9 @@
 extends CanvasLayer
 class_name QuestLog
 
+# Font size for description inside the log
+const LOG_DESC_FONT_SIZE := 25
+
 @onready var list_box  : VBoxContainer = $Panel/List
 @onready var close_btn : Button        = $Panel/Close
 
@@ -45,12 +48,23 @@ func _add_done_button(qdata: QuestData) -> void:
 	list_box.add_child(btn)
 
 func _add_active_button(qdata: QuestData) -> void:
+	var container = VBoxContainer.new()
+	list_box.add_child(container)
+
 	var btn = Button.new()
 	btn.text = qdata.title
-	# podłączamy kliknięcie, żeby zmieniało objective
-	var cb = Callable(self, "_on_list_item_pressed").bind(qdata.id)
-	btn.connect("pressed", cb)
-	list_box.add_child(btn)
+	container.add_child(btn)
 
-func _on_list_item_pressed(selected_id: String) -> void:
-	QuestObjectiveUi.set_quest_id(selected_id)
+	var desc = Label.new()
+	desc.text = qdata.description
+	desc.visible = false
+	desc.add_theme_font_size_override("font_size", LOG_DESC_FONT_SIZE)
+	container.add_child(desc)
+
+	# podłączamy kliknięcie, żeby zmieniało objective i rozwijało opis
+	var cb = Callable(self, "_on_list_item_pressed").bind(qdata.id, desc)
+	btn.connect("pressed", cb)
+
+func _on_list_item_pressed(selected_id: String, desc_label: Label) -> void:
+		QuestObjectiveUi.set_quest_id(selected_id)
+		desc_label.visible = not desc_label.visible

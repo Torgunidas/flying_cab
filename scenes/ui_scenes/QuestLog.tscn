@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://cf03f45uenpty"]
+[gd_scene load_steps=3 format=3 uid="uid://cf03f45uenpty"]
 
 [ext_resource type="Script" uid="uid://bevsdwbjhl5xn" path="res://scripts/ui_logic/QuestLog.gd" id="1_kucni"]
+
+[sub_resource type="Theme" id="Theme_je0rk"]
+default_font_size = 20
 
 [node name="UiManager" type="CanvasLayer"]
 layer = 10
@@ -19,6 +22,7 @@ offset_bottom = 90.0
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
+theme = SubResource("Theme_je0rk")
 
 [node name="Close" type="Button" parent="Panel"]
 layout_mode = 0

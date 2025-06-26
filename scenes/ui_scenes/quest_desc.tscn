@@ -1,4 +1,10 @@
-[gd_scene format=3 uid="uid://co383hag7ftvi"]
+[gd_scene load_steps=3 format=3 uid="uid://co383hag7ftvi"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_gedgr"]
+font_size = 25
+
+[sub_resource type="LabelSettings" id="LabelSettings_xn6b5"]
+font_size = 25
 
 [node name="Quest_desc" type="CanvasLayer"]
 
@@ -16,7 +22,9 @@ offset_bottom = 40.0
 [node name="Quest_name" type="Label" parent="Description/Content"]
 layout_mode = 2
 text = "Find blue Fiat"
+label_settings = SubResource("LabelSettings_gedgr")
 
 [node name="Quest_description" type="Label" parent="Description/Content"]
 layout_mode = 2
 text = "Follow the pointing finger"
+label_settings = SubResource("LabelSettings_xn6b5")
