@@ -113,7 +113,11 @@ Aby MapOverlay mógł prawidłowo ustawić limity kamery w takich poziomach,
 należy dodać węzeł (np. `Sprite2D` lub `Node2D`) w grupie `level_bounds`
 określający rozmiar planszy.
 
+### Sterowanie mini‑mapą
 
+Powiększenie mini‑mapy można zmieniać kółkiem myszy lub gestem pinch na
+urządzeniach dotykowych. Zakres przybliżenia kontrolują zmienne eksportowane
+`zoom_step`, `min_zoom` oraz `max_zoom` w skrypcie `MapOverlay.gd`.
 
 ## Licencja
 

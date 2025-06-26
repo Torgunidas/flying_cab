@@ -1,13 +1,15 @@
-[gd_scene load_steps=4 format=3 uid="uid://cfol60xahev3c"]
+[gd_scene load_steps=5 format=3 uid="uid://cfol60xahev3c"]
 
 [ext_resource type="Texture2D" uid="uid://ctkamq5wa4sw5" path="res://Assets/character/maya_sister/ChatGPT Image 26 cze 2025, 01_49_28.png" id="1_18fb1"]
 [ext_resource type="Script" uid="uid://d1obn43fxr2v2" path="res://scripts/info_board.gd" id="1_yywhm"]
+[ext_resource type="Resource" uid="uid://ds3wa2ty18ogl" path="res://dialogues/main_quest/maya_dialog.tres" id="2_j1ptl"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ohdfx"]
 size = Vector2(20, 35)
 
 [node name="MayaSister" type="Area2D"]
 script = ExtResource("1_yywhm")
+dialog_resource = ExtResource("2_j1ptl")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -0.5)

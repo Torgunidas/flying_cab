@@ -7,9 +7,9 @@ class_name MapOverlay
 @export var interior_map_zoom := Vector2(1, 1)
 
 # --- PAN / ZOOM ---
-@export var zoom_step      := 0
-@export var min_zoom       := 1
-@export var max_zoom       := 1
+@export var zoom_step      := 1.1
+@export var min_zoom       := 0.5
+@export var max_zoom       := 3.0
 @export var drag_sensitivity := 1.0
 
 var _is_dragging := false
@@ -194,10 +194,11 @@ func _on_level_loaded(level: Node2D, player: Node2D) -> void:
 
 	# ─── Center mini-map camera na GRACZU ───────────────────────
 	mini_cam.position = player.global_position
+	var target_zoom = camera_zoom
 	if level.is_in_group("interiors"):
-			mini_cam.zoom = interior_map_zoom
-	else:
-			mini_cam.zoom = camera_zoom
+			target_zoom = interior_map_zoom
+	mini_cam.zoom = Vector2(clamp(target_zoom.x, min_zoom, max_zoom),
+							   clamp(target_zoom.y, min_zoom, max_zoom))
 
 	# ─── Odświeżamy markery: używamy current_player_target ───────
 	_clear_player_markers()
