@@ -342,7 +342,7 @@ func _update_quest_positions() -> void:
 
 # --- WORLD TO MAP ---
 func world_to_map(p: Vector2) -> Vector2:
-	return (p - mini_cam.position) / mini_cam.zoom + vp.size * 0.5
+	return (p - mini_cam.position) * mini_cam.zoom + vp.size * 0.5
 
 # --- CAMERA LIMITS ---
 # --- CAMERA LIMITS ----------------------------------------------------
