@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_x3vxi")
-id = "1"
+id = "1_1_talk_to_maya"
 title = "Talk to Maya"
 description = "Speak with your sister in your home"
 start_target = "quest_giver"

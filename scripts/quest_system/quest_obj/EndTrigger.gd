@@ -14,16 +14,23 @@ class_name EndTrigger
 # 4) Możesz przesunąć pozycję nagrody względem triggera
 @export var reward_offset: Vector2 = Vector2.ZERO
 
+# Decides if quest should be completed upon entering this trigger.
+# Useful when the trigger is only a map hint.
+@export var complete_on_enter: bool = true
+
+
 func _ready() -> void:
 	body_entered.connect(_on_enter)
 
 func _on_enter(body: Node) -> void:
 	if not body.is_in_group("player"):
 		return
+	if not complete_on_enter:
+		return
 
 	var q = QuestSys.get_quest(quest_id)
 	if q and q.status == QuestData.Status.ACTIVE:
-		# ► ukończ questa
+				# ► ukończ questa
 		QuestSys.complete(quest_id)
 
 		# ► utwórz instancję RewardBox

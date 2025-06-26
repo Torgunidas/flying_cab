@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=4 uid="uid://c6wgvur21jgyx"]
+[gd_scene load_steps=39 format=4 uid="uid://c6wgvur21jgyx"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_u2gg1"]
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="2_gqf4i"]
@@ -25,6 +25,11 @@
 [ext_resource type="PackedScene" uid="uid://bvk6c025h6onw" path="res://scenes/taxi_system_scenes/DeliveryPoint.tscn" id="23_qobc6"]
 [ext_resource type="PackedScene" uid="uid://fadt8dhpoe5q" path="res://scenes/cars/car_yellow_cab.tscn" id="24_q242y"]
 [ext_resource type="PackedScene" uid="uid://b6kngcwxwlrsk" path="res://scenes/cars/car_npc.tscn" id="25_s7xga"]
+[ext_resource type="Script" uid="uid://3t2u77lm7cv3" path="res://scripts/quest_system/quest_obj/EndTrigger.gd" id="26_dmnkx"]
+[ext_resource type="Script" uid="uid://llrlsy1152jv" path="res://scripts/quest_system/quest_obj/StartTrigger.gd" id="27_me7hm"]
+[ext_resource type="Texture2D" uid="uid://jussxd5bdvrv" path="res://Assets/Free Industrial Zone Tileset/3 Objects/Box1.png" id="28_7ob0h"]
+[ext_resource type="PackedScene" uid="uid://dq3q4fnlfjrol" path="res://scenes/quest/RewardBox.tscn" id="29_l7kxo"]
+[ext_resource type="Texture2D" uid="uid://bcavvnbspcdew" path="res://Assets/Free Industrial Zone Tileset/3 Objects/Box8.png" id="30_th6as"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_umyuv"]
 size = Vector2(3497, 20)
@@ -913,6 +918,11 @@ physics_layer_0/collision_layer = 1
 sources/100 = SubResource("TileSetAtlasSource_r6178")
 tile_proxies/coords_level = [[0, Vector2i(0, 0)], [100, Vector2i(0, 0)], [0, Vector2i(0, 1)], [100, Vector2i(0, 1)], [0, Vector2i(1, 0)], [100, Vector2i(1, 0)], [0, Vector2i(1, 1)], [100, Vector2i(1, 1)], [1, Vector2i(0, 0)], [100, Vector2i(2, 0)], [1, Vector2i(0, 1)], [100, Vector2i(2, 1)], [1, Vector2i(1, 0)], [100, Vector2i(3, 0)], [1, Vector2i(1, 1)], [100, Vector2i(3, 1)], [2, Vector2i(0, 0)], [100, Vector2i(4, 0)], [2, Vector2i(0, 1)], [100, Vector2i(4, 1)], [2, Vector2i(1, 0)], [100, Vector2i(5, 0)], [2, Vector2i(1, 1)], [100, Vector2i(5, 1)], [3, Vector2i(0, 0)], [100, Vector2i(6, 0)], [3, Vector2i(0, 1)], [100, Vector2i(6, 1)], [3, Vector2i(1, 0)], [100, Vector2i(7, 0)], [3, Vector2i(1, 1)], [100, Vector2i(7, 1)], [4, Vector2i(0, 0)], [100, Vector2i(8, 0)], [4, Vector2i(0, 1)], [100, Vector2i(8, 1)], [4, Vector2i(1, 0)], [100, Vector2i(9, 0)], [4, Vector2i(1, 1)], [100, Vector2i(9, 1)], [5, Vector2i(0, 0)], [100, Vector2i(10, 0)], [5, Vector2i(0, 1)], [100, Vector2i(10, 1)], [5, Vector2i(1, 0)], [100, Vector2i(11, 0)], [5, Vector2i(1, 1)], [100, Vector2i(11, 1)], [6, Vector2i(0, 0)], [100, Vector2i(12, 0)], [6, Vector2i(0, 1)], [100, Vector2i(12, 1)], [6, Vector2i(1, 0)], [100, Vector2i(13, 0)], [6, Vector2i(1, 1)], [100, Vector2i(13, 1)], [7, Vector2i(0, 0)], [100, Vector2i(14, 0)], [7, Vector2i(0, 1)], [100, Vector2i(14, 1)], [7, Vector2i(1, 0)], [100, Vector2i(15, 0)], [7, Vector2i(1, 1)], [100, Vector2i(15, 1)], [8, Vector2i(0, 0)], [100, Vector2i(16, 0)], [8, Vector2i(0, 1)], [100, Vector2i(16, 1)], [8, Vector2i(1, 0)], [100, Vector2i(17, 0)], [8, Vector2i(1, 1)], [100, Vector2i(17, 1)], [9, Vector2i(0, 0)], [100, Vector2i(18, 0)], [9, Vector2i(0, 1)], [100, Vector2i(18, 1)], [9, Vector2i(1, 0)], [100, Vector2i(19, 0)], [9, Vector2i(1, 1)], [100, Vector2i(19, 1)], [10, Vector2i(0, 0)], [100, Vector2i(20, 0)], [10, Vector2i(0, 1)], [100, Vector2i(20, 1)], [10, Vector2i(1, 0)], [100, Vector2i(21, 0)], [10, Vector2i(1, 1)], [100, Vector2i(21, 1)], [11, Vector2i(0, 0)], [100, Vector2i(22, 0)], [11, Vector2i(0, 1)], [100, Vector2i(22, 1)], [11, Vector2i(1, 0)], [100, Vector2i(23, 0)], [11, Vector2i(1, 1)], [100, Vector2i(23, 1)], [12, Vector2i(0, 0)], [100, Vector2i(24, 0)], [12, Vector2i(0, 1)], [100, Vector2i(24, 1)], [12, Vector2i(1, 0)], [100, Vector2i(25, 0)], [12, Vector2i(1, 1)], [100, Vector2i(25, 1)], [13, Vector2i(0, 0)], [100, Vector2i(26, 0)], [13, Vector2i(0, 1)], [100, Vector2i(26, 1)], [13, Vector2i(1, 0)], [100, Vector2i(27, 0)], [13, Vector2i(1, 1)], [100, Vector2i(27, 1)], [14, Vector2i(0, 0)], [100, Vector2i(28, 0)], [14, Vector2i(0, 1)], [100, Vector2i(28, 1)], [14, Vector2i(1, 0)], [100, Vector2i(29, 0)], [14, Vector2i(1, 1)], [100, Vector2i(29, 1)], [15, Vector2i(0, 0)], [100, Vector2i(0, 2)], [15, Vector2i(0, 1)], [100, Vector2i(0, 3)], [15, Vector2i(1, 0)], [100, Vector2i(1, 2)], [15, Vector2i(1, 1)], [100, Vector2i(1, 3)], [16, Vector2i(0, 0)], [100, Vector2i(2, 2)], [16, Vector2i(0, 1)], [100, Vector2i(2, 3)], [16, Vector2i(1, 0)], [100, Vector2i(3, 2)], [16, Vector2i(1, 1)], [100, Vector2i(3, 3)], [17, Vector2i(0, 0)], [100, Vector2i(4, 2)], [17, Vector2i(0, 1)], [100, Vector2i(4, 3)], [17, Vector2i(1, 0)], [100, Vector2i(5, 2)], [17, Vector2i(1, 1)], [100, Vector2i(5, 3)], [18, Vector2i(0, 0)], [100, Vector2i(6, 2)], [18, Vector2i(0, 1)], [100, Vector2i(6, 3)], [18, Vector2i(1, 0)], [100, Vector2i(7, 2)], [18, Vector2i(1, 1)], [100, Vector2i(7, 3)], [19, Vector2i(0, 0)], [100, Vector2i(8, 2)], [19, Vector2i(0, 1)], [100, Vector2i(8, 3)], [19, Vector2i(1, 0)], [100, Vector2i(9, 2)], [19, Vector2i(1, 1)], [100, Vector2i(9, 3)], [20, Vector2i(0, 0)], [100, Vector2i(10, 2)], [20, Vector2i(0, 1)], [100, Vector2i(10, 3)], [20, Vector2i(1, 0)], [100, Vector2i(11, 2)], [20, Vector2i(1, 1)], [100, Vector2i(11, 3)], [21, Vector2i(0, 0)], [100, Vector2i(12, 2)], [21, Vector2i(0, 1)], [100, Vector2i(12, 3)], [21, Vector2i(1, 0)], [100, Vector2i(13, 2)], [21, Vector2i(1, 1)], [100, Vector2i(13, 3)], [22, Vector2i(0, 0)], [100, Vector2i(14, 2)], [22, Vector2i(0, 1)], [100, Vector2i(14, 3)], [22, Vector2i(1, 0)], [100, Vector2i(15, 2)], [22, Vector2i(1, 1)], [100, Vector2i(15, 3)], [23, Vector2i(0, 0)], [100, Vector2i(16, 2)], [23, Vector2i(0, 1)], [100, Vector2i(16, 3)], [23, Vector2i(1, 0)], [100, Vector2i(17, 2)], [23, Vector2i(1, 1)], [100, Vector2i(17, 3)], [24, Vector2i(0, 0)], [100, Vector2i(18, 2)], [24, Vector2i(0, 1)], [100, Vector2i(18, 3)], [24, Vector2i(1, 0)], [100, Vector2i(19, 2)], [24, Vector2i(1, 1)], [100, Vector2i(19, 3)], [25, Vector2i(0, 0)], [100, Vector2i(20, 2)], [25, Vector2i(0, 1)], [100, Vector2i(20, 3)], [25, Vector2i(1, 0)], [100, Vector2i(21, 2)], [25, Vector2i(1, 1)], [100, Vector2i(21, 3)], [26, Vector2i(0, 0)], [100, Vector2i(22, 2)], [26, Vector2i(0, 1)], [100, Vector2i(22, 3)], [26, Vector2i(1, 0)], [100, Vector2i(23, 2)], [26, Vector2i(1, 1)], [100, Vector2i(23, 3)], [27, Vector2i(0, 0)], [100, Vector2i(24, 2)], [27, Vector2i(0, 1)], [100, Vector2i(24, 3)], [27, Vector2i(1, 0)], [100, Vector2i(25, 2)], [27, Vector2i(1, 1)], [100, Vector2i(25, 3)], [28, Vector2i(0, 0)], [100, Vector2i(26, 2)], [28, Vector2i(0, 1)], [100, Vector2i(26, 3)], [28, Vector2i(1, 0)], [100, Vector2i(27, 2)], [28, Vector2i(1, 1)], [100, Vector2i(27, 3)], [29, Vector2i(0, 0)], [100, Vector2i(28, 2)], [29, Vector2i(0, 1)], [100, Vector2i(28, 3)], [29, Vector2i(1, 0)], [100, Vector2i(29, 2)], [29, Vector2i(1, 1)], [100, Vector2i(29, 3)], [30, Vector2i(0, 0)], [100, Vector2i(0, 4)], [30, Vector2i(0, 1)], [100, Vector2i(0, 5)], [30, Vector2i(1, 0)], [100, Vector2i(1, 4)], [30, Vector2i(1, 1)], [100, Vector2i(1, 5)], [31, Vector2i(0, 0)], [100, Vector2i(2, 4)], [31, Vector2i(0, 1)], [100, Vector2i(2, 5)], [31, Vector2i(1, 0)], [100, Vector2i(3, 4)], [31, Vector2i(1, 1)], [100, Vector2i(3, 5)], [32, Vector2i(0, 0)], [100, Vector2i(4, 4)], [32, Vector2i(0, 1)], [100, Vector2i(4, 5)], [32, Vector2i(1, 0)], [100, Vector2i(5, 4)], [32, Vector2i(1, 1)], [100, Vector2i(5, 5)], [33, Vector2i(0, 0)], [100, Vector2i(6, 4)], [33, Vector2i(0, 1)], [100, Vector2i(6, 5)], [33, Vector2i(1, 0)], [100, Vector2i(7, 4)], [33, Vector2i(1, 1)], [100, Vector2i(7, 5)], [34, Vector2i(0, 0)], [100, Vector2i(8, 4)], [34, Vector2i(0, 1)], [100, Vector2i(8, 5)], [34, Vector2i(1, 0)], [100, Vector2i(9, 4)], [34, Vector2i(1, 1)], [100, Vector2i(9, 5)], [35, Vector2i(0, 0)], [100, Vector2i(10, 4)], [35, Vector2i(0, 1)], [100, Vector2i(10, 5)], [35, Vector2i(1, 0)], [100, Vector2i(11, 4)], [35, Vector2i(1, 1)], [100, Vector2i(11, 5)], [36, Vector2i(0, 0)], [100, Vector2i(12, 4)], [36, Vector2i(1, 0)], [100, Vector2i(13, 4)], [37, Vector2i(0, 0)], [100, Vector2i(14, 4)], [37, Vector2i(1, 0)], [100, Vector2i(15, 4)], [38, Vector2i(0, 0)], [100, Vector2i(16, 4)], [38, Vector2i(1, 0)], [100, Vector2i(17, 4)], [39, Vector2i(0, 0)], [100, Vector2i(18, 4)], [39, Vector2i(1, 0)], [100, Vector2i(19, 4)], [40, Vector2i(0, 0)], [100, Vector2i(20, 4)], [40, Vector2i(0, 1)], [100, Vector2i(20, 5)], [40, Vector2i(1, 0)], [100, Vector2i(21, 4)], [40, Vector2i(1, 1)], [100, Vector2i(21, 5)], [41, Vector2i(0, 0)], [100, Vector2i(22, 4)], [41, Vector2i(0, 1)], [100, Vector2i(22, 5)], [41, Vector2i(1, 0)], [100, Vector2i(23, 4)], [41, Vector2i(1, 1)], [100, Vector2i(23, 5)], [42, Vector2i(0, 0)], [100, Vector2i(24, 4)], [42, Vector2i(0, 1)], [100, Vector2i(24, 5)], [42, Vector2i(1, 0)], [100, Vector2i(25, 4)], [42, Vector2i(1, 1)], [100, Vector2i(25, 5)], [43, Vector2i(0, 0)], [100, Vector2i(26, 4)], [43, Vector2i(0, 1)], [100, Vector2i(26, 5)], [43, Vector2i(1, 0)], [100, Vector2i(27, 4)], [43, Vector2i(1, 1)], [100, Vector2i(27, 5)], [44, Vector2i(0, 0)], [100, Vector2i(28, 4)], [44, Vector2i(0, 1)], [100, Vector2i(28, 5)], [44, Vector2i(1, 0)], [100, Vector2i(29, 4)], [44, Vector2i(1, 1)], [100, Vector2i(29, 5)], [45, Vector2i(0, 0)], [100, Vector2i(0, 6)], [45, Vector2i(0, 1)], [100, Vector2i(0, 7)], [45, Vector2i(1, 0)], [100, Vector2i(1, 6)], [45, Vector2i(1, 1)], [100, Vector2i(1, 7)], [46, Vector2i(0, 0)], [100, Vector2i(2, 6)], [46, Vector2i(0, 1)], [100, Vector2i(2, 7)], [46, Vector2i(1, 0)], [100, Vector2i(3, 6)], [46, Vector2i(1, 1)], [100, Vector2i(3, 7)], [47, Vector2i(0, 0)], [100, Vector2i(4, 6)], [47, Vector2i(0, 1)], [100, Vector2i(4, 7)], [47, Vector2i(1, 0)], [100, Vector2i(5, 6)], [47, Vector2i(1, 1)], [100, Vector2i(5, 7)], [48, Vector2i(0, 0)], [100, Vector2i(6, 6)], [48, Vector2i(0, 1)], [100, Vector2i(6, 7)], [48, Vector2i(1, 0)], [100, Vector2i(7, 6)], [48, Vector2i(1, 1)], [100, Vector2i(7, 7)], [49, Vector2i(0, 0)], [100, Vector2i(8, 6)], [49, Vector2i(0, 1)], [100, Vector2i(8, 7)], [49, Vector2i(1, 0)], [100, Vector2i(9, 6)], [49, Vector2i(1, 1)], [100, Vector2i(9, 7)], [50, Vector2i(0, 0)], [100, Vector2i(10, 6)], [50, Vector2i(0, 1)], [100, Vector2i(10, 7)], [50, Vector2i(1, 0)], [100, Vector2i(11, 6)], [50, Vector2i(1, 1)], [100, Vector2i(11, 7)], [51, Vector2i(0, 0)], [100, Vector2i(12, 6)], [51, Vector2i(0, 1)], [100, Vector2i(12, 7)], [51, Vector2i(1, 0)], [100, Vector2i(13, 6)], [51, Vector2i(1, 1)], [100, Vector2i(13, 7)], [52, Vector2i(0, 0)], [100, Vector2i(14, 6)], [52, Vector2i(0, 1)], [100, Vector2i(14, 7)], [52, Vector2i(1, 0)], [100, Vector2i(15, 6)], [52, Vector2i(1, 1)], [100, Vector2i(15, 7)], [53, Vector2i(0, 0)], [100, Vector2i(16, 6)], [53, Vector2i(0, 1)], [100, Vector2i(16, 7)], [53, Vector2i(1, 0)], [100, Vector2i(17, 6)], [53, Vector2i(1, 1)], [100, Vector2i(17, 7)], [54, Vector2i(0, 0)], [100, Vector2i(18, 6)], [54, Vector2i(0, 1)], [100, Vector2i(18, 7)], [54, Vector2i(1, 0)], [100, Vector2i(19, 6)], [54, Vector2i(1, 1)], [100, Vector2i(19, 7)], [55, Vector2i(0, 0)], [100, Vector2i(20, 6)], [55, Vector2i(0, 1)], [100, Vector2i(20, 7)], [55, Vector2i(1, 0)], [100, Vector2i(21, 6)], [55, Vector2i(1, 1)], [100, Vector2i(21, 7)], [56, Vector2i(0, 0)], [100, Vector2i(22, 6)], [56, Vector2i(0, 1)], [100, Vector2i(22, 7)], [56, Vector2i(1, 0)], [100, Vector2i(23, 6)], [56, Vector2i(1, 1)], [100, Vector2i(23, 7)], [57, Vector2i(0, 0)], [100, Vector2i(24, 6)], [57, Vector2i(0, 1)], [100, Vector2i(24, 7)], [57, Vector2i(1, 0)], [100, Vector2i(25, 6)], [57, Vector2i(1, 1)], [100, Vector2i(25, 7)], [58, Vector2i(0, 0)], [100, Vector2i(26, 6)], [58, Vector2i(0, 1)], [100, Vector2i(26, 7)], [58, Vector2i(1, 0)], [100, Vector2i(27, 6)], [58, Vector2i(1, 1)], [100, Vector2i(27, 7)], [59, Vector2i(0, 0)], [100, Vector2i(28, 6)], [59, Vector2i(0, 1)], [100, Vector2i(28, 7)], [59, Vector2i(1, 0)], [100, Vector2i(29, 6)], [59, Vector2i(1, 1)], [100, Vector2i(29, 7)], [60, Vector2i(0, 0)], [100, Vector2i(0, 8)], [60, Vector2i(0, 1)], [100, Vector2i(0, 9)], [60, Vector2i(1, 0)], [100, Vector2i(1, 8)], [60, Vector2i(1, 1)], [100, Vector2i(1, 9)], [61, Vector2i(0, 0)], [100, Vector2i(2, 8)], [61, Vector2i(0, 1)], [100, Vector2i(2, 9)], [61, Vector2i(1, 0)], [100, Vector2i(3, 8)], [61, Vector2i(1, 1)], [100, Vector2i(3, 9)], [62, Vector2i(0, 0)], [100, Vector2i(4, 8)], [62, Vector2i(0, 1)], [100, Vector2i(4, 9)], [62, Vector2i(1, 0)], [100, Vector2i(5, 8)], [62, Vector2i(1, 1)], [100, Vector2i(5, 9)], [63, Vector2i(0, 0)], [100, Vector2i(6, 8)], [63, Vector2i(0, 1)], [100, Vector2i(6, 9)], [63, Vector2i(1, 0)], [100, Vector2i(7, 8)], [63, Vector2i(1, 1)], [100, Vector2i(7, 9)], [64, Vector2i(0, 0)], [100, Vector2i(8, 8)], [64, Vector2i(0, 1)], [100, Vector2i(8, 9)], [64, Vector2i(1, 0)], [100, Vector2i(9, 8)], [64, Vector2i(1, 1)], [100, Vector2i(9, 9)], [65, Vector2i(0, 0)], [100, Vector2i(10, 8)], [65, Vector2i(0, 1)], [100, Vector2i(10, 9)], [65, Vector2i(1, 0)], [100, Vector2i(11, 8)], [65, Vector2i(1, 1)], [100, Vector2i(11, 9)], [66, Vector2i(0, 0)], [100, Vector2i(12, 8)], [66, Vector2i(0, 1)], [100, Vector2i(12, 9)], [66, Vector2i(1, 0)], [100, Vector2i(13, 8)], [66, Vector2i(1, 1)], [100, Vector2i(13, 9)], [67, Vector2i(0, 0)], [100, Vector2i(14, 8)], [67, Vector2i(0, 1)], [100, Vector2i(14, 9)], [67, Vector2i(1, 0)], [100, Vector2i(15, 8)], [67, Vector2i(1, 1)], [100, Vector2i(15, 9)], [68, Vector2i(0, 0)], [100, Vector2i(16, 8)], [68, Vector2i(0, 1)], [100, Vector2i(16, 9)], [68, Vector2i(1, 0)], [100, Vector2i(17, 8)], [68, Vector2i(1, 1)], [100, Vector2i(17, 9)], [69, Vector2i(0, 0)], [100, Vector2i(18, 8)], [69, Vector2i(0, 1)], [100, Vector2i(18, 9)], [69, Vector2i(1, 0)], [100, Vector2i(19, 8)], [69, Vector2i(1, 1)], [100, Vector2i(19, 9)], [70, Vector2i(0, 0)], [100, Vector2i(20, 8)], [70, Vector2i(0, 1)], [100, Vector2i(20, 9)], [70, Vector2i(1, 0)], [100, Vector2i(21, 8)], [70, Vector2i(1, 1)], [100, Vector2i(21, 9)], [71, Vector2i(0, 0)], [100, Vector2i(22, 8)], [71, Vector2i(0, 1)], [100, Vector2i(22, 9)], [71, Vector2i(1, 0)], [100, Vector2i(23, 8)], [71, Vector2i(1, 1)], [100, Vector2i(23, 9)], [72, Vector2i(0, 0)], [100, Vector2i(24, 8)], [72, Vector2i(0, 1)], [100, Vector2i(24, 9)], [72, Vector2i(1, 0)], [100, Vector2i(25, 8)], [72, Vector2i(1, 1)], [100, Vector2i(25, 9)], [73, Vector2i(0, 0)], [100, Vector2i(26, 8)], [73, Vector2i(0, 1)], [100, Vector2i(26, 9)], [73, Vector2i(1, 0)], [100, Vector2i(27, 8)], [73, Vector2i(1, 1)], [100, Vector2i(27, 9)], [74, Vector2i(0, 0)], [100, Vector2i(28, 8)], [74, Vector2i(0, 1)], [100, Vector2i(28, 9)], [74, Vector2i(1, 0)], [100, Vector2i(29, 8)], [74, Vector2i(1, 1)], [100, Vector2i(29, 9)], [75, Vector2i(0, 0)], [100, Vector2i(0, 10)], [75, Vector2i(0, 1)], [100, Vector2i(0, 11)], [75, Vector2i(1, 0)], [100, Vector2i(1, 10)], [75, Vector2i(1, 1)], [100, Vector2i(1, 11)], [76, Vector2i(0, 0)], [100, Vector2i(2, 10)], [76, Vector2i(0, 1)], [100, Vector2i(2, 11)], [76, Vector2i(1, 0)], [100, Vector2i(3, 10)], [76, Vector2i(1, 1)], [100, Vector2i(3, 11)], [77, Vector2i(0, 0)], [100, Vector2i(4, 10)], [77, Vector2i(0, 1)], [100, Vector2i(4, 11)], [77, Vector2i(1, 0)], [100, Vector2i(5, 10)], [77, Vector2i(1, 1)], [100, Vector2i(5, 11)], [78, Vector2i(0, 0)], [100, Vector2i(6, 10)], [78, Vector2i(0, 1)], [100, Vector2i(6, 11)], [78, Vector2i(1, 0)], [100, Vector2i(7, 10)], [78, Vector2i(1, 1)], [100, Vector2i(7, 11)], [79, Vector2i(0, 0)], [100, Vector2i(8, 10)], [79, Vector2i(0, 1)], [100, Vector2i(8, 11)], [79, Vector2i(1, 0)], [100, Vector2i(9, 10)], [79, Vector2i(1, 1)], [100, Vector2i(9, 11)], [80, Vector2i(0, 0)], [100, Vector2i(10, 10)], [80, Vector2i(0, 1)], [100, Vector2i(10, 11)], [80, Vector2i(1, 0)], [100, Vector2i(11, 10)], [80, Vector2i(1, 1)], [100, Vector2i(11, 11)], [81, Vector2i(0, 0)], [100, Vector2i(12, 10)], [81, Vector2i(0, 1)], [100, Vector2i(12, 11)], [81, Vector2i(1, 0)], [100, Vector2i(13, 10)], [81, Vector2i(1, 1)], [100, Vector2i(13, 11)], [82, Vector2i(0, 0)], [100, Vector2i(14, 10)], [82, Vector2i(0, 1)], [100, Vector2i(14, 11)], [82, Vector2i(1, 0)], [100, Vector2i(15, 10)], [82, Vector2i(1, 1)], [100, Vector2i(15, 11)], [83, Vector2i(0, 0)], [100, Vector2i(16, 10)], [83, Vector2i(0, 1)], [100, Vector2i(16, 11)], [83, Vector2i(1, 0)], [100, Vector2i(17, 10)], [83, Vector2i(1, 1)], [100, Vector2i(17, 11)], [84, Vector2i(0, 0)], [100, Vector2i(18, 10)], [84, Vector2i(0, 1)], [100, Vector2i(18, 11)], [84, Vector2i(1, 0)], [100, Vector2i(19, 10)], [84, Vector2i(1, 1)], [100, Vector2i(19, 11)], [85, Vector2i(0, 0)], [100, Vector2i(20, 10)], [85, Vector2i(0, 1)], [100, Vector2i(20, 11)], [85, Vector2i(1, 0)], [100, Vector2i(21, 10)], [85, Vector2i(1, 1)], [100, Vector2i(21, 11)], [86, Vector2i(0, 0)], [100, Vector2i(22, 10)], [86, Vector2i(0, 1)], [100, Vector2i(22, 11)], [86, Vector2i(1, 0)], [100, Vector2i(23, 10)], [86, Vector2i(1, 1)], [100, Vector2i(23, 11)], [87, Vector2i(0, 0)], [100, Vector2i(24, 10)], [87, Vector2i(0, 1)], [100, Vector2i(24, 11)], [87, Vector2i(1, 0)], [100, Vector2i(25, 10)], [87, Vector2i(1, 1)], [100, Vector2i(25, 11)], [88, Vector2i(0, 0)], [100, Vector2i(26, 10)], [88, Vector2i(0, 1)], [100, Vector2i(26, 11)], [88, Vector2i(1, 0)], [100, Vector2i(27, 10)], [88, Vector2i(1, 1)], [100, Vector2i(27, 11)], [89, Vector2i(0, 0)], [100, Vector2i(28, 10)], [89, Vector2i(0, 1)], [100, Vector2i(28, 11)], [89, Vector2i(1, 0)], [100, Vector2i(29, 10)], [89, Vector2i(1, 1)], [100, Vector2i(29, 11)], [90, Vector2i(0, 0)], [100, Vector2i(0, 12)], [90, Vector2i(0, 1)], [100, Vector2i(0, 13)], [90, Vector2i(1, 0)], [100, Vector2i(1, 12)], [90, Vector2i(1, 1)], [100, Vector2i(1, 13)], [91, Vector2i(0, 0)], [100, Vector2i(2, 12)], [91, Vector2i(0, 1)], [100, Vector2i(2, 13)], [91, Vector2i(1, 0)], [100, Vector2i(3, 12)], [91, Vector2i(1, 1)], [100, Vector2i(3, 13)], [92, Vector2i(0, 0)], [100, Vector2i(4, 12)], [92, Vector2i(0, 1)], [100, Vector2i(4, 13)], [92, Vector2i(1, 0)], [100, Vector2i(5, 12)], [92, Vector2i(1, 1)], [100, Vector2i(5, 13)], [93, Vector2i(0, 0)], [100, Vector2i(6, 12)], [93, Vector2i(0, 1)], [100, Vector2i(6, 13)], [93, Vector2i(1, 0)], [100, Vector2i(7, 12)], [93, Vector2i(1, 1)], [100, Vector2i(7, 13)], [94, Vector2i(0, 0)], [100, Vector2i(8, 12)], [94, Vector2i(0, 1)], [100, Vector2i(8, 13)], [94, Vector2i(1, 0)], [100, Vector2i(9, 12)], [94, Vector2i(1, 1)], [100, Vector2i(9, 13)], [95, Vector2i(0, 0)], [100, Vector2i(10, 12)], [95, Vector2i(0, 1)], [100, Vector2i(10, 13)], [95, Vector2i(1, 0)], [100, Vector2i(11, 12)], [95, Vector2i(1, 1)], [100, Vector2i(11, 13)], [96, Vector2i(0, 0)], [100, Vector2i(12, 12)], [96, Vector2i(0, 1)], [100, Vector2i(12, 13)], [96, Vector2i(1, 0)], [100, Vector2i(13, 12)], [96, Vector2i(1, 1)], [100, Vector2i(13, 13)], [97, Vector2i(0, 0)], [100, Vector2i(14, 12)], [97, Vector2i(0, 1)], [100, Vector2i(14, 13)], [97, Vector2i(1, 0)], [100, Vector2i(15, 12)], [97, Vector2i(1, 1)], [100, Vector2i(15, 13)], [98, Vector2i(0, 0)], [100, Vector2i(16, 12)], [98, Vector2i(0, 1)], [100, Vector2i(16, 13)], [98, Vector2i(1, 0)], [100, Vector2i(17, 12)], [98, Vector2i(1, 1)], [100, Vector2i(17, 13)], [99, Vector2i(0, 0)], [100, Vector2i(18, 12)], [99, Vector2i(0, 1)], [100, Vector2i(18, 13)], [99, Vector2i(1, 0)], [100, Vector2i(19, 12)], [99, Vector2i(1, 1)], [100, Vector2i(19, 13)]]
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p8gsd"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_i0cx1"]
+size = Vector2(26, 18)
+
 [node name="HiCity" type="Node2D"]
 script = ExtResource("1_u2gg1")
 
@@ -1014,10 +1024,13 @@ position = Vector2(-639, -260)
 position = Vector2(-522, -263)
 taxi_marker_scene = ExtResource("23_q242y")
 
+[node name="Car_yellow_cab" parent="cars" instance=ExtResource("24_q242y")]
+position = Vector2(-9594, -250)
+
 [node name="entrances" type="Node2D" parent="."]
 position = Vector2(-8192, -487)
 
-[node name="Door_home" parent="entrances" instance=ExtResource("16_iumgf")]
+[node name="Door_home" parent="entrances" groups=["quest_goal"] instance=ExtResource("16_iumgf")]
 position = Vector2(-1167, 207)
 target_level_path = "uid://b0piubrnoxlkq"
 spawn_point_name = "tutaj_gracz"
@@ -1036,9 +1049,6 @@ position = Vector2(3224, 326)
 
 [node name="GasStation3" parent="gas_stations" instance=ExtResource("10_nvfoa")]
 position = Vector2(4513, -93)
-
-[node name="Car_yellow_cab" parent="." instance=ExtResource("24_q242y")]
-position = Vector2(-9594, -250)
 
 [node name="architecture" type="Node2D" parent="."]
 
@@ -2455,6 +2465,76 @@ position = Vector2(12388, -104)
 
 [node name="WP_03" parent="npc_cars/car_npc2/waypoint" index="3"]
 position = Vector2(0, -72)
+
+[node name="Quests" type="Node2D" parent="."]
+
+[node name="1_1 talk to maya" type="Area2D" parent="Quests" groups=["quest_goal"]]
+position = Vector2(-9360, -265)
+script = ExtResource("26_dmnkx")
+quest_id = "1_1_talk_to_maya"
+complete_on_enter = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/1_1 talk to maya"]
+shape = SubResource("RectangleShape2D_p8gsd")
+
+[node name="deliver_patient_1" type="Node" parent="Quests"]
+
+[node name="box_obj1" type="Area2D" parent="Quests/deliver_patient_1" groups=["quest_giver"]]
+z_index = 1
+position = Vector2(-9425, -808)
+script = ExtResource("27_me7hm")
+quest_id = "1"
+
+[node name="Sprite2D" type="Sprite2D" parent="Quests/deliver_patient_1/box_obj1"]
+texture = ExtResource("28_7ob0h")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/deliver_patient_1/box_obj1"]
+position = Vector2(0, 5)
+shape = SubResource("RectangleShape2D_i0cx1")
+
+[node name="box_obj2" type="Area2D" parent="Quests/deliver_patient_1" groups=["quest_goal"]]
+z_index = 1
+position = Vector2(-9293, -808)
+script = ExtResource("26_dmnkx")
+quest_id = "1"
+
+[node name="Sprite2D" type="Sprite2D" parent="Quests/deliver_patient_1/box_obj2"]
+texture = ExtResource("28_7ob0h")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/deliver_patient_1/box_obj2"]
+position = Vector2(0, 5)
+shape = SubResource("RectangleShape2D_i0cx1")
+
+[node name="bring_berries_2" type="Node" parent="Quests"]
+
+[node name="box_obj1" type="Area2D" parent="Quests/bring_berries_2" groups=["quest_giver"]]
+z_index = 1
+position = Vector2(-9124, -809)
+script = ExtResource("27_me7hm")
+quest_id = "2"
+
+[node name="Sprite2D" type="Sprite2D" parent="Quests/bring_berries_2/box_obj1"]
+texture = ExtResource("28_7ob0h")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/bring_berries_2/box_obj1"]
+position = Vector2(0, 5)
+shape = SubResource("RectangleShape2D_i0cx1")
+
+[node name="box_obj2" type="Area2D" parent="Quests/bring_berries_2" groups=["quest_goal"]]
+z_index = 1
+position = Vector2(-8951, -808)
+script = ExtResource("26_dmnkx")
+quest_id = "2"
+reward_scene = ExtResource("29_l7kxo")
+reward_texture = ExtResource("30_th6as")
+
+[node name="Sprite2D" type="Sprite2D" parent="Quests/bring_berries_2/box_obj2"]
+visible = false
+texture = ExtResource("28_7ob0h")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/bring_berries_2/box_obj2"]
+position = Vector2(0, 5)
+shape = SubResource("RectangleShape2D_i0cx1")
 
 [connection signal="body_entered" from="DeathBoundary" to="." method="_on_death_boundary_body_entered"]
 

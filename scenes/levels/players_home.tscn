@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=4 uid="uid://b0piubrnoxlkq"]
+[gd_scene load_steps=9 format=4 uid="uid://b0piubrnoxlkq"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_1tkwu"]
 [ext_resource type="TileSet" uid="uid://dv1s41vxk3fuv" path="res://Assets/TileSets/business_district.tres" id="1_gxj05"]
@@ -6,6 +6,9 @@
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="4_pnta0"]
 [ext_resource type="Texture2D" uid="uid://bi88hj6bluhcv" path="res://Assets/interior_players_house.png" id="5_1tkwu"]
 [ext_resource type="PackedScene" uid="uid://cfol60xahev3c" path="res://scenes/characters/maya_sister.tscn" id="6_636f2"]
+[ext_resource type="Script" uid="uid://3t2u77lm7cv3" path="res://scripts/quest_system/quest_obj/EndTrigger.gd" id="7_apte8"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_636f2"]
 
 [node name="PlayersHome" type="Node2D" groups=["interiors"]]
 script = ExtResource("1_1tkwu")
@@ -46,3 +49,14 @@ texture = ExtResource("5_1tkwu")
 
 [node name="MayaSister" parent="." instance=ExtResource("6_636f2")]
 position = Vector2(303, 4)
+
+[node name="Quests" type="Node2D" parent="."]
+
+[node name="1_1 talk to maya" type="Area2D" parent="Quests" groups=["quest_goal"]]
+position = Vector2(304, 0)
+script = ExtResource("7_apte8")
+quest_id = "1_1_talk_to_maya"
+complete_on_enter = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/1_1 talk to maya"]
+shape = SubResource("RectangleShape2D_636f2")

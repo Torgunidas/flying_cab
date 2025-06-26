@@ -50,6 +50,63 @@ Plik `export_presets.cfg` zawiera dwa presety:
 Aby zbudować grę, w edytorze Godot wybierz `Project > Export...` i uruchom
 eksport zgodnie z wybranym presetem.
 
+Instrukcja dodawania nowego questa
+Utwórz zasób QuestData
+
+W Godot wybierz New Resource → QuestData (dzięki class_name QuestData w pliku QuestData.gd).
+
+Wypełnij pola:
+
+id – unikalny identyfikator.
+
+title – krótka nazwa.
+
+description – opis zadania.
+
+objective – tekst pokazywany w okienku celu (QuestObjectiveUI).
+
+reward – kwota wypłacana po ukończeniu.
+
+next_quest_id – opcjonalnie id kolejnego questa w linii.
+
+start_target domyślnie ustaw na "quest_giver".
+
+Dodaj zasób do QuestSysRoot
+
+Otwórz scenes/QuestSysRoot.tscn.
+
+W Inspectorze w polu quests dodaj nowo utworzony .tres.
+Dzięki temu autoload QuestSys zarejestruje questa w _ready() (linie 20‑23).
+
+Umieść StartTrigger w poziomie
+
+W scenie poziomu (np. scenes/level_1.tscn) dodaj węzeł Area2D z przypiętym skryptem StartTrigger.gd i wpisz quest_id.
+
+Dodaj go do grupy quest_giver (wymagane do wyświetlenia znacznika startu, jeśli system markerów zostanie rozszerzony).
+
+Gdy gracz wejdzie w obszar, quest zostanie aktywowany.
+
+Zdefiniuj cel questa
+
+W miejscu, do którego gracz ma dotrzeć, dodaj Area2D z przypiętym skryptem EndTrigger.gd (ustaw quest_id).
+
+Ten węzeł powinien należeć do grupy quest_goal – dzięki temu MapOverlay wyświetli nad nim ikonę „!” (patrz funkcja _build_goal_markers).
+
+Opcjonalnie możesz ustawić reward_scene (np. scenes/quest/RewardBox.tscn) i reward_texture, aby po ukończeniu pojawił się prosty obiekt nagrody.
+
+(Opcjonalnie) Dodaj dialog
+
+Jeśli quest rozpoczyna się rozmową z NPC, użyj węzła QuestGiver (scripts/info_board.gd).
+
+W polu dialog_resource ustaw DialogBook lub DialogData. W dialogu można w akcjach wykorzystać start_quest i finish_quest.
+
+Test
+
+Uruchom poziom. Po wejściu w StartTrigger quest pojawi się w QuestLog, a aktualny cel w QuestObjectiveUI.
+
+Marker „!” będzie widoczny nad węzłem z grupy quest_goal, jeżeli quest jest aktywny. Po wejściu w EndTrigger quest zostanie ukończony i (jeśli zadano) pojawi się RewardBox.
+
+
 ## Licencja
 
 Projekt udostępniany jest na licencji MIT. Szczegóły znajdują się w pliku
