@@ -99,6 +99,8 @@ Opcjonalnie możesz ustawić reward_scene (np. scenes/quest/RewardBox.tscn) i re
 Jeśli quest rozpoczyna się rozmową z NPC, użyj węzła QuestGiver (scripts/info_board.gd).
 
 W polu dialog_resource ustaw DialogBook lub DialogData. W dialogu można w akcjach wykorzystać start_quest i finish_quest.
+Odpowiedzi (DialogAnswer) mają pole `show_if_unavailable`, które decyduje,
+czy przycisk powinien być widoczny, gdy warunki (requirements) nie są spełnione.
 
 Test
 
