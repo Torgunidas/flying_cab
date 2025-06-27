@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogBook" load_steps=21 format=3 uid="uid://ds3wa2ty18ogl"]
+[gd_resource type="Resource" script_class="DialogBook" load_steps=23 format=3 uid="uid://qshud65a7kqq"]
 
 [ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_upblg"]
 [ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_l7org"]
@@ -23,10 +23,20 @@ requirements = Array[ExtResource("4_2jftd")]([SubResource("Resource_jiexr")])
 show_if_unavailable = false
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
+[sub_resource type="Resource" id="Resource_qckf5"]
+script = ExtResource("3_xjnsa")
+type = "close"
+amount = 0
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
 [sub_resource type="Resource" id="Resource_1w67r"]
 script = ExtResource("2_l7org")
-text = "Rest, dear."
-actions = Array[ExtResource("3_xjnsa")]([])
+text = "Test akcji"
+actions = Array[ExtResource("3_xjnsa")]([SubResource("Resource_qckf5")])
 goto_page = -1
 requirements = Array[ExtResource("4_2jftd")]([])
 show_if_unavailable = true
@@ -90,6 +100,7 @@ amount = 10000
 quest_id = ""
 anim_name = ""
 loop_count = 1
+npc_text_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_m80b5"]
@@ -99,6 +110,7 @@ amount = 0
 quest_id = "1_2_find_your_car"
 anim_name = ""
 loop_count = 1
+npc_text_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_8c70r"]
@@ -108,6 +120,7 @@ amount = 0
 quest_id = "1_1_talk_to_maya"
 anim_name = ""
 loop_count = 1
+npc_text_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_b8fjn"]
@@ -125,7 +138,13 @@ npc_text = "As always."
 answers = Array[ExtResource("2_l7org")]([SubResource("Resource_b8fjn")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
+[sub_resource type="Resource" id="Resource_rlc84"]
+script = ExtResource("1_upblg")
+npc_text = "...."
+answers = Array[ExtResource("2_l7org")]([])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
 [resource]
 script = ExtResource("2_o8nqn")
-pages = Array[ExtResource("1_upblg")]([SubResource("Resource_acon4"), SubResource("Resource_l7org"), SubResource("Resource_2jftd"), SubResource("Resource_0odqd"), SubResource("Resource_5l0x3")])
+pages = Array[ExtResource("1_upblg")]([SubResource("Resource_acon4"), SubResource("Resource_l7org"), SubResource("Resource_2jftd"), SubResource("Resource_0odqd"), SubResource("Resource_5l0x3"), SubResource("Resource_rlc84")])
 metadata/_custom_type_script = "uid://c4sn7n4x1gvpe"
