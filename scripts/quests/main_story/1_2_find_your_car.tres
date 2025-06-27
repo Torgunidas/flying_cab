@@ -4,9 +4,9 @@
 
 [resource]
 script = ExtResource("1_bpdl1")
-id = "1"
-title = "Talk to Maya"
-description = "Speak with your sister in your home"
+id = "1_2_find_your_car"
+title = "Get your car"
+description = "Get in your car"
 start_target = "quest_giver"
 objective = ""
 reward = 0
