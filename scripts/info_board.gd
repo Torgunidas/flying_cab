@@ -3,6 +3,7 @@ class_name QuestGiver
 
 # Możesz podać DialogBook (wieloetapowy) lub pojedynczy DialogData
 @export var dialog_resource : Resource
+@export var portrait_texture : Texture2D = null
 
 signal mission_start(mission_id)
 

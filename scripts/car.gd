@@ -192,11 +192,14 @@ func _ready() -> void:
 		# Domyślnie wyłącz sterowanie
 	controls_enabled = false
 
-	# Inicjalizacja UI (MobileControls)
+	# Inicjalizacja UI (MobileControls) ─ aktualizuj tylko dla pojazdu
+		# sterowanego przez gracza. Dzięki temu spawnowanie innych aut nie
+		# nadpisze wartości w HUD‑zie.
 	var mobile_controls = get_tree().get_current_scene().get_node_or_null("MobileControls")
-	if mobile_controls:
-		mobile_controls.update_hp_display(current_hp, max_hp)
-		mobile_controls.update_fuel_display(current_fuel, max_fuel)
+	var player = get_tree().get_first_node_in_group("player")
+	if mobile_controls and player and player.in_vehicle and player.vehicle == self:
+			mobile_controls.update_hp_display(current_hp, max_hp)
+			mobile_controls.update_fuel_display(current_fuel, max_fuel)
 		
 			# połącz timeout na start reload
 	death_timer.connect("timeout", Callable(self, "_on_death_timer_timeout"))
@@ -401,8 +404,9 @@ func _apply_damage(dmg: int) -> void:
 	print("Collision! Dmg=", dmg, " HP=", current_hp)
 
 	var mobile_controls = get_tree().get_current_scene().get_node_or_null("MobileControls")
-	if mobile_controls:
-		mobile_controls.update_hp_display(current_hp, max_hp)
+	var player = get_tree().get_first_node_in_group("player")
+	if mobile_controls and player and player.in_vehicle and player.vehicle == self:
+				mobile_controls.update_hp_display(current_hp, max_hp)
 
 	if current_hp <= 0:
 		_on_car_death()

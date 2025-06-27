@@ -16,6 +16,7 @@ var _page_i : int          = 0       # indeks bieżącej strony
 @onready var panel       : PanelContainer = $DialogPanel
 @onready var npc_label   : Label          = %NPCText
 @onready var answer_btns : Array[Button]  = [%AnswerA, %AnswerB, %AnswerC]    # 3 przyciski
+@onready var portrait_rect : TextureRect   = %Portrait
 
 
 # ─────────────────────────────────────────────────────────────
@@ -29,6 +30,7 @@ var _gs                   : Node      = null  # autoload GameState
 # ─────────────────────────────────────────────────────────────
 func _ready() -> void:
 	panel.visible = false
+	portrait_rect.visible = false
 	_gs = get_node("/root/GameState")
 	for i in answer_btns.size():
 		answer_btns[i].pressed.connect(_on_answer_pressed.bind(i))
@@ -59,12 +61,21 @@ func start_dialog(data, from : Node = null) -> void:
 		return
 
 	_current_interactable = from
+	if from and from.has_variable("portrait_texture"):
+				var tex = from.portrait_texture
+				portrait_rect.texture = tex
+				portrait_rect.visible = tex != null
+	else:
+				portrait_rect.texture = null
+				portrait_rect.visible = false
 	_page_i = 0
 	_show_page()
 
 
 func close_dialog() -> void:
 	panel.visible = false
+	portrait_rect.texture = null
+	portrait_rect.visible = false
 	set_process_input(false)
 
 func is_open() -> bool:

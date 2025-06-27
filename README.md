@@ -115,9 +115,9 @@ określający rozmiar planszy.
 
 ### Sterowanie mini‑mapą
 
-Powiększenie mini‑mapy można zmieniać kółkiem myszy lub gestem pinch na
-urządzeniach dotykowych. Zakres przybliżenia kontrolują zmienne eksportowane
-`zoom_step`, `min_zoom` oraz `max_zoom` w skrypcie `MapOverlay.gd`.
+Powiększenie mini‑mapy można zmieniać kółkiem myszy lub dwoma palcami (gest
+pinch) na urządzeniach dotykowych. Zakres przybliżenia kontrolują zmienne
+eksportowane
 
 ## Licencja
 

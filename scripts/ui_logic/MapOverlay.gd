@@ -19,6 +19,8 @@ var _cam_start_pos : Vector2
 var _pinch_start_dist := 0.0
 var _pinch_start_zoom := Vector2.ZERO
 @export var marker_scale : float = 1.0
+var _pinch_active := false
+var _touches : Dictionary = {}    # index -> position
 
 # --- SCENES & RESOURCES ---
 # const QuestMarkerScene := preload("res://scenes/ui_scenes/QuestMarkers.tscn")
@@ -41,6 +43,13 @@ var goal_markers : Dictionary = {}   # Node2D → TextureRect
 
 var current_player_target: Node2D = null
 var world_set := false
+
+func _get_pinch_distance() -> float:
+	var keys = _touches.keys()
+	if keys.size() < 2:
+			return 0.0
+	return (_touches[keys[0]] as Vector2).distance_to(_touches[keys[1]] as Vector2)
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -401,11 +410,36 @@ func _input(event: InputEvent) -> void:
 		return
 
 	# ───────────────────── Z O O M ───────────────────────
-	if event is InputEventMouseButton:
+	# ───────────────────── Z O O M ───────────────────────
+	if event is InputEventScreenTouch:
+		if event.pressed:
+					_touches[event.index] = event.position
+					if _touches.size() == 2:
+							_pinch_active = true
+							_pinch_start_dist = _get_pinch_distance()
+							_pinch_start_zoom = mini_cam.zoom
+		else:
+					_touches.erase(event.index)
+					if _touches.size() < 2:
+							_pinch_active = false
+		return
+	elif event is InputEventScreenDrag:
+		_touches[event.index] = event.position
+		if _pinch_active and _touches.size() >= 2:
+						var dist = _get_pinch_distance()
+						if dist != 0.0:
+							var new_zoom = _pinch_start_zoom.x * (_pinch_start_dist / dist)
+							var z = clamp(new_zoom, min_zoom, max_zoom)
+							mini_cam.zoom = Vector2(z, z)
+		elif _touches.size() == 1:
+					mini_cam.position -= event.relative * mini_cam.zoom
+		return
+
+	elif event is InputEventMouseButton:
 		if event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_apply_zoom(zoom_step)
+					_apply_zoom(zoom_step)
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_apply_zoom(1.0 / zoom_step)
+					_apply_zoom(1.0 / zoom_step)
 
 		# START / STOP drag-a
 		elif event.button_index == MOUSE_BUTTON_LEFT:

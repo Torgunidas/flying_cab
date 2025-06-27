@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogBook" load_steps=9 format=3 uid="uid://ds3wa2ty18ogl"]
+[gd_resource type="Resource" script_class="DialogBook" load_steps=14 format=3 uid="uid://ds3wa2ty18ogl"]
 
 [ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_upblg"]
 [ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_l7org"]
@@ -16,19 +16,55 @@ metadata/_custom_type_script = "uid://2aako6y61wi5"
 
 [sub_resource type="Resource" id="Resource_x5eyt"]
 script = ExtResource("2_l7org")
-text = "I promise to get you more med."
+text = "How are you feeling today?"
+actions = Array[ExtResource("3_xjnsa")]([])
+goto_page = 1
+requirements = Array[ExtResource("4_2jftd")]([SubResource("Resource_jiexr")])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_1w67r"]
+script = ExtResource("2_l7org")
+text = "Rest, dear."
 actions = Array[ExtResource("3_xjnsa")]([])
 goto_page = -1
-requirements = Array[ExtResource("4_2jftd")]([SubResource("Resource_jiexr")])
+requirements = Array[ExtResource("4_2jftd")]([])
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_acon4"]
 script = ExtResource("1_upblg")
-npc_text = "Hi, brother. I don't fell well today."
-answers = Array[ExtResource("2_l7org")]([SubResource("Resource_x5eyt")])
+npc_text = "Hi, brother."
+answers = Array[ExtResource("2_l7org")]([SubResource("Resource_x5eyt"), SubResource("Resource_1w67r")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
+[sub_resource type="Resource" id="Resource_xjnsa"]
+script = ExtResource("2_l7org")
+text = "The substance is wearing off?"
+actions = Array[ExtResource("3_xjnsa")]([])
+goto_page = 2
+requirements = Array[ExtResource("4_2jftd")]([])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_l7org"]
+script = ExtResource("1_upblg")
+npc_text = "Worse. I feel like I am falling apart"
+answers = Array[ExtResource("2_l7org")]([SubResource("Resource_xjnsa")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
+[sub_resource type="Resource" id="Resource_tvxdt"]
+script = ExtResource("2_l7org")
+text = "I'll go to Mr. Frog and get more substance."
+actions = Array[ExtResource("3_xjnsa")]([])
+goto_page = -1
+requirements = Array[ExtResource("4_2jftd")]([])
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_2jftd"]
+script = ExtResource("1_upblg")
+npc_text = "Yes. I need more. I don't have much time."
+answers = Array[ExtResource("2_l7org")]([SubResource("Resource_tvxdt")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
 [resource]
 script = ExtResource("2_o8nqn")
-pages = Array[ExtResource("1_upblg")]([SubResource("Resource_acon4")])
+pages = Array[ExtResource("1_upblg")]([SubResource("Resource_acon4"), SubResource("Resource_l7org"), SubResource("Resource_2jftd")])
 metadata/_custom_type_script = "uid://c4sn7n4x1gvpe"
