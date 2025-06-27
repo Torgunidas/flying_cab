@@ -15,8 +15,9 @@ var _book   : DialogBook   = null    # cały dialog
 var _page_i : int          = 0       # indeks bieżącej strony
 @onready var panel       : PanelContainer = $DialogPanel
 @onready var npc_label   : Label          = %NPCText
-@onready var answer_btns : Array[Button]  = [%AnswerA, %AnswerB, %AnswerC]    # 3 przyciski
 @onready var portrait_rect : TextureRect   = %Portrait
+@onready var answer_btns : Array[Button]  = [%AnswerA, %AnswerB, %AnswerC]    # 3 przyciski
+
 
 
 # ─────────────────────────────────────────────────────────────
@@ -25,6 +26,12 @@ var _page_i : int          = 0       # indeks bieżącej strony
 var _current_interactable : Node      = null  # obiekt, który otworzył okno
 var _gs                   : Node      = null  # autoload GameState
 
+# Helper: returns true if the given object exposes a property with the provided name.
+func _has_property(obj: Object, prop_name: String) -> bool:
+		for info in obj.get_property_list():
+				if "name" in info and info.name == prop_name:
+						return true
+		return false
 # ─────────────────────────────────────────────────────────────
 #  READY
 # ─────────────────────────────────────────────────────────────
@@ -49,25 +56,25 @@ func _input(event : InputEvent) -> void:
 func start_dialog(data, from : Node = null) -> void:
 	# jeśli przekazano pojedynczy DialogData → zrób z niego 1-stronicową książkę
 	if data is DialogData:
-		_book = DialogBook.new()
-		var page := DialogPage.new()
-		page.npc_text = data.npc_text
-		page.answers  = data.answers
-		_book.pages.append(page)
+			_book = DialogBook.new()
+			var page := DialogPage.new()
+			page.npc_text = data.npc_text
+			page.answers  = data.answers
+			_book.pages.append(page)
 	elif data is DialogBook:
-		_book = data
+			_book = data
 	else:
-		push_error("start_dialog(): expected DialogBook or DialogData")
-		return
+			push_error("start_dialog(): expected DialogBook or DialogData")
+			return
 
 	_current_interactable = from
-	if from and from.has_variable("portrait_texture"):
-				var tex = from.portrait_texture
-				portrait_rect.texture = tex
-				portrait_rect.visible = tex != null
+	if from and _has_property(from, "portrait_texture"):
+			var tex = from.portrait_texture
+			portrait_rect.texture = tex
+			portrait_rect.visible = tex != null
 	else:
-				portrait_rect.texture = null
-				portrait_rect.visible = false
+			portrait_rect.texture = null
+			portrait_rect.visible = false
 	_page_i = 0
 	_show_page()
 
