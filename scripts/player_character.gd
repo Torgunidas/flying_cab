@@ -13,11 +13,11 @@ const JUMP_VELOCITY := -300
 @export var zoom_on_foot: Vector2    = Vector2(3.0, 3.0)
 
 # HP postaci
-@export var max_hp: int = 100
+@export var max_hp: int = 50
 var current_hp: int = max_hp
 
 # Urazy od wysokości
-@export var fall_damage_threshold: float = 200.0
+@export var fall_damage_threshold: float = 50.0
 @export var fall_damage_factor: float    = 0.1
 
 var _fall_start_y: float = 0.0
