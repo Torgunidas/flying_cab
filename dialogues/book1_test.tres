@@ -12,6 +12,7 @@ text = "Pogadajmy"
 actions = Array[ExtResource("3_ff7u3")]([])
 goto_page = 1
 requirements = Array[ExtResource("4_hlxla")]([])
+show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_sbi4u"]
@@ -21,6 +22,7 @@ amount = 200
 quest_id = ""
 anim_name = ""
 loop_count = 1
+npc_text_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_ytf3h"]
@@ -29,6 +31,7 @@ text = "Daj hajs i spadam"
 actions = Array[ExtResource("3_ff7u3")]([SubResource("Resource_sbi4u")])
 goto_page = -1
 requirements = Array[ExtResource("4_hlxla")]([])
+show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_mf6n7"]
@@ -45,6 +48,7 @@ text = "Wiem coś o berries"
 actions = Array[ExtResource("3_ff7u3")]([])
 goto_page = 2
 requirements = Array[ExtResource("4_hlxla")]([SubResource("Resource_mf6n7")])
+show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_ff7u3"]
@@ -60,6 +64,7 @@ amount = 200
 quest_id = ""
 anim_name = ""
 loop_count = 1
+npc_text_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_l82rh"]
@@ -68,6 +73,7 @@ text = "Daj więcej kasy"
 actions = Array[ExtResource("3_ff7u3")]([SubResource("Resource_hlxla")])
 goto_page = -1
 requirements = Array[ExtResource("4_hlxla")]([])
+show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_5p3ng"]
@@ -83,6 +89,7 @@ amount = 0
 quest_id = "2"
 anim_name = ""
 loop_count = 1
+npc_text_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_h6cwj"]
@@ -92,6 +99,7 @@ amount = 3000
 quest_id = ""
 anim_name = ""
 loop_count = 1
+npc_text_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_4fye5"]
@@ -100,6 +108,7 @@ text = "A masz. Mi one niepotrzebne"
 actions = Array[ExtResource("3_ff7u3")]([SubResource("Resource_d1v3a"), SubResource("Resource_h6cwj")])
 goto_page = -1
 requirements = Array[ExtResource("4_hlxla")]([])
+show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_4sg4d"]

@@ -12,6 +12,7 @@ amount = 0
 quest_id = ""
 anim_name = "dat_ass"
 loop_count = 8
+npc_text_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_a1ffj"]
@@ -21,6 +22,7 @@ amount = 1
 quest_id = ""
 anim_name = ""
 loop_count = 1
+npc_text_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_6g6pg"]
@@ -29,6 +31,7 @@ text = "Shake dat ting!"
 actions = Array[ExtResource("2_a1ffj")]([SubResource("Resource_0r4pe"), SubResource("Resource_a1ffj")])
 goto_page = -1
 requirements = Array[ExtResource("3_6tc5l")]([])
+show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_6tc5l"]
@@ -37,6 +40,7 @@ text = "Later, sweety... Wait here for me"
 actions = Array[ExtResource("2_a1ffj")]([])
 goto_page = -1
 requirements = Array[ExtResource("3_6tc5l")]([])
+show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [resource]

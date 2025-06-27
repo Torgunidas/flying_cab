@@ -25,7 +25,6 @@ var _page_i : int          = 0       # indeks bieżącej strony
 # ─────────────────────────────────────────────────────────────
 var _current_interactable : Node      = null  # obiekt, który otworzył okno
 var _gs                   : Node      = null  # autoload GameState
-var _visible_answers      : Array[DialogAnswer] = []
 
 # Helper: returns true if the given object exposes a property with the provided name.
 func _has_property(obj: Object, prop_name: String) -> bool:
@@ -33,7 +32,6 @@ func _has_property(obj: Object, prop_name: String) -> bool:
 				if "name" in info and info.name == prop_name:
 						return true
 		return false
-
 # ─────────────────────────────────────────────────────────────
 #  READY
 # ─────────────────────────────────────────────────────────────
@@ -64,7 +62,7 @@ func start_dialog(data, from : Node = null) -> void:
 			page.answers  = data.answers
 			_book.pages.append(page)
 	elif data is DialogBook:
-		_book = data
+			_book = data
 	else:
 			push_error("start_dialog(): expected DialogBook or DialogData")
 			return
@@ -91,9 +89,8 @@ func is_open() -> bool:
 	return panel.visible
 	
 func _on_answer_pressed(idx : int) -> void:
-	if idx >= _visible_answers.size():
-				return
-	var ans : DialogAnswer = _visible_answers[idx]
+	var ans : DialogAnswer = _book.pages[_page_i].answers[idx]
+	for act in ans.actions: _apply_action(act)
 
 	if ans.goto_page >= 0 and ans.goto_page < _book.pages.size():
 		_page_i = ans.goto_page
@@ -166,22 +163,15 @@ func _show_page() -> void:
 	var page : DialogPage = _book.pages[_page_i]
 	npc_label.text = page.npc_text
 
-	_visible_answers.clear()
-	var btn_i := 0
-	for ans in page.answers:
-				var enabled := _requirements_met(ans)
-				if not enabled and not ans.show_if_unavailable:
-						continue
-				if btn_i >= answer_btns.size():
-						break
-				var btn := answer_btns[btn_i]
-				btn.text     = ans.text
-				btn.disabled = not enabled
-				btn.visible  = true
-				_visible_answers.append(ans)
-				btn_i += 1
-
-	for i in range(btn_i, answer_btns.size()):
-				answer_btns[i].visible = false
+	for i in range(answer_btns.size()):
+		var btn := answer_btns[i]
+		if i < page.answers.size():
+			var ans := page.answers[i]
+			var enabled := _requirements_met(ans)
+			btn.text     = ans.text
+			btn.disabled = not enabled
+			btn.visible  = true
+		else:
+			btn.visible  = false
 
 	panel.visible = true
