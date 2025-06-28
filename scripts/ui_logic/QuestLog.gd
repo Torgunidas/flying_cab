@@ -50,11 +50,19 @@ func _add_done_button(qdata: QuestData) -> void:
 	btn.add_theme_font_size_override("font_size", LOG_BTN_FONT_SIZE)
 	btn.custom_minimum_size.y = LOG_BTN_MIN_HEIGHT
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.anchor_left = 0
+	btn.anchor_right = 1
+	btn.offset_left = 0
+	btn.offset_right = 0
 	list_box.add_child(btn)
 
 func _add_active_button(qdata: QuestData) -> void:
 	var container = VBoxContainer.new()
 	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	container.anchor_left = 0
+	container.anchor_right = 1
+	container.offset_left = 0
+	container.offset_right = 0
 	list_box.add_child(container)
 
 	var btn = Button.new()
@@ -62,6 +70,10 @@ func _add_active_button(qdata: QuestData) -> void:
 	btn.add_theme_font_size_override("font_size", LOG_BTN_FONT_SIZE)
 	btn.custom_minimum_size.y = LOG_BTN_MIN_HEIGHT
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.anchor_left = 0
+	btn.anchor_right = 1
+	btn.offset_left = 0
+	btn.offset_right = 0
 	container.add_child(btn)
 
 	var desc = Label.new()
