@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://cdy48vkvvc6ew"]
+[gd_scene load_steps=15 format=3 uid="uid://cdy48vkvvc6ew"]
 
 [ext_resource type="Texture2D" uid="uid://nkkivycjfrrx" path="res://Assets/ui/button.png" id="1_0i7bk"]
 [ext_resource type="Script" uid="uid://c6bsqbwsh1ytd" path="res://scripts/mobile_controls.gd" id="1_c6u6f"]
@@ -7,6 +7,20 @@
 [ext_resource type="Texture2D" uid="uid://owhfx7samawh" path="res://Assets/ui/chicago-city-black-silhouette-logo-icon.png" id="5_awbvr"]
 [ext_resource type="Texture2D" uid="uid://bj8njiaxbbuyo" path="res://Assets/ui/quest.png" id="6_vvc32"]
 [ext_resource type="FontFile" uid="uid://bi7srqvr2p0ft" path="res://Assets/fonts/CyberpunkCraftpixPixel.otf" id="7_4nitx"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_s7xho"]
+font = ExtResource("7_4nitx")
+font_size = 25
+font_color = Color(0.971387, 0, 0.170392, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_xl5u8"]
+font = ExtResource("7_4nitx")
+font_size = 50
+font_color = Color(0.797711, 0.776114, 0, 1)
+
+[sub_resource type="Theme" id="Theme_mlu6h"]
+default_font = ExtResource("7_4nitx")
+default_font_size = 30
 
 [sub_resource type="LabelSettings" id="LabelSettings_pf44a"]
 font = ExtResource("7_4nitx")
@@ -105,18 +119,6 @@ offset_right = -19.0
 offset_bottom = -191.0
 grow_horizontal = 0
 
-[node name="toggle_map" type="TouchScreenButton" parent="MainControl"]
-position = Vector2(381, -1574)
-scale = Vector2(0.142, 0.142)
-texture_normal = ExtResource("5_awbvr")
-action = "toggle_map"
-
-[node name="quest_log" type="TouchScreenButton" parent="MainControl"]
-position = Vector2(245, -1574)
-scale = Vector2(0.141694, 0.141694)
-texture_normal = ExtResource("6_vvc32")
-action = "quest_log"
-
 [node name="LifeContainer" type="Control" parent="MainControl"]
 layout_mode = 1
 anchor_left = -0.45
@@ -129,6 +131,58 @@ offset_right = 17.0
 offset_bottom = 233.0
 grow_horizontal = 2
 grow_vertical = 0
+
+[node name="Buttony_top" type="VBoxContainer" parent="MainControl"]
+layout_mode = 0
+offset_left = 221.0
+offset_top = -1539.0
+offset_right = 400.0
+offset_bottom = -1512.0
+
+[node name="maya_time" type="HBoxContainer" parent="MainControl/Buttony_top"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainControl/Buttony_top/maya_time"]
+layout_mode = 2
+text = "Maya's time:"
+label_settings = SubResource("LabelSettings_s7xho")
+
+[node name="show_maya_time" type="Label" parent="MainControl/Buttony_top/maya_time"]
+layout_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="MainControl/Buttony_top"]
+layout_mode = 2
+
+[node name="toggle_map" type="TouchScreenButton" parent="MainControl/Buttony_top/Buttons"]
+position = Vector2(124, 16)
+scale = Vector2(0.142, 0.142)
+texture_normal = ExtResource("5_awbvr")
+action = "toggle_map"
+
+[node name="quest_log" type="TouchScreenButton" parent="MainControl/Buttony_top/Buttons"]
+position = Vector2(-4, 15)
+scale = Vector2(0.141694, 0.141694)
+texture_normal = ExtResource("6_vvc32")
+action = "quest_log"
+
+[node name="death_screen" type="VBoxContainer" parent="MainControl"]
+layout_mode = 0
+offset_left = -272.0
+offset_top = -1232.0
+offset_right = 312.0
+offset_bottom = -1067.0
+
+[node name="Label" type="Label" parent="MainControl/death_screen"]
+layout_mode = 2
+text = "Maya's life is over
+So is your purpose
+It ends now"
+label_settings = SubResource("LabelSettings_xl5u8")
+
+[node name="Button" type="Button" parent="MainControl/death_screen"]
+layout_mode = 2
+theme = SubResource("Theme_mlu6h")
+text = "RETRY"
 
 [node name="StatusPanel" type="Panel" parent="."]
 offset_left = 40.0
