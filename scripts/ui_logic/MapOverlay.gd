@@ -178,7 +178,6 @@ func _add_goal_marker(goal_node: Node2D, quest_id: String) -> void:
 	m.texture_normal = icon
 	m.texture_pressed = icon
 	m.texture_hover = icon
-	m.expand = true
 	m.ignore_texture_size = true
 	m.size          = icon.get_size()
 	m.scale         = Vector2(marker_scale, marker_scale)
