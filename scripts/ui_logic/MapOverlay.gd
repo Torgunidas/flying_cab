@@ -70,6 +70,8 @@ func _ready() -> void:
 	vp.size    = get_viewport().get_visible_rect().size
 	mini_cam.make_current()
 	mini_cam.zoom = camera_zoom
+	mini_cam.connect("zoom_changed", Callable(self, "_on_mini_cam_zoom"))
+
 
 	# Stretch marker layers fullscreen
 	player_root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -391,9 +393,6 @@ func _process(_dt: float) -> void:
 	if info_panel.visible and active_goal_marker:
 			info_panel.position = active_goal_marker.position - Vector2(info_panel.size.x * 0.5 - active_goal_marker.size.x * active_goal_marker.scale.x * 0.5, info_panel.size.y + 5)
 
-
-
-
 func _update_quest_positions() -> void:
 	var screen_scale = marker_scale * mini_cam.zoom.x
 	for marker in quest_markers.values():
@@ -620,3 +619,9 @@ func _on_player_exited_vehicle() -> void:
 
 	# 5) kamera mini-mapki wraca na gracza
 	mini_cam.position = player_node.global_position
+
+func _on_mini_cam_zoom(new_zoom: Vector2) -> void:
+	var sc_scale := marker_scale * new_zoom.x
+	for m in player_markers.values():       m.scale = Vector2(sc_scale, sc_scale)
+	for m in quest_giver_markers.values():  m.scale = Vector2(sc_scale, sc_scale)
+	for m in goal_markers.values():         m.scale = Vector2(sc_scale, sc_scale)
