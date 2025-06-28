@@ -172,14 +172,14 @@ offset_top = -1232.0
 offset_right = 312.0
 offset_bottom = -1067.0
 
-[node name="Label" type="Label" parent="MainControl/death_screen"]
+[node name="game_over_note" type="Label" parent="MainControl/death_screen"]
 layout_mode = 2
 text = "Maya's life is over
 So is your purpose
 It ends now"
 label_settings = SubResource("LabelSettings_xl5u8")
 
-[node name="Button" type="Button" parent="MainControl/death_screen"]
+[node name="retry" type="Button" parent="MainControl/death_screen"]
 layout_mode = 2
 theme = SubResource("Theme_mlu6h")
 text = "RETRY"
