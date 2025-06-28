@@ -100,15 +100,14 @@ func _update_maya_time_display() -> void:
 				maya_time_label.text = str(int(_seconds_left / 60))
 
 func _on_time_expired() -> void:
-		if death_screen:
-				death_screen.visible = true
-		pauza.set_paused(true)
+	if death_screen:
+		death_screen.visible = true
+	get_tree().paused = true          # zamiast „pauza”
 
 func _on_retry_pressed() -> void:
-	print("Retry pressed")
 	if death_screen:
-			death_screen.visible = false
-	pauza.set_paused(false)
+		death_screen.visible = false
+	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/ui_scenes/MainMenu.tscn")
 
 # ───────────────────────── 5. PRZEŁĄCZANIE TRYBU ─────────────────────

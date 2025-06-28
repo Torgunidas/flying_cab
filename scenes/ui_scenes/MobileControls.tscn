@@ -185,6 +185,7 @@ It ends now"
 label_settings = SubResource("LabelSettings_xl5u8")
 
 [node name="retry_button" type="Button" parent="MainControl/death_screen"]
+process_mode = 3
 layout_mode = 2
 theme = SubResource("Theme_mlu6h")
 text = "RETRY"

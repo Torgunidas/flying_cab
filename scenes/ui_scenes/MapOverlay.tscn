@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://owhfx7samawh" path="res://Assets/ui/chicago-city-black-silhouette-logo-icon.png" id="2_7xec7"]
 
 [node name="MapOverlay" type="CanvasLayer" groups=["map_overlay"]]
-process_mode = 3
+process_mode = 1
 layer = 12
 script = ExtResource("1_icqhu")
 marker_scale = 0.2
