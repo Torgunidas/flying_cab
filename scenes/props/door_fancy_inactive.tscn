@@ -1,0 +1,91 @@
+[gd_scene load_steps=10 format=3 uid="uid://b5hwgkohta0cw"]
+
+[ext_resource type="Texture2D" uid="uid://dybedeyppsicf" path="res://Assets/doors-and-portals-pixel-art-asset-pack/1 Doors/4.png" id="2_1yvpi"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_w1cy3"]
+atlas = ExtResource("2_1yvpi")
+region = Rect2(160, 0, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gxfkc"]
+atlas = ExtResource("2_1yvpi")
+region = Rect2(128, 0, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hetp4"]
+atlas = ExtResource("2_1yvpi")
+region = Rect2(96, 0, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_a2thi"]
+atlas = ExtResource("2_1yvpi")
+region = Rect2(64, 0, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3yovw"]
+atlas = ExtResource("2_1yvpi")
+region = Rect2(32, 0, 32, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i5jca"]
+atlas = ExtResource("2_1yvpi")
+region = Rect2(0, 0, 32, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_mmhnw"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_w1cy3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gxfkc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hetp4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a2thi")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3yovw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i5jca")
+}],
+"loop": false,
+"name": &"closing",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i5jca")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3yovw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a2thi")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hetp4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gxfkc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_w1cy3")
+}],
+"loop": false,
+"name": &"opening",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fnmon"]
+size = Vector2(26, 40)
+
+[node name="Door_fancy_inactive" type="Area2D"]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(-0.5, 0.5)
+scale = Vector2(0.96875, 0.984375)
+sprite_frames = SubResource("SpriteFrames_mmhnw")
+animation = &"opening"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-2, 12)
+shape = SubResource("RectangleShape2D_fnmon")

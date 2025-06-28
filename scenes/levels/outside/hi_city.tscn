@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=4 uid="uid://c6wgvur21jgyx"]
+[gd_scene load_steps=41 format=4 uid="uid://c6wgvur21jgyx"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_u2gg1"]
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="2_gqf4i"]
@@ -16,6 +16,7 @@
 [ext_resource type="Script" uid="uid://bk1pnw2el7yfl" path="res://scripts/ui_logic/fly_thru_neon.gd" id="14_xhy5v"]
 [ext_resource type="FontFile" uid="uid://bi7srqvr2p0ft" path="res://Assets/fonts/CyberpunkCraftpixPixel.otf" id="15_xhy5v"]
 [ext_resource type="PackedScene" uid="uid://ck11xu7tdgsxn" path="res://scenes/props/door_fancy.tscn" id="16_iumgf"]
+[ext_resource type="PackedScene" uid="uid://b5hwgkohta0cw" path="res://scenes/props/door_fancy_inactive.tscn" id="16_l7kxo"]
 [ext_resource type="Texture2D" uid="uid://ckenyc7vdeehr" path="res://market_street_atlas.png" id="17_fs6ew"]
 [ext_resource type="PackedScene" uid="uid://jhvhgsllotq5" path="res://scenes/props/door_normal.tscn" id="18_3leuv"]
 [ext_resource type="TileSet" uid="uid://bn0n8x6jgfyyw" path="res://Assets/TileSets/industrial.tres" id="19_05nhu"]
@@ -1039,6 +1040,9 @@ spawn_point_name = "tutaj_gracz"
 
 [node name="exit_home" type="Node2D" parent="entrances/Door_home"]
 position = Vector2(-3, 11)
+
+[node name="Door_fancy_inactive" parent="entrances" instance=ExtResource("16_l7kxo")]
+position = Vector2(-1008, 206)
 
 [node name="gas_stations" type="Node2D" parent="."]
 position = Vector2(-3296, -1687)
