@@ -66,7 +66,6 @@ offset_bottom = 40.0
 layout_mode = 2
 
 [node name="UpButton" type="TouchScreenButton" parent="MainControl/BottomContainer/ButtonRow"]
-modulate = Color(1, 1, 1, 0.282353)
 position = Vector2(295, -227)
 scale = Vector2(1.912, 1.912)
 texture_normal = ExtResource("1_0i7bk")
@@ -81,7 +80,6 @@ texture_pressed = ExtResource("4_oueyw")
 action = "toggle_action"
 
 [node name="RightButton" type="TouchScreenButton" parent="MainControl/BottomContainer/ButtonRow"]
-modulate = Color(1, 1, 1, 0.282353)
 position = Vector2(-93, -249)
 rotation = 1.5708
 scale = Vector2(1.912, 1.912)
@@ -89,7 +87,6 @@ texture_normal = ExtResource("1_0i7bk")
 action = "thrust_right"
 
 [node name="LeftButton" type="TouchScreenButton" parent="MainControl/BottomContainer/ButtonRow"]
-modulate = Color(1, 1, 1, 0.282353)
 position = Vector2(-468, -32.9999)
 rotation = -1.5708
 scale = Vector2(1.91208, 1.98919)
@@ -109,14 +106,14 @@ offset_bottom = -191.0
 grow_horizontal = 0
 
 [node name="toggle_map" type="TouchScreenButton" parent="MainControl"]
-position = Vector2(72, -126)
-scale = Vector2(0.1, 0.1)
+position = Vector2(381, -1574)
+scale = Vector2(0.142, 0.142)
 texture_normal = ExtResource("5_awbvr")
 action = "toggle_map"
 
 [node name="quest_log" type="TouchScreenButton" parent="MainControl"]
-position = Vector2(-16, -128)
-scale = Vector2(0.1, 0.1)
+position = Vector2(245, -1574)
+scale = Vector2(0.141694, 0.141694)
 texture_normal = ExtResource("6_vvc32")
 action = "quest_log"
 

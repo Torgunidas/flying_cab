@@ -42,7 +42,7 @@ offset_bottom = 40.0
 
 [node name="map_button" type="TouchScreenButton" parent="."]
 z_index = 15
-position = Vector2(42, 1041)
-scale = Vector2(0.1, 0.1)
+position = Vector2(40.0001, 1073)
+scale = Vector2(0.142, 0.142)
 texture_normal = ExtResource("2_7xec7")
 action = "toggle_map"

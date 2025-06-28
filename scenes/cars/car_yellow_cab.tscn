@@ -334,41 +334,41 @@ ground_boost_vertical_multiplier = 1.0
 
 [node name="rear_thrust_anim" type="AnimatedSprite2D" parent="car_body"]
 visible = false
-position = Vector2(-31, 12)
+position = Vector2(-29, 25)
 sprite_frames = SubResource("SpriteFrames_ga80a")
 animation = &"thrust"
 
 [node name="rear_thrust" type="Sprite2D" parent="car_body"]
-position = Vector2(-30.9453, -3.40281)
+position = Vector2(-28.9453, 9.59719)
 rotation = 0.00234696
 scale = Vector2(0.286779, 0.560562)
 texture = ExtResource("5_vhjpo")
 
 [node name="front_thrust_anim" type="AnimatedSprite2D" parent="car_body"]
 visible = false
-position = Vector2(5, 11)
+position = Vector2(7, 24)
 sprite_frames = SubResource("SpriteFrames_ga80a")
 animation = &"thrust"
 frame_progress = 0.682861
 
 [node name="front_thrust" type="Sprite2D" parent="car_body"]
-position = Vector2(3.48536, -4.00722)
+position = Vector2(5.48536, 8.99278)
 rotation = 0.00130835
 scale = Vector2(0.448916, 0.611111)
 texture = ExtResource("5_vhjpo")
 
 [node name="door_open" type="Sprite2D" parent="car_body"]
 visible = false
-position = Vector2(0, -13)
+position = Vector2(2, 0)
 texture = ExtResource("6_vhjpo")
 
 [node name="chasis" type="Sprite2D" parent="car_body"]
-position = Vector2(0, -13)
+position = Vector2(2, 0)
 texture = ExtResource("7_5gayy")
 
 [node name="horizontal_thrust_anim" type="AnimatedSprite2D" parent="car_body"]
 visible = false
-position = Vector2(-55, -9)
+position = Vector2(-53, 4)
 scale = Vector2(1.35, 1.28571)
 sprite_frames = SubResource("SpriteFrames_4i15a")
 animation = &"thrust"
@@ -376,16 +376,16 @@ frame_progress = 0.553299
 
 [node name="PivotCheck_front" type="RayCast2D" parent="car_body"]
 unique_name_in_owner = true
-position = Vector2(16, 0)
+position = Vector2(18, 13)
 target_position = Vector2(0, 12)
 
 [node name="PivotCheck_rear" type="RayCast2D" parent="car_body"]
 unique_name_in_owner = true
-position = Vector2(-27, 0)
+position = Vector2(-25, 13)
 target_position = Vector2(0, 12)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(-2, -12.75)
+position = Vector2(0, 0.25)
 shape = SubResource("RectangleShape2D_8jbes")
 
 [node name="death_sound" type="AudioStreamPlayer2D" parent="."]

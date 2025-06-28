@@ -4,7 +4,7 @@ extends CharacterBody2D
 signal entered_vehicle(vehicle_node: Node2D)
 signal exited_vehicle()
 signal money_changed(new_money: int)
-const SPEED := 150.0
+const SPEED := 120.0
 const JUMP_VELOCITY := -300
 @export var gravity_force: float = 800
 
