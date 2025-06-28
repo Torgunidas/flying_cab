@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://cdy48vkvvc6ew"]
+[gd_scene load_steps=16 format=3 uid="uid://cdy48vkvvc6ew"]
 
 [ext_resource type="Texture2D" uid="uid://nkkivycjfrrx" path="res://Assets/ui/button.png" id="1_0i7bk"]
 [ext_resource type="Script" uid="uid://c6bsqbwsh1ytd" path="res://scripts/mobile_controls.gd" id="1_c6u6f"]
@@ -12,6 +12,11 @@
 font = ExtResource("7_4nitx")
 font_size = 25
 font_color = Color(0.971387, 0, 0.170392, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_mlu6h"]
+font = ExtResource("7_4nitx")
+font_size = 40
+font_color = Color(0.972549, 0, 0.168627, 1)
 
 [sub_resource type="LabelSettings" id="LabelSettings_xl5u8"]
 font = ExtResource("7_4nitx")
@@ -153,6 +158,7 @@ label_settings = SubResource("LabelSettings_s7xho")
 
 [node name="show_maya_time" type="Label" parent="MainControl/Buttony_top/maya_time"]
 layout_mode = 2
+label_settings = SubResource("LabelSettings_mlu6h")
 
 [node name="Buttons" type="HBoxContainer" parent="MainControl/Buttony_top"]
 layout_mode = 2

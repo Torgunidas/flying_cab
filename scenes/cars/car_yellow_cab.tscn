@@ -316,19 +316,23 @@ animations = [{
 [node name="Car_yellow_cab" type="CharacterBody2D"]
 collision_mask = 5
 script = ExtResource("1_vhjpo")
-thrust_force = 600.0
-horizontal_thrust = 300.0
-max_fall_speed = 300.0
+thrust_force = 220.0
+horizontal_thrust = 160.0
+max_climb_speed = 160.0
+vertical_damping = 1.0
+max_fall_speed = 500.0
 ceiling_penalty = 40.0
-max_horizontal_speed = 420.0
+max_horizontal_speed = 210.0
 max_hp = 400
 damage_tolerance = 160.0
-max_fuel = 600.0
+max_fuel = 1200.0
+fuel_regeneration_rate = 10.0
 npc_scene = ExtResource("2_5gayy")
 taxi_marker_scene = ExtResource("3_e6o62")
 ground_boost_multiplier = 5.0
 ground_boost_duration = 0.05
 ground_boost_vertical_multiplier = 1.0
+fare_rate = 0.08
 
 [node name="car_body" type="Sprite2D" parent="."]
 

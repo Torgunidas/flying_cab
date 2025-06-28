@@ -21,6 +21,7 @@ var _pinch_start_zoom := Vector2.ZERO
 @export var marker_scale : float = 1.0
 var _pinch_active := false
 var _touches : Dictionary = {}    # index -> position
+var _paused_by_map := false       # tracks if map triggered the pause
 
 # --- SCENES & RESOURCES ---
 # const QuestMarkerScene := preload("res://scenes/ui_scenes/QuestMarkers.tscn")
@@ -540,7 +541,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func show_map():
 	visible = true
 	mini_cam.position = current_player_target.global_position
-	pauza.set_paused(true)
+	_paused_by_map = not pauza.is_paused()
+	if _paused_by_map:
+			pauza.set_paused(true)
 	print("PAUSED =", get_tree().paused)
 	print("*** MAP OPEN ***",
 		  "  vp.world null? ", vp.world_2d == null,
@@ -551,11 +554,11 @@ func show_map():
 		
 func _hide_map():
 	for c in get_tree().get_nodes_in_group("Pickup_Crate"):
-			c.visible = true
-	pauza.set_paused(false)
+						c.visible = true
+	if _paused_by_map:
+				pauza.set_paused(false)
+				_paused_by_map = false
 	visible = false
-	visible = false
-	pauza.set_paused(false)
 	_hide_goal_info()
 	print("tree paused =", get_tree().paused)
 
