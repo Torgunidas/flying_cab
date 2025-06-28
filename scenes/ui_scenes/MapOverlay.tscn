@@ -48,7 +48,6 @@ texture_normal = ExtResource("2_7xec7")
 action = "toggle_map"
 
 [node name="QuestInfoPanel" type="Panel" parent="."]
-visible = false
 offset_right = 300.0
 offset_bottom = 120.0
 

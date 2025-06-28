@@ -57,6 +57,12 @@ func _get_pinch_distance() -> float:
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	vp_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	player_root.process_mode = Node.PROCESS_MODE_ALWAYS
+	quest_root.process_mode  = Node.PROCESS_MODE_ALWAYS
+	info_panel.process_mode  = Node.PROCESS_MODE_ALWAYS
+	player_root.mouse_filter = Control.MOUSE_FILTER_IGNORE   # <─ DODAJ
+	quest_root.mouse_filter  = Control.MOUSE_FILTER_IGNORE   # <─ DODAJ
 	print("GameRoot in group gameroot:", get_tree().get_first_node_in_group("gameroot"))
 	print("quest_root:", quest_root, "type:", typeof(quest_root))
 		# Configure SubViewport & camera
@@ -86,6 +92,7 @@ func _ready() -> void:
 	tex.mouse_filter = Control.MOUSE_FILTER_PASS
 	$MapRoot.add_child(tex)
 	$MapRoot.move_child(tex, 0)
+	$MapRoot.move_child(quest_root, $MapRoot.get_child_count() - 1)
 	tex.set_anchors_preset(Control.PRESET_FULL_RECT)
 	tex.offset_left = 0; tex.offset_top = 0; tex.offset_right = 0; tex.offset_bottom = 0
 
@@ -175,6 +182,7 @@ func _add_goal_marker(goal_node: Node2D, quest_id: String) -> void:
 			return
 	var icon := MARKER_CONFIG["quest_goal"]
 	var m := TextureButton.new()
+	m.process_mode = Node.PROCESS_MODE_ALWAYS
 	m.texture_normal = icon
 	m.texture_pressed = icon
 	m.texture_hover = icon
@@ -185,33 +193,44 @@ func _add_goal_marker(goal_node: Node2D, quest_id: String) -> void:
 	m.mouse_filter  = Control.MOUSE_FILTER_PASS
 	m.z_index       = 100
 	m.set_meta("quest_id", quest_id)
+	# desktop – hover, mobile & desktop – tap / click
 	m.connect("mouse_entered", Callable(self, "_on_goal_marker_mouse_entered").bind(m))
-	m.connect("mouse_exited", Callable(self, "_on_goal_marker_mouse_exited"))
-	m.connect("pressed", Callable(self, "_on_goal_marker_pressed").bind(m))
+	m.connect("mouse_exited",  Callable(self, "_on_goal_marker_mouse_exited"))
+	m.connect("pressed",       Callable(self, "_on_goal_marker_toggle").bind(m))
+	# jedno uniwersalne wejście (tap = InputEventScreenTouch, click = InputEventMouseButton)
+	m.connect("gui_input",     Callable(self, "_on_goal_marker_gui_input").bind(m))
 	quest_root.add_child(m)
 	goal_markers[goal_node] = m
 
 func _on_goal_marker_mouse_entered(marker: Control) -> void:
+	print("HOVER nad", marker, "id:", marker.get_meta("quest_id"))
 	_show_goal_info(marker)
 
 func _on_goal_marker_mouse_exited() -> void:
 	_hide_goal_info()
 
-func _on_goal_marker_pressed(marker: Control) -> void:
+func _on_goal_marker_toggle(marker: Control) -> void:
 	if info_panel.visible and active_goal_marker == marker:
 			_hide_goal_info()
 	else:
 			_show_goal_info(marker)
 
+func _on_goal_marker_gui_input(event: InputEvent, marker: Control) -> void:
+		if (event is InputEventScreenTouch and event.pressed) \
+		or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+				_on_goal_marker_toggle(marker)
+
 func _show_goal_info(marker: Control) -> void:
 	var qid = marker.get_meta("quest_id", "")
 	var q = QuestSys.get_quest(qid)
 	if q == null:
-			return
+				return                # brak takiego questa – nic nie rób
 	info_title.text = q.title
 	info_desc.text = q.description
 	active_goal_marker = marker
-	info_panel.position = marker.position - Vector2(info_panel.size.x * 0.5 - marker.size.x * marker.scale.x * 0.5, info_panel.size.y + 5)
+	# ustawiamy panel tuż nad markerem (przeliczamy współrzędne global→lokalne)
+	info_panel.global_position = marker.get_global_position() \
+							 - Vector2(info_panel.size.x * 0.5, info_panel.size.y + 8)
 	info_panel.visible = true
 
 func _hide_goal_info() -> void:
