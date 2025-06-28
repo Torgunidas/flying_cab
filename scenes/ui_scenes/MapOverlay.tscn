@@ -46,3 +46,15 @@ position = Vector2(40.0001, 1073)
 scale = Vector2(0.142, 0.142)
 texture_normal = ExtResource("2_7xec7")
 action = "toggle_map"
+
+[node name="QuestInfoPanel" type="Panel" parent="."]
+visible = false
+
+[node name="VBox" type="VBoxContainer" parent="QuestInfoPanel"]
+layout_mode = 0
+
+[node name="TitleLabel" type="Label" parent="QuestInfoPanel/VBox"]
+layout_mode = 2
+
+[node name="DescLabel" type="Label" parent="QuestInfoPanel/VBox"]
+layout_mode = 2

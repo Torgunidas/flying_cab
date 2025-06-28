@@ -34,7 +34,11 @@ const MARKER_CONFIG := { "player": preload("res://Assets/ui/button.png"),
 @onready var mini_cam        : Camera2D    = $MapRoot/MapViewport/MiniVP/MiniCamera
 @onready var player_root     : Control     = $MapRoot/MarkerPlayer
 @onready var quest_root      : Control     = $MapRoot/QuestMarkers
+@onready var info_panel      : Panel       = $QuestInfoPanel
+@onready var info_title      : Label       = $QuestInfoPanel/VBox/TitleLabel
+@onready var info_desc       : Label       = $QuestInfoPanel/VBox/DescLabel
 
+var active_goal_marker : Control = null
 # --- MARKER STORAGE ---
 var player_markers      := {}  # Node2D -> TextureRect
 var quest_giver_markers := {}  # Node2D -> TextureRect
@@ -99,6 +103,7 @@ func _ready() -> void:
 	QuestSys.quest_completed.connect(func(_id): _build_goal_markers())
 
 	_build_goal_markers()
+	info_panel.visible = false
 	
 func _build_goal_markers() -> void:
 	# 1) usuń stare wykrzykniki
@@ -128,11 +133,7 @@ func _build_goal_markers() -> void:
 		# 3) dodaj marker tylko, gdy quest jest ACTIVE
 		var q := QuestSys.get_quest(qid)
 		if q and q.status == QuestData.Status.ACTIVE:
-			_add_goal_marker(goal)
-
-
-
-
+				_add_goal_marker(goal, qid)
 		
 func _add_quest_giver_marker(target: Node2D) -> void:
 	print("  ▶ _add_quest_giver_marker called for", target)
@@ -165,23 +166,58 @@ func _clear_quest_giver_markers() -> void:
 # ───────────── GOAL MARKERS (ikonka „!”) ─────────────
 func _clear_goal_markers() -> void:
 	for m in goal_markers.values():
-		m.queue_free()
+			m.queue_free()
 	goal_markers.clear()
+	_hide_goal_info()
 
-func _add_goal_marker(goal_node: Node2D) -> void:
+func _add_goal_marker(goal_node: Node2D, quest_id: String) -> void:
 	if goal_markers.has(goal_node):
-		return
+			return
 	var icon := MARKER_CONFIG["quest_goal"]
-	var m := TextureRect.new()
-	m.texture       = icon
-	m.expand_mode   = TextureRect.EXPAND_IGNORE_SIZE
+	var m := TextureButton.new()
+	m.texture_normal = icon
+	m.texture_pressed = icon
+	m.texture_hover = icon
+	m.expand = true
+	m.ignore_texture_size = true
 	m.size          = icon.get_size()
 	m.scale         = Vector2(marker_scale, marker_scale)
 	m.pivot_offset  = Vector2.ZERO
-	m.mouse_filter  = Control.MOUSE_FILTER_IGNORE
+	m.mouse_filter  = Control.MOUSE_FILTER_PASS
 	m.z_index       = 100
+	m.set_meta("quest_id", quest_id)
+	m.connect("mouse_entered", Callable(self, "_on_goal_marker_mouse_entered").bind(m))
+	m.connect("mouse_exited", Callable(self, "_on_goal_marker_mouse_exited"))
+	m.connect("pressed", Callable(self, "_on_goal_marker_pressed").bind(m))
 	quest_root.add_child(m)
 	goal_markers[goal_node] = m
+
+func _on_goal_marker_mouse_entered(marker: Control) -> void:
+	_show_goal_info(marker)
+
+func _on_goal_marker_mouse_exited() -> void:
+	_hide_goal_info()
+
+func _on_goal_marker_pressed(marker: Control) -> void:
+	if info_panel.visible and active_goal_marker == marker:
+			_hide_goal_info()
+	else:
+			_show_goal_info(marker)
+
+func _show_goal_info(marker: Control) -> void:
+	var qid = marker.get_meta("quest_id", "")
+	var q = QuestSys.get_quest(qid)
+	if q == null:
+			return
+	info_title.text = q.title
+	info_desc.text = q.description
+	active_goal_marker = marker
+	info_panel.position = marker.position - Vector2(info_panel.size.x * 0.5 - marker.size.x * marker.scale.x * 0.5, info_panel.size.y + 5)
+	info_panel.visible = true
+
+func _hide_goal_info() -> void:
+	active_goal_marker = null
+	info_panel.visible = false
 
 
 # --- LEVEL LOADED ---
@@ -324,15 +360,18 @@ func _process(_dt: float) -> void:
 	
 # Quest-goal (“!”) markers
 	for g in goal_markers.keys():
-		if not is_instance_valid(g):
-			goal_markers[g].queue_free()
-			goal_markers.erase(g)
-			continue
-		var m = goal_markers[g]
-		var base = world_to_map(g.global_position)
-		var sc   = marker_scale * mini_cam.zoom.x
-		m.scale = Vector2(sc, sc)
-		m.position = base - (m.size * m.scale) * 0.5
+				if not is_instance_valid(g):
+						goal_markers[g].queue_free()
+						goal_markers.erase(g)
+						continue
+				var m = goal_markers[g]
+				var base = world_to_map(g.global_position)
+				var sc   = marker_scale * mini_cam.zoom.x
+				m.scale = Vector2(sc, sc)
+				m.position = base - (m.size * m.scale) * 0.5
+
+	if info_panel.visible and active_goal_marker:
+			info_panel.position = active_goal_marker.position - Vector2(info_panel.size.x * 0.5 - active_goal_marker.size.x * active_goal_marker.scale.x * 0.5, info_panel.size.y + 5)
 
 
 
@@ -496,11 +535,12 @@ func show_map():
 		
 func _hide_map():
 	for c in get_tree().get_nodes_in_group("Pickup_Crate"):
-		c.visible = true
+			c.visible = true
 	pauza.set_paused(false)
 	visible = false
 	visible = false
 	pauza.set_paused(false)
+	_hide_goal_info()
 	print("tree paused =", get_tree().paused)
 
 func _apply_zoom(mult: float) -> void:
