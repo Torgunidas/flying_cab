@@ -70,7 +70,6 @@ func _ready() -> void:
 	vp.size    = get_viewport().get_visible_rect().size
 	mini_cam.make_current()
 	mini_cam.zoom = camera_zoom
-	mini_cam.connect("zoom_changed", Callable(self, "_on_mini_cam_zoom"))
 
 
 	# Stretch marker layers fullscreen
