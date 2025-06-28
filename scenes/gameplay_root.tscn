@@ -18,7 +18,7 @@ player_scene = ExtResource("4_b2pxe")
 
 [node name="MobileControls" parent="." instance=ExtResource("5_j6dpx")]
 
-[node name="LifeContainer" parent="MobileControls/MainControl" index="4"]
+[node name="LifeContainer" parent="MobileControls/MainControl" index="2"]
 offset_left = -22.0
 
 [node name="MapOverlay" parent="." instance=ExtResource("6_76q5s")]
@@ -29,6 +29,18 @@ script = ExtResource("3_hctk7")
 [node name="environment" type="Node2D" parent="."]
 
 [node name="world" parent="environment" instance=ExtResource("2_85ppi")]
+
+[node name="GasStation" parent="environment/world" index="23"]
+price_per_10 = null
+refuel_speed = null
+
+[node name="GasStation2" parent="environment/world" index="24"]
+price_per_10 = null
+refuel_speed = null
+
+[node name="GasStation3" parent="environment/world" index="25"]
+price_per_10 = null
+refuel_speed = null
 
 [node name="CameraController" type="Camera2D" parent="."]
 zoom = Vector2(3, 3)

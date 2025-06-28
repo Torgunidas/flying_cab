@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=4 uid="uid://c6wgvur21jgyx"]
+[gd_scene load_steps=40 format=4 uid="uid://c6wgvur21jgyx"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_u2gg1"]
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="2_gqf4i"]
@@ -30,6 +30,7 @@
 [ext_resource type="Texture2D" uid="uid://jussxd5bdvrv" path="res://Assets/Free Industrial Zone Tileset/3 Objects/Box1.png" id="28_7ob0h"]
 [ext_resource type="PackedScene" uid="uid://dq3q4fnlfjrol" path="res://scenes/quest/RewardBox.tscn" id="29_l7kxo"]
 [ext_resource type="Texture2D" uid="uid://bcavvnbspcdew" path="res://Assets/Free Industrial Zone Tileset/3 Objects/Box8.png" id="30_th6as"]
+[ext_resource type="PackedScene" uid="uid://qacc8w3r5e7y" path="res://scenes/props/car_wash.tscn" id="31_7ob0h"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_umyuv"]
 size = Vector2(3497, 20)
@@ -1044,12 +1045,18 @@ position = Vector2(-3296, -1687)
 
 [node name="GasStation" parent="gas_stations" instance=ExtResource("10_nvfoa")]
 position = Vector2(4571, 327)
+price_per_10 = null
+refuel_speed = null
 
 [node name="GasStation2" parent="gas_stations" instance=ExtResource("10_nvfoa")]
 position = Vector2(3224, 326)
+price_per_10 = null
+refuel_speed = null
 
 [node name="GasStation3" parent="gas_stations" instance=ExtResource("10_nvfoa")]
 position = Vector2(4513, -93)
+price_per_10 = null
+refuel_speed = null
 
 [node name="architecture" type="Node2D" parent="."]
 
@@ -2536,6 +2543,9 @@ texture = ExtResource("28_7ob0h")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/bring_berries_2/box_obj2"]
 position = Vector2(0, 5)
 shape = SubResource("RectangleShape2D_i0cx1")
+
+[node name="CarWash" parent="." instance=ExtResource("31_7ob0h")]
+position = Vector2(-5783, -1365)
 
 [connection signal="body_entered" from="DeathBoundary" to="." method="_on_death_boundary_body_entered"]
 

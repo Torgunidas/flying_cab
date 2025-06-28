@@ -60,6 +60,10 @@ life_label_path = NodePath("StatusPanel/VBoxContainer/PlayerStatus/LifeLabel")
 car_status_path = NodePath("StatusPanel/VBoxContainer/CarStatus")
 player_status_path = NodePath("StatusPanel/VBoxContainer/PlayerStatus")
 enter_button_path = NodePath("MainControl/BottomContainer/ButtonRow/enter_button")
+maya_time_label_path = NodePath("MainControl/Buttony_top/maya_time/show_maya_time")
+death_screen_path = NodePath("MainControl/death_screen")
+retry_button_path = NodePath("MainControl/death_screen/retry_button")
+timer_minutes = 1
 
 [node name="MainControl" type="Control" parent="."]
 layout_mode = 3
@@ -142,7 +146,7 @@ offset_bottom = -1512.0
 [node name="maya_time" type="HBoxContainer" parent="MainControl/Buttony_top"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainControl/Buttony_top/maya_time"]
+[node name="maya_time_label" type="Label" parent="MainControl/Buttony_top/maya_time"]
 layout_mode = 2
 text = "Maya's time:"
 label_settings = SubResource("LabelSettings_s7xho")
@@ -166,6 +170,7 @@ texture_normal = ExtResource("6_vvc32")
 action = "quest_log"
 
 [node name="death_screen" type="VBoxContainer" parent="MainControl"]
+visible = false
 layout_mode = 0
 offset_left = -272.0
 offset_top = -1232.0
@@ -179,7 +184,7 @@ So is your purpose
 It ends now"
 label_settings = SubResource("LabelSettings_xl5u8")
 
-[node name="retry" type="Button" parent="MainControl/death_screen"]
+[node name="retry_button" type="Button" parent="MainControl/death_screen"]
 layout_mode = 2
 theme = SubResource("Theme_mlu6h")
 text = "RETRY"

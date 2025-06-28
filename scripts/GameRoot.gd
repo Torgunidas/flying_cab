@@ -7,7 +7,7 @@ signal level_loaded(level: Node2D, player: Node2D)   # ← zostaw, jeśli Mapa z
 @export var player_scene     : PackedScene
 @export var environment_parent: NodePath = "environment"
 @export var interior_zoom: Vector2 = Vector2(5, 5)
-@export var exterior_zoom: Vector2 = Vector2(3, 3)
+@export var exterior_zoom: Vector2 = Vector2(5, 5)
 
 @onready var env_parent := get_node_or_null(environment_parent)
 func _ready() -> void:
