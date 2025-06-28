@@ -3,14 +3,16 @@ class_name QuestLog
 
 # Font size for description inside the log
 const LOG_DESC_FONT_SIZE := 25
+# Font size for quest buttons
+const LOG_BTN_FONT_SIZE := 28
+# Minimal height for quest buttons (for easier tapping)
+const LOG_BTN_MIN_HEIGHT := 60
 
 @onready var list_box  : VBoxContainer = $Panel/List
-@onready var close_btn : Button        = $Panel/Close
 
 func _ready() -> void:
 	visible = false
 	set_process_unhandled_input(true)
-	close_btn.pressed.connect(Callable(self, "_on_close_pressed"))
 	QuestSys.quest_activated.connect(Callable(self, "_refresh"))
 	QuestSys.quest_completed.connect(Callable(self, "_refresh"))
 	_refresh()
@@ -45,20 +47,28 @@ func _add_done_button(qdata: QuestData) -> void:
 	btn.disabled = true
 	# zielony kolor tekstu
 	btn.add_theme_color_override("font_color", Color(0, 1, 0))
+	btn.add_theme_font_size_override("font_size", LOG_BTN_FONT_SIZE)
+	btn.custom_minimum_size.y = LOG_BTN_MIN_HEIGHT
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list_box.add_child(btn)
 
 func _add_active_button(qdata: QuestData) -> void:
 	var container = VBoxContainer.new()
+	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list_box.add_child(container)
 
 	var btn = Button.new()
 	btn.text = qdata.title
+	btn.add_theme_font_size_override("font_size", LOG_BTN_FONT_SIZE)
+	btn.custom_minimum_size.y = LOG_BTN_MIN_HEIGHT
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	container.add_child(btn)
 
 	var desc = Label.new()
 	desc.text = qdata.description
 	desc.visible = false
 	desc.add_theme_font_size_override("font_size", LOG_DESC_FONT_SIZE)
+	desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	container.add_child(desc)
 
 	# podłączamy kliknięcie, żeby zmieniało objective i rozwijało opis

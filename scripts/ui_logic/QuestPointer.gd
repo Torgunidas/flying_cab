@@ -11,7 +11,7 @@ func _process(_delta: float) -> void:
 		if player == null:
 				return
 		var pos = player.global_position
-		if player.has_variable("in_vehicle") and player.in_vehicle and player.vehicle:
+		if player.in_vehicle and player.vehicle:
 				if is_instance_valid(player.vehicle):
 						pos = player.vehicle.global_position
 		global_position = pos + Vector2(0, -48)
