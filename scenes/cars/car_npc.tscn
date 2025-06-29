@@ -322,6 +322,7 @@ collision_mask = 13
 script = ExtResource("1_b2jgi")
 waypoints_path = NodePath("waypoint")
 cruise_speed = 120.0
+car_id = "npc_car"
 thrust_force = 300.0
 horizontal_thrust = 220.0
 max_climb_speed = 280.0

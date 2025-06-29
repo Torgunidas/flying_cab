@@ -316,6 +316,7 @@ animations = [{
 [node name="CarNew" type="CharacterBody2D"]
 collision_mask = 5
 script = ExtResource("1_xjm3i")
+car_id = "sport"
 thrust_force = 600.0
 horizontal_thrust = 300.0
 max_fall_speed = 300.0
