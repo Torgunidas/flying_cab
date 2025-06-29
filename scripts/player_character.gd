@@ -24,9 +24,10 @@ var _fall_start_y: float = 0.0
 var _was_on_floor: bool   = true
 
 # Stan pojazdu i sterowania
-var vehicle: CharacterBody2D = null
+var vehicle: Car = null
 var in_vehicle: bool         = false
 var controls_enabled: bool   = true
+var allowed_car_ids: Array[String] = []   # identyfikatory pojazdów, do których gracz ma dostęp
 
 # Flagi śmierci i lądowania
 var _player_dead: bool        = false
@@ -129,25 +130,38 @@ func _ui() -> CanvasLayer:
 	var ui := get_tree().get_current_scene().get_node_or_null("MobileControls")
 	return ui
 # -- w dowolnym miejscu w PlayerCharacter.gd, ale poza innymi funkcjami -- 
-func _find_closest_vehicle() -> CharacterBody2D:
-	var closest: CharacterBody2D = null
+func _find_closest_vehicle() -> Car:
+	var closest  : Car   = null
 	var min_dist := INF
-	for v: CharacterBody2D in get_tree().get_nodes_in_group("vehicles"):
-		if is_instance_valid(v) and v.is_inside_tree():
-			var d = global_position.distance_to(v.global_position)
-			if d < min_dist:
-				min_dist = d
-				closest = v
+
+	for v in get_tree().get_nodes_in_group("vehicles"):
+		if not (v is Car):
+			continue                         # w grupie znalazł się nie-samochód – pomijamy
+
+		var car := v as Car
+		if not can_use_vehicle_id(car.car_id):
+			continue                         # brak uprawnień do tego modelu / egzemplarza
+
+		var d := global_position.distance_to(car.global_position)
+		if d < min_dist:
+			min_dist = d
+			closest  = car
 	return closest
 
 
-func enter_vehicle(target_vehicle: CharacterBody2D = null) -> void:
-	# 1) Figure out which vehicle we're entering
-	var veh: CharacterBody2D = target_vehicle
+
+func enter_vehicle(target_vehicle: Car = null) -> void:
+	# 1) wybierz pojazd
+	var veh : Car = target_vehicle
 	if veh == null:
 		veh = _find_closest_vehicle()
-	if not veh:
-		return  # no car in range
+	if veh == null:
+		return                               # nic w zasięgu
+
+	# 2) autoryzacja
+	if not can_use_vehicle_id(veh.car_id):
+		print("Car not authorized")
+		return
 
 	# 2) Store it and disable collisions
 	vehicle = veh
@@ -248,6 +262,20 @@ func _on_player_reload() -> void:
 func update_hp_ui() -> void:
 	var ui = get_tree().get_current_scene().get_node_or_null("MobileControls") as CanvasLayer
 	if ui:
-		ui.update_hp_display(current_hp, max_hp)
-		ui.update_life_display(current_hp, max_hp)
+				ui.update_hp_display(current_hp, max_hp)
+				ui.update_life_display(current_hp, max_hp)
+
+# -----------------------------------------------------------------
+#  Obsługa uprawnień do pojazdów
+# -----------------------------------------------------------------
+func can_use_vehicle_id(id: String) -> bool:
+		return id == "" or id in allowed_car_ids
+
+func add_vehicle_access(id: String) -> void:
+		if id != "" and id not in allowed_car_ids:
+				allowed_car_ids.append(id)
+
+func remove_vehicle_access(id: String) -> void:
+		if id in allowed_car_ids:
+				allowed_car_ids.erase(id)
 		

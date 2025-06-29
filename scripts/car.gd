@@ -16,6 +16,8 @@ const LAYER_HAZARDS   := 3      # sama taksówka
 const SLIDE_H := 40.0     # px/s  – poziome zsuwanie
 const SLIDE_V := 30.0     # px/s  – pionowe „osuwanie się”
 
+# Unikalny identyfikator auta wykorzystywany w questach
+@export var car_id: String = ""
 # -----------------------
 # Parametry ruchu/fizyki
 # -----------------------

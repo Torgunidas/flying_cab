@@ -31,16 +31,16 @@ script = ExtResource("3_hctk7")
 [node name="world" parent="environment" instance=ExtResource("2_85ppi")]
 
 [node name="GasStation" parent="environment/world" index="23"]
-price_per_10 = null
-refuel_speed = null
+price_per_10 = 5
+refuel_speed = 150.0
 
 [node name="GasStation2" parent="environment/world" index="24"]
-price_per_10 = null
-refuel_speed = null
+price_per_10 = 5
+refuel_speed = 150.0
 
 [node name="GasStation3" parent="environment/world" index="25"]
-price_per_10 = null
-refuel_speed = null
+price_per_10 = 5
+refuel_speed = 150.0
 
 [node name="CameraController" type="Camera2D" parent="."]
 zoom = Vector2(3, 3)

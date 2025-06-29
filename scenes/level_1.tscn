@@ -1253,18 +1253,12 @@ texture = ExtResource("31_1aans")
 
 [node name="GasStation" parent="." instance=ExtResource("36_q0ron")]
 position = Vector2(-83, -1495)
-price_per_10 = null
-refuel_speed = null
 
 [node name="GasStation2" parent="." instance=ExtResource("36_q0ron")]
 position = Vector2(2184, -2919)
-price_per_10 = null
-refuel_speed = null
 
 [node name="GasStation3" parent="." instance=ExtResource("36_q0ron")]
 position = Vector2(10723, -2071)
-price_per_10 = null
-refuel_speed = null
 
 [node name="PassengerSpawnPoint" parent="." instance=ExtResource("38_v8pws")]
 position = Vector2(3362, -2620)

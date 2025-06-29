@@ -139,19 +139,26 @@ func _apply_action(act : DialogAction) -> void:
 		"finish_quest":     QuestSys.finish_quest( act.quest_id)
 
 		"start_animation":
-			if _current_interactable:
-		# 1) jeśli to stacja benzynowa → wołamy play_refuel_animation
-				if _current_interactable.has_method("play_refuel_animation"):
-					_current_interactable.play_refuel_animation(
-						act.anim_name,
-						max(1, act.loop_count)
-					)
-		# 2) w pozostałych przypadkach (np. QuestGiver) → stara metoda
-				elif _current_interactable.has_method("play_dialog_animation"):
-					_current_interactable.play_dialog_animation(
-						act.anim_name,
-						max(1, act.loop_count)
-					)
+				if _current_interactable:
+					# 1) jeśli to stacja benzynowa → wołamy play_refuel_animation
+							if _current_interactable.has_method("play_refuel_animation"):
+									_current_interactable.play_refuel_animation(
+											act.anim_name,
+											max(1, act.loop_count)
+									)
+					# 2) w pozostałych przypadkach (np. QuestGiver) → stara metoda
+							elif _current_interactable.has_method("play_dialog_animation"):
+									_current_interactable.play_dialog_animation(
+											act.anim_name,
+											max(1, act.loop_count)
+											)
+
+		"grant_vehicle_access":
+				if pc:
+						pc.add_vehicle_access(act.vehicle_id)
+		"revoke_vehicle_access":
+				if pc:
+						pc.remove_vehicle_access(act.vehicle_id)
 
 		"npc_text":
 			var branch := DialogData.new()

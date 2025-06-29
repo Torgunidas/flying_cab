@@ -316,6 +316,7 @@ animations = [{
 [node name="Car_yellow_cab" type="CharacterBody2D"]
 collision_mask = 5
 script = ExtResource("1_vhjpo")
+car_id = "yellow_cab"
 thrust_force = 220.0
 horizontal_thrust = 160.0
 max_climb_speed = 160.0
