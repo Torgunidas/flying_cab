@@ -18,6 +18,12 @@ signal vehicle_access_changed               # (emitter, added: bool, id: String)
 var _money: int       = 0
 var _initialized: bool = false           # ⇦ TA zmienna zapobiega ponownemu resetowi
 
+# ─────────────────────────────────────────────
+#  ZAPAMIĘTANE TRANSFORMY POJAZDÓW
+#  { "Level1": { "limo_123": {pos: Vector2, rot: float} } }
+# ─────────────────────────────────────────────
+var saved_vehicle_tf : Dictionary = {}
+
 # --- lifecycle -------------------------------------------------------------
 func _ready() -> void:
 	if not _initialized:                 # tylko przy pierwszym starcie
@@ -91,3 +97,21 @@ func revoke_vehicle(id: String, is_instance := false) -> void:
 
 func has_vehicle(id: String) -> bool:
 	return id in allowed_models or id in allowed_instances
+
+func save_vehicle_transform(level_name: String, car: Car) -> void:
+	if car == null:
+		return
+	if not saved_vehicle_tf.has(level_name):
+		saved_vehicle_tf[level_name] = {}
+	saved_vehicle_tf[level_name][car.instance_id] = {
+		"pos": car.global_position,
+		"rot": car.rotation
+	}
+
+func get_saved_transform(level_name: String, inst_id: String) -> Dictionary:
+	if saved_vehicle_tf.has(level_name):
+		return saved_vehicle_tf[level_name].get(inst_id, {})
+	return {}
+
+func clear_vehicle_transforms(level_name: String) -> void:
+	saved_vehicle_tf.erase(level_name)

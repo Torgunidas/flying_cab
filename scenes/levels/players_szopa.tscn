@@ -7,6 +7,9 @@
 
 [node name="PlayersHome" type="Node2D" groups=["interiors"]]
 script = ExtResource("1_5lfu7")
+gravity_force = null
+air_resistance = null
+player_spawn_position = null
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
 position = Vector2(0, 21)

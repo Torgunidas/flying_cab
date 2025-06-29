@@ -215,6 +215,10 @@ func exit_vehicle() -> void:
 	
 	emit_signal("exited_vehicle")
 	global_position = vehicle.global_position
+	GameState.save_vehicle_transform(
+	get_tree().current_scene.name,   # np. "Level1"
+	vehicle
+	)
 	show()
 
 func _apply_damage(dmg: int) -> void:
@@ -283,3 +287,6 @@ func remove_vehicle_access(id: String, is_instance := false) -> void:
 		return
 	GameState.revoke_vehicle(id, is_instance)
 		
+func _on_enter_building_door() -> void:
+	if in_vehicle and vehicle:
+		GameState.save_vehicle_transform(get_tree().current_scene.name, vehicle)

@@ -15,3 +15,12 @@ func _ready() -> void:
 	for passenger in get_tree().get_nodes_in_group("passangers_right"):
 		if passenger.has_node("AnimatedSprite2D"):
 			passenger.get_node("AnimatedSprite2D").flip_h = false
+			
+			# 2) ►►  ODTWÓRZ ZAPISANE POZYCJE POJAZDÓW  ◄◄
+	for car in get_tree().get_nodes_in_group("vehicles"):
+		if not (car is Car):
+			continue
+		var saved := GameState.get_saved_transform(name, car.instance_id)
+		if saved.size() > 0:
+			car.global_position = saved["pos"]
+			car.rotation       = saved["rot"]

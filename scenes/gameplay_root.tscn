@@ -29,6 +29,7 @@ script = ExtResource("3_hctk7")
 [node name="environment" type="Node2D" parent="."]
 
 [node name="world" parent="environment" instance=ExtResource("2_85ppi")]
+player_spawn_position = null
 
 [node name="GasStation" parent="environment/world" index="23"]
 price_per_10 = 5

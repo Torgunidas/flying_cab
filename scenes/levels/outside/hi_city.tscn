@@ -927,6 +927,9 @@ size = Vector2(26, 18)
 
 [node name="HiCity" type="Node2D"]
 script = ExtResource("1_u2gg1")
+gravity_force = null
+air_resistance = null
+player_spawn_position = null
 
 [node name="ParallaxBackground" type="ParallaxBackground" parent="."]
 
