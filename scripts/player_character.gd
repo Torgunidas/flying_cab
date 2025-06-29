@@ -1,7 +1,7 @@
 class_name PlayerCharacter
 extends CharacterBody2D
 
-signal entered_vehicle(vehicle_node: Node2D)
+signal entered_vehicle(vehicle: Car)
 signal exited_vehicle()
 signal money_changed(new_money: int)
 const SPEED := 120.0

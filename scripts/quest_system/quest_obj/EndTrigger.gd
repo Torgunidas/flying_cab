@@ -1,67 +1,63 @@
-# res://scripts/quest_system/EndTrigger.gd
 extends Area2D
 class_name EndTrigger
 
-# 1) ID questa
-@export var quest_id: String
-
-# 2) Ścieżka do sceny nagrody (jedna uniwersalna RewardBox.tscn)
-@export var reward_scene: PackedScene
-
-# 3) Tekstura, którą chcesz pokazać w tym triggerze
-@export var reward_texture: Texture
-
-# 4) Możesz przesunąć pozycję nagrody względem triggera
-@export var reward_offset: Vector2 = Vector2.ZERO
-
-# Jeśli niepusty, gracz lub pojazd o podanym ID musi wejść w trigger,
-# aby zaliczyć questa
-@export var required_car_id: String = ""
-
-# Decides if quest should be completed upon entering this trigger.
-# Useful when the trigger is only a map hint.
-@export var complete_on_enter: bool = true
-
-
+@export var quest_id           : String
+@export var reward_scene       : PackedScene
+@export var reward_texture     : Texture
+@export var reward_offset      : Vector2 = Vector2.ZERO
+@export var required_car_id    : String  = ""   # puste → wystarczy sam gracz
+@export var complete_on_enter  : bool    = true
 
 func _ready() -> void:
 	body_entered.connect(_on_enter)
 
-func _on_enter(body: Node) -> void:
+func _on_enter(body : Node) -> void:
 	var valid := false
-	if required_car_id == "":
-				valid = body.is_in_group("player")
-	else:
-			if body.has_variable("car_id") and body.car_id == required_car_id:
-						valid = true
-			elif body.is_in_group("player"):
-					var pc := body as PlayerCharacter
-					if pc.in_vehicle and pc.vehicle.has_variable("car_id") and pc.vehicle.car_id == required_car_id:
-							valid = true
-	if not valid:
-				return
-	if not complete_on_enter:
-				return
 
-	var q = QuestSys.get_quest(quest_id)
+	# ─────────────────────────────────────────────────────────────
+	# 1)  NIE wymagamy konkretnego auta – wystarczy gracz na piechotę
+	# ─────────────────────────────────────────────────────────────
+	if required_car_id == "":
+		valid = body.is_in_group("player")
+
+	# ─────────────────────────────────────────────────────────────
+	# 2)  WYMAGAMY wjazdu graczem w pojeździe o zadanym ID
+	# ─────────────────────────────────────────────────────────────
+	else:
+		# Trigger zwraca kolizję *samochodu* (PlayerCharacter ma wyłączoną kolizję
+		# albo jest ukryty), więc sprawdzamy czy:
+		#   a) to naprawdę Car o poprawnym ID i
+		#   b) siedzi w nim PlayerCharacter.
+		if body is Car:
+			var car := body as Car
+			if car.car_id == required_car_id:
+				var pc := get_tree().get_first_node_in_group("player") as PlayerCharacter
+				if pc and pc.in_vehicle and pc.vehicle == car:
+					valid = true
+
+	# ─────────────────────────────────────────────────────────────
+	# 3)  Reagujemy tylko, gdy warunek spełniony *i* flaga pozwala
+	# ─────────────────────────────────────────────────────────────
+	if not valid or not complete_on_enter:
+		return
+
+	_complete_quest_and_spawn_reward()
+
+
+# ==========  P R I V A T E  ==========
+
+func _complete_quest_and_spawn_reward() -> void:
+	var q := QuestSys.get_quest(quest_id)
 	if q and q.status == QuestData.Status.ACTIVE:
-				# ► ukończ questa
 		QuestSys.complete(quest_id)
 
-		# ► utwórz instancję RewardBox
 		if reward_scene:
-			var box = reward_scene.instantiate()
-
-			# 1) dodajemy do głównej sceny, by nie zniknęło po queue_free()
+			var box := reward_scene.instantiate()
 			get_tree().current_scene.add_child(box)
-
-			# 2) ustawiamy pozycję
 			box.global_position = global_position + reward_offset
 
-			# 3) podmieniamy teksturę Sprite2D
-			var spr = box.get_node("Sprite2D") as Sprite2D
+			var spr := box.get_node("Sprite2D") as Sprite2D
 			if spr and reward_texture:
 				spr.texture = reward_texture
 
-		# ► usuń trigger (box już w scenie)
-		queue_free()
+		queue_free()   # trigger spełniony → usuń
