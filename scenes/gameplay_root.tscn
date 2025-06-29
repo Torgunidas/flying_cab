@@ -29,6 +29,7 @@ script = ExtResource("3_hctk7")
 [node name="environment" type="Node2D" parent="."]
 
 [node name="world" parent="environment" instance=ExtResource("2_85ppi")]
+<<<<<<< Updated upstream
 
 [node name="GasStation" parent="environment/world" index="23"]
 price_per_10 = 5
@@ -41,6 +42,9 @@ refuel_speed = 150.0
 [node name="GasStation3" parent="environment/world" index="25"]
 price_per_10 = 5
 refuel_speed = 150.0
+=======
+player_spawn_position = Vector2(1400, -2271)
+>>>>>>> Stashed changes
 
 [node name="CameraController" type="Camera2D" parent="."]
 zoom = Vector2(3, 3)

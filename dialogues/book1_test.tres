@@ -23,6 +23,7 @@ quest_id = ""
 anim_name = ""
 loop_count = 1
 npc_text_id = ""
+vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_ytf3h"]
@@ -65,6 +66,7 @@ quest_id = ""
 anim_name = ""
 loop_count = 1
 npc_text_id = ""
+vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_l82rh"]
@@ -90,6 +92,7 @@ quest_id = "2"
 anim_name = ""
 loop_count = 1
 npc_text_id = ""
+vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_h6cwj"]
@@ -100,6 +103,7 @@ quest_id = ""
 anim_name = ""
 loop_count = 1
 npc_text_id = ""
+vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_4fye5"]
