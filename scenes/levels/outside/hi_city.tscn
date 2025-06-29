@@ -1,4 +1,4 @@
-[gd_scene load_steps=41 format=4 uid="uid://c6wgvur21jgyx"]
+[gd_scene load_steps=42 format=4 uid="uid://c6wgvur21jgyx"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_u2gg1"]
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="2_gqf4i"]
@@ -29,6 +29,7 @@
 [ext_resource type="Script" uid="uid://3t2u77lm7cv3" path="res://scripts/quest_system/quest_obj/EndTrigger.gd" id="26_dmnkx"]
 [ext_resource type="Script" uid="uid://llrlsy1152jv" path="res://scripts/quest_system/quest_obj/StartTrigger.gd" id="27_me7hm"]
 [ext_resource type="Texture2D" uid="uid://jussxd5bdvrv" path="res://Assets/Free Industrial Zone Tileset/3 Objects/Box1.png" id="28_7ob0h"]
+[ext_resource type="Script" uid="uid://cif7nxdplie2g" path="res://scripts/quest_system/quest_obj/EnterVehicleTrigger.gd" id="28_th6as"]
 [ext_resource type="PackedScene" uid="uid://dq3q4fnlfjrol" path="res://scenes/quest/RewardBox.tscn" id="29_l7kxo"]
 [ext_resource type="Texture2D" uid="uid://bcavvnbspcdew" path="res://Assets/Free Industrial Zone Tileset/3 Objects/Box8.png" id="30_th6as"]
 [ext_resource type="PackedScene" uid="uid://qacc8w3r5e7y" path="res://scenes/props/car_wash.tscn" id="31_7ob0h"]
@@ -2486,7 +2487,7 @@ shape = SubResource("RectangleShape2D_p8gsd")
 
 [node name="1_2_find_your_car" type="Area2D" parent="Quests" groups=["quest_goal"]]
 position = Vector2(-9592, -257)
-script = ExtResource("26_dmnkx")
+script = ExtResource("28_th6as")
 quest_id = "1_2_find_your_car"
 required_car_id = "yellow_cab"
 

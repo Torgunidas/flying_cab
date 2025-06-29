@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3 uid="uid://n2otckq3on0i"]
+
+[ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="1_wb0p7"]
+
+[resource]
+script = ExtResource("1_wb0p7")
+id = "1_3_go_to_carwash"
+title = "Go to carwash"
+description = "Clean your car"
+start_target = "quest_giver"
+objective = ""
+reward = 0
+next_quest_id = ""
+metadata/_custom_type_script = "uid://b0fshn7oxrpms"
