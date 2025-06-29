@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=4 uid="uid://c6wgvur21jgyx"]
+[gd_scene load_steps=40 format=4 uid="uid://c6wgvur21jgyx"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_u2gg1"]
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="2_gqf4i"]
@@ -30,8 +30,6 @@
 [ext_resource type="Script" uid="uid://llrlsy1152jv" path="res://scripts/quest_system/quest_obj/StartTrigger.gd" id="27_me7hm"]
 [ext_resource type="Texture2D" uid="uid://jussxd5bdvrv" path="res://Assets/Free Industrial Zone Tileset/3 Objects/Box1.png" id="28_7ob0h"]
 [ext_resource type="Script" uid="uid://cif7nxdplie2g" path="res://scripts/quest_system/quest_obj/EnterVehicleTrigger.gd" id="28_th6as"]
-[ext_resource type="PackedScene" uid="uid://dq3q4fnlfjrol" path="res://scenes/quest/RewardBox.tscn" id="29_l7kxo"]
-[ext_resource type="Texture2D" uid="uid://bcavvnbspcdew" path="res://Assets/Free Industrial Zone Tileset/3 Objects/Box8.png" id="30_th6as"]
 [ext_resource type="PackedScene" uid="uid://qacc8w3r5e7y" path="res://scenes/props/car_wash.tscn" id="31_7ob0h"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_umyuv"]
@@ -2479,8 +2477,6 @@ position = Vector2(0, -72)
 [node name="1_1 talk to maya" type="Area2D" parent="Quests" groups=["quest_goal"]]
 position = Vector2(-9360, -265)
 script = ExtResource("26_dmnkx")
-quest_id = "1_1_talk_to_maya"
-complete_on_enter = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/1_1 talk to maya"]
 shape = SubResource("RectangleShape2D_p8gsd")
@@ -2514,7 +2510,6 @@ shape = SubResource("RectangleShape2D_i0cx1")
 z_index = 1
 position = Vector2(-9293, -808)
 script = ExtResource("26_dmnkx")
-quest_id = "1"
 
 [node name="Sprite2D" type="Sprite2D" parent="Quests/deliver_patient_1/box_obj2"]
 texture = ExtResource("28_7ob0h")
@@ -2542,9 +2537,6 @@ shape = SubResource("RectangleShape2D_i0cx1")
 z_index = 1
 position = Vector2(-8951, -808)
 script = ExtResource("26_dmnkx")
-quest_id = "2"
-reward_scene = ExtResource("29_l7kxo")
-reward_texture = ExtResource("30_th6as")
 
 [node name="Sprite2D" type="Sprite2D" parent="Quests/bring_berries_2/box_obj2"]
 visible = false

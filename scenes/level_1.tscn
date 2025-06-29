@@ -1,4 +1,4 @@
-[gd_scene load_steps=46 format=4 uid="uid://b1w3en2rhgah7"]
+[gd_scene load_steps=44 format=4 uid="uid://b1w3en2rhgah7"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_5xbjy"]
 [ext_resource type="TileSet" uid="uid://bn0n8x6jgfyyw" path="res://Assets/TileSets/industrial.tres" id="2_tdlki"]
@@ -23,9 +23,7 @@
 [ext_resource type="Script" uid="uid://llrlsy1152jv" path="res://scripts/quest_system/quest_obj/StartTrigger.gd" id="23_wbtxt"]
 [ext_resource type="Script" uid="uid://3t2u77lm7cv3" path="res://scripts/quest_system/quest_obj/EndTrigger.gd" id="25_x2fux"]
 [ext_resource type="Texture2D" uid="uid://3wkpoohj3buh" path="res://Assets/market_street/2 Background/Night/3.png" id="26_k8ld0"]
-[ext_resource type="PackedScene" uid="uid://dq3q4fnlfjrol" path="res://scenes/quest/RewardBox.tscn" id="26_s7g0b"]
 [ext_resource type="Texture2D" uid="uid://cf8q6f5iedr54" path="res://Assets/market_street/2 Background/Night/5.png" id="27_mbb35"]
-[ext_resource type="Texture2D" uid="uid://bcavvnbspcdew" path="res://Assets/Free Industrial Zone Tileset/3 Objects/Box8.png" id="27_mmfjm"]
 [ext_resource type="Texture2D" uid="uid://dsv503fk0mayb" path="res://Assets/market_street/2 Background/Day/2.png" id="28_iw4em"]
 [ext_resource type="PackedScene" uid="uid://b3ou5t2ssjwfd" path="res://scenes/cars/car_new.tscn" id="29_iw4em"]
 [ext_resource type="PackedScene" uid="uid://bvk6c025h6onw" path="res://scenes/taxi_system_scenes/DeliveryPoint.tscn" id="29_mbb35"]
@@ -1061,7 +1059,6 @@ shape = SubResource("RectangleShape2D_tr1x6")
 z_index = 1
 position = Vector2(1338, -2273)
 script = ExtResource("25_x2fux")
-quest_id = "1"
 
 [node name="Sprite2D" type="Sprite2D" parent="quests/deliver_patient_1/box_obj2"]
 texture = ExtResource("23_d5akn")
@@ -1089,9 +1086,6 @@ shape = SubResource("RectangleShape2D_tr1x6")
 z_index = 1
 position = Vector2(1690, -2656)
 script = ExtResource("25_x2fux")
-quest_id = "2"
-reward_scene = ExtResource("26_s7g0b")
-reward_texture = ExtResource("27_mmfjm")
 
 [node name="Sprite2D" type="Sprite2D" parent="quests/bring_berries_2/box_obj2"]
 visible = false
@@ -1120,7 +1114,6 @@ shape = SubResource("RectangleShape2D_tr1x6")
 z_index = 1
 position = Vector2(4858, -1512)
 script = ExtResource("25_x2fux")
-quest_id = "3"
 
 [node name="skrzynka" type="Sprite2D" parent="quests/long_journey_3/box_obj2"]
 texture = ExtResource("23_d5akn")
