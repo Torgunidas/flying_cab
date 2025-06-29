@@ -1049,18 +1049,12 @@ position = Vector2(-3296, -1687)
 
 [node name="GasStation" parent="gas_stations" instance=ExtResource("10_nvfoa")]
 position = Vector2(4571, 327)
-price_per_10 = null
-refuel_speed = null
 
 [node name="GasStation2" parent="gas_stations" instance=ExtResource("10_nvfoa")]
 position = Vector2(3224, 326)
-price_per_10 = null
-refuel_speed = null
 
 [node name="GasStation3" parent="gas_stations" instance=ExtResource("10_nvfoa")]
 position = Vector2(4513, -93)
-price_per_10 = null
-refuel_speed = null
 
 [node name="architecture" type="Node2D" parent="."]
 
