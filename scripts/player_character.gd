@@ -51,15 +51,6 @@ func _ready() -> void:
 #	enter_vehicle()
 	update_hp_ui()
 	add_to_group("player")
-	# get_tree().connect("tree_exiting", Callable(self, "_save_vehicle_tf_if_needed"))
-	
-func _exit_tree() -> void:
-	_save_vehicle_tf_if_needed()
-
-func _save_vehicle_tf_if_needed() -> void:
-	if in_vehicle and vehicle:
-		var lvl := get_tree().current_scene.name   # np. "Level1"
-		GameState.save_vehicle_transform(lvl, vehicle)
 
 
 func _physics_process(delta: float) -> void:

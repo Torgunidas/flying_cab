@@ -15,7 +15,3 @@ func _ready() -> void:
 	for passenger in get_tree().get_nodes_in_group("passangers_right"):
 		if passenger.has_node("AnimatedSprite2D"):
 			passenger.get_node("AnimatedSprite2D").flip_h = false
-<<<<<<< Updated upstream
-=======
-			
->>>>>>> Stashed changes

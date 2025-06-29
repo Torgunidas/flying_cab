@@ -18,7 +18,6 @@ const SLIDE_V := 30.0     # px/s  – pionowe „osuwanie się”
 
 # Unikalny identyfikator auta wykorzystywany w questach
 @export var car_id: String = ""
-@export var instance_id : String = ""          # KONKRETNY egzemplarz
 # -----------------------
 # Parametry ruchu/fizyki
 # -----------------------
@@ -82,7 +81,6 @@ var _is_boosting: bool = false
 var _boost_timer: float = 2.0
 var _boost_dir: String = ""    # "horizontal" lub "vertical"
 @export var disembark_distance : float = 256.0   # ≤ tyle pikseli od celu
-
 
 
 # Dodatkowe do sterowania i flipowania
@@ -207,22 +205,6 @@ func _ready() -> void:
 		
 			# połącz timeout na start reload
 	death_timer.connect("timeout", Callable(self, "_on_death_timer_timeout"))
-	
-	# 1) zagwarantuj unikalne instance_id
-	if instance_id == "":
-		instance_id = "%s_%d" % [car_id, get_instance_id()]
-	add_to_group("vehicles")
-
-	# 2) ‼ po JEDNEJ klatce sprawdź, czy GameState ma zapis —
-	#    wtedy masz pewność, że *wszystkie* nody są w drzewie
-	call_deferred("_restore_transform")
-
-func _restore_transform() -> void:
-	var lvl := get_tree().current_scene.name
-	var data := GameState.get_saved_transform(lvl, instance_id)
-	if data.size() > 0:
-		global_position = data["pos"]
-		rotation        = data["rot"]
 
 func _process(_delta: float) -> void:
 	if not controls_enabled:

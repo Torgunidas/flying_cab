@@ -13,7 +13,6 @@ quest_id = ""
 anim_name = "dat_ass"
 loop_count = 8
 npc_text_id = ""
-vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_a1ffj"]
@@ -24,7 +23,6 @@ quest_id = ""
 anim_name = ""
 loop_count = 1
 npc_text_id = ""
-vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_6g6pg"]
