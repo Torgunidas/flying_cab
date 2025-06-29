@@ -6,6 +6,14 @@ var _selected_level : PackedScene = null
 
 signal money_changed(new_amount: int)
 
+# ——————————————————————————
+#  POJAZDY: model vs instancja
+# ——————————————————————————
+var allowed_models    : Array[String] = []     # „taxi”, „police_suv”...
+var allowed_instances : Array[String] = []     # „taxi_42”, „police_suv_A1”...
+
+signal vehicle_access_changed               # (emitter, added: bool, id: String)
+
 # --- pola wewnętrzne -------------------------------------------------------
 var _money: int       = 0
 var _initialized: bool = false           # ⇦ TA zmienna zapobiega ponownemu resetowi
@@ -52,3 +60,34 @@ func set_spawn_point_name(name: String) -> void:
 
 func get_spawn_point_name() -> String:
 	return _spawn_point_name
+
+func grant_vehicle(id: String, is_instance := false) -> void:
+	if id == "":
+		return
+
+	var list : Array[String]
+	if is_instance:
+		list = allowed_instances
+	else:
+		list = allowed_models
+
+	if id in list:
+		return
+	list.append(id)
+	emit_signal("vehicle_access_changed", true, id)
+
+
+func revoke_vehicle(id: String, is_instance := false) -> void:
+	var list : Array[String]
+	if is_instance:
+		list = allowed_instances
+	else:
+		list = allowed_models
+
+	if id in list:
+		list.erase(id)
+		emit_signal("vehicle_access_changed", false, id)
+
+
+func has_vehicle(id: String) -> bool:
+	return id in allowed_models or id in allowed_instances

@@ -27,7 +27,7 @@ var _was_on_floor: bool   = true
 var vehicle: Car = null
 var in_vehicle: bool         = false
 var controls_enabled: bool   = true
-var allowed_car_ids: Array[String] = []   # identyfikatory pojazdów, do których gracz ma dostęp
+var allowed_car_ids: Array[String] = ["yellow_cab"]   # identyfikatory pojazdów, do których gracz ma dostęp
 
 # Flagi śmierci i lądowania
 var _player_dead: bool        = false
@@ -269,13 +269,17 @@ func update_hp_ui() -> void:
 #  Obsługa uprawnień do pojazdów
 # -----------------------------------------------------------------
 func can_use_vehicle_id(id: String) -> bool:
-		return id == "" or id in allowed_car_ids
+	return id == "" or GameState.has_vehicle(id)
 
-func add_vehicle_access(id: String) -> void:
-		if id != "" and id not in allowed_car_ids:
-				allowed_car_ids.append(id)
+func add_vehicle_access(id: String, is_instance := false) -> void:
+	id = id.strip_edges()
+	if id == "":
+		return
+	GameState.grant_vehicle(id, is_instance)
 
-func remove_vehicle_access(id: String) -> void:
-		if id in allowed_car_ids:
-				allowed_car_ids.erase(id)
+func remove_vehicle_access(id: String, is_instance := false) -> void:
+	id = id.strip_edges()
+	if id == "":
+		return
+	GameState.revoke_vehicle(id, is_instance)
 		
