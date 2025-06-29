@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogBook" load_steps=25 format=3 uid="uid://qshud65a7kqq"]
+[gd_resource type="Resource" script_class="DialogBook" load_steps=23 format=3 uid="uid://qshud65a7kqq"]
 
 [ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_upblg"]
 [ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_l7org"]
@@ -25,39 +25,18 @@ metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_qckf5"]
 script = ExtResource("3_xjnsa")
-type = "grant_vehicle_access"
+type = "close"
 amount = 0
 quest_id = ""
 anim_name = ""
 loop_count = 1
 npc_text_id = ""
-vehicle_id = "yellow_cab"
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_1w67r"]
 script = ExtResource("2_l7org")
-text = "Dawaj kurwo klucze do grata"
+text = "Test akcji"
 actions = Array[ExtResource("3_xjnsa")]([SubResource("Resource_qckf5")])
-goto_page = -1
-requirements = Array[ExtResource("4_2jftd")]([])
-show_if_unavailable = true
-metadata/_custom_type_script = "uid://enivet37mn8j"
-
-[sub_resource type="Resource" id="Resource_p4lck"]
-script = ExtResource("3_xjnsa")
-type = "revoke_vehicle_access"
-amount = 0
-quest_id = ""
-anim_name = ""
-loop_count = 1
-npc_text_id = ""
-vehicle_id = "yellow_cab"
-metadata/_custom_type_script = "uid://cke3kl33pylr5"
-
-[sub_resource type="Resource" id="Resource_g6ne0"]
-script = ExtResource("2_l7org")
-text = "Najebałem się. Schowaj kluczyki do yellow_cab"
-actions = Array[ExtResource("3_xjnsa")]([SubResource("Resource_p4lck")])
 goto_page = -1
 requirements = Array[ExtResource("4_2jftd")]([])
 show_if_unavailable = true
@@ -66,7 +45,7 @@ metadata/_custom_type_script = "uid://enivet37mn8j"
 [sub_resource type="Resource" id="Resource_acon4"]
 script = ExtResource("1_upblg")
 npc_text = "Hi, brother."
-answers = Array[ExtResource("2_l7org")]([SubResource("Resource_x5eyt"), SubResource("Resource_1w67r"), SubResource("Resource_g6ne0")])
+answers = Array[ExtResource("2_l7org")]([SubResource("Resource_x5eyt"), SubResource("Resource_1w67r")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
 [sub_resource type="Resource" id="Resource_xjnsa"]
@@ -122,7 +101,6 @@ quest_id = ""
 anim_name = ""
 loop_count = 1
 npc_text_id = ""
-vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_m80b5"]
@@ -133,7 +111,6 @@ quest_id = "1_2_find_your_car"
 anim_name = ""
 loop_count = 1
 npc_text_id = ""
-vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_8c70r"]
@@ -144,7 +121,6 @@ quest_id = "1_1_talk_to_maya"
 anim_name = ""
 loop_count = 1
 npc_text_id = ""
-vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_b8fjn"]
