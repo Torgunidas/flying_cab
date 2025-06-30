@@ -1,24 +1,40 @@
-[gd_scene load_steps=3 format=3 uid="uid://c7rrgbgxhbwfl"]
+[gd_scene load_steps=4 format=3 uid="uid://c7rrgbgxhbwfl"]
 
 [ext_resource type="Script" uid="uid://bbhl7fiaboime" path="res://scripts/ui_logic/MessageSys.gd" id="1_fczim"]
+[ext_resource type="FontFile" uid="uid://bi7srqvr2p0ft" path="res://Assets/fonts/CyberpunkCraftpixPixel.otf" id="2_5nw2a"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_k0bpp"]
-font_size = 40
+font = ExtResource("2_5nw2a")
+font_size = 50
+font_color = Color(0.662745, 0.0431373, 0, 1)
 
 [node name="SystemMessageUI" type="CanvasLayer"]
 script = ExtResource("1_fczim")
 
 [node name="Panel" type="Panel" parent="."]
+visible = false
+z_index = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 3.0
+offset_top = 170.0
+offset_right = -2.0
+offset_bottom = -1076.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Label" type="Label" parent="Panel"]
-layout_mode = 2
+z_index = 11
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -11.0
+offset_top = 155.0
+offset_right = 1.0
+offset_bottom = -146.0
+text = "TEST"
 label_settings = SubResource("LabelSettings_k0bpp")
 horizontal_alignment = 1
 vertical_alignment = 1
