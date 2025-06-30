@@ -1033,6 +1033,9 @@ current_fuel = 400.0
 [node name="entrances" type="Node2D" parent="."]
 position = Vector2(-8192, -487)
 
+[node name="Door_fancy_inactive2" parent="entrances" instance=ExtResource("16_l7kxo")]
+position = Vector2(209, -880)
+
 [node name="Door_home" parent="entrances" groups=["quest_goal"] instance=ExtResource("16_iumgf")]
 z_index = -1
 position = Vector2(-1167, 207)
@@ -1044,6 +1047,9 @@ position = Vector2(-3, 11)
 
 [node name="Door_fancy_inactive" parent="entrances" instance=ExtResource("16_l7kxo")]
 position = Vector2(-1008, 206)
+
+[node name="Door_fancy_inactive3" parent="entrances" instance=ExtResource("16_l7kxo")]
+position = Vector2(2101, -880)
 
 [node name="gas_stations" type="Node2D" parent="."]
 position = Vector2(-3296, -1687)
@@ -2553,8 +2559,28 @@ position = Vector2(-5783, -1365)
 [node name="GasStation" parent="." instance=ExtResource("10_nvfoa")]
 position = Vector2(-8198, -1343)
 
+[node name="delivey_car_wash" type="Node2D" parent="."]
+position = Vector2(-6008, -1343)
+
+[node name="DeliveryPoint" parent="delivey_car_wash" instance=ExtResource("23_qobc6")]
+
+[node name="PassengerWaypoint" parent="delivey_car_wash/DeliveryPoint" index="2"]
+position = Vector2(-88, 0)
+
+[node name="PassengerSpawnPoint" parent="." instance=ExtResource("21_s5ica")]
+position = Vector2(-7985, -1354)
+delivery_groups = Array[NodePath]([NodePath("../delivey_car_wash")])
+
+[node name="Waypoint" parent="PassengerSpawnPoint" index="1"]
+position = Vector2(-56, 0)
+
+[node name="SpawnTimer" parent="PassengerSpawnPoint" index="2"]
+wait_time = 10.0
+
 [connection signal="body_entered" from="DeathBoundary" to="." method="_on_death_boundary_body_entered"]
 
 [editable path="passangers_E/PassengerSpawnPoint"]
 [editable path="npc_cars/car_npc"]
 [editable path="npc_cars/car_npc2"]
+[editable path="delivey_car_wash/DeliveryPoint"]
+[editable path="PassengerSpawnPoint"]
