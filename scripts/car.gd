@@ -43,8 +43,9 @@ var current_hp: int = 300
 # -----------------------
 # Parametry paliwa
 # -----------------------
-@export var max_fuel: float = 2000.0
-var current_fuel: float = 2000.0
+@export var max_fuel: float = 2000.0               # pojemność baku
+@export_range(0.0, 2000.0, 1.0)
+var current_fuel: float = 2000.0                   # faktyczne paliwo – teraz widoczne w Inspectorze
 @export var fuel_consumption_rate_up: float = 0.1
 @export var fuel_consumption_rate_lr: float = 0.05
 @export var fuel_regeneration_rate: float = 20
@@ -189,7 +190,7 @@ func _ready() -> void:
 	add_to_group("interactables")
 
 	current_hp = max_hp
-	current_fuel = max_fuel
+	current_fuel = clamp(current_fuel, 0.0, max_fuel)   # zachowuje to, co wpiszesz w Inspectorze
 
 		# Domyślnie wyłącz sterowanie
 	controls_enabled = false

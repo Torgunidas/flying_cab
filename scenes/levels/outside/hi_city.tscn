@@ -1028,6 +1028,7 @@ taxi_marker_scene = ExtResource("23_q242y")
 
 [node name="Car_yellow_cab" parent="cars" instance=ExtResource("24_q242y")]
 position = Vector2(-9594, -263)
+current_fuel = 400.0
 
 [node name="entrances" type="Node2D" parent="."]
 position = Vector2(-8192, -487)
@@ -2548,6 +2549,9 @@ shape = SubResource("RectangleShape2D_i0cx1")
 
 [node name="CarWash" parent="." instance=ExtResource("31_7ob0h")]
 position = Vector2(-5783, -1365)
+
+[node name="GasStation" parent="." instance=ExtResource("10_nvfoa")]
+position = Vector2(-8198, -1343)
 
 [connection signal="body_entered" from="DeathBoundary" to="." method="_on_death_boundary_body_entered"]
 
