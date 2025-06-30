@@ -1,34 +1,38 @@
 extends CanvasLayer
 class_name MessageSys
 
-# Prosty system do wyświetlania krótkich komunikatów na środku ekranu.
-
+# Czas domyślny (sekundy)
 @export var default_time: float = 2.0
 
-@onready var label: Label = $Panel/Label
+@onready var panel: Panel = $SysMessagePanel      # Panel z ramką
+@onready var label: Label = %SysMessage           # Label wewnątrz panelu
 
-var _queue: Array = []
-var _timer: Timer
+var _queue: Array = []        # Kolejka komunikatów
+var _timer: Timer             # Jednorazowy timer
 
 func _ready() -> void:
-	label.visible = false
+	panel.visible = false     # Ukrywamy wszystko na starcie
 	_timer = Timer.new()
 	_timer.one_shot = true
 	add_child(_timer)
 	_timer.timeout.connect(_show_next)
 
 func show_message(text: String, duration: float = -1.0) -> void:
-	var t = duration if duration > 0.0 else default_time
-	_queue.append({"text": text, "time": t})
-	if label.visible:
+	# Jeżeli nie podano czasu, użyj default_time
+	var t := duration if duration > 0.0 else default_time
+	_queue.push_back({"text": text, "time": t})
+	# Jeśli panel jest już widoczny, poczekaj aż zniknie
+	if panel.visible:
 		return
 	_show_next()
 
 func _show_next() -> void:
+	# Brak kolejnych wiadomości – chowamy panel
 	if _queue.is_empty():
-		label.visible = false
+		panel.visible = false
 		return
+
 	var msg = _queue.pop_front()
 	label.text = msg["text"]
-	label.visible = true
-	_timer.start(msg["time"])
+	panel.visible = true          # Pokazujemy panel (label pokaże się automatycznie)
+	_timer.start(msg["time"])     # Odliczamy czas wyświetlania
