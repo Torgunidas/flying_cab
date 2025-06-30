@@ -5,6 +5,8 @@ extends Node               # ⇦ NIE dawaj tutaj `class_name`
 var _selected_level : PackedScene = null
 
 signal money_changed(new_amount: int)
+signal maya_timer_updated(seconds_left: int)
+signal maya_time_expired
 
 # ——————————————————————————
 #  POJAZDY: model vs instancja
@@ -17,15 +19,25 @@ signal vehicle_access_changed               # (emitter, added: bool, id: String)
 # --- pola wewnętrzne -------------------------------------------------------
 var _money: int       = 0
 var _initialized: bool = false           # ⇦ TA zmienna zapobiega ponownemu resetowi
+var _maya_timer: Timer
+var _maya_seconds_left: int = 0
+@export var maya_timer_minutes: int = 20
+var _maya_timer_active: bool = false
 
 # --- lifecycle -------------------------------------------------------------
 func _ready() -> void:
 	if not _initialized:                 # tylko przy pierwszym starcie
-		_money       = starting_money
-		_initialized = true
-		print("[GS _ready] init =", _money)
+			_money       = starting_money
+			_initialized = true
+			print("[GS _ready] init =", _money)
+			_maya_timer = Timer.new()
+			_maya_timer.wait_time = 1.0
+			_maya_timer.one_shot = false
+			_maya_timer.autostart = false
+			add_child(_maya_timer)
+			_maya_timer.timeout.connect(_on_maya_timer_tick)
 	else:
-		print("[GS _ready] hot-reload, saldo zostaje =", _money)
+			print("[GS _ready] hot-reload, saldo zostaje =", _money)
 
 	emit_signal("money_changed", _money)
 
@@ -91,3 +103,31 @@ func revoke_vehicle(id: String, is_instance := false) -> void:
 
 func has_vehicle(id: String) -> bool:
 	return id in allowed_models or id in allowed_instances
+
+# --- MAYA GLOBAL TIMER -----------------------------------------------------
+func start_maya_timer(minutes := maya_timer_minutes) -> void:
+		if _maya_timer_active:
+				return
+		_maya_seconds_left = minutes * 60
+		_maya_timer.start()
+		_maya_timer_active = true
+		emit_signal("maya_timer_updated", _maya_seconds_left)
+
+func stop_maya_timer() -> void:
+		if not _maya_timer_active:
+				return
+		_maya_timer.stop()
+		_maya_timer_active = false
+
+func get_maya_seconds_left() -> int:
+		return _maya_seconds_left
+
+func _on_maya_timer_tick() -> void:
+		if not _maya_timer_active:
+				return
+		_maya_seconds_left -= 1
+		emit_signal("maya_timer_updated", _maya_seconds_left)
+		if _maya_seconds_left <= 0:
+				_maya_timer.stop()
+				_maya_timer_active = false
+				emit_signal("maya_time_expired")

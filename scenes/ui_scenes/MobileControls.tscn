@@ -68,7 +68,6 @@ enter_button_path = NodePath("MainControl/BottomContainer/ButtonRow/enter_button
 maya_time_label_path = NodePath("MainControl/Buttony_top/maya_time/show_maya_time")
 death_screen_path = NodePath("MainControl/death_screen")
 retry_button_path = NodePath("MainControl/death_screen/retry_button")
-timer_minutes = 10
 
 [node name="MainControl" type="Control" parent="."]
 layout_mode = 3

@@ -13,7 +13,6 @@ class_name MobileControls      # ← pozwala w Inspektorze widzieć klasę
 @export var maya_time_label_path : NodePath    # Label z minutami gry
 @export var death_screen_path    : NodePath    # VBox z ekranem śmierci
 @export var retry_button_path    : NodePath    # Przycisk restartu gry
-@export var timer_minutes        : int = 5     # Startowy czas gry (minuty)
 
 # ───────────────────────── 2. ON-READY REFERENCJE ─────────────────────
 @onready var hp_label      : Label   = get_node_or_null(hp_label_path)
@@ -28,8 +27,10 @@ class_name MobileControls      # ← pozwala w Inspektorze widzieć klasę
 @onready var death_screen      : Control = get_node_or_null(death_screen_path)
 @onready var retry_button      : Button  = get_node_or_null(retry_button_path)
 
+
 var _countdown_timer : Timer
 var _seconds_left : int = 0
+
 
 # ───────────────────────────── 3. READY ───────────────────────────────
 func _ready() -> void:
@@ -41,19 +42,23 @@ func _ready() -> void:
 			death_screen.visible = false
 	if retry_button:
 			retry_button.pressed.connect(_on_retry_pressed)
-	_start_timer()
 
 	# ① spróbuj pobrać autoload o nazwie „GameState”
 	var gs : Node = get_node_or_null("/root/GameState")
 
 	# ② jeśli był nazwany inaczej – wypisz ostrzeżenie
 	if gs == null:
-		push_warning("Nie znaleziono autoloadu 'GameState' w /root/ – sprawdź nazwę w Project Settings → Autoload.")
-		return
+				push_warning("Nie znaleziono autoloadu 'GameState' w /root/ – sprawdź nazwę w Project Settings → Autoload.")
+				return
 
 	# ③ od razu pokaż saldo i podłącz się pod sygnał
 	update_money_display(gs.get_money())
-	gs.money_changed.connect(update_money_display)   # ← bez self., bo to Callable w Godot 4
+	gs.money_changed.connect(update_money_display)
+
+	_seconds_left = gs.get_maya_seconds_left()
+	_update_maya_time_display()
+	gs.maya_timer_updated.connect(_on_maya_timer_updated)
+	gs.maya_time_expired.connect(_on_time_expired)
 
 
 # ───────────────────────── 4. PUBLICZNE METODY HUD ────────────────────
@@ -78,26 +83,13 @@ func set_enter_visible(visible: bool) -> void:
 	if enter_button:
 				enter_button.visible = visible
 
-func _start_timer() -> void:
-		_seconds_left = timer_minutes * 60
-		_update_maya_time_display()
-		_countdown_timer = Timer.new()
-		_countdown_timer.wait_time = 1.0
-		_countdown_timer.autostart = true
-		_countdown_timer.one_shot = false
-		add_child(_countdown_timer)
-		_countdown_timer.timeout.connect(_on_timer_tick)
-
-func _on_timer_tick() -> void:
-		_seconds_left -= 1
-		_update_maya_time_display()
-		if _seconds_left <= 0:
-				_countdown_timer.stop()
-				_on_time_expired()
-
 func _update_maya_time_display() -> void:
 		if maya_time_label:
-				maya_time_label.text = str(int(_seconds_left / 60))
+					maya_time_label.text = str(int(_seconds_left / 60))
+
+func _on_maya_timer_updated(secs: int) -> void:
+		_seconds_left = secs
+		_update_maya_time_display()
 
 func _on_time_expired() -> void:
 	if death_screen:
@@ -106,8 +98,11 @@ func _on_time_expired() -> void:
 
 func _on_retry_pressed() -> void:
 	if death_screen:
-		death_screen.visible = false
+				death_screen.visible = false
 	get_tree().paused = false
+	var gs : Node = get_node_or_null("/root/GameState")
+	if gs:
+				gs.stop_maya_timer()
 	get_tree().change_scene_to_file("res://scenes/ui_scenes/MainMenu.tscn")
 
 # ───────────────────────── 5. PRZEŁĄCZANIE TRYBU ─────────────────────
