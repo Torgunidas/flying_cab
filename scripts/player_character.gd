@@ -160,6 +160,7 @@ func enter_vehicle(target_vehicle: Car = null) -> void:
 
 	# 2) autoryzacja
 	if not can_use_vehicle_id(veh.car_id):
+		MessageSystem.show_message("Car not authorized")
 		print("Car not authorized")
 		return
 
@@ -270,6 +271,7 @@ func update_hp_ui() -> void:
 # -----------------------------------------------------------------
 func can_use_vehicle_id(id: String) -> bool:
 		return id == "" or GameState.has_vehicle(id)
+
 
 func add_vehicle_access(id: String, is_instance := false) -> void:
 	id = id.strip_edges()

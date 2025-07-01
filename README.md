@@ -37,6 +37,7 @@ Najważniejsze skrypty:
 - `QuestSys.gd` – zarządza misjami/questami
 - `car_neo.gd` – model pojazdu/taksówki
 - `ui_logic/` – logika menu, dialogów, mapy i innych elementów interfejsu
+- `MessageSys.gd` – wyświetla krótkie komunikaty na środku ekranu
 
 Autoloady definiowane są w `project.godot` (GameState, QuestSys, QuestLog itp.).
 

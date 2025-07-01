@@ -7,11 +7,15 @@ extends Node2D
 
 func _ready() -> void:
 	# 1) Dla grupy "passangers_left" – flip_h = true
+	#1) Dla grupy "passangers_left" – flip_h = true
 	for passenger in get_tree().get_nodes_in_group("passangers_left"):
-		if passenger.has_node("AnimatedSprite2D"):
-			passenger.get_node("AnimatedSprite2D").flip_h = true
+				if passenger.has_node("AnimatedSprite2D"):
+						passenger.get_node("AnimatedSprite2D").flip_h = true
 
 	# 2) Dla grupy "passangers_right" – flip_h = false (domyślnie)
 	for passenger in get_tree().get_nodes_in_group("passangers_right"):
-		if passenger.has_node("AnimatedSprite2D"):
-			passenger.get_node("AnimatedSprite2D").flip_h = false
+				if passenger.has_node("AnimatedSprite2D"):
+						passenger.get_node("AnimatedSprite2D").flip_h = false
+
+	if get_name() == "HiCity":
+				GameState.start_maya_timer()
