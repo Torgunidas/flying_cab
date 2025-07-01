@@ -10,5 +10,5 @@ description = "Clean your car"
 start_target = "quest_giver"
 objective = ""
 reward = 0
-next_quest_id = ""
+next_quest_id = "1_4_fill_her_up"
 metadata/_custom_type_script = "uid://b0fshn7oxrpms"

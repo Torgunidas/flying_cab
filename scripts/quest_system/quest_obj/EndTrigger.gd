@@ -6,6 +6,7 @@ class_name EndTrigger
 @export var reward_texture     : Texture
 @export var reward_offset      : Vector2 = Vector2.ZERO
 @export var required_car_id    : String  = ""   # puste → wystarczy sam gracz
+@export_range(0.0, 100.0, 1.0) var min_fuel_percent : float = -1.0   # <0 → brak wymogu
 @export var complete_on_enter  : bool    = true
 
 func _ready() -> void:
@@ -40,6 +41,19 @@ func _on_enter(body : Node) -> void:
 	# ─────────────────────────────────────────────────────────────
 	if not valid or not complete_on_enter:
 		return
+		
+	if min_fuel_percent >= 0.0:
+		var pc := get_tree().get_first_node_in_group("player") as PlayerCharacter
+		if pc and pc.in_vehicle and pc.vehicle:
+			var car := pc.vehicle
+			if car.max_fuel > 0.0:
+				var percent := 100.0 * car.current_fuel / car.max_fuel
+				if percent < min_fuel_percent:
+					return
+			else:
+				return
+		else:
+			return
 
 	_complete_quest_and_spawn_reward()
 
