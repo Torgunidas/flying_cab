@@ -2506,7 +2506,6 @@ shape = SubResource("RectangleShape2D_p8gsd")
 position = Vector2(-5769, -1347)
 script = ExtResource("29_l7kxo")
 quest_id = "1_3_go_to_carwash"
-fuel_threshold_percent = 20.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/1_3_go_to_carwash"]
 shape = SubResource("RectangleShape2D_p8gsd")
@@ -2515,6 +2514,8 @@ shape = SubResource("RectangleShape2D_p8gsd")
 position = Vector2(-8248, -1331)
 script = ExtResource("29_l7kxo")
 quest_id = "1_4_fill_her_up"
+threshold_percent = 100.0
+relation = "="
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/1_4_fill_her_up"]
 position = Vector2(1, 0)

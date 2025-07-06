@@ -14,25 +14,32 @@ script = ExtResource("1_3dwls")
 pointer_scene = ExtResource("2_2ol4c")
 
 [node name="Panel" type="Panel" parent="."]
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 6.0
+offset_top = 383.0
+offset_right = 318.0
+offset_bottom = 452.0
 
 [node name="VBox" type="VBoxContainer" parent="Panel"]
+custom_minimum_size = Vector2(200, 10)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 8.0
-offset_top = 449.0
-offset_right = 139.0
-offset_bottom = 478.0
+offset_left = -82.0
+offset_top = 10.0
+offset_right = 78.0
+offset_bottom = 44.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="TitleLabel" type="Label" parent="Panel/VBox"]
+custom_minimum_size = Vector2(200, 20)
 layout_mode = 2
 text = "Your goal:"
 label_settings = SubResource("LabelSettings_3dwls")
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
 
 [node name="ObjectiveLabel" type="Label" parent="Panel/VBox"]
 layout_mode = 2

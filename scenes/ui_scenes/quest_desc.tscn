@@ -16,8 +16,10 @@ offset_bottom = 40.0
 
 [node name="Content" type="VBoxContainer" parent="Description"]
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 60.0
+offset_top = 3.0
+offset_right = 370.0
+offset_bottom = 77.0
 
 [node name="Quest_name" type="Label" parent="Description/Content"]
 layout_mode = 2
