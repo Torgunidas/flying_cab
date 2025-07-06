@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="QuestLibrary" load_steps=10 format=3 uid="uid://cq6ruw3141dqn"]
+[gd_resource type="Resource" script_class="QuestLibrary" load_steps=12 format=3 uid="uid://cq6ruw3141dqn"]
 
 [ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="1_a5q7q"]
 [ext_resource type="Resource" uid="uid://e47f7juk5vxf" path="res://scripts/quests/main_story/1_1_talk_to_maya.tres" id="2_k5ioe"]
@@ -9,8 +9,10 @@
 [ext_resource type="Resource" uid="uid://ck2u2egic02ex" path="res://scripts/quests/long_journey.tres" id="6_gqe43"]
 [ext_resource type="Resource" uid="uid://n2otckq3on0i" path="res://scripts/quests/main_story/1_3_go_to_carwash.tres" id="7_kw6jk"]
 [ext_resource type="Resource" uid="uid://bsg12eqg56xdr" path="res://scripts/quests/main_story/1_4_fill_her_up.tres" id="8_tpeyx"]
+[ext_resource type="Resource" uid="uid://3t0kaajt7nv8" path="res://scripts/quests/main_story/1_5_continue_to_carwash.tres" id="9_gqe43"]
+[ext_resource type="Resource" uid="uid://x7ukk7vxue0" path="res://scripts/quests/main_story/1_6_speak_with_Froggy.tres" id="10_qig1b"]
 
 [resource]
 script = ExtResource("4_cu83m")
-quests = Array[ExtResource("1_a5q7q")]([ExtResource("2_k5ioe"), ExtResource("3_kw6jk"), ExtResource("4_tpeyx"), ExtResource("5_gjmnp"), ExtResource("6_gqe43"), ExtResource("7_kw6jk"), ExtResource("8_tpeyx")])
+quests = Array[ExtResource("1_a5q7q")]([ExtResource("2_k5ioe"), ExtResource("3_kw6jk"), ExtResource("4_tpeyx"), ExtResource("5_gjmnp"), ExtResource("6_gqe43"), ExtResource("7_kw6jk"), ExtResource("8_tpeyx"), ExtResource("9_gqe43"), ExtResource("10_qig1b")])
 metadata/_custom_type_script = "uid://cq5o5143xcblq"

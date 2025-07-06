@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://cuoulglqmx533"]
+[gd_scene load_steps=12 format=3 uid="uid://cuoulglqmx533"]
 
 [ext_resource type="Script" uid="uid://cjoc18yxp4ndw" path="res://scripts/quest_system/QuestSys.gd" id="1_a7boj"]
 [ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="2_fu2d4"]
@@ -9,7 +9,9 @@
 [ext_resource type="Resource" uid="uid://chymtmhl82qwi" path="res://scripts/quests/main_story/1_2_find_your_car.tres" id="7_usihm"]
 [ext_resource type="Resource" uid="uid://n2otckq3on0i" path="res://scripts/quests/main_story/1_3_go_to_carwash.tres" id="8_usihm"]
 [ext_resource type="Resource" uid="uid://bsg12eqg56xdr" path="res://scripts/quests/main_story/1_4_fill_her_up.tres" id="9_kgnnl"]
+[ext_resource type="Resource" uid="uid://3t0kaajt7nv8" path="res://scripts/quests/main_story/1_5_continue_to_carwash.tres" id="10_ku236"]
+[ext_resource type="Resource" uid="uid://x7ukk7vxue0" path="res://scripts/quests/main_story/1_6_speak_with_Froggy.tres" id="11_5bwdy"]
 
 [node name="QuestSysRoot" type="Node"]
 script = ExtResource("1_a7boj")
-quests = Array[ExtResource("2_fu2d4")]([ExtResource("3_gd0j4"), ExtResource("4_dan3w"), ExtResource("5_gd0j4"), ExtResource("6_x47m3"), ExtResource("7_usihm"), ExtResource("8_usihm"), ExtResource("9_kgnnl")])
+quests = Array[ExtResource("2_fu2d4")]([ExtResource("3_gd0j4"), ExtResource("4_dan3w"), ExtResource("5_gd0j4"), ExtResource("6_x47m3"), ExtResource("7_usihm"), ExtResource("8_usihm"), ExtResource("9_kgnnl"), ExtResource("10_ku236"), ExtResource("11_5bwdy")])

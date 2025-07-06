@@ -38,6 +38,8 @@ var _dead_has_landed: bool    = false
 @onready var character_anim := $character_anim as AnimatedSprite2D
 @onready var char_collision := $CollisionShape2D as CollisionShape2D
 
+func _enter_tree() -> void: add_to_group("player")
+
 func _ready() -> void:
 	print("Global pause object =", typeof(pauza))   # musi wypisać 17 (OBJECT)
 	add_to_group("player")

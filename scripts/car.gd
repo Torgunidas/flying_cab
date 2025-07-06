@@ -108,6 +108,9 @@ var _door_opened: bool = false
 @onready var rc_front: RayCast2D = $car_body/PivotCheck_front
 @onready var rc_rear : RayCast2D = $car_body/PivotCheck_rear
 
+signal fuel_percent_changed(percent: float)
+var _prev_fuel_pct: float = -1.0       # pamiętamy ostatnią wartość
+
 
 # --- Control & state flags ------------------------------------------
 var player_input_enabled : bool = true       # ◆ NOWE
@@ -278,6 +281,14 @@ func _physics_process(delta: float) -> void:
 		_apply_horizontal_thrust(delta, _level.air_resistance)
 	else:
 		velocity.x = lerp(velocity.x, 0.0, _level.air_resistance * delta)
+			# zakładam, że current_fuel maleje gdzieś wcześniej w tym samym _physics_process
+	if max_fuel <= 0.0:
+		return                         # brak zbiornika? pomijamy
+	var pct := 100.0 * current_fuel / max_fuel
+	# emitujemy sygnał tylko, gdy realnie się zmieniło (histereza 0.1 %)
+	if abs(pct - _prev_fuel_pct) >= 0.1:
+		_prev_fuel_pct = pct
+		emit_signal("fuel_percent_changed", pct)
 
 	_apply_soft_ceiling(delta)
 	move_and_slide()

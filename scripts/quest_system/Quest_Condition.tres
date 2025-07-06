@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="QuestCondition" load_steps=2 format=3 uid="uid://cjg1d402qdvfv"]
+
+[ext_resource type="Script" uid="uid://dfdnefdfbi1ch" path="res://scripts/quest_system/quest_obj/QuestCondition.gd" id="1_235ur"]
+
+[resource]
+script = ExtResource("1_235ur")
+metadata/_custom_type_script = "uid://dfdnefdfbi1ch"

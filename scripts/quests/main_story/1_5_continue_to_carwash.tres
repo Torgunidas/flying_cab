@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3 uid="uid://3t0kaajt7nv8"]
+
+[ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="1_orvlt"]
+
+[resource]
+script = ExtResource("1_orvlt")
+id = "1_5_continue_to_carwash"
+title = "Now go to carwash"
+description = "Clean your car"
+start_target = "quest_giver"
+objective = ""
+reward = 0
+next_quest_id = "1_6_speak_with_Froggy"
+metadata/_custom_type_script = "uid://b0fshn7oxrpms"

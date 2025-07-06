@@ -10,5 +10,5 @@ description = "Your fuel is almost gone. Fill her up"
 start_target = "quest_giver"
 objective = ""
 reward = 0
-next_quest_id = ""
+next_quest_id = "1_5_continue_to_carwash"
 metadata/_custom_type_script = "uid://b0fshn7oxrpms"

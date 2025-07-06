@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3 uid="uid://x7ukk7vxue0"]
+
+[ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="1_xv0ry"]
+
+[resource]
+script = ExtResource("1_xv0ry")
+id = "1_6_speak_with_Froggy"
+title = "Speak to Froggy"
+description = "Froggy has a substance for Maya"
+start_target = "quest_giver"
+objective = ""
+reward = 0
+next_quest_id = "1_4_fill_her_up"
+metadata/_custom_type_script = "uid://b0fshn7oxrpms"
