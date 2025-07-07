@@ -19,3 +19,4 @@ func _ready() -> void:
 
 	if get_name() == "HiCity":
 				GameState.start_maya_timer()
+				QuestSys.activate("1_1_talk_to_maya")

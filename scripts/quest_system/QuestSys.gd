@@ -21,10 +21,7 @@ func _ready() -> void:
 		for q: QuestData in quests:
 				_dict[q.id] = q
 		_debug_print_all()      # testowo – możesz potem usunąć
-		# Activate main quest at startup if present
-		var default_id := "1_1_talk_to_maya"
-		if _dict.has(default_id):
-				activate(default_id)
+
 
 ## -------------------------------------------------------------------
 ## 4. Publiczne API

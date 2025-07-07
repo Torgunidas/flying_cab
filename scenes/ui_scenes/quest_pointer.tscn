@@ -10,6 +10,7 @@ script = ExtResource("1_tspf7")
 
 [node name="Arrow" type="Sprite2D" parent="Pointer"]
 z_index = 20
+rotation = -0.58294
 scale = Vector2(0.18, 0.18)
 texture = ExtResource("2")
 offset = Vector2(-1.25283, 38.2398)
