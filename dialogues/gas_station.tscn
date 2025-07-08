@@ -27,7 +27,6 @@ script = ExtResource("1_npads")
 metadata/_edit_horizontal_guides_ = [23.0]
 
 [node name="fly_thru" type="Label" parent="."]
-z_index = 1
 offset_left = -38.0
 offset_top = -69.0
 offset_right = 80.0
@@ -86,15 +85,17 @@ texture = ExtResource("5_lsr6i")
 position = Vector2(57, 4)
 
 [node name="Pillar2" type="Sprite2D" parent="."]
-z_index = -2
+z_index = -3
 position = Vector2(26, 6)
 texture = ExtResource("11_qarhm")
 
 [node name="Pillar" type="Sprite2D" parent="."]
+z_index = -3
 position = Vector2(26, -26)
 texture = ExtResource("11_bnae7")
 
 [node name="128x64" type="Sprite2D" parent="."]
+z_index = -3
 position = Vector2(23, -55.5)
 scale = Vector2(1, 0.414286)
 texture = ExtResource("12_86rmm")
