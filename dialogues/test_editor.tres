@@ -19,6 +19,7 @@ text = "..."
 actions = Array[ExtResource("3_406y0")]([])
 goto_page = -1
 requirements = Array[ExtResource("4_0h1f0")]([SubResource("Resource_bsxls")])
+show_if_unavailable = true
 
 [sub_resource type="Resource" id="Resource_plh4e"]
 script = ExtResource("1_jbr8m")

@@ -111,6 +111,8 @@ var _door_opened: bool = false
 @onready var rc_rear_edge : RayCast2D = $car_body/PivotCheck_rear_edge
 signal fuel_percent_changed(percent: float)
 var _prev_fuel_pct: float = -1.0       # pamiętamy ostatnią wartość
+# When false, the vehicle ignores fuel consumption logic.
+var fuel_enabled: bool = true
 
 
 # --- Control & state flags ------------------------------------------
@@ -123,6 +125,8 @@ func set_controls_enabled(enabled: bool) -> void:
 	controls_enabled = enabled
 func set_inertial_fall(active: bool) -> void:
 	inertial_fall = active
+func set_fuel_enabled(v: bool) -> void:
+	fuel_enabled = v
 	
 # ---------- AI-override (wirtualne „klawisze”) ----------
 var ai_input  : Vector2 = Vector2.ZERO   # analog −1…1  (x=←/→, y=↓/↑)
@@ -267,35 +271,37 @@ func _physics_process(delta: float) -> void:
 	velocity.y = min(velocity.y + _level.gravity_force * delta, max_fall_speed)
 
 	# pion
-	if current_fuel > 0.0:
+	var has_fuel := (not fuel_enabled) or current_fuel > 0.0
+	if has_fuel:
 		if _btn_pressed("thrust_up"):
-			_apply_vertical_thrust(delta)
+				_apply_vertical_thrust(delta)
 		elif _btn_pressed("hover"):
-			velocity = Vector2.ZERO
+				velocity = Vector2.ZERO
 	if not _btn_pressed("thrust_up") and velocity.y < 0.0:
 		velocity.y = lerp(velocity.y, 0.0, vertical_damping * delta)
-	if _is_boosting and _boost_dir == "vertical" and current_fuel > 0.0:
+	if _is_boosting and _boost_dir == "vertical" and has_fuel:
 		_apply_vertical_thrust(delta)
 
 	# poziom
-	if current_fuel > 0.0:
-		_apply_horizontal_thrust(delta, _level.air_resistance)
+	if has_fuel:
+				_apply_horizontal_thrust(delta, _level.air_resistance)
 	else:
-		velocity.x = lerp(velocity.x, 0.0, _level.air_resistance * delta)
+				velocity.x = lerp(velocity.x, 0.0, _level.air_resistance * delta)
 			# zakładam, że current_fuel maleje gdzieś wcześniej w tym samym _physics_process
 	if max_fuel <= 0.0:
 		return                         # brak zbiornika? pomijamy
 	var pct := 100.0 * current_fuel / max_fuel
-	# emitujemy sygnał tylko, gdy realnie się zmieniło (histereza 0.1 %)
-	if abs(pct - _prev_fuel_pct) >= 0.1:
-		_prev_fuel_pct = pct
-		emit_signal("fuel_percent_changed", pct)
+		# emitujemy sygnał tylko, gdy realnie się zmieniło (histereza 0.1 %)
+	if fuel_enabled and abs(pct - _prev_fuel_pct) >= 0.1:
+			_prev_fuel_pct = pct
+			emit_signal("fuel_percent_changed", pct)
 
 	_apply_soft_ceiling(delta)
 	move_and_slide()
 	_update_balance(delta, _level.gravity_force) 
 	_handle_ground_stop(delta)
-	_apply_fuel_regeneration(delta)
+	if fuel_enabled:
+		_apply_fuel_regeneration(delta)
 
 	# kolizje / obrażenia
 	for i in range(get_slide_collision_count()):
@@ -344,8 +350,10 @@ func _apply_vertical_thrust(delta: float) -> void:
 	velocity.y -= thrust_value * delta
 
 	# zużycie paliwa
-	var fuel_used = thrust_value * fuel_consumption_rate_up * delta
-	current_fuel = max(current_fuel - fuel_used, 0)
+	# zużycie paliwa
+	if fuel_enabled:
+		var fuel_used = thrust_value * fuel_consumption_rate_up * delta
+		current_fuel = max(current_fuel - fuel_used, 0)
 
 	# limit prędkości
 	var speed_limit = -max_climb_speed * mult
@@ -375,10 +383,11 @@ func _apply_horizontal_thrust(delta: float, air_resistance: float) -> void:
 			velocity.x = lerp(velocity.x, 0.0, res * delta)
 
 	velocity.x = clamp(velocity.x, -max_horizontal_speed, max_horizontal_speed)
-	current_fuel = clamp(
-		current_fuel - thrust * fuel_consumption_rate_lr * delta \
-					  * int(_btn_pressed("thrust_left") or _btn_pressed("thrust_right")),
-		0.0, max_fuel)
+	if fuel_enabled:
+		current_fuel = clamp(
+			current_fuel - thrust * fuel_consumption_rate_lr * delta \
+				  * int(_btn_pressed("thrust_left") or _btn_pressed("thrust_right")),
+			0.0, max_fuel)
 
 
 
@@ -396,6 +405,8 @@ func _handle_ground_stop(delta: float) -> void:
 
 
 func _apply_fuel_regeneration(delta: float) -> void:
+	if not fuel_enabled:
+				return
 	var using_thrust := _btn_pressed("thrust_up") \
 						or _btn_pressed("thrust_left") \
 						or _btn_pressed("thrust_right")

@@ -12,6 +12,7 @@ text = "..."
 actions = Array[ExtResource("3_ak6t7")]([])
 goto_page = -1
 requirements = Array[ExtResource("4_l3jy2")]([])
+show_if_unavailable = true
 
 [sub_resource type="Resource" id="Resource_ubs2s"]
 script = ExtResource("2_j1485")
@@ -19,6 +20,7 @@ text = "..."
 actions = Array[ExtResource("3_ak6t7")]([])
 goto_page = -1
 requirements = Array[ExtResource("4_l3jy2")]([])
+show_if_unavailable = true
 
 [sub_resource type="Resource" id="Resource_2ehj0"]
 script = ExtResource("2_j1485")
@@ -26,6 +28,7 @@ text = "odpowiedz test 1"
 actions = Array[ExtResource("3_ak6t7")]([])
 goto_page = -1
 requirements = Array[ExtResource("4_l3jy2")]([])
+show_if_unavailable = true
 
 [sub_resource type="Resource" id="Resource_v1mlh"]
 script = ExtResource("2_j1485")
@@ -33,6 +36,7 @@ text = "2"
 actions = Array[ExtResource("3_ak6t7")]([])
 goto_page = -1
 requirements = Array[ExtResource("4_l3jy2")]([])
+show_if_unavailable = true
 
 [sub_resource type="Resource" id="Resource_xck70"]
 script = ExtResource("1_lykcv")

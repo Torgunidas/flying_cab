@@ -35,7 +35,8 @@ func _ready() -> void:
 	_gather_waypoints()
 
 	set_controls_enabled(true)   # ← AI korzysta z fizyki auta
-	set_player_input_enabled(false) 
+	set_player_input_enabled(false)
+	set_fuel_enabled(false)      # NPC vehicles ignore fuel until taken over 
 	if add_roof_platform:
 		_spawn_roof_platform()
 	_spawn_interact_marker()
@@ -156,6 +157,8 @@ func interact() -> void:
 		ai_input    = Vector2.ZERO
 		ai_thrust   = false
 		ai_hover    = false
+		set_fuel_enabled(true)
+		current_fuel = max_fuel
 		set_player_input_enabled(true)
 		call_deferred("set_controls_enabled", true)
 		return
