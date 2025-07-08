@@ -13,8 +13,8 @@ class_name CarNPC
 @export var player_layer_bit     : int = 0      # warstwa gracza (np. Layer‑1)
 @export var platform_layer_bit   : int = 5      # warstwa platformy dachu
 @export var add_roof_platform    : bool = true
-@export var roof_size            : Vector2 = Vector2(64, 20)
-@export var roof_offset          : Vector2 = Vector2(0, -10)
+@export var roof_size            : Vector2 = Vector2(90, 10)
+@export var roof_offset          : Vector2 = Vector2(0, -13)
 
 @export var interact_offset      : Vector2 = Vector2(32, 0)
 

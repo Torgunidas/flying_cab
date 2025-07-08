@@ -5,7 +5,7 @@ class_name ProximityToggle
 # • znajduje się w zasięgu enter_distance od dowolnego węzła w grupie "interactables"
 # • LUB siedzi w pojeździe (PlayerCharacter.in_vehicle)
 
-@export var enter_distance: float = 32.0
+@export var enter_distance: float = 48.0
 
 @onready var ui: MobileControls = get_tree().get_current_scene().get_node_or_null("MobileControls") as MobileControls
 @onready var pc: PlayerCharacter = get_parent() as PlayerCharacter
