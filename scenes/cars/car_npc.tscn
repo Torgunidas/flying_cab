@@ -114,7 +114,7 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nqkih"]
-size = Vector2(95, 23.5)
+size = Vector2(90, 27)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_vbl1x"]
 animations = [{
@@ -379,16 +379,26 @@ animation = &"thrust"
 
 [node name="PivotCheck_front" type="RayCast2D" parent="car_body"]
 unique_name_in_owner = true
-position = Vector2(4, 0)
-target_position = Vector2(0, 12)
+position = Vector2(4.5, 14)
+target_position = Vector2(0, 2)
 
 [node name="PivotCheck_rear" type="RayCast2D" parent="car_body"]
 unique_name_in_owner = true
-position = Vector2(-16, 0)
-target_position = Vector2(0, 12)
+position = Vector2(-3.5, 14)
+target_position = Vector2(0, 2)
+
+[node name="PivotCheck_front_edge" type="RayCast2D" parent="car_body"]
+unique_name_in_owner = true
+position = Vector2(44.5, 14)
+target_position = Vector2(0, 2)
+
+[node name="PivotCheck_rear_edge" type="RayCast2D" parent="car_body"]
+unique_name_in_owner = true
+position = Vector2(-44.5, 14)
+target_position = Vector2(0, 2)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -0.25)
+position = Vector2(0, 0.5)
 shape = SubResource("RectangleShape2D_nqkih")
 
 [node name="death_sound" type="AudioStreamPlayer2D" parent="."]

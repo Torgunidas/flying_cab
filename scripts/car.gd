@@ -107,7 +107,8 @@ var _door_opened: bool = false
 @onready var car_body : Node2D = $car_body
 @onready var rc_front: RayCast2D = $car_body/PivotCheck_front
 @onready var rc_rear : RayCast2D = $car_body/PivotCheck_rear
-
+@onready var rc_front_edge: RayCast2D = $car_body/PivotCheck_front_edge
+@onready var rc_rear_edge : RayCast2D = $car_body/PivotCheck_rear_edge
 signal fuel_percent_changed(percent: float)
 var _prev_fuel_pct: float = -1.0       # pamiętamy ostatnią wartość
 
@@ -590,7 +591,16 @@ func _eject_passengers() -> void:
 func _update_door_visibility() -> void:
 	const SPEED_THRESHOLD := 30.0      # px/s ─ zmień tu, gdybyś chciał inne zachowanie
 
-	var on_floor = rc_front.is_colliding() and rc_rear.is_colliding()
+	var hits := 0
+	if rc_front.is_colliding():
+			hits += 1
+	if rc_rear.is_colliding():
+			hits += 1
+	if rc_front_edge.is_colliding():
+			hits += 1
+	if rc_rear_edge.is_colliding():
+			hits += 1
+	var on_floor = hits >= 3
 	var horizontal_vel : float = abs(velocity.x)
 
 	var should_open := on_floor and horizontal_vel < SPEED_THRESHOLD
@@ -645,33 +655,32 @@ func _update_car_orientation() -> void:
 # -----------------------------------------------
 func _update_balance(delta: float, g: float) -> void:
 	var facing : int = sign(car_body.scale.x)   # +1 prawo, -1 lewo
-	var SLIDE  : float = 40.0                   # prędkość zsuwania
-	var front_hit : bool = rc_front.is_colliding()
-	var rear_hit  : bool = rc_rear.is_colliding()
 
-	# ── Scenariusz 1: stabilnie ─────────────────────────────
-	if front_hit and rear_hit:
-		_balance_state    = 0
-		return
+	var hits_front := int(rc_front.is_colliding()) + int(rc_front_edge.is_colliding())
+	var hits_rear  := int(rc_rear.is_colliding())  + int(rc_rear_edge.is_colliding())
+	var total_hits := hits_front + hits_rear
 
-	# ── Scenariusz 2: tył w powietrzu ──────────────────────
-	if front_hit and not rear_hit:
-		_balance_state = 1
-		var sx = -facing * SLIDE_H * delta   # poziomo w stronę zwisu
-		var sy =  SLIDE_V * delta            # powoli w dół
-		translate(Vector2(sx, sy))
-		velocity.x = lerp(velocity.x, sx / delta, 2*delta)  # miękkie wyrównanie
-		return
+	if total_hits >= 3:
+			_balance_state = 0
+			return
 
-	# ── Scenariusz 3: przód w powietrzu ────────────────────
-	if rear_hit and not front_hit:
-		_balance_state = 2
-		var sx =  facing * SLIDE_H * delta
-		var sy =  SLIDE_V * delta
-		translate(Vector2(sx, sy))
-		velocity.x = lerp(velocity.x, sx / delta, 2*delta)
-		return
+	   # Rear side w powietrzu
+	if hits_front > hits_rear:
+			_balance_state = 1
+			var sx = -facing * SLIDE_H * delta
+			var sy =  SLIDE_V * delta
+			translate(Vector2(sx, sy))
+			velocity.x = lerp(velocity.x, sx / delta, 2 * delta)
+			return
 
-	# ── ani przód, ani tył ────────────────
+	   # Front side w powietrzu
+	if hits_rear > hits_front:
+			_balance_state = 2
+			var sx =  facing * SLIDE_H * delta
+			var sy =  SLIDE_V * delta
+			translate(Vector2(sx, sy))
+			velocity.x = lerp(velocity.x, sx / delta, 2 * delta)
+			return
+
 	_balance_state    = 0
 	_balance_detached = false

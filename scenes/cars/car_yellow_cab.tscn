@@ -381,13 +381,23 @@ frame_progress = 0.553299
 
 [node name="PivotCheck_front" type="RayCast2D" parent="car_body"]
 unique_name_in_owner = true
-position = Vector2(18, 13)
-target_position = Vector2(0, 4)
+position = Vector2(4.5, 13)
+target_position = Vector2(0, 2)
 
 [node name="PivotCheck_rear" type="RayCast2D" parent="car_body"]
 unique_name_in_owner = true
-position = Vector2(-25, 13)
-target_position = Vector2(0, 4)
+position = Vector2(-3.5, 13)
+target_position = Vector2(0, 2)
+
+[node name="PivotCheck_front_edge" type="RayCast2D" parent="car_body"]
+unique_name_in_owner = true
+position = Vector2(47.5, 13)
+target_position = Vector2(0, 2)
+
+[node name="PivotCheck_rear_edge" type="RayCast2D" parent="car_body"]
+unique_name_in_owner = true
+position = Vector2(-47.5, 13)
+target_position = Vector2(0, 2)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 0.25)
