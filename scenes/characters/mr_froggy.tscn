@@ -1,23 +1,68 @@
-[gd_scene load_steps=6 format=3 uid="uid://dowdc7hynobnm"]
+[gd_scene load_steps=12 format=3 uid="uid://dowdc7hynobnm"]
 
 [ext_resource type="Script" uid="uid://d1obn43fxr2v2" path="res://scripts/info_board.gd" id="1_1ubfn"]
-[ext_resource type="Resource" uid="uid://qshud65a7kqq" path="res://dialogues/main_quest/maya_dialog.tres" id="2_7xsou"]
-[ext_resource type="Texture2D" uid="uid://cyjt07ady6l7e" path="res://Assets/character/maya_sister/Maya_portrait2.png" id="3_coace"]
-[ext_resource type="Texture2D" uid="uid://ctkamq5wa4sw5" path="res://Assets/character/maya_sister/ChatGPT Image 26 cze 2025, 01_49_28.png" id="4_6oamt"]
+[ext_resource type="Resource" uid="uid://qed7nsuwh5yv" path="res://dialogues/main_quest/mr_froggy.tres" id="2_1ubfn"]
+[ext_resource type="Texture2D" uid="uid://pq56edgwkuvi" path="res://Assets/character/MrFroggy/froggy_smile_portrait-export.png" id="3_1ubfn"]
+[ext_resource type="Texture2D" uid="uid://y0x7ex21cm6p" path="res://Assets/GandalfHardcore Modern NPCs/Mafia Boss sheet.png" id="4_1ubfn"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ohdfx"]
-size = Vector2(20, 35)
+size = Vector2(48, 36)
 
-[node name="MayaSister" type="Area2D"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_7xsou"]
+atlas = ExtResource("4_1ubfn")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_coace"]
+atlas = ExtResource("4_1ubfn")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6oamt"]
+atlas = ExtResource("4_1ubfn")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b4p6h"]
+atlas = ExtResource("4_1ubfn")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_63wsu"]
+atlas = ExtResource("4_1ubfn")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_viajj"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7xsou")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_coace")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6oamt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b4p6h")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63wsu")
+}],
+"loop": true,
+"name": &"default",
+"speed": 10.0
+}]
+
+[node name="MrFroggy" type="Area2D"]
 script = ExtResource("1_1ubfn")
-dialog_resource = ExtResource("2_7xsou")
-portrait_texture = ExtResource("3_coace")
+dialog_resource = ExtResource("2_1ubfn")
+portrait_texture = ExtResource("3_1ubfn")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -0.5)
+position = Vector2(1, 4)
 shape = SubResource("RectangleShape2D_ohdfx")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-position = Vector2(5.96046e-08, 0)
-scale = Vector2(0.0229492, 0.0229492)
-texture = ExtResource("4_6oamt")
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(1, -3)
+scale = Vector2(0.8, 0.8)
+sprite_frames = SubResource("SpriteFrames_viajj")
+autoplay = "default"
+frame_progress = 0.0338229
