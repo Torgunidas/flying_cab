@@ -8,28 +8,39 @@ const LOG_BTN_FONT_SIZE := 28
 # Minimal height for quest buttons (for easier tapping)
 const LOG_BTN_MIN_HEIGHT := 60
 
-@onready var list_box  : VBoxContainer = $Panel/List
+@onready var quest_list : VBoxContainer = $QuestPanel/QuestList
+@onready var inv_list   : VBoxContainer = $InventoryPanel/ItemList
+@onready var quest_panel : Panel = $QuestPanel
+@onready var inv_panel   : Panel = $InventoryPanel
+@onready var quest_btn   : Button = $Tabs/QuestButton
+@onready var inv_btn     : Button = $Tabs/InventoryButton
 
 func _ready() -> void:
 	visible = false
 	set_process_unhandled_input(true)
-	QuestSys.quest_activated.connect(Callable(self, "_refresh"))
-	QuestSys.quest_completed.connect(Callable(self, "_refresh"))
-	_refresh()
+	QuestSys.quest_activated.connect(_refresh_quests)
+	QuestSys.quest_completed.connect(_refresh_quests)
+	GameState.items_changed.connect(_refresh_inventory)
+	quest_btn.pressed.connect(_show_quests)
+	inv_btn.pressed.connect(_show_inventory)
+	_refresh_quests()
+	_refresh_inventory()
+	_show_quests()
 
 func _on_close_pressed() -> void:
 	visible = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("quest_log"):
-		visible = not visible
-		if visible:
-			_refresh()
+				visible = not visible
+				if visible:
+						_refresh_quests()
+						_refresh_inventory()
 
-func _refresh(_id := "") -> void:
-	# 1) czyścimy poprzednie przyciski
-	for child in list_box.get_children():
-		child.queue_free()
+func _refresh_quests(_id := "") -> void:
+		# 1) czyścimy poprzednie przyciski
+	for child in quest_list.get_children():
+			child.queue_free()
 
 	# 2) iterujemy tylko po ACTIVE i DONE
 	for qdata in QuestSys.get_all():
@@ -54,7 +65,7 @@ func _add_done_button(qdata: QuestData) -> void:
 	btn.anchor_right = 1
 	btn.offset_left = 0
 	btn.offset_right = 0
-	list_box.add_child(btn)
+	quest_list.add_child(btn)
 
 func _add_active_button(qdata: QuestData) -> void:
 	var container = VBoxContainer.new()
@@ -63,7 +74,7 @@ func _add_active_button(qdata: QuestData) -> void:
 	container.anchor_right = 1
 	container.offset_left = 0
 	container.offset_right = 0
-	list_box.add_child(container)
+	quest_list.add_child(container)
 
 	var btn = Button.new()
 	btn.text = qdata.title
@@ -90,3 +101,28 @@ func _add_active_button(qdata: QuestData) -> void:
 func _on_list_item_pressed(selected_id: String, desc_label: Label) -> void:
 		QuestObjectiveUi.set_quest_id(selected_id)
 		desc_label.visible = not desc_label.visible
+		
+func _refresh_inventory() -> void:
+		for child in inv_list.get_children():
+				child.queue_free()
+		for item in GameState.get_items():
+				if item is ItemData:
+						var hbox = HBoxContainer.new()
+						inv_list.add_child(hbox)
+						if item.icon:
+								var tex = TextureRect.new()
+								tex.texture = item.icon
+								tex.custom_minimum_size = Vector2(64,64)
+								hbox.add_child(tex)
+						var lbl = Label.new()
+						lbl.text = item.name
+						lbl.add_theme_font_size_override("font_size", LOG_BTN_FONT_SIZE)
+						hbox.add_child(lbl)
+
+func _show_quests() -> void:
+		quest_panel.visible = true
+		inv_panel.visible = false
+
+func _show_inventory() -> void:
+		quest_panel.visible = false
+		inv_panel.visible = true

@@ -113,6 +113,9 @@ func _requirements_met(ans : DialogAnswer) -> bool:
 			"active_quest":
 				if not QuestSys.is_active(req.quest_id):
 					return false
+			"has_item":
+				if not _gs.has_item(req.item.id if req.item else ""):
+					return false
 	return true
 
 func _check_money(req : DialogRequirement) -> bool:
@@ -159,6 +162,13 @@ func _apply_action(act : DialogAction) -> void:
 		"revoke_vehicle_access":
 				if pc:
 						pc.remove_vehicle_access(act.vehicle_id)
+						
+		"grant_item":
+				if act.item:
+						_gs.grant_item(act.item)
+		"revoke_item":
+				if act.item:
+						_gs.revoke_item(act.item.id)
 
 		"npc_text":
 			var branch := DialogData.new()

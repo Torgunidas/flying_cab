@@ -8,6 +8,11 @@ signal money_changed(new_amount: int)
 signal maya_timer_updated(seconds_left: int)
 signal maya_time_expired
 
+# --- Items --------------------------------------------------------------
+signal items_changed(item_list: Array)
+var _items: Dictionary = {}       # id -> ItemData
+
+
 # ——————————————————————————
 #  POJAZDY: model vs instancja
 # ——————————————————————————
@@ -40,6 +45,7 @@ func _ready() -> void:
 			print("[GS _ready] hot-reload, saldo zostaje =", _money)
 
 	emit_signal("money_changed", _money)
+	emit_signal("items_changed", get_items())
 
 # --- API -------------------------------------------------------------------
 func get_money() -> int:
@@ -103,7 +109,26 @@ func revoke_vehicle(id: String, is_instance := false) -> void:
 
 func has_vehicle(id: String) -> bool:
 	return id in allowed_models or id in allowed_instances
+	
+# --- ITEM MANAGEMENT -------------------------------------------------------
+func grant_item(item: ItemData) -> void:
+		if item == null or item.id == "":
+				return
+		if _items.has(item.id):
+				return
+		_items[item.id] = item
+		emit_signal("items_changed", get_items())
 
+func revoke_item(item_id: String) -> void:
+		if _items.has(item_id):
+				_items.erase(item_id)
+				emit_signal("items_changed", get_items())
+
+func has_item(item_id: String) -> bool:
+		return _items.has(item_id)
+
+func get_items() -> Array:
+		return _items.values()
 # --- MAYA GLOBAL TIMER -----------------------------------------------------
 func start_maya_timer(minutes := maya_timer_minutes) -> void:
 		if _maya_timer_active:

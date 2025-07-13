@@ -4,6 +4,7 @@ class_name DialogAction
 						"start_quest","finish_quest",
 						"start_animation",
 						"grant_vehicle_access","revoke_vehicle_access",
+						"grant_item","revoke_item",
 						"close",
 						"npc_text") var type := "close"
 @export var amount     : int    = 0
@@ -12,3 +13,4 @@ class_name DialogAction
 @export var loop_count  : int    = 1
 @export var npc_text_id : String = ""
 @export var vehicle_id : String = ""
+@export var item      : ItemData

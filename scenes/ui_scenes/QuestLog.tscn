@@ -1,18 +1,49 @@
 [gd_scene load_steps=3 format=3 uid="uid://cf03f45uenpty"]
 
-[ext_resource type="Script" uid="uid://bevsdwbjhl5xn" path="res://scripts/ui_logic/QuestLog.gd" id="1_kucni"]
+[ext_resource type="Script" uid="uid://bevsdwbjhl5xn" path="res://scripts/ui_logic/QuestLog.gd" id="1"]
 
 [sub_resource type="Theme" id="Theme_je0rk"]
 default_font_size = 30
 
 [node name="UiManager" type="CanvasLayer"]
 layer = 10
-script = ExtResource("1_kucni")
+script = ExtResource("1")
 
-[node name="Panel" type="Panel" parent="."]
+[node name="Tabs" type="VBoxContainer" parent="."]
+offset_left = 10.0
+offset_top = 150.0
+theme = SubResource("Theme_je0rk")
+
+[node name="QuestButton" type="Button" parent="Tabs"]
+layout_mode = 2
+text = "Quests"
+
+[node name="InventoryButton" type="Button" parent="Tabs"]
+layout_mode = 2
+text = "Inventory"
+
+[node name="QuestPanel" type="Panel" parent="."]
+visible = false
 z_index = 10
 
-[node name="List" type="VBoxContainer" parent="Panel"]
+[node name="QuestList" type="VBoxContainer" parent="QuestPanel"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 0.5
+anchor_bottom = 0.186
+offset_left = 109.0
+offset_top = 118.0
+offset_right = 201.0
+offset_bottom = 355.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_je0rk")
+
+[node name="InventoryPanel" type="Panel" parent="."]
+visible = false
+z_index = 10
+
+[node name="ItemList" type="VBoxContainer" parent="InventoryPanel"]
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 0.5
