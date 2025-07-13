@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="DialogData" load_steps=9 format=3 uid="uid://o0xm5uag5e26"]
+[gd_resource type="Resource" script_class="DialogData" load_steps=13 format=3 uid="uid://o0xm5uag5e26"]
 
 [ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="1_qltff"]
 [ext_resource type="Script" uid="uid://cke3kl33pylr5" path="res://scripts/dialogues/DialogAction.gd" id="2_mivoi"]
 [ext_resource type="Script" uid="uid://dkvjsh0ocuvpa" path="res://scripts/dialogues/dialogdata.gd" id="2_qwfh3"]
 [ext_resource type="Script" uid="uid://2aako6y61wi5" path="res://scripts/dialogues/DialogRequirement.gd" id="3_3nalj"]
+[ext_resource type="Resource" uid="uid://chqwua6cvm0pf" path="res://items/the_substance_low.tres" id="4_3nalj"]
 
 [sub_resource type="Resource" id="Resource_nfqsn"]
 script = ExtResource("2_mivoi")
@@ -16,30 +17,60 @@ npc_text_id = ""
 vehicle_id = "yellow_cab"
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
+[sub_resource type="Resource" id="Resource_48n80"]
+script = ExtResource("3_3nalj")
+type = "money_req"
+amount = 0
+cmp = ">"
+quest_id = ""
+metadata/_custom_type_script = "uid://2aako6y61wi5"
+
 [sub_resource type="Resource" id="Resource_8rxmt"]
 script = ExtResource("1_qltff")
 text = "Yellow cab"
 actions = Array[ExtResource("2_mivoi")]([SubResource("Resource_nfqsn")])
 goto_page = -1
-requirements = Array[ExtResource("3_3nalj")]([])
+requirements = Array[ExtResource("3_3nalj")]([SubResource("Resource_48n80")])
 show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
-[sub_resource type="Resource" id="Resource_mivoi"]
+[sub_resource type="Resource" id="Resource_xrk6l"]
 script = ExtResource("2_mivoi")
-type = "grant_vehicle_access"
-amount = 0
+type = "grant_item"
+amount = 1
 quest_id = ""
 anim_name = ""
 loop_count = 1
 npc_text_id = ""
-vehicle_id = "npc_car"
+vehicle_id = ""
+item = ExtResource("4_3nalj")
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
-[sub_resource type="Resource" id="Resource_3nalj"]
+[sub_resource type="Resource" id="Resource_kt2md"]
 script = ExtResource("1_qltff")
-text = "NPC car"
-actions = Array[ExtResource("2_mivoi")]([SubResource("Resource_mivoi")])
+text = "Menu itemków"
+actions = Array[ExtResource("2_mivoi")]([SubResource("Resource_xrk6l")])
+goto_page = -1
+requirements = Array[ExtResource("3_3nalj")]([])
+show_if_unavailable = true
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_yc48a"]
+script = ExtResource("2_mivoi")
+type = "revoke_item"
+amount = 1
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+item = ExtResource("4_3nalj")
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_5qndx"]
+script = ExtResource("1_qltff")
+text = "Oddaję itemek"
+actions = Array[ExtResource("2_mivoi")]([SubResource("Resource_yc48a")])
 goto_page = -1
 requirements = Array[ExtResource("3_3nalj")]([])
 show_if_unavailable = true
@@ -48,5 +79,5 @@ metadata/_custom_type_script = "uid://enivet37mn8j"
 [resource]
 script = ExtResource("2_qwfh3")
 npc_text = "Choose the car"
-answers = Array[ExtResource("1_qltff")]([SubResource("Resource_8rxmt"), SubResource("Resource_3nalj")])
+answers = Array[ExtResource("1_qltff")]([SubResource("Resource_8rxmt"), SubResource("Resource_kt2md"), SubResource("Resource_5qndx")])
 metadata/_custom_type_script = "uid://dkvjsh0ocuvpa"

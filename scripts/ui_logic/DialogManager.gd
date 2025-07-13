@@ -169,7 +169,6 @@ func _apply_action(act : DialogAction) -> void:
 		"revoke_item":
 				if act.item:
 						_gs.revoke_item(act.item.id)
-
 		"npc_text":
 			var branch := DialogData.new()
 			branch.npc_text = act.npc_text_id

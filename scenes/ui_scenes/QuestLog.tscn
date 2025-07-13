@@ -42,6 +42,10 @@ theme = SubResource("Theme_je0rk")
 [node name="InventoryPanel" type="Panel" parent="."]
 visible = false
 z_index = 10
+offset_left = 64.0
+offset_top = 312.0
+offset_right = 64.0
+offset_bottom = 312.0
 
 [node name="ItemList" type="VBoxContainer" parent="InventoryPanel"]
 layout_mode = 1
