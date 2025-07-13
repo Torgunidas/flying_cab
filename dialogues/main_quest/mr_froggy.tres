@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogBook" load_steps=23 format=3 uid="uid://qed7nsuwh5yv"]
+[gd_resource type="Resource" script_class="DialogBook" load_steps=24 format=3 uid="uid://qed7nsuwh5yv"]
 
 [ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_ebkyo"]
 [ext_resource type="Script" uid="uid://c4sn7n4x1gvpe" path="res://scripts/dialogues/DialogBook.gd" id="2_31yw8"]
@@ -18,8 +18,8 @@ metadata/_custom_type_script = "uid://2aako6y61wi5"
 [sub_resource type="Resource" id="Resource_1tijw"]
 script = ExtResource("2_yr4xk")
 text = "I need the substance for Maya."
-actions = Array[ExtResource("3_633b3")]([null])
-goto_page = 1
+actions = Array[ExtResource("3_633b3")]([])
+goto_page = 5
 requirements = Array[ExtResource("4_e8bnp")]([SubResource("Resource_hgkdg")])
 show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
@@ -143,7 +143,13 @@ npc_text = "Splendid. Here you go. I hope she'll get better."
 answers = Array[ExtResource("2_yr4xk")]([SubResource("Resource_jjik0")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
+[sub_resource type="Resource" id="Resource_i1qlc"]
+script = ExtResource("1_ebkyo")
+npc_text = "Ciekawe czy tu działa"
+answers = Array[ExtResource("2_yr4xk")]([])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
 [resource]
 script = ExtResource("2_31yw8")
-pages = Array[ExtResource("1_ebkyo")]([SubResource("Resource_scnuc"), SubResource("Resource_j2n8k"), SubResource("Resource_mqt50"), SubResource("Resource_86vpy"), SubResource("Resource_01t3h")])
+pages = Array[ExtResource("1_ebkyo")]([SubResource("Resource_scnuc"), SubResource("Resource_j2n8k"), SubResource("Resource_mqt50"), SubResource("Resource_86vpy"), SubResource("Resource_01t3h"), SubResource("Resource_i1qlc")])
 metadata/_custom_type_script = "uid://c4sn7n4x1gvpe"

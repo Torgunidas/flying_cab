@@ -1,0 +1,100 @@
+[gd_resource type="Resource" script_class="DialogBook" load_steps=17 format=3 uid="uid://chfmkvt5f1uio"]
+
+[ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_ixh5l"]
+[ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_jlfuf"]
+[ext_resource type="Script" uid="uid://cke3kl33pylr5" path="res://scripts/dialogues/DialogAction.gd" id="3_k1ixd"]
+[ext_resource type="Script" uid="uid://2aako6y61wi5" path="res://scripts/dialogues/DialogRequirement.gd" id="4_2u07e"]
+[ext_resource type="Script" uid="uid://c4sn7n4x1gvpe" path="res://scripts/dialogues/DialogBook.gd" id="5_did6w"]
+[ext_resource type="Resource" uid="uid://chqwua6cvm0pf" path="res://items/the_substance_low.tres" id="5_jlfuf"]
+
+[sub_resource type="Resource" id="Resource_ixh5l"]
+script = ExtResource("4_2u07e")
+type = "active_quest"
+amount = 0
+cmp = ">"
+quest_id = "1_6_speak_with_Froggy"
+metadata/_custom_type_script = "uid://2aako6y61wi5"
+
+[sub_resource type="Resource" id="Resource_x5eyt"]
+script = ExtResource("2_jlfuf")
+text = "I need the substance for Maya."
+actions = Array[ExtResource("3_k1ixd")]([])
+goto_page = 1
+requirements = Array[ExtResource("4_2u07e")]([SubResource("Resource_ixh5l")])
+show_if_unavailable = true
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_acon4"]
+script = ExtResource("1_ixh5l")
+npc_text = "Long time no see."
+answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_x5eyt")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
+[sub_resource type="Resource" id="Resource_xjnsa"]
+script = ExtResource("2_jlfuf")
+text = "Yes I do."
+actions = Array[ExtResource("3_k1ixd")]([])
+goto_page = 2
+requirements = Array[ExtResource("4_2u07e")]([])
+show_if_unavailable = true
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_l7org"]
+script = ExtResource("1_ixh5l")
+npc_text = "Poor girl. Do you the money?"
+answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_xjnsa")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
+[sub_resource type="Resource" id="Resource_k1ixd"]
+script = ExtResource("3_k1ixd")
+type = "grant_item"
+amount = 1
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+item = ExtResource("5_jlfuf")
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_jlfuf"]
+script = ExtResource("3_k1ixd")
+type = "finish_quest"
+amount = 0
+quest_id = "1_6_speak_with_Froggy"
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_2u07e"]
+script = ExtResource("3_k1ixd")
+type = "start_quest"
+amount = 0
+quest_id = "1_7_bring_cure_to_maya"
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_tvxdt"]
+script = ExtResource("2_jlfuf")
+text = "I'll take it."
+actions = Array[ExtResource("3_k1ixd")]([SubResource("Resource_k1ixd"), SubResource("Resource_jlfuf"), SubResource("Resource_2u07e")])
+goto_page = -1
+requirements = Array[ExtResource("4_2u07e")]([])
+show_if_unavailable = true
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_2jftd"]
+script = ExtResource("1_ixh5l")
+npc_text = "It's gonna be 6000$ for the small unit."
+answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_tvxdt")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
+[resource]
+script = ExtResource("5_did6w")
+pages = Array[ExtResource("1_ixh5l")]([SubResource("Resource_acon4"), SubResource("Resource_l7org"), SubResource("Resource_2jftd")])
+metadata/_custom_type_script = "uid://c4sn7n4x1gvpe"

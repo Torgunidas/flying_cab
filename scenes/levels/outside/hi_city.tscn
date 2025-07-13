@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=4 uid="uid://c6wgvur21jgyx"]
+[gd_scene load_steps=43 format=4 uid="uid://c6wgvur21jgyx"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_u2gg1"]
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="2_gqf4i"]
@@ -33,6 +33,7 @@
 [ext_resource type="Script" uid="uid://pv1qxoeq5xnx" path="res://scripts/quest_system/quest_obj/FuelQuestWatcher.gd" id="29_l7kxo"]
 [ext_resource type="PackedScene" uid="uid://qacc8w3r5e7y" path="res://scenes/props/car_wash.tscn" id="31_7ob0h"]
 [ext_resource type="PackedScene" uid="uid://dowdc7hynobnm" path="res://scenes/characters/mr_froggy.tscn" id="33_th6as"]
+[ext_resource type="Resource" uid="uid://chfmkvt5f1uio" path="res://dialogues/main_quest/mr_froggy_take_2.tres" id="34_i0cx1"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_umyuv"]
 size = Vector2(3497, 20)
@@ -2612,6 +2613,7 @@ wait_time = 10.0
 
 [node name="MrFroggy" parent="." instance=ExtResource("33_th6as")]
 position = Vector2(-5686, -1357)
+dialog_resource = ExtResource("34_i0cx1")
 
 [connection signal="body_entered" from="DeathBoundary" to="." method="_on_death_boundary_body_entered"]
 
