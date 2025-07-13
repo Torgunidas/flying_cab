@@ -457,9 +457,14 @@ func _setup_camera_limits(level: Node) -> void:
 func _input(event: InputEvent) -> void:
 	# otwieranie / zamykanie
 	if event.is_action_pressed(toggle_map):
-		if visible: _hide_map()
-		else: show_map()
-		return
+			if visible:
+					_hide_map()
+			else:
+				var dm := get_tree().get_current_scene().get_node_or_null("DialogManager") as DialogManager
+				if dm and dm.is_open():
+					dm.close_dialog()
+					show_map()
+			return
 
 	# pozostałe zdarzenia interesują nas tylko gdy mapa jest widoczna
 	if not visible:
