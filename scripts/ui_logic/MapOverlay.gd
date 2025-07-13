@@ -460,10 +460,8 @@ func _input(event: InputEvent) -> void:
 			if visible:
 					_hide_map()
 			else:
-				var dm := get_tree().get_current_scene().get_node_or_null("DialogManager") as DialogManager
-				if dm and dm.is_open():
-					dm.close_dialog()
-					show_map()
+				_close_dialog_if_open()
+				show_map()
 			return
 
 	# pozostałe zdarzenia interesują nas tylko gdy mapa jest widoczna
@@ -542,6 +540,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventMouseMotion and event.button_mask & MOUSE_BUTTON_MASK_LEFT:
 		mini_cam.position -= event.relative * mini_cam.zoom
+
+func _close_dialog_if_open() -> void:
+		var dm := get_tree().get_current_scene().get_node_or_null("DialogManager") as DialogManager
+		if dm and dm.is_open():
+				dm.close_dialog()
 
 func show_map():
 	visible = true
