@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="DialogBook" load_steps=17 format=3 uid="uid://qed7nsuwh5yv"]
+[gd_resource type="Resource" script_class="DialogBook" load_steps=23 format=3 uid="uid://qed7nsuwh5yv"]
 
 [ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_ebkyo"]
 [ext_resource type="Script" uid="uid://c4sn7n4x1gvpe" path="res://scripts/dialogues/DialogBook.gd" id="2_31yw8"]
 [ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_yr4xk"]
 [ext_resource type="Script" uid="uid://cke3kl33pylr5" path="res://scripts/dialogues/DialogAction.gd" id="3_633b3"]
 [ext_resource type="Script" uid="uid://2aako6y61wi5" path="res://scripts/dialogues/DialogRequirement.gd" id="4_e8bnp"]
+[ext_resource type="Resource" uid="uid://chqwua6cvm0pf" path="res://items/the_substance_low.tres" id="5_633b3"]
 
 [sub_resource type="Resource" id="Resource_hgkdg"]
 script = ExtResource("4_e8bnp")
@@ -74,12 +75,65 @@ npc_text = "I know, Jo, I know. The subtance. And I am always happy to help, as 
 answers = Array[ExtResource("2_yr4xk")]([SubResource("Resource_pfy3h")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
+[sub_resource type="Resource" id="Resource_e8bnp"]
+script = ExtResource("3_633b3")
+type = "grant_item"
+amount = 1
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+item = ExtResource("5_633b3")
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_83kb8"]
+script = ExtResource("3_633b3")
+type = "deduct_money"
+amount = 8000
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_633b3"]
+script = ExtResource("3_633b3")
+type = "finish_quest"
+amount = 0
+quest_id = "1_6_speak_with_Froggy"
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_41eso"]
+script = ExtResource("3_633b3")
+type = "start_quest"
+amount = 0
+quest_id = "1_7_bring_cure_to_maya"
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_2qyax"]
+script = ExtResource("4_e8bnp")
+type = "money_req"
+amount = 8000
+cmp = "="
+quest_id = ""
+metadata/_custom_type_script = "uid://2aako6y61wi5"
+
 [sub_resource type="Resource" id="Resource_jjik0"]
 script = ExtResource("2_yr4xk")
-text = "Thank you, Mr Froggy."
-actions = Array[ExtResource("3_633b3")]([null])
+text = "Thank you, Mr Froggy. (Deducts 8000$)."
+actions = Array[ExtResource("3_633b3")]([SubResource("Resource_e8bnp"), SubResource("Resource_83kb8"), SubResource("Resource_633b3"), SubResource("Resource_41eso")])
 goto_page = -1
-requirements = Array[ExtResource("4_e8bnp")]([])
+requirements = Array[ExtResource("4_e8bnp")]([SubResource("Resource_2qyax")])
 show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 

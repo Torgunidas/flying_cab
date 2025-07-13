@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3 uid="uid://dn661m1wxs0t"]
+
+[ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="1_crbfu"]
+
+[resource]
+script = ExtResource("1_crbfu")
+id = "1_7_bring_cure_to_maya"
+title = "Bring cure to Maya"
+description = "You the substance Maya needs"
+start_target = "quest_giver"
+objective = ""
+reward = 0
+next_quest_id = ""
+metadata/_custom_type_script = "uid://b0fshn7oxrpms"
