@@ -193,6 +193,11 @@ func _wait_for_taxi(_delta: float) -> void:
 	var car: CharacterBody2D = _find_player_car()
 	if car == null:
 		return  # jeżeli gracz nie jest w aucie, to nic więcej nie robimy
+		
+		# 2.5) ►► NOWOŚĆ ◄◄  – pomijamy przepełnione auta
+	if car.has_variable("max_passanger") \
+	and car.passenger_count >= car.max_passanger:
+		return                                   # taxi pełna → czekamy dalej
 
 	# 3) Jeżeli auto było CharacterBody2D, upewniamy się, że stoi na ziemi (można pominąć dla RigidBody2D)
 	if car.is_class("CharacterBody2D") and not car.is_on_floor():
@@ -378,6 +383,12 @@ func _board_taxi() -> void:
 	if !is_instance_valid(_target_car):
 		_reset_to_patrol()
 		return
+	
+	# 1b) sprawdź pojemność pojazdu
+	if _target_car.has_variable("max_passanger"):
+			if _target_car.passenger_count >= _target_car.max_passanger:
+					_reset_to_patrol()
+					return
 
 	# 2) zwiększ licznik pasażerów
 	_target_car.passenger_count += 1
@@ -509,3 +520,11 @@ func _fall_move(delta: float) -> void:
 	# 3) po wylądowaniu przechodzimy do patrolu (lub idling)
 	if is_on_floor():
 		kill()      # przywraca normalny AI + kolizję
+		
+# -- Pomocnicze: kompatybilność ze starymi wywołaniami -----------
+func has_variable(name: String) -> bool:
+	# Przegląda pełną listę właściwości (wbudowanych i ze skryptu)
+	for info in get_property_list():
+		if "name" in info and info.name == name:
+			return true
+	return false

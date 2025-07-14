@@ -62,7 +62,7 @@ var state : CarState = CarState.IDLE
 var _delivery_point : DeliveryPoint           # bieżący cel
 var _taxi_marker    : TaxiMarker
 var passenger_count : int = 0
-
+@export var max_passanger : int = 1
 # -------------------------------------------------------------
 
 # -----------------------
@@ -144,6 +144,10 @@ func _has_property(obj: Object, prop_name: String) -> bool:
 				if "name" in info and info.name == prop_name:
 						return true
 		return false
+		
+func has_variable(name: String) -> bool:
+	# Zwraca true, jeżeli _to konkretne_ auto ma właściwość 'name'
+	return _has_property(self, name)
 
 func _find_level_node() -> Node:
 		var n: Node = self
@@ -199,6 +203,7 @@ func _ready() -> void:
 
 	current_hp = max_hp
 	current_fuel = clamp(current_fuel, 0.0, max_fuel)   # zachowuje to, co wpiszesz w Inspectorze
+	passenger_count = clamp(passenger_count, 0, max_passanger)
 
 		# Domyślnie wyłącz sterowanie
 	controls_enabled = false
@@ -585,11 +590,10 @@ func _eject_passengers() -> void:
 		else:
 			npc._sprite.animation = "fall"
 			npc._sprite.play()
-			# lekki impet, żeby nie stał w miejscu
-			if npc.has_variable("velocity"):
-				npc.velocity = Vector2(
-					randf_range(-80, 80),
-					-160
+			# lekki impet – każdy pasażer dostaje przypadkową prędkość startową
+			npc.velocity = Vector2(
+				randf_range(-80, 80),
+				-160
 				)
 
 		get_tree().current_scene.add_child(npc)   # wrzuć do świata

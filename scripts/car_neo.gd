@@ -57,6 +57,7 @@ var state : CarState = CarState.IDLE
 var _delivery_point : DeliveryPoint           # bieżący cel
 var _taxi_marker    : TaxiMarker
 var passenger_count : int = 0
+@export var max_passanger : int = 1
 
 # -------------------------------------------------------------
 
@@ -101,6 +102,7 @@ func _ready() -> void:
 
 	current_hp = max_hp
 	current_fuel = max_fuel
+	passenger_count = clamp(passenger_count, 0, max_passanger)
 
 		# Domyślnie wyłącz sterowanie
 	controls_enabled = false
