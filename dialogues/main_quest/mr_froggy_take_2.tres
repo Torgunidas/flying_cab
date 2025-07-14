@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogBook" load_steps=17 format=3 uid="uid://chfmkvt5f1uio"]
+[gd_resource type="Resource" script_class="DialogBook" load_steps=18 format=3 uid="uid://chfmkvt5f1uio"]
 
 [ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_ixh5l"]
 [ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_jlfuf"]
@@ -79,10 +79,21 @@ npc_text_id = ""
 vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
+[sub_resource type="Resource" id="Resource_did6w"]
+script = ExtResource("3_k1ixd")
+type = "deduct_money"
+amount = 6000
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
 [sub_resource type="Resource" id="Resource_tvxdt"]
 script = ExtResource("2_jlfuf")
 text = "I'll take it."
-actions = Array[ExtResource("3_k1ixd")]([SubResource("Resource_k1ixd"), SubResource("Resource_jlfuf"), SubResource("Resource_2u07e")])
+actions = Array[ExtResource("3_k1ixd")]([SubResource("Resource_k1ixd"), SubResource("Resource_jlfuf"), SubResource("Resource_2u07e"), SubResource("Resource_did6w")])
 goto_page = -1
 requirements = Array[ExtResource("4_2u07e")]([])
 show_if_unavailable = true

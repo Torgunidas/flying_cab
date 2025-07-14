@@ -137,6 +137,7 @@ func _apply_action(act : DialogAction) -> void:
 		"add_money":        _gs.add_money(   act.amount)
 		"deduct_money":     _gs.spend_money( act.amount)
 		"add_life":         if pc: pc.heal(act.amount)
+		"add_maya_time":   _gs.add_maya_time(act.amount)
 
 		"start_quest":      QuestSys.start_quest(  act.quest_id)
 		"finish_quest":     QuestSys.finish_quest( act.quest_id)

@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="DialogBook" load_steps=25 format=3 uid="uid://qshud65a7kqq"]
+[gd_resource type="Resource" script_class="DialogBook" load_steps=30 format=3 uid="uid://qshud65a7kqq"]
 
 [ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_upblg"]
 [ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_l7org"]
 [ext_resource type="Script" uid="uid://c4sn7n4x1gvpe" path="res://scripts/dialogues/DialogBook.gd" id="2_o8nqn"]
 [ext_resource type="Script" uid="uid://cke3kl33pylr5" path="res://scripts/dialogues/DialogAction.gd" id="3_xjnsa"]
 [ext_resource type="Script" uid="uid://2aako6y61wi5" path="res://scripts/dialogues/DialogRequirement.gd" id="4_2jftd"]
+[ext_resource type="Resource" uid="uid://chqwua6cvm0pf" path="res://items/the_substance_low.tres" id="5_xjnsa"]
 
 [sub_resource type="Resource" id="Resource_jiexr"]
 script = ExtResource("4_2jftd")
@@ -43,30 +44,28 @@ requirements = Array[ExtResource("4_2jftd")]([])
 show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
-[sub_resource type="Resource" id="Resource_p4lck"]
-script = ExtResource("3_xjnsa")
-type = "revoke_vehicle_access"
-amount = 0
-quest_id = ""
-anim_name = ""
-loop_count = 1
-npc_text_id = ""
-vehicle_id = "yellow_cab"
-metadata/_custom_type_script = "uid://cke3kl33pylr5"
-
 [sub_resource type="Resource" id="Resource_g6ne0"]
+script = ExtResource("4_2jftd")
+type = "has_item"
+amount = 0
+cmp = ">"
+quest_id = ""
+item = ExtResource("5_xjnsa")
+metadata/_custom_type_script = "uid://2aako6y61wi5"
+
+[sub_resource type="Resource" id="Resource_p4lck"]
 script = ExtResource("2_l7org")
-text = "Zabieraj kluczyki"
-actions = Array[ExtResource("3_xjnsa")]([SubResource("Resource_p4lck")])
-goto_page = -1
-requirements = Array[ExtResource("4_2jftd")]([])
-show_if_unavailable = true
+text = "I have the cure. That should do for some time."
+actions = Array[ExtResource("3_xjnsa")]([])
+goto_page = 6
+requirements = Array[ExtResource("4_2jftd")]([SubResource("Resource_g6ne0")])
+show_if_unavailable = false
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_acon4"]
 script = ExtResource("1_upblg")
 npc_text = "Hi, brother."
-answers = Array[ExtResource("2_l7org")]([SubResource("Resource_x5eyt"), SubResource("Resource_1w67r"), SubResource("Resource_g6ne0")])
+answers = Array[ExtResource("2_l7org")]([SubResource("Resource_x5eyt"), SubResource("Resource_1w67r"), SubResource("Resource_p4lck")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
 [sub_resource type="Resource" id="Resource_xjnsa"]
@@ -168,7 +167,45 @@ npc_text = "...."
 answers = Array[ExtResource("2_l7org")]([])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
+[sub_resource type="Resource" id="Resource_n32ei"]
+script = ExtResource("3_xjnsa")
+type = "revoke_item"
+amount = 0
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+item = ExtResource("5_xjnsa")
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_ec28w"]
+script = ExtResource("3_xjnsa")
+type = "add_maya_time"
+amount = 10
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_6cv8u"]
+script = ExtResource("2_l7org")
+text = "[You administer the cure]."
+actions = Array[ExtResource("3_xjnsa")]([SubResource("Resource_n32ei"), SubResource("Resource_ec28w")])
+goto_page = -1
+requirements = Array[ExtResource("4_2jftd")]([])
+show_if_unavailable = true
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_40wqe"]
+script = ExtResource("1_upblg")
+npc_text = "Thank you, Jo. But... I guess... This was the last one."
+answers = Array[ExtResource("2_l7org")]([SubResource("Resource_6cv8u")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
 [resource]
 script = ExtResource("2_o8nqn")
-pages = Array[ExtResource("1_upblg")]([SubResource("Resource_acon4"), SubResource("Resource_l7org"), SubResource("Resource_2jftd"), SubResource("Resource_0odqd"), SubResource("Resource_5l0x3"), SubResource("Resource_rlc84")])
+pages = Array[ExtResource("1_upblg")]([SubResource("Resource_acon4"), SubResource("Resource_l7org"), SubResource("Resource_2jftd"), SubResource("Resource_0odqd"), SubResource("Resource_5l0x3"), SubResource("Resource_rlc84"), SubResource("Resource_40wqe")])
 metadata/_custom_type_script = "uid://c4sn7n4x1gvpe"

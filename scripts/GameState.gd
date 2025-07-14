@@ -26,7 +26,7 @@ var _money: int       = 0
 var _initialized: bool = false           # ⇦ TA zmienna zapobiega ponownemu resetowi
 var _maya_timer: Timer
 var _maya_seconds_left: int = 0
-@export var maya_timer_minutes: int = 20
+@export var maya_timer_minutes: int = 6
 var _maya_timer_active: bool = false
 
 # --- lifecycle -------------------------------------------------------------
@@ -146,6 +146,15 @@ func stop_maya_timer() -> void:
 
 func get_maya_seconds_left() -> int:
 		return _maya_seconds_left
+		
+func add_maya_time(minutes: int) -> void:
+		if minutes <= 0:
+				return
+		_maya_seconds_left += minutes * 60
+		if not _maya_timer_active and _maya_seconds_left > 0:
+				_maya_timer.start()
+				_maya_timer_active = true
+		emit_signal("maya_timer_updated", _maya_seconds_left)
 
 func _on_maya_timer_tick() -> void:
 		if not _maya_timer_active:
