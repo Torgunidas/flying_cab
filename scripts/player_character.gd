@@ -258,9 +258,12 @@ func _on_player_death() -> void:
 	t.start()
 
 func _on_player_reload() -> void:
-	# Odroczony restart sceny po śmierci gracza
 	await get_tree().create_timer(0.6).timeout
-	get_tree().reload_current_scene()
+	if GameState.has_method("reset_game"):
+				GameState.reset_game()
+	if QuestSys.has_method("reset_all"):
+				QuestSys.reset_all()
+	get_tree().change_scene_to_file("res://scenes/ui_scenes/MainMenu.tscn")
 	
 func update_hp_ui() -> void:
 	var ui = get_tree().get_current_scene().get_node_or_null("MobileControls") as CanvasLayer

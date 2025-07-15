@@ -85,9 +85,14 @@ func get_all() -> Array[QuestData]:
 func get_by_status(st: QuestData.Status) -> Array[QuestData]:
 	var arr: Array[QuestData] = []
 	for q in _dict.values():
-		if q is QuestData and q.status == st:
-			arr.append(q)
+				if q is QuestData and q.status == st:
+						arr.append(q)
 	return arr
+
+func reset_all() -> void:
+		for q: QuestData in _dict.values():
+				if q is QuestData:
+						q.status = QuestData.Status.INACTIVE
 
 ## -------------------------------------------------------------------
 ## 5. Pomocniczy wydruk – tylko do testów

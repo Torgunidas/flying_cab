@@ -110,6 +110,19 @@ func revoke_vehicle(id: String, is_instance := false) -> void:
 func has_vehicle(id: String) -> bool:
 	return id in allowed_models or id in allowed_instances
 	
+# --- RESET GAME ------------------------------------------------------------
+func reset_game() -> void:
+		_money = 0
+		allowed_models.clear()
+		allowed_instances.clear()
+		_items.clear()
+		_selected_level = null
+		_spawn_point_name = ""
+		stop_maya_timer()
+		_maya_seconds_left = 0
+		emit_signal("money_changed", _money)
+		emit_signal("items_changed", get_items())	
+	
 # --- ITEM MANAGEMENT -------------------------------------------------------
 func grant_item(item: ItemData) -> void:
 		if item == null or item.id == "":
