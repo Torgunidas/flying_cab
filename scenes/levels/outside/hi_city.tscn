@@ -2508,6 +2508,21 @@ position = Vector2(4247, 75)
 [node name="WP_03" parent="npc_cars/car_npc3/waypoint" index="3"]
 position = Vector2(75, 78)
 
+[node name="car_npc4" parent="npc_cars" instance=ExtResource("25_s7xga")]
+position = Vector2(-3121, -1383)
+
+[node name="WP_00" parent="npc_cars/car_npc4/waypoint" index="0"]
+position = Vector2(74, 4)
+
+[node name="WP_01" parent="npc_cars/car_npc4/waypoint" index="1"]
+position = Vector2(-5172, -24)
+
+[node name="WP_02" parent="npc_cars/car_npc4/waypoint" index="2"]
+position = Vector2(-5156, -212)
+
+[node name="WP_03" parent="npc_cars/car_npc4/waypoint" index="3"]
+position = Vector2(78, 6)
+
 [node name="car_npc2" parent="npc_cars" instance=ExtResource("25_s7xga")]
 position = Vector2(-8496, -518)
 
@@ -2674,6 +2689,7 @@ texture = ExtResource("37_eyoi1")
 [editable path="passangers_E/PassengerSpawnPoint"]
 [editable path="npc_cars/car_npc"]
 [editable path="npc_cars/car_npc3"]
+[editable path="npc_cars/car_npc4"]
 [editable path="npc_cars/car_npc2"]
 [editable path="delivey_car_wash/Point_Car_wash"]
 [editable path="passangers/passenger_1st_gasstation"]
