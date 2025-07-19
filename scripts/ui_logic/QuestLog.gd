@@ -102,10 +102,11 @@ func _on_list_item_pressed(selected_id: String, desc_label: Label) -> void:
 		QuestObjectiveUi.set_quest_id(selected_id)
 		desc_label.visible = not desc_label.visible
 		
-func _refresh_inventory() -> void:
+func _refresh_inventory(item_list: Array = []) -> void:
 		for child in inv_list.get_children():
 				child.queue_free()
-		for item in GameState.get_items():
+		var list_to_show = item_list    # albo GameState.get_items()
+		for item in list_to_show:
 				if item is ItemData:
 						var hbox = HBoxContainer.new()
 						inv_list.add_child(hbox)
