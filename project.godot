@@ -17,6 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+VehPers="*res://scripts/VehiclePersistence.gd"
 GameState="*res://scripts/GameState.gd"
 QuestSys="*res://scenes/QuestSysRoot.tscn"
 UISys="*res://scenes/ui_scenes/QuestLog.tscn"

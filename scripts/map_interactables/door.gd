@@ -48,8 +48,46 @@ func interact() -> void:
 		push_error("Door: nie mogę załadować %s" % target_level_path); return
 
 	# ② zapisz w GameState: poziom + punkt spawnu
+	# ② zapisz w GameState: poziom + punkt spawnu
 	GameState.set_selected_level(level_ps)
 	GameState.set_spawn_point_name(spawn_point_name.strip_edges())
+	
+	_save_world_vehicle_if_any()
 
 	# ③ przełącz na GameplayRoot
 	get_tree().change_scene_to_file(GAME_ROOT_PATH)
+
+func _find_world_level_from_here() -> Node:
+	var n: Node = self
+	while n:
+		if VehPers.is_world_level(n):
+			return n
+		# Jeśli dotarliśmy do current_scene (GameplayRoot) – przerwij pętlę,
+		# bo wyżej już nic nie będzie (parent == null)
+		if n == get_tree().current_scene:
+			break
+		n = n.get_parent()
+
+	# Fallback – spróbuj przez 'environment'
+	var root := get_tree().current_scene
+	var env := root.get_node_or_null("environment")
+	if env:
+		for c in env.get_children():
+			if VehPers.is_world_level(c):
+				return c
+	return null
+
+
+func _save_world_vehicle_if_any() -> void:
+	var world_level := _find_world_level_from_here()
+	if world_level == null:
+		print("[Door] World level NOT found (structure changed?)")
+		return
+
+	if VehPers.current_car and VehPers.current_car.is_inside_tree():
+		# Uwaga: current_car może być dzieckiem world_level albo jego potomkiem
+		VehPers.save_car_state(world_level)
+		print("[Door] Saved vehicle at", VehPers.current_car.global_position,
+			  "world =", world_level.name)
+	else:
+		print("[Door] No current_car to save (not in vehicle / freed)")

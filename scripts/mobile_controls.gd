@@ -106,6 +106,9 @@ func _on_retry_pressed() -> void:
 	if QuestSys.has_method("reset_all"):
 								QuestSys.reset_all()
 	get_tree().change_scene_to_file("res://scenes/ui_scenes/MainMenu.tscn")
+	VehPers._saved.clear()
+	VehPers.current_car = null
+	VehPers.last_world_id = ""
 
 # ───────────────────────── 5. PRZEŁĄCZANIE TRYBU ─────────────────────
 func set_mode(mode: String) -> void:

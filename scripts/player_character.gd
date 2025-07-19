@@ -192,6 +192,7 @@ func enter_vehicle(target_vehicle: Car = null) -> void:
 		ui.update_hp_display(vehicle.current_hp, vehicle.max_hp)
 		ui.update_fuel_display(vehicle.current_fuel, vehicle.max_fuel)
 	
+	VehPers.set_current_car(veh)
 	emit_signal("entered_vehicle", vehicle)
 	hide()
 

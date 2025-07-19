@@ -1066,6 +1066,12 @@ position = Vector2(1645, -880)
 [node name="Door_fancy_inactive6" parent="entrances" instance=ExtResource("16_l7kxo")]
 position = Vector2(1482, -879)
 
+[node name="Door_fancy_inactive8" parent="entrances" instance=ExtResource("16_l7kxo")]
+position = Vector2(810, -1007)
+
+[node name="Door_fancy_inactive9" parent="entrances" instance=ExtResource("16_l7kxo")]
+position = Vector2(810, -879)
+
 [node name="gas_stations" type="Node2D" parent="."]
 position = Vector2(-3296, -1687)
 
@@ -2631,6 +2637,16 @@ position = Vector2(-56, 0)
 [node name="SpawnTimer" parent="passangers/passenger_2ns_gasstation2" index="2"]
 wait_time = 8.0
 
+[node name="passenger_2ns_gasstation3" parent="passangers" instance=ExtResource("21_s5ica")]
+position = Vector2(-7385, -1478)
+delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash/Point_Car_wash")])
+
+[node name="Waypoint" parent="passangers/passenger_2ns_gasstation3" index="1"]
+position = Vector2(-69, 0)
+
+[node name="SpawnTimer" parent="passangers/passenger_2ns_gasstation3" index="2"]
+wait_time = 8.0
+
 [node name="Bench" type="Sprite2D" parent="."]
 position = Vector2(-8517, -1346)
 texture = ExtResource("37_eyoi1")
@@ -2645,3 +2661,4 @@ texture = ExtResource("37_eyoi1")
 [editable path="delivey_car_wash/Point_Car_wash"]
 [editable path="passangers/passenger_1st_gasstation"]
 [editable path="passangers/passenger_2ns_gasstation2"]
+[editable path="passangers/passenger_2ns_gasstation3"]

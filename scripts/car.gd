@@ -467,6 +467,10 @@ func _on_car_death() -> void:
 	
 	# Emit signal śmierci
 	emit_signal("died")
+	if VehPers.current_car == self:
+		VehPers.clear_car_state(VehPers.last_world_id)
+		VehPers.current_car = null
+	queue_free()
 
 	# 4) Zamieniamy sprite i odtwarzamy dźwięk
 	var _car_body_sprite  = get_node("car_body")  as Sprite2D
