@@ -170,6 +170,9 @@ func enter_vehicle(target_vehicle: Car = null) -> void:
 	vehicle = veh
 	add_collision_exception_with(vehicle)
 	vehicle.add_collision_exception_with(self)
+	if not vehicle.is_in_group("player_owned_vehicle"):
+		vehicle.add_to_group("player_owned_vehicle")
+		vehicle.set_meta("player_owned", true)
 
 	# 3) Switch into vehicle mode
 	in_vehicle = true

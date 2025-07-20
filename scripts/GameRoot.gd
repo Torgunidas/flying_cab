@@ -81,14 +81,17 @@ func _load_level(level_scene: PackedScene) -> void:
 	if VehPers.is_world_level(level_inst):
 		var veh_parent: Node = level_inst.get_node_or_null("Vehicles") if level_inst.has_node("Vehicles") else level_inst
 		if VehPers.has_state(level_inst.name):
-			_d("Restoring vehicle for %s" % level_inst.name)
-			var restored := VehPers.restore_car_state(level_inst, veh_parent)
-			if restored:
-				# (opcjonalnie) oznacz przywrócony pojazd, żeby inne inicjalizacje go nie ruszały
-				restored.add_to_group("restored_vehicle")
-				_d("Vehicle restored at %s" % str(restored.global_position))
-		else:
-			_d("No saved vehicle state for %s" % level_inst.name)
+			# Usuń fabryczne auto gracza (te bez player_owned_vehicle)
+			for c in veh_parent.get_children():
+				if c is Car and not c.is_in_group("player_owned_vehicle") and (c.car_id == "yellow_cab" or c.car_id == ""):
+					c.queue_free()
+		var restored := VehPers.restore_car_state(level_inst, veh_parent)
+		if restored:
+			restored.add_to_group("player_owned_vehicle")
+			restored.set_meta("player_owned", true)
+	else:
+		_d("No saved vehicle state for %s" % level_inst.name)
+
 
 	# 3) SPAWN GRACZA ──────────────────────────────────────────
 	var spawn_name := GameState.get_spawn_point_name()

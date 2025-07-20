@@ -1,54 +1,73 @@
 extends Node
-class_name VehiclePersistence
+class_name VehiclePersistence     # Autoload o nazwie VehPers
 
-const WORLD_LEVEL_IDS: Array[String] = ["HiCity"]
+const WORLD_LEVEL_IDS: Array[String] = ["HiCity"]   # dopisz kolejne jeśli potrzebujesz
 
-var _saved: Dictionary = {}               # world_name -> dict
+var _saved: Dictionary = {}     # klucz = nazwa root levelu
 var current_car: Car = null
 var last_world_id: String = ""
 
+# ---------- Helpery właściwości ----------
+func _get_prop(obj: Object, name: String) -> Variant:
+	if obj == null:
+		return null
+	for p in obj.get_property_list():
+		if p.name == name:
+			return obj.get(name)
+	return null
+
+func _set_prop(obj: Object, name: String, value) -> void:
+	if obj == null:
+		return
+	for p in obj.get_property_list():
+		if p.name == name:
+			obj.set(name, value)
+			return
+
+# ---------- Public API ----------
 func is_world_level(level_root: Node) -> bool:
-	if level_root == null:
-		return false
-	return level_root.name in WORLD_LEVEL_IDS
+	return level_root != null and level_root.name in WORLD_LEVEL_IDS
 
-
-func save_car_state(world_root: Node) -> void:
-	_dbg("save_enter", "root="+world_root.name+" cur="+str(current_car))
-	if current_car == null or world_root == null:
-		return
-	if not is_world_level(world_root):
-		return
-	_dbg("saved", "root="+world_root.name+" pos="+str(current_car.global_position))
-
-	# ── WARIANT A (jeżeli rzeczywiście potrzebujesz PackedScene) ──
-	# var car_scene: PackedScene = current_car.get_scene() as PackedScene
-	# var path: String = car_scene.resource_path if car_scene != null else ""
-
-	# ── WARIANT B (PROSTSZY) używa wbudowanej właściwości node'a (Godot 4):
-	var path: String = current_car.scene_file_path
-
-	_saved[world_root.name] = {
-		"car_scene_path": path,
-		"pos": current_car.global_position,
-		"rot": current_car.rotation,
-		"vel": current_car.velocity,
-	}
-	last_world_id = world_root.name
-
+func has_state(world_name: String) -> bool:
+	return _saved.has(world_name)
 
 func clear_car_state(world_name: String) -> void:
 	_saved.erase(world_name)
 	if last_world_id == world_name:
 		last_world_id = ""
 
+func set_current_car(car: Car) -> void:
+	current_car = car
 
-func has_state(world_name: String) -> bool:
-	return _saved.has(world_name)
+# ---------- Save ----------
+func save_car_state(world_root: Node) -> void:
+	if current_car == null or world_root == null:
+		return
+	if not is_world_level(world_root):
+		return
 
+	var path: String = current_car.scene_file_path
+	var hp_val       = _get_prop(current_car, "current_hp")
+	var max_hp_val   = _get_prop(current_car, "max_hp")
+	var fuel_val     = _get_prop(current_car, "current_fuel")
+	var max_fuel_val = _get_prop(current_car, "max_fuel")
 
+	_saved[world_root.name] = {
+		"car_scene_path": path,
+		"pos": current_car.global_position,
+		"rot": current_car.rotation,
+		"vel": current_car.velocity,
+		"hp": hp_val,
+		"max_hp": max_hp_val,
+		"fuel": fuel_val,
+		"max_fuel": max_fuel_val
+	}
+	last_world_id = world_root.name
+	_dbg("saved", "root="+world_root.name+" pos="+str(current_car.global_position)
+		+" hp="+str(hp_val)+"/"+str(max_hp_val)+" fuel="+str(fuel_val)+"/"+str(max_fuel_val))
+
+# ---------- Restore ----------
 func restore_car_state(world_root: Node2D, parent: Node) -> Car:
-	_dbg("restore_try", "root="+world_root.name)
 	if world_root == null or parent == null:
 		return null
 	if not is_world_level(world_root):
@@ -61,27 +80,51 @@ func restore_car_state(world_root: Node2D, parent: Node) -> Car:
 	if path == "" or not ResourceLoader.exists(path):
 		push_warning("VehPers: brak sceny pojazdu: %s" % path)
 		return null
-	_dbg("restore_found", "path="+path)
 
 	var packed: PackedScene = load(path)
-	var car: Car = packed.instantiate() as Car
+	var car := packed.instantiate() as Car
 	parent.add_child(car)
+
+	# Transform
 	car.global_position = data.pos
 	car.rotation = data.rot
-	call_deferred("_apply_velocity", car, data.vel)
-	current_car = car
-	_dbg("restored", "pos="+str(car.global_position))
-	return car
 
+	# Velocity (po _ready)
+	if data.has("vel") and typeof(data.vel) == TYPE_VECTOR2:
+		call_deferred("_apply_velocity", car, data.vel)
+
+	# Deferred stats (aby nie nadpisało ich _ready() w car.gd)
+	call_deferred("_restore_stats_after_ready", car, data)
+
+	current_car = car
+	return car
 
 func _apply_velocity(car: Car, vel: Vector2) -> void:
 	if car and car.is_inside_tree():
 		car.velocity = vel
 
+func _restore_stats_after_ready(car: Car, data: Dictionary) -> void:
+	if car == null or not car.is_inside_tree():
+		return
+	var saved_max_hp   = data.get("max_hp", null)
+	var saved_hp       = data.get("hp", null)
+	var saved_max_fuel = data.get("max_fuel", null)
+	var saved_fuel     = data.get("fuel", null)
 
-func set_current_car(car: Car) -> void:
-	current_car = car
-	_dbg("set_current_car", "car="+str(car))
+	if saved_max_hp != null:
+		_set_prop(car, "max_hp", saved_max_hp)
+	if saved_hp != null:
+		var cap_hp = saved_max_hp if saved_max_hp != null else saved_hp
+		_set_prop(car, "current_hp", clamp(saved_hp, 0, cap_hp))
 
+	if saved_max_fuel != null:
+		_set_prop(car, "max_fuel", saved_max_fuel)
+	if saved_fuel != null:
+		var cap_fuel = saved_max_fuel if saved_max_fuel != null else saved_fuel
+		_set_prop(car, "current_fuel", clamp(saved_fuel, 0.0, float(cap_fuel)))
+
+	_dbg("restored_stats", "hp="+str(saved_hp)+"/"+str(saved_max_hp)+" fuel="+str(saved_fuel)+"/"+str(saved_max_fuel))
+
+# ---------- Debug ----------
 func _dbg(tag: String, extra := "") -> void:
-	print("[VehPers]", tag, " world_keys=", _saved.keys(), " current_car=", current_car, " last_world=", last_world_id, " ", extra)
+	print("[VehPers]", tag, extra, " keys=", _saved.keys())
