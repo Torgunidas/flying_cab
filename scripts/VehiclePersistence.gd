@@ -51,6 +51,7 @@ func save_car_state(world_root: Node) -> void:
 	var max_hp_val   = _get_prop(current_car, "max_hp")
 	var fuel_val     = _get_prop(current_car, "current_fuel")
 	var max_fuel_val = _get_prop(current_car, "max_fuel")
+	var car_id_val = _get_prop(current_car, "car_id")
 
 	_saved[world_root.name] = {
 		"car_scene_path": path,
@@ -60,7 +61,8 @@ func save_car_state(world_root: Node) -> void:
 		"hp": hp_val,
 		"max_hp": max_hp_val,
 		"fuel": fuel_val,
-		"max_fuel": max_fuel_val
+		"max_fuel": max_fuel_val,
+		"car_id": car_id_val
 	}
 	last_world_id = world_root.name
 	_dbg("saved", "root="+world_root.name+" pos="+str(current_car.global_position)
@@ -76,6 +78,7 @@ func restore_car_state(world_root: Node2D, parent: Node) -> Car:
 		return null
 
 	var data: Dictionary = _saved[world_root.name]
+	var saved_car_id = data.get("car_id", null)
 	var path: String = data.get("car_scene_path", "")
 	if path == "" or not ResourceLoader.exists(path):
 		push_warning("VehPers: brak sceny pojazdu: %s" % path)
@@ -95,6 +98,13 @@ func restore_car_state(world_root: Node2D, parent: Node) -> Car:
 
 	# Deferred stats (aby nie nadpisało ich _ready() w car.gd)
 	call_deferred("_restore_stats_after_ready", car, data)
+	
+		# po zainstancjowaniu:
+	if saved_car_id != null:
+		_set_prop(car, "car_id", saved_car_id)   # jeśli chcesz zachować identyfikator
+	car.set_meta("player_owned", true)
+	car.add_to_group("player_owned_vehicle")
+	car.set_meta("restored_from_save", true)
 
 	current_car = car
 	return car
@@ -128,3 +138,13 @@ func _restore_stats_after_ready(car: Car, data: Dictionary) -> void:
 # ---------- Debug ----------
 func _dbg(tag: String, extra := "") -> void:
 	print("[VehPers]", tag, extra, " keys=", _saved.keys())
+	
+	
+	# -----------------------------------------------------------------------
+#  RESET – kasuje cały runtime’owy zapis pojazdu
+# -----------------------------------------------------------------------
+func reset_vehicle_persistence() -> void:
+	_saved.clear()
+	current_car = null
+	last_world_id = ""
+	_dbg("reset", "vehicle state cleared")

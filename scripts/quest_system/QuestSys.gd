@@ -11,6 +11,7 @@ class_name QuestManager        # ← nazwa klasy NIE może być „QuestSys”
 ## -------------------------------------------------------------------
 signal quest_activated(quest_id: String)
 signal quest_completed(quest_id: String)
+signal quests_reset
 
 ## -------------------------------------------------------------------
 ## 3. Prywatny słownik id → QuestData
@@ -90,9 +91,13 @@ func get_by_status(st: QuestData.Status) -> Array[QuestData]:
 	return arr
 
 func reset_all() -> void:
-		for q: QuestData in _dict.values():
-				if q is QuestData:
-						q.status = QuestData.Status.INACTIVE
+	for q: QuestData in _dict.values():
+		if q is QuestData:
+			q.status = QuestData.Status.INACTIVE
+	emit_signal("quests_reset")    # sygnał dla UI
+
+
+
 
 ## -------------------------------------------------------------------
 ## 5. Pomocniczy wydruk – tylko do testów

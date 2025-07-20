@@ -98,17 +98,14 @@ func _on_time_expired() -> void:
 
 func _on_retry_pressed() -> void:
 	if death_screen:
-								death_screen.visible = false
+		death_screen.visible = false
 	get_tree().paused = false
-	var gs : Node = get_node_or_null("/root/GameState")
-	if gs and gs.has_method("reset_game"):
-								gs.reset_game()
-	if QuestSys.has_method("reset_all"):
-								QuestSys.reset_all()
+
+	# jeden, kompletny reset
+	GameState.reset_game()
+
 	get_tree().change_scene_to_file("res://scenes/ui_scenes/MainMenu.tscn")
-	VehPers._saved.clear()
-	VehPers.current_car = null
-	VehPers.last_world_id = ""
+
 
 # ───────────────────────── 5. PRZEŁĄCZANIE TRYBU ─────────────────────
 func set_mode(mode: String) -> void:

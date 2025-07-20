@@ -9,9 +9,15 @@ extends Control
 @onready var menu_music := $MenuMusic
 
 func _ready() -> void:
-	# ② Od razu startujemy muzykę (w razie gdyby Autoplay był wyłączony)
+	# Hard reset za każdym razem, gdy pojawia się menu
+	if GameState and GameState.has_method("reset_game"):
+		GameState.reset_game()
+
 	if not menu_music.playing:
 		menu_music.play()
+
+
+
 
 func _on_Quit_pressed() -> void:
 	if menu_music.playing:

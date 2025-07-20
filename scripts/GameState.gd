@@ -111,17 +111,41 @@ func has_vehicle(id: String) -> bool:
 	return id in allowed_models or id in allowed_instances
 	
 # --- RESET GAME ------------------------------------------------------------
+# --- RESET GAME ------------------------------------------------------------
 func reset_game() -> void:
-		_money = 0
+		# 1) wyczyść zasoby gracza
+		_money                = 100
 		allowed_models.clear()
 		allowed_instances.clear()
 		_items.clear()
-		_selected_level = null
-		_spawn_point_name = ""
+
+		# 2) spawn / level
+		_selected_level       = null
+		_spawn_point_name     = ""
+
+		# 3) globalny timer
 		stop_maya_timer()
-		_maya_seconds_left = 0
+		_maya_seconds_left    = 0
+
+		# 4) questy
+		var qm := get_node_or_null("/root/QuestSys")
+		if qm and qm.has_method("reset_all"):
+				qm.reset_all()
+
+		# 5) pojazd
+		var vp := get_node_or_null("/root/VehPers")
+		if vp and vp.has_method("reset_vehicle_persistence"):
+				vp.reset_vehicle_persistence()
+
+		# 6) pozwól _ready() ustawić starting_money przy następnym wejściu do gry
+		_initialized = false
+
+		# 7) sygnały UI
 		emit_signal("money_changed", _money)
-		emit_signal("items_changed", get_items())	
+		emit_signal("items_changed", get_items())
+
+
+
 	
 # --- ITEM MANAGEMENT -------------------------------------------------------
 func grant_item(item: ItemData) -> void:

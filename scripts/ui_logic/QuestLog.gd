@@ -20,6 +20,7 @@ func _ready() -> void:
 	set_process_unhandled_input(true)
 	QuestSys.quest_activated.connect(_refresh_quests)
 	QuestSys.quest_completed.connect(_refresh_quests)
+	QuestSys.quests_reset.connect(_refresh_quests)
 	GameState.items_changed.connect(_refresh_inventory)
 	quest_btn.pressed.connect(_show_quests)
 	inv_btn.pressed.connect(_show_inventory)

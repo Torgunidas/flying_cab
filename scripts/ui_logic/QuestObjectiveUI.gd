@@ -18,6 +18,7 @@ func _ready() -> void:
 	# podłączamy się na activation i completion
 	QuestSys.quest_activated.connect(_on_quest_activated)
 	QuestSys.quest_completed.connect(_on_quest_completed)
+	QuestSys.quests_reset.connect(clear_objective)
 
 	# jeśli przy starcie jest już jakiś active quest, od razu go pokaż
 	_initialize_current_active()
@@ -99,3 +100,7 @@ func _update_objective() -> void:
 	title_label.text     = q.title
 	objective_label.text = q.objective
 	_spawn_pointer(_find_goal_node(quest_id))
+
+func clear_objective() -> void:
+	title_label.text = ""
+	visible = false

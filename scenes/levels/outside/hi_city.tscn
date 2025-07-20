@@ -1029,8 +1029,9 @@ position = Vector2(-639, -260)
 position = Vector2(-522, -263)
 taxi_marker_scene = ExtResource("23_q242y")
 
-[node name="Car_yellow_cab" parent="cars" instance=ExtResource("24_q242y")]
+[node name="Car_yellow_cab" parent="cars" groups=["default_spawn_car"] instance=ExtResource("24_q242y")]
 position = Vector2(-9594, -263)
+damage_tolerance = 100.0
 current_fuel = 400.0
 
 [node name="entrances" type="Node2D" parent="."]
