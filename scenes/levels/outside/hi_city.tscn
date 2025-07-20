@@ -2620,7 +2620,7 @@ dialog_resource = ExtResource("34_i0cx1")
 
 [node name="passenger_1st_gasstation" parent="passangers" instance=ExtResource("21_s5ica")]
 position = Vector2(-7985, -1352)
-delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash/Point_Car_wash")])
+delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash")])
 
 [node name="Waypoint" parent="passangers/passenger_1st_gasstation" index="1"]
 position = Vector2(-56, 0)
@@ -2630,7 +2630,7 @@ wait_time = 13.0
 
 [node name="passenger_2ns_gasstation2" parent="passangers" instance=ExtResource("21_s5ica")]
 position = Vector2(-7985, -1478)
-delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash/Point_Car_wash")])
+delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash")])
 
 [node name="Waypoint" parent="passangers/passenger_2ns_gasstation2" index="1"]
 position = Vector2(-56, 0)
@@ -2640,7 +2640,7 @@ wait_time = 8.0
 
 [node name="passenger_2ns_gasstation3" parent="passangers" instance=ExtResource("21_s5ica")]
 position = Vector2(-7385, -1478)
-delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash/Point_Car_wash")])
+delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash")])
 
 [node name="Waypoint" parent="passangers/passenger_2ns_gasstation3" index="1"]
 position = Vector2(-69, 0)

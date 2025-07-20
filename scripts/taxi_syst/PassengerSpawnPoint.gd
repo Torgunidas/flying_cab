@@ -31,7 +31,13 @@ func _on_SpawnTimer_timeout() -> void:
 		return
 	var npc = passenger_scene.instantiate()
 	add_child(npc)
-	npc.delivery_groups = delivery_groups.duplicate()
+	# przekazujemy absolutne ścieżki grup z perspektywy nowego NPC
+	var abs_paths : Array[NodePath] = []
+	for p in delivery_groups:
+				var node = get_node_or_null(p)
+				if node:
+							abs_paths.append(node.get_path())
+	npc.delivery_groups = abs_paths
 	npc.global_position = _spawn.global_position
 	_active_passenger  = npc
 	npc.tree_exited.connect(_on_passenger_freed)   # zjawi się, gdy queue_free()

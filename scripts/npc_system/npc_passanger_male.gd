@@ -290,7 +290,7 @@ func _pick_random_delivery_point() -> DeliveryPoint:
 			continue
 		# przejrzyj dzieci (bez rekurencji; jeśli masz głębiej zagnieżdżone,
 		# użyj root.get_children_recursive())
-		for c in root.get_children_recursive():
+		for c in root.get_children():
 			if c is DeliveryPoint:
 				pool.append(c)
 	# 2) Fallback – jeśli lista pusta, wracamy do starego sposobu (najbliższy z grupy)
