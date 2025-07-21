@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogBook" load_steps=30 format=3 uid="uid://qshud65a7kqq"]
+[gd_resource type="Resource" script_class="DialogBook" load_steps=32 format=3 uid="uid://qshud65a7kqq"]
 
 [ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_upblg"]
 [ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_l7org"]
@@ -190,10 +190,32 @@ npc_text_id = ""
 vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
+[sub_resource type="Resource" id="Resource_fvtq2"]
+script = ExtResource("3_xjnsa")
+type = "finish_quest"
+amount = 0
+quest_id = "1_7_bring_cure_to_maya"
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_mki21"]
+script = ExtResource("3_xjnsa")
+type = "start_quest"
+amount = 0
+quest_id = "2_0_get_the_money_for_cure"
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
 [sub_resource type="Resource" id="Resource_6cv8u"]
 script = ExtResource("2_l7org")
 text = "[You administer the cure]."
-actions = Array[ExtResource("3_xjnsa")]([SubResource("Resource_n32ei"), SubResource("Resource_ec28w")])
+actions = Array[ExtResource("3_xjnsa")]([SubResource("Resource_n32ei"), SubResource("Resource_ec28w"), SubResource("Resource_fvtq2"), SubResource("Resource_mki21")])
 goto_page = -1
 requirements = Array[ExtResource("4_2jftd")]([])
 show_if_unavailable = true

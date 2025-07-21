@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogBook" load_steps=18 format=3 uid="uid://chfmkvt5f1uio"]
+[gd_resource type="Resource" script_class="DialogBook" load_steps=19 format=3 uid="uid://chfmkvt5f1uio"]
 
 [ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_ixh5l"]
 [ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_jlfuf"]
@@ -21,13 +21,22 @@ text = "I need the substance for Maya."
 actions = Array[ExtResource("3_k1ixd")]([])
 goto_page = 1
 requirements = Array[ExtResource("4_2u07e")]([SubResource("Resource_ixh5l")])
+show_if_unavailable = false
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_8gl8u"]
+script = ExtResource("2_jlfuf")
+text = "Yup. We'll catch up later."
+actions = Array[ExtResource("3_k1ixd")]([])
+goto_page = -1
+requirements = Array[ExtResource("4_2u07e")]([])
 show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_acon4"]
 script = ExtResource("1_ixh5l")
 npc_text = "Long time no see."
-answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_x5eyt")])
+answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_x5eyt"), SubResource("Resource_8gl8u")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
 [sub_resource type="Resource" id="Resource_xjnsa"]

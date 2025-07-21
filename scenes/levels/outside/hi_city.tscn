@@ -1,4 +1,4 @@
-[gd_scene load_steps=44 format=4 uid="uid://c6wgvur21jgyx"]
+[gd_scene load_steps=45 format=4 uid="uid://c6wgvur21jgyx"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_u2gg1"]
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="2_gqf4i"]
@@ -32,6 +32,7 @@
 [ext_resource type="Script" uid="uid://cif7nxdplie2g" path="res://scripts/quest_system/quest_obj/EnterVehicleTrigger.gd" id="28_th6as"]
 [ext_resource type="Script" uid="uid://pv1qxoeq5xnx" path="res://scripts/quest_system/quest_obj/FuelQuestWatcher.gd" id="29_l7kxo"]
 [ext_resource type="PackedScene" uid="uid://qacc8w3r5e7y" path="res://scenes/props/car_wash.tscn" id="31_7ob0h"]
+[ext_resource type="Script" uid="uid://dwd1akddxd876" path="res://scripts/quest_system/quest_obj/MoneyQuestWatcher.gd" id="32_e5ogx"]
 [ext_resource type="PackedScene" uid="uid://dowdc7hynobnm" path="res://scenes/characters/mr_froggy.tscn" id="33_th6as"]
 [ext_resource type="Resource" uid="uid://chfmkvt5f1uio" path="res://dialogues/main_quest/mr_froggy_take_2.tres" id="34_i0cx1"]
 [ext_resource type="Texture2D" uid="uid://wykh7agwekxp" path="res://Assets/residential-area-tileset-pixel-art/3 Objects/Bench.png" id="37_eyoi1"]
@@ -2596,6 +2597,21 @@ quest_id = "1_7_bring_cure_to_maya"
 complete_on_enter = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/1_7_bring_cure_to_maya"]
+shape = SubResource("RectangleShape2D_13x0f")
+
+[node name="2_0_get_the_money_for_cure" type="Node2D" parent="Quests" groups=["quest_goal"]]
+position = Vector2(-9363, -270)
+script = ExtResource("32_e5ogx")
+quest_id = "2_0_get_the_money_for_cure"
+threshold_amount = 4000
+
+[node name="2_1_get_back_to_Froggy" type="Area2D" parent="Quests" groups=["quest_goal"]]
+position = Vector2(-9363, -270)
+script = ExtResource("26_dmnkx")
+quest_id = "1_7_bring_cure_to_maya"
+complete_on_enter = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/2_1_get_back_to_Froggy"]
 shape = SubResource("RectangleShape2D_13x0f")
 
 [node name="CarWash" parent="." instance=ExtResource("31_7ob0h")]

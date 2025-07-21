@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3 uid="uid://bk06k5be7viop"]
+
+[ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="1_ff621"]
+
+[resource]
+script = ExtResource("1_ff621")
+id = "2_1_get_back_to_Froggy"
+title = "Get back to Froggy"
+description = "You can buy more Substance for Maya"
+start_target = "quest_giver"
+objective = ""
+reward = 0
+next_quest_id = ""
+metadata/_custom_type_script = "uid://b0fshn7oxrpms"

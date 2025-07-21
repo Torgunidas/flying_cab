@@ -64,5 +64,3 @@ shape = SubResource("RectangleShape2D_636f2")
 
 [node name="Massager" parent="." instance=ExtResource("8_xc4mc")]
 position = Vector2(-97, -1)
-dialog_resource = null
-portrait_texture = null

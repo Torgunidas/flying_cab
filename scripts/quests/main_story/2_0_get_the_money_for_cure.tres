@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3 uid="uid://bdu8717rtyo06"]
+
+[ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="1_0dkby"]
+
+[resource]
+script = ExtResource("1_0dkby")
+id = "2_0_get_the_money_for_cure"
+title = "Gather 1000$"
+description = "Another portion of Substance costs 6k$"
+start_target = "quest_giver"
+objective = ""
+reward = 0
+next_quest_id = "2_1_get_back_to_Froggy"
+metadata/_custom_type_script = "uid://b0fshn7oxrpms"

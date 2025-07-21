@@ -1,8 +1,7 @@
-[gd_scene load_steps=38 format=3 uid="uid://cinhhb4fjvssc"]
+[gd_scene load_steps=37 format=3 uid="uid://cinhhb4fjvssc"]
 
 [ext_resource type="Script" uid="uid://d1obn43fxr2v2" path="res://scripts/info_board.gd" id="1_6r3gf"]
-[ext_resource type="Resource" uid="uid://qshud65a7kqq" path="res://dialogues/main_quest/maya_dialog.tres" id="2_cirsr"]
-[ext_resource type="Texture2D" uid="uid://cyjt07ady6l7e" path="res://Assets/character/maya_sister/Maya_portrait2.png" id="3_uap48"]
+[ext_resource type="Resource" uid="uid://cn0gv23qal7n6" path="res://dialogues/massager.tres" id="2_yox44"]
 [ext_resource type="Texture2D" uid="uid://cblcayksfmde8" path="res://Assets/Massage bench altered.png" id="4_6r3gf"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ohdfx"]
@@ -235,8 +234,7 @@ animations = [{
 
 [node name="Massager" type="Area2D"]
 script = ExtResource("1_6r3gf")
-dialog_resource = ExtResource("2_cirsr")
-portrait_texture = ExtResource("3_uap48")
+dialog_resource = ExtResource("2_yox44")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(-0.5, 7.5)
