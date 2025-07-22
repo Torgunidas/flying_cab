@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_0dkby")
 id = "2_0_get_the_money_for_cure"
-title = "Gather 1000$"
+title = "Gather 4000$"
 description = "Another portion of Substance costs 6k$"
 start_target = "quest_giver"
 objective = ""
