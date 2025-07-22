@@ -1086,6 +1086,9 @@ position = Vector2(3224, 326)
 [node name="GasStation3" parent="gas_stations" instance=ExtResource("10_nvfoa")]
 position = Vector2(4513, -93)
 
+[node name="GasStation_by_the_carwash" parent="gas_stations" instance=ExtResource("10_nvfoa")]
+position = Vector2(-2072, 331)
+
 [node name="architecture" type="Node2D" parent="."]
 
 [node name="business_buildings" type="Node2D" parent="architecture"]
@@ -2628,6 +2631,22 @@ position = Vector2(-6008, -1343)
 [node name="PassengerWaypoint" parent="delivey_car_wash/Point_Car_wash" index="2"]
 position = Vector2(-88, 0)
 
+[node name="delivey_car_wash2" type="Node2D" parent="."]
+position = Vector2(-4960, -1471)
+
+[node name="Point_Car_wash" parent="delivey_car_wash2" instance=ExtResource("23_qobc6")]
+
+[node name="PassengerWaypoint" parent="delivey_car_wash2/Point_Car_wash" index="2"]
+position = Vector2(-88, 0)
+
+[node name="delivey_car_wash3" type="Node2D" parent="."]
+position = Vector2(-3688, -2032)
+
+[node name="Point_Car_wash" parent="delivey_car_wash3" instance=ExtResource("23_qobc6")]
+
+[node name="PassengerWaypoint" parent="delivey_car_wash3/Point_Car_wash" index="2"]
+position = Vector2(-88, 0)
+
 [node name="MrFroggy" parent="." instance=ExtResource("33_th6as")]
 position = Vector2(-5686, -1357)
 dialog_resource = ExtResource("34_i0cx1")
@@ -2664,9 +2683,28 @@ position = Vector2(-69, 0)
 [node name="SpawnTimer" parent="passangers/passenger_2ns_gasstation3" index="2"]
 wait_time = 8.0
 
+[node name="PassengerSpawnPoint" parent="passangers" instance=ExtResource("21_s5ica")]
+position = Vector2(-3778, -2034)
+delivery_groups = Array[NodePath]([NodePath("../../delivery_player_building")])
+
+[node name="Waypoint" parent="passangers/PassengerSpawnPoint" index="1"]
+position = Vector2(-144, 0)
+
+[node name="SpawnTimer" parent="passangers/PassengerSpawnPoint" index="2"]
+wait_time = 10.0
+
 [node name="Bench" type="Sprite2D" parent="."]
 position = Vector2(-8517, -1346)
 texture = ExtResource("37_eyoi1")
+
+[node name="delivery_player_building" type="Node2D" parent="."]
+position = Vector2(-3688, -2032)
+
+[node name="DeliveryPoint" parent="delivery_player_building" instance=ExtResource("23_qobc6")]
+position = Vector2(-5411, 1775)
+
+[node name="PassengerWaypoint" parent="delivery_player_building/DeliveryPoint" index="2"]
+position = Vector2(-104, 0)
 
 [connection signal="body_entered" from="DeathBoundary" to="." method="_on_death_boundary_body_entered"]
 
@@ -2676,6 +2714,10 @@ texture = ExtResource("37_eyoi1")
 [editable path="npc_cars/car_npc4"]
 [editable path="npc_cars/car_npc2"]
 [editable path="delivey_car_wash/Point_Car_wash"]
+[editable path="delivey_car_wash2/Point_Car_wash"]
+[editable path="delivey_car_wash3/Point_Car_wash"]
 [editable path="passangers/passenger_1st_gasstation"]
 [editable path="passangers/passenger_2ns_gasstation2"]
 [editable path="passangers/passenger_2ns_gasstation3"]
+[editable path="passangers/PassengerSpawnPoint"]
+[editable path="delivery_player_building/DeliveryPoint"]
