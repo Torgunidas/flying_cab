@@ -2626,25 +2626,25 @@ position = Vector2(-8198, -1343)
 [node name="delivey_car_wash" type="Node2D" parent="."]
 position = Vector2(-6008, -1343)
 
+[node name="Point_Car_wash2" parent="delivey_car_wash" instance=ExtResource("23_qobc6")]
+position = Vector2(1048, -128)
+marker = NodePath("../Point_Car_wash/Sprite2D")
+waypoint = NodePath("../Point_Car_wash/PassengerWaypoint")
+
+[node name="PassengerWaypoint" parent="delivey_car_wash/Point_Car_wash2" index="2"]
+position = Vector2(-88, 0)
+
 [node name="Point_Car_wash" parent="delivey_car_wash" instance=ExtResource("23_qobc6")]
 
 [node name="PassengerWaypoint" parent="delivey_car_wash/Point_Car_wash" index="2"]
 position = Vector2(-88, 0)
 
-[node name="delivey_car_wash2" type="Node2D" parent="."]
-position = Vector2(-4960, -1471)
+[node name="Point_Car_wash3" parent="delivey_car_wash" instance=ExtResource("23_qobc6")]
+position = Vector2(2320, -689)
+marker = NodePath("../Point_Car_wash/Sprite2D")
+waypoint = NodePath("../Point_Car_wash/PassengerWaypoint")
 
-[node name="Point_Car_wash" parent="delivey_car_wash2" instance=ExtResource("23_qobc6")]
-
-[node name="PassengerWaypoint" parent="delivey_car_wash2/Point_Car_wash" index="2"]
-position = Vector2(-88, 0)
-
-[node name="delivey_car_wash3" type="Node2D" parent="."]
-position = Vector2(-3688, -2032)
-
-[node name="Point_Car_wash" parent="delivey_car_wash3" instance=ExtResource("23_qobc6")]
-
-[node name="PassengerWaypoint" parent="delivey_car_wash3/Point_Car_wash" index="2"]
+[node name="PassengerWaypoint" parent="delivey_car_wash/Point_Car_wash3" index="2"]
 position = Vector2(-88, 0)
 
 [node name="MrFroggy" parent="." instance=ExtResource("33_th6as")]
@@ -2713,9 +2713,9 @@ position = Vector2(-104, 0)
 [editable path="npc_cars/car_npc3"]
 [editable path="npc_cars/car_npc4"]
 [editable path="npc_cars/car_npc2"]
+[editable path="delivey_car_wash/Point_Car_wash2"]
 [editable path="delivey_car_wash/Point_Car_wash"]
-[editable path="delivey_car_wash2/Point_Car_wash"]
-[editable path="delivey_car_wash3/Point_Car_wash"]
+[editable path="delivey_car_wash/Point_Car_wash3"]
 [editable path="passangers/passenger_1st_gasstation"]
 [editable path="passangers/passenger_2ns_gasstation2"]
 [editable path="passangers/passenger_2ns_gasstation3"]
