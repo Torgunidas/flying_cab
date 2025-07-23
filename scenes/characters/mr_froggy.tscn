@@ -1,7 +1,7 @@
 [gd_scene load_steps=12 format=3 uid="uid://dowdc7hynobnm"]
 
 [ext_resource type="Script" uid="uid://d1obn43fxr2v2" path="res://scripts/info_board.gd" id="1_1ubfn"]
-[ext_resource type="Resource" uid="uid://qed7nsuwh5yv" path="res://dialogues/main_quest/mr_froggy.tres" id="2_1ubfn"]
+[ext_resource type="Resource" uid="uid://chfmkvt5f1uio" path="res://dialogues/main_quest/mr_froggy_take_2.tres" id="2_1ubfn"]
 [ext_resource type="Texture2D" uid="uid://pq56edgwkuvi" path="res://Assets/character/MrFroggy/froggy_smile_portrait-export.png" id="3_1ubfn"]
 [ext_resource type="Texture2D" uid="uid://y0x7ex21cm6p" path="res://Assets/GandalfHardcore Modern NPCs/Mafia Boss sheet.png" id="4_1ubfn"]
 

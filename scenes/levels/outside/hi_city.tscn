@@ -2628,8 +2628,6 @@ position = Vector2(-6008, -1343)
 
 [node name="Point_Car_wash2" parent="delivey_car_wash" instance=ExtResource("23_qobc6")]
 position = Vector2(1048, -128)
-marker = NodePath("../Point_Car_wash/Sprite2D")
-waypoint = NodePath("../Point_Car_wash/PassengerWaypoint")
 
 [node name="PassengerWaypoint" parent="delivey_car_wash/Point_Car_wash2" index="2"]
 position = Vector2(-88, 0)
@@ -2641,8 +2639,6 @@ position = Vector2(-88, 0)
 
 [node name="Point_Car_wash3" parent="delivey_car_wash" instance=ExtResource("23_qobc6")]
 position = Vector2(2320, -689)
-marker = NodePath("../Point_Car_wash/Sprite2D")
-waypoint = NodePath("../Point_Car_wash/PassengerWaypoint")
 
 [node name="PassengerWaypoint" parent="delivey_car_wash/Point_Car_wash3" index="2"]
 position = Vector2(-88, 0)

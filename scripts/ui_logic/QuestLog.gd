@@ -104,22 +104,24 @@ func _on_list_item_pressed(selected_id: String, desc_label: Label) -> void:
 		desc_label.visible = not desc_label.visible
 		
 func _refresh_inventory(item_list: Array = []) -> void:
-		for child in inv_list.get_children():
-				child.queue_free()
-		var list_to_show = item_list    # albo GameState.get_items()
-		for item in list_to_show:
-				if item is ItemData:
-						var hbox = HBoxContainer.new()
-						inv_list.add_child(hbox)
-						if item.icon:
-								var tex = TextureRect.new()
-								tex.texture = item.icon
-								tex.custom_minimum_size = Vector2(64,64)
-								hbox.add_child(tex)
-						var lbl = Label.new()
-						lbl.text = item.name
-						lbl.add_theme_font_size_override("font_size", LOG_BTN_FONT_SIZE)
-						hbox.add_child(lbl)
+	for child in inv_list.get_children():
+		child.queue_free()
+	var list_to_show = item_list
+	if list_to_show.is_empty():
+		list_to_show = GameState.get_items()
+	for item in list_to_show:
+		if item is ItemData:
+			var hbox = HBoxContainer.new()
+			inv_list.add_child(hbox)
+			if item.icon:
+					var tex = TextureRect.new()
+					tex.texture = item.icon
+					tex.custom_minimum_size = Vector2(64,64)
+					hbox.add_child(tex)
+			var lbl = Label.new()
+			lbl.text = item.name
+			lbl.add_theme_font_size_override("font_size", LOG_BTN_FONT_SIZE)
+			hbox.add_child(lbl)
 
 func _show_quests() -> void:
 		quest_panel.visible = true
