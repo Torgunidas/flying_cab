@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=2 format=3 uid="uid://b52h01mr57vcq"]
+
+[ext_resource type="Script" uid="uid://b0fshn7oxrpms" path="res://scripts/quest_system/QuestData.gd" id="1_odq0i"]
+
+[resource]
+script = ExtResource("1_odq0i")
+id = "2_2_get_money_to_but_maya_time"
+title = "Get 4k to but Maya time"
+description = "Every time you save 4k go to Froggy for a Substance"
+start_target = "quest_giver"
+objective = ""
+reward = 0
+next_quest_id = ""
+metadata/_custom_type_script = "uid://b0fshn7oxrpms"

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogBook" load_steps=19 format=3 uid="uid://chfmkvt5f1uio"]
+[gd_resource type="Resource" script_class="DialogBook" load_steps=22 format=3 uid="uid://chfmkvt5f1uio"]
 
 [ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_ixh5l"]
 [ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_jlfuf"]
@@ -33,10 +33,27 @@ requirements = Array[ExtResource("4_2u07e")]([])
 show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
+[sub_resource type="Resource" id="Resource_aj2rm"]
+script = ExtResource("4_2u07e")
+type = "active_quest"
+amount = 0
+cmp = ">"
+quest_id = "2_1_get_back_to_Froggy"
+metadata/_custom_type_script = "uid://2aako6y61wi5"
+
+[sub_resource type="Resource" id="Resource_lvjvf"]
+script = ExtResource("2_jlfuf")
+text = "I came back for more..."
+actions = Array[ExtResource("3_k1ixd")]([])
+goto_page = -1
+requirements = Array[ExtResource("4_2u07e")]([SubResource("Resource_aj2rm")])
+show_if_unavailable = true
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
 [sub_resource type="Resource" id="Resource_acon4"]
 script = ExtResource("1_ixh5l")
-npc_text = "Long time no see."
-answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_x5eyt"), SubResource("Resource_8gl8u")])
+npc_text = "Hi, Jo."
+answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_x5eyt"), SubResource("Resource_8gl8u"), SubResource("Resource_lvjvf")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
 [sub_resource type="Resource" id="Resource_xjnsa"]
@@ -114,7 +131,13 @@ npc_text = "It's gonna be 6000$ for the small unit."
 answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_tvxdt")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
+[sub_resource type="Resource" id="Resource_fmdtq"]
+script = ExtResource("1_ixh5l")
+npc_text = ""
+answers = Array[ExtResource("2_jlfuf")]([])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
 [resource]
 script = ExtResource("5_did6w")
-pages = Array[ExtResource("1_ixh5l")]([SubResource("Resource_acon4"), SubResource("Resource_l7org"), SubResource("Resource_2jftd")])
+pages = Array[ExtResource("1_ixh5l")]([SubResource("Resource_acon4"), SubResource("Resource_l7org"), SubResource("Resource_2jftd"), SubResource("Resource_fmdtq")])
 metadata/_custom_type_script = "uid://c4sn7n4x1gvpe"

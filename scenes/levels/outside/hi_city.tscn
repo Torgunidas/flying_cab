@@ -1,4 +1,4 @@
-[gd_scene load_steps=45 format=4 uid="uid://c6wgvur21jgyx"]
+[gd_scene load_steps=44 format=4 uid="uid://c6wgvur21jgyx"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_u2gg1"]
 [ext_resource type="PackedScene" uid="uid://b52ghm7rlxiac" path="res://scenes/PlayerSpawn.tscn" id="2_gqf4i"]
@@ -34,7 +34,6 @@
 [ext_resource type="PackedScene" uid="uid://qacc8w3r5e7y" path="res://scenes/props/car_wash.tscn" id="31_7ob0h"]
 [ext_resource type="Script" uid="uid://dwd1akddxd876" path="res://scripts/quest_system/quest_obj/MoneyQuestWatcher.gd" id="32_e5ogx"]
 [ext_resource type="PackedScene" uid="uid://dowdc7hynobnm" path="res://scenes/characters/mr_froggy.tscn" id="33_th6as"]
-[ext_resource type="Resource" uid="uid://chfmkvt5f1uio" path="res://dialogues/main_quest/mr_froggy_take_2.tres" id="34_i0cx1"]
 [ext_resource type="Texture2D" uid="uid://wykh7agwekxp" path="res://Assets/residential-area-tileset-pixel-art/3 Objects/Bench.png" id="37_eyoi1"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_umyuv"]
@@ -2645,7 +2644,6 @@ position = Vector2(-88, 0)
 
 [node name="MrFroggy" parent="." instance=ExtResource("33_th6as")]
 position = Vector2(-5686, -1357)
-dialog_resource = ExtResource("34_i0cx1")
 
 [node name="passangers" type="Node2D" parent="."]
 
@@ -2689,6 +2687,16 @@ position = Vector2(-144, 0)
 [node name="SpawnTimer" parent="passangers/PassengerSpawnPoint" index="2"]
 wait_time = 10.0
 
+[node name="PassengerSpawnPoint2" parent="passangers" instance=ExtResource("21_s5ica")]
+position = Vector2(-6098, -1346)
+delivery_groups = Array[NodePath]([NodePath("../../delivery_player_building")])
+
+[node name="Waypoint" parent="passangers/PassengerSpawnPoint2" index="1"]
+position = Vector2(112, 1)
+
+[node name="SpawnTimer" parent="passangers/PassengerSpawnPoint2" index="2"]
+wait_time = 10.0
+
 [node name="Bench" type="Sprite2D" parent="."]
 position = Vector2(-8517, -1346)
 texture = ExtResource("37_eyoi1")
@@ -2700,6 +2708,12 @@ position = Vector2(-3688, -2032)
 position = Vector2(-5411, 1775)
 
 [node name="PassengerWaypoint" parent="delivery_player_building/DeliveryPoint" index="2"]
+position = Vector2(-104, 0)
+
+[node name="DeliveryPoint2" parent="delivery_player_building" instance=ExtResource("23_qobc6")]
+position = Vector2(-3489, 355)
+
+[node name="PassengerWaypoint" parent="delivery_player_building/DeliveryPoint2" index="2"]
 position = Vector2(-104, 0)
 
 [connection signal="body_entered" from="DeathBoundary" to="." method="_on_death_boundary_body_entered"]
@@ -2716,4 +2730,6 @@ position = Vector2(-104, 0)
 [editable path="passangers/passenger_2ns_gasstation2"]
 [editable path="passangers/passenger_2ns_gasstation3"]
 [editable path="passangers/PassengerSpawnPoint"]
+[editable path="passangers/PassengerSpawnPoint2"]
 [editable path="delivery_player_building/DeliveryPoint"]
+[editable path="delivery_player_building/DeliveryPoint2"]
