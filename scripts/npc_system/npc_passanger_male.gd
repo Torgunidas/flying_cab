@@ -162,6 +162,10 @@ func start_spawn_sequence(
 	_wp_target     = wp_pos
 	_state         = State.WALK_TO_WP
 
+# spawnowany pasażer ma własny cykl – zatrzymaj standardowy licznik
+	if _call_timer.is_stopped() == false:
+		_call_timer.stop()
+
 
 # ────────────────────────────────────
 #  1) PATROL: NPC przechodzi przez punkty
@@ -372,6 +376,8 @@ func _on_WaitTimer_timeout() -> void:
 	if dynamic_spawn:
 		# → pasażer nie był zabrany; wraca do punktu startu
 		_call_label.visible = false
+		if _call_timer.is_stopped() == false:
+				_call_timer.stop()
 		_state = State.GO_HOME
 	else:
 		# → zwykły mieszkaniec – wraca do patrolu jak dotąd

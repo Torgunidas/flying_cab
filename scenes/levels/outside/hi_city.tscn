@@ -2608,9 +2608,9 @@ quest_id = "2_0_get_the_money_for_cure"
 threshold_amount = 4000
 
 [node name="2_1_get_back_to_Froggy" type="Area2D" parent="Quests" groups=["quest_goal"]]
-position = Vector2(-9363, -270)
+position = Vector2(-5682, -1348)
 script = ExtResource("26_dmnkx")
-quest_id = "1_7_bring_cure_to_maya"
+quest_id = "2_1_get_back_to_Froggy"
 complete_on_enter = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/2_1_get_back_to_Froggy"]

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogBook" load_steps=22 format=3 uid="uid://chfmkvt5f1uio"]
+[gd_resource type="Resource" script_class="DialogBook" load_steps=34 format=3 uid="uid://chfmkvt5f1uio"]
 
 [ext_resource type="Script" uid="uid://dcxxfy4h8m8tn" path="res://scripts/dialogues/DialogPage.gd" id="1_ixh5l"]
 [ext_resource type="Script" uid="uid://enivet37mn8j" path="res://scripts/dialogues/DialogAnswer.gd" id="2_jlfuf"]
@@ -33,27 +33,36 @@ requirements = Array[ExtResource("4_2u07e")]([])
 show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
-[sub_resource type="Resource" id="Resource_aj2rm"]
+[sub_resource type="Resource" id="Resource_lvjvf"]
+script = ExtResource("2_jlfuf")
+text = "I came back for morexx..."
+actions = Array[ExtResource("3_k1ixd")]([])
+goto_page = 3
+requirements = Array[ExtResource("4_2u07e")]([])
+show_if_unavailable = true
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_nd87w"]
 script = ExtResource("4_2u07e")
-type = "active_quest"
-amount = 0
-cmp = ">"
-quest_id = "2_1_get_back_to_Froggy"
+type = "money_req"
+amount = 4000
+cmp = "<"
+quest_id = ""
 metadata/_custom_type_script = "uid://2aako6y61wi5"
 
-[sub_resource type="Resource" id="Resource_lvjvf"]
+[sub_resource type="Resource" id="Resource_lqfla"]
 script = ExtResource("2_jlfuf")
 text = "I came back for more..."
 actions = Array[ExtResource("3_k1ixd")]([])
-goto_page = -1
-requirements = Array[ExtResource("4_2u07e")]([SubResource("Resource_aj2rm")])
+goto_page = 6
+requirements = Array[ExtResource("4_2u07e")]([SubResource("Resource_nd87w")])
 show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_acon4"]
 script = ExtResource("1_ixh5l")
 npc_text = "Hi, Jo."
-answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_x5eyt"), SubResource("Resource_8gl8u"), SubResource("Resource_lvjvf")])
+answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_x5eyt"), SubResource("Resource_8gl8u"), SubResource("Resource_lvjvf"), SubResource("Resource_lqfla")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
 [sub_resource type="Resource" id="Resource_xjnsa"]
@@ -131,13 +140,112 @@ npc_text = "It's gonna be 6000$ for the small unit."
 answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_tvxdt")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
+[sub_resource type="Resource" id="Resource_mtils"]
+script = ExtResource("2_jlfuf")
+text = "Yes... anything."
+actions = Array[ExtResource("3_k1ixd")]([])
+goto_page = 4
+requirements = Array[ExtResource("4_2u07e")]([])
+show_if_unavailable = true
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
 [sub_resource type="Resource" id="Resource_fmdtq"]
 script = ExtResource("1_ixh5l")
-npc_text = ""
-answers = Array[ExtResource("2_jlfuf")]([])
+npc_text = "You'll do anything for your sister."
+answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_mtils")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
+[sub_resource type="Resource" id="Resource_gc24h"]
+script = ExtResource("2_jlfuf")
+text = "Yes, I do."
+actions = Array[ExtResource("3_k1ixd")]([])
+goto_page = 5
+requirements = Array[ExtResource("4_2u07e")]([])
+show_if_unavailable = true
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_3ut0n"]
+script = ExtResource("1_ixh5l")
+npc_text = "I'll keep that in mind. But now you just want more Substance?"
+answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_gc24h")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
+[sub_resource type="Resource" id="Resource_lla5d"]
+script = ExtResource("3_k1ixd")
+type = "grant_item"
+amount = 1
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+item = ExtResource("5_jlfuf")
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_6tlg3"]
+script = ExtResource("3_k1ixd")
+type = "deduct_money"
+amount = 4000
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_5nbii"]
+script = ExtResource("3_k1ixd")
+type = "close"
+amount = 0
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_4amkm"]
+script = ExtResource("2_jlfuf")
+text = "I will. Anytime I collect 4k$"
+actions = Array[ExtResource("3_k1ixd")]([SubResource("Resource_lla5d"), SubResource("Resource_6tlg3"), SubResource("Resource_5nbii")])
+goto_page = -1
+requirements = Array[ExtResource("4_2u07e")]([])
+show_if_unavailable = true
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_1pxwj"]
+script = ExtResource("1_ixh5l")
+npc_text = "Ok. 4k, as always. Come back anytime for more."
+answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_4amkm")])
+metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
+
+[sub_resource type="Resource" id="Resource_cloov"]
+script = ExtResource("3_k1ixd")
+type = "close"
+amount = 0
+quest_id = ""
+anim_name = ""
+loop_count = 1
+npc_text_id = ""
+vehicle_id = ""
+metadata/_custom_type_script = "uid://cke3kl33pylr5"
+
+[sub_resource type="Resource" id="Resource_gcln8"]
+script = ExtResource("2_jlfuf")
+text = "Darn it. I'll be back when I get more"
+actions = Array[ExtResource("3_k1ixd")]([SubResource("Resource_cloov")])
+goto_page = -1
+requirements = Array[ExtResource("4_2u07e")]([])
+show_if_unavailable = true
+metadata/_custom_type_script = "uid://enivet37mn8j"
+
+[sub_resource type="Resource" id="Resource_lxx1v"]
+script = ExtResource("1_ixh5l")
+npc_text = "You sure you got enough money? 4k$?"
+answers = Array[ExtResource("2_jlfuf")]([SubResource("Resource_gcln8")])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
 [resource]
 script = ExtResource("5_did6w")
-pages = Array[ExtResource("1_ixh5l")]([SubResource("Resource_acon4"), SubResource("Resource_l7org"), SubResource("Resource_2jftd"), SubResource("Resource_fmdtq")])
+pages = Array[ExtResource("1_ixh5l")]([SubResource("Resource_acon4"), SubResource("Resource_l7org"), SubResource("Resource_2jftd"), SubResource("Resource_fmdtq"), SubResource("Resource_3ut0n"), SubResource("Resource_1pxwj"), SubResource("Resource_lxx1v")])
 metadata/_custom_type_script = "uid://c4sn7n4x1gvpe"
