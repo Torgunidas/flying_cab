@@ -2592,6 +2592,16 @@ quest_id = "1_5_continue_to_carwash"
 position = Vector2(83.5, -5)
 shape = SubResource("RectangleShape2D_p8gsd")
 
+[node name="1_6_speak_with_Froggy" type="Area2D" parent="Quests" groups=["quest_goal"]]
+position = Vector2(-5681, -1347)
+script = ExtResource("26_dmnkx")
+quest_id = "1_6_speak_with_Froggy"
+complete_on_enter = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Quests/1_6_speak_with_Froggy"]
+position = Vector2(-4.5, -5)
+shape = SubResource("RectangleShape2D_p8gsd")
+
 [node name="1_7_bring_cure_to_maya" type="Area2D" parent="Quests" groups=["quest_goal"]]
 position = Vector2(-9363, -270)
 script = ExtResource("26_dmnkx")

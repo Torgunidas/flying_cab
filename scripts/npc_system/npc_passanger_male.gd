@@ -39,6 +39,7 @@ var _target_car: Node = null        # referencja do samochodu, do którego idzie
 var is_dead: bool = false           # flaga, czy NPC “umarl”
 var _home_pos  : Vector2            # gdzie wrócić
 var _wp_target : Vector2            # punkt waypoint
+var _ignored_cars : Array = []      # auta, z którymi ignorujemy kolizje
 
 # ───────── REFERENCJE ───────────────
 @onready var _sprite: AnimatedSprite2D = $Sprite
@@ -214,8 +215,7 @@ func _wait_for_taxi(_delta: float) -> void:
 		_target_car = car
 
 		# Wyłączamy kolizje między NPC a autem, by NPC “wsunął” się do auta
-		add_collision_exception_with(_target_car)
-		_target_car.add_collision_exception_with(self)
+		ignore_car_until_unspawn(_target_car)
 
 		# Przechodzimy do stanu GO_TO_CAR
 		_state = State.GO_TO_CAR
@@ -313,12 +313,12 @@ func _pick_random_delivery_point() -> DeliveryPoint:
 
 
 func _reset_to_patrol() -> void:
-	# ► 1. Przywróć kolizję w OBU kierunkach
 	if is_instance_valid(_target_car):
 		# – NPC znowu widzi samochód
 		remove_collision_exception_with(_target_car)
 		# – samochód znowu widzi NPC-a  ← brakowało TEJ linijki
 		_target_car.remove_collision_exception_with(self)
+		_ignored_cars.erase(_target_car)
 
 	# ► 2. Wyzeruj referencję, żeby następne wywołanie mogło znaleźć nowy pojazd
 	_target_car = null
@@ -432,8 +432,7 @@ func kill(car: CharacterBody2D=null) -> void:
 	_sprite.animation = "dead"
 	_sprite.play()
 	if car:
-		add_collision_exception_with(car)
-		car.add_collision_exception_with(self)
+		ignore_car_until_unspawn(car)
 	var t := Timer.new()
 	t.one_shot = true
 	t.wait_time = disappear_after
@@ -491,6 +490,16 @@ func ignore_car_for_a_moment(car: Node2D, seconds: float = 1.5) -> void:
 	timer.start()
 
 
+# Wylaczanie kolizji z samochodem az do znikniecia NPC
+func ignore_car_until_unspawn(car: Node2D) -> void:
+		if car == null:
+				return
+		if _ignored_cars.has(car) == false:
+				_ignored_cars.append(car)
+		add_collision_exception_with(car)
+		car.add_collision_exception_with(self)
+
+
 func _on_ignore_timer_timeout(car: Node2D, timer: Timer) -> void:
 	if is_instance_valid(car):
 		remove_collision_exception_with(car)
@@ -529,8 +538,13 @@ func _fall_move(delta: float) -> void:
 		
 # -- Pomocnicze: kompatybilność ze starymi wywołaniami -----------
 func has_variable(name: String) -> bool:
-	# Przegląda pełną listę właściwości (wbudowanych i ze skryptu)
-	for info in get_property_list():
-		if "name" in info and info.name == name:
-			return true
-	return false
+	# # Przegląda pełną listę właściwości (wbudowanych i ze skryptu)
+		for info in get_property_list():
+				if "name" in info and info.name == name:
+						return true
+		return false
+
+func _exit_tree() -> void:
+		for car in _ignored_cars:
+				if is_instance_valid(car):
+						car.remove_collision_exception_with(self)

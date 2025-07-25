@@ -544,7 +544,8 @@ func _unboard_npc() -> void:
 	
 	# 2) przekazujemy mu punkt docelowy
 	npc.set_delivery_target(_delivery_point)
-	npc.ignore_car_for_a_moment(self, 1.5) 
+	if npc.has_method("ignore_car_until_unspawn"):
+		npc.ignore_car_until_unspawn(self)
 	
 	# 3) aktualizujemy licznik
 	passenger_count -= 1
