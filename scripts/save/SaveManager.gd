@@ -145,4 +145,4 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("save_debug"):
 		save_min()
 	elif event.is_action_pressed("load_debug"):
-		self.load()                               # ⬅ nowa nazwa
+		self.load_save()                               # ⬅ nowa nazwa
