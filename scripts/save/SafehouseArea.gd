@@ -4,9 +4,9 @@ extends Area2D
 func _on_body_entered(body:Node) -> void:
 	if body.is_in_group("player"):
 		if UISys and UISys.has_method("show_confirm"):
-			UISys.show_confirm("ZAPISAĆ GRĘ?", func(): SaveManager.save_min(slot))
+			UISys.show_confirm("ZAPISAĆ GRĘ?", func(): SaveMgr.save_min(slot))
 		else:
-			SaveManager.save_min(slot)
+			SaveMgr.save_min(slot)
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)

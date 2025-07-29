@@ -152,7 +152,7 @@ func load_from_save_dict(src:Dictionary) -> void:
 	for id in src.keys():
 		var q : QuestData = _dict.get(id)
 		if q:
-			var entry := src[id]
-			q.status    = entry.get("status", q.status)
-			q.objective = entry.get("objective", q.objective)
+				var entry: Dictionary = src[id] as Dictionary
+				q.status    = entry.get("status", q.status)
+				q.objective = entry.get("objective", q.objective)
 	quests_reset.emit()

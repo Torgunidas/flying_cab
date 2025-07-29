@@ -11,7 +11,7 @@ func _ready() -> void:
 func _refresh() -> void:
 	for c in list.get_children():
 		c.queue_free()
-	var saves := SaveManager.list_saves()
+	var saves := SaveMgr.list_saves()
 	empty_label.visible = saves.is_empty()
 	for s in saves:
 		list.add_child(_make_entry(s))
@@ -26,12 +26,12 @@ func _make_entry(data:Dictionary) -> Control:
 
 	var load_btn := Button.new()
 	load_btn.text = "Wczytaj"
-	load_btn.pressed.connect(func(): SaveManager.load(data.slot))
+	load_btn.pressed.connect(func(): SaveMgr.load(data.slot))
 
 	var del_btn := Button.new()
 	del_btn.text = "Usuń"
 	del_btn.pressed.connect(func():
-		SaveManager.delete_save(data.slot)
+		SaveMgr.delete_save(data.slot)
 		_refresh()
 	)
 

@@ -24,7 +24,7 @@ func set_last_driven_car(car: Node) -> void:
 		upgrades = _safe_get(car, "upgrades", [])
 	}
 
-func save_min(slot:int = 1) -> void:
+func save_min(slot: int = 1) -> void:
 	var player := _get_player()
 	var data := {
 		version           = SAVE_VERSION,
@@ -39,31 +39,35 @@ func save_min(slot:int = 1) -> void:
 		quests   = QuestSys.get_save_dict(),
 		last_car = _last_car_data
 	}
-	var path := SAVE_PATH_FMT % slot
+
+	var path: String = SAVE_PATH_FMT % slot
 	if FileAccess.file_exists(path):
-		DirAccess.copy_absolute(path, path + ".bak")
+		DirAccess.copy_absolute(path, "%s.bak" % path)
+
 	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	f.store_string(JSON.stringify(data))
 	f.close()
 
-func load(slot:int = 1) -> void:
+func load_save(slot: int = 1) -> void:          # ⬅ zmiana nazwy (unikamy kolizji z ResourceLoader.load)
 	var path := SAVE_PATH_FMT % slot
 	if !FileAccess.file_exists(path):
-		push_error("No save file: %s" % path)
-		return
+				push_error("No save file: %s" % path)
+				return
 	var f := FileAccess.open(path, FileAccess.READ)
-	var data := JSON.parse_string(f.get_as_text())
+	var data: Variant = JSON.parse_string(f.get_as_text())
 	f.close()
 	if typeof(data) != TYPE_DICTIONARY:
-		push_error("Corrupted save file")
-		return
+			push_error("Corrupted save file")
+			return
 
 	get_tree().change_scene_to_file(data.current_scene)
 	await get_tree().process_frame
 
+	# przywróć stan gry
 	GameState.set_maya_seconds_left(data.maya_seconds_left)
 	GameState.set_money(data.player.money)
+
 	var player := _get_player()
 	if player:
 		player.current_hp = data.player.hp
@@ -83,24 +87,25 @@ func load(slot:int = 1) -> void:
 
 	_last_car_data = data.last_car
 
-func has_save(slot:int = 1) -> bool:
+
+func has_save(slot: int = 1) -> bool:
 	return FileAccess.file_exists(SAVE_PATH_FMT % slot)
 
-func delete_save(slot:int) -> void:
-	var path := SAVE_PATH_FMT % slot
+func delete_save(slot: int) -> void:
+	var path: String = SAVE_PATH_FMT % slot
 	if FileAccess.file_exists(path):
 		DirAccess.remove_absolute(path)
 
-func list_saves() -> Array[Dictionary]:
-	var out: Array = []
+func list_saves() -> Array:                      # dokładny typ niepotrzebny
+	var out: Array[Dictionary] = []
 	var dir := DirAccess.open(SAVE_DIR)
 	if dir == null:
 		return out
 	for file in dir.get_files():
 		if file.ends_with(".fcsave"):
-			var slot := int(file.get_slice("_", 1).get_slice(".", 0))
-			var path := SAVE_DIR + "/" + file
-			var meta := _peek_metadata(path)
+			var slot: int = int(file.get_slice("_", 1).get_slice(".", 0))
+			var path: String = "%s/%s" % [SAVE_DIR, file]
+			var meta: Dictionary = _peek_metadata(path)
 			meta.slot = slot
 			meta.path = path
 			out.append(meta)
@@ -109,33 +114,30 @@ func list_saves() -> Array[Dictionary]:
 
 # ---------- INTERNAL ----------
 
-func _peek_metadata(path:String) -> Dictionary:
+func _peek_metadata(path: String) -> Dictionary:
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
-		return {}
+			return {}
 	var txt := f.get_as_text()
 	f.close()
-	var data := JSON.parse_string(txt)
+	var data: Variant = JSON.parse_string(txt)
 	if typeof(data) != TYPE_DICTIONARY:
-		return {}
+				return {}
 	return {
-		timestamp = data.get("timestamp", ""),
-		maya      = data.get("maya_seconds_left", 0),
-		money     = data.get("player", {}).get("money", 0),
-		scene     = data.get("current_scene", ""),
-		version   = data.get("version", 0)
+				timestamp = data.get("timestamp", ""),
+				maya      = data.get("maya_seconds_left", 0),
 	}
 
 func _get_player() -> Node:
-	# dawniej: return arr.is_empty() ? null : arr[0]
-	var arr := get_tree().get_nodes_in_group("player")
-	if arr.is_empty():
+	var players := get_tree().get_nodes_in_group("player")
+	if players.is_empty():
 		return null
-	return arr[0]
+	return players[0]
 
-func _safe_get(obj:Object, prop:String, def):
-	# dawniej: return obj and obj.has_variable(prop) ? obj.get(prop) : def
-	if obj and obj.has_variable(prop):
+func _safe_get(obj: Object, prop: String, def):
+	if obj == null:
+		return def
+	if obj.has_property(prop):
 		return obj.get(prop)
 	return def
 
@@ -143,4 +145,4 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("save_debug"):
 		save_min()
 	elif event.is_action_pressed("load_debug"):
-		load()
+		self.load()                               # ⬅ nowa nazwa
