@@ -138,3 +138,21 @@ func get_quests() -> Array:
 				"node": null,      # placeholder – wrócimy do stage-node’ów później
 			})
 	return arr
+	
+func get_save_dict() -> Dictionary:
+	var d := {}
+	for q: QuestData in _dict.values():
+		d[q.id] = {
+			"status": q.status,
+			"objective": q.objective
+		}
+	return d
+
+func load_from_save_dict(src:Dictionary) -> void:
+	for id in src.keys():
+		var q : QuestData = _dict.get(id)
+		if q:
+			var entry := src[id]
+			q.status    = entry.get("status", q.status)
+			q.objective = entry.get("objective", q.objective)
+	quests_reset.emit()

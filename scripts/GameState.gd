@@ -202,3 +202,9 @@ func _on_maya_timer_tick() -> void:
 				_maya_timer.stop()
 				_maya_timer_active = false
 				emit_signal("maya_time_expired")
+func set_maya_seconds_left(v:int) -> void:
+				_maya_seconds_left = v
+
+func set_money(v:int) -> void:
+				_money = v
+				emit_signal("money_changed", _money)

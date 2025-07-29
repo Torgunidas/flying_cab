@@ -148,3 +148,22 @@ func reset_vehicle_persistence() -> void:
 	current_car = null
 	last_world_id = ""
 	_dbg("reset", "vehicle state cleared")
+	
+func spawn_car_in_garage(car_id:String) -> Car:
+		var scene_path := _get_scene_for_car(car_id)
+		var packed: PackedScene = load(scene_path)
+		var car := packed.instantiate() as Car
+		var garage := get_tree().get_current_scene().get_node_or_null("GarageSpawn")
+		if garage:
+				garage.add_child(car)
+				car.global_position = garage.global_position
+		else:
+				get_tree().get_current_scene().add_child(car)
+		return car
+
+func _get_scene_for_car(car_id:String) -> String:
+		var map := {
+				"cab_neo": "res://scenes/cars/cab_neo.tscn",
+				"taxi": "res://scenes/cars/car_yellow_cab.tscn"
+		}
+		return map.get(car_id, "res://scenes/cars/car_yellow_cab.tscn")

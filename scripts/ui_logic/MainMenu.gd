@@ -23,6 +23,14 @@ func _on_Quit_pressed() -> void:
 	if menu_music.playing:
 		menu_music.stop()
 	get_tree().quit()
+	
+func _on_LoadGame_pressed() -> void:
+		get_tree().change_scene_to_file("res://scenes/ui_scenes/SaveMenu.tscn")
+
+func _on_Continue_pressed() -> void:
+		var saves := SaveManager.list_saves()
+		if saves.size() > 0:
+				SaveManager.load(saves.back().slot)
 
 
 func _on_level_1_button_pressed() -> void:

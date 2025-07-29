@@ -25,6 +25,7 @@ pauza="*res://scripts/ui_logic/PauseSys.gd"
 QuestObjectiveUi="*res://scenes/ui_scenes/QuestObjectiveUI.tscn"
 FlyThruNeon="*res://scripts/ui_logic/fly_thru_neon.gd"
 MessageSystem="*res://scenes/ui_scenes/SystemMessageUI.tscn"
+SaveMgr="*res://scripts/save/SaveManager.gd"
 
 [display]
 

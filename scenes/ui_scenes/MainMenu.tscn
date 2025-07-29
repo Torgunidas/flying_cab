@@ -44,37 +44,64 @@ text = "Choose level:"
 
 [node name="Level1_button" type="Button" parent="VBoxContainer/Level1"]
 layout_mode = 0
-offset_left = 100.0
-offset_top = 69.0
-offset_right = 238.0
-offset_bottom = 119.0
+offset_left = 18.0
+offset_top = 71.0
+offset_right = 156.0
+offset_bottom = 121.0
 theme_override_font_sizes/font_size = 30
 text = "test level"
 
 [node name="Level2_button" type="Button" parent="VBoxContainer/Level1"]
 layout_mode = 0
-offset_left = 119.0
-offset_top = 140.0
-offset_right = 228.0
-offset_bottom = 197.0
+offset_left = 20.0
+offset_top = 134.0
+offset_right = 129.0
+offset_bottom = 191.0
 theme_override_font_sizes/font_size = 35
 text = "hi city"
 
 [node name="Level3_button" type="Button" parent="VBoxContainer/Level1"]
 layout_mode = 0
-offset_left = 119.0
-offset_top = 224.0
-offset_right = 228.0
-offset_bottom = 281.0
+offset_left = 17.0
+offset_top = 211.0
+offset_right = 196.0
+offset_bottom = 268.0
 theme_override_font_sizes/font_size = 35
 text = "szopa test"
 
+[node name="ContinueButton" type="Button" parent="VBoxContainer/Level1"]
+layout_mode = 0
+offset_left = 11.0
+offset_top = 308.0
+offset_right = 194.0
+offset_bottom = 365.0
+theme_override_font_sizes/font_size = 35
+text = "Kontynuuj"
+
+[node name="LoadButton" type="Button" parent="VBoxContainer/Level1"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 392.0
+offset_right = 226.0
+offset_bottom = 449.0
+theme_override_font_sizes/font_size = 35
+text = "Wczytaj grę"
+
+[node name="QuitButton" type="Button" parent="VBoxContainer/Level1"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 474.0
+offset_right = 162.0
+offset_bottom = 531.0
+theme_override_font_sizes/font_size = 35
+text = "Wyjście"
+
 [node name="Label" type="Label" parent="VBoxContainer/Level1"]
 layout_mode = 0
-offset_left = -85.0
-offset_top = 369.0
-offset_right = 238.0
-offset_bottom = 521.0
+offset_left = 417.0
+offset_top = 324.0
+offset_right = 790.0
+offset_bottom = 538.0
 theme_override_font_sizes/font_size = 20
 text = "Become a night taxi driver in
  a harsh reality of a near future!
@@ -86,10 +113,10 @@ D - right"
 
 [node name="Label2" type="Label" parent="VBoxContainer/Level1"]
 layout_mode = 0
-offset_left = 80.0
-offset_top = 494.0
-offset_right = 201.0
-offset_bottom = 584.0
+offset_left = 641.0
+offset_top = 443.0
+offset_right = 762.0
+offset_bottom = 533.0
 theme_override_font_sizes/font_size = 20
 text = "F - action
 Q - quest list
@@ -106,3 +133,6 @@ text = "(c)infringed Marczak Studios 2025"
 [connection signal="pressed" from="VBoxContainer/Level1/Level1_button" to="." method="_on_level_1_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/Level1/Level2_button" to="." method="_on_level_2_button_pressed"]
 [connection signal="pressed" from="VBoxContainer/Level1/Level3_button" to="." method="_on_level_3_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/Level1/ContinueButton" to="." method="_on_Continue_pressed"]
+[connection signal="pressed" from="VBoxContainer/Level1/LoadButton" to="." method="_on_LoadGame_pressed"]
+[connection signal="pressed" from="VBoxContainer/Level1/QuitButton" to="." method="_on_Quit_pressed"]
