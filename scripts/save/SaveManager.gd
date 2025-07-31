@@ -48,6 +48,8 @@ func save_min(slot: int = 1) -> void:
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	f.store_string(JSON.stringify(data))
 	f.close()
+	if MessageSystem and MessageSystem.has_method("show_message"):
+				MessageSystem.show_message("Game saved")
 
 func load_save(slot: int = 1) -> void:          # ⬅ zmiana nazwy (unikamy kolizji z ResourceLoader.load)
 	var path := SAVE_PATH_FMT % slot
@@ -131,14 +133,20 @@ func _peek_metadata(path: String) -> Dictionary:
 func _get_player() -> Node:
 	var players := get_tree().get_nodes_in_group("player")
 	if players.is_empty():
-		return null
+			return null
 	return players[0]
+
+func _has_property(obj: Object, prop_name: String) -> bool:
+	for info in obj.get_property_list():
+			if "name" in info and info.name == prop_name:
+					return true
+	return false
 
 func _safe_get(obj: Object, prop: String, def):
 	if obj == null:
-		return def
-	if obj.has_property(prop):
-		return obj.get(prop)
+			return def
+	if _has_property(obj, prop):
+				return obj.get(prop)
 	return def
 
 func _input(event: InputEvent) -> void:
