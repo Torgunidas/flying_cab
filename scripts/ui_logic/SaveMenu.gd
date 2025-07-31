@@ -26,7 +26,7 @@ func _make_entry(data:Dictionary) -> Control:
 
 	var load_btn := Button.new()
 	load_btn.text = "Wczytaj"
-	load_btn.pressed.connect(func(): SaveMgr.load(data.slot))
+	load_btn.pressed.connect(func(): SaveMgr.load_save(data.slot))
 
 	var del_btn := Button.new()
 	del_btn.text = "Usuń"

@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=4 uid="uid://b0piubrnoxlkq"]
+[gd_scene load_steps=12 format=4 uid="uid://b0piubrnoxlkq"]
 
 [ext_resource type="Script" uid="uid://dx5s3nmiqwygc" path="res://scripts/level_1.gd" id="1_1bob4"]
 [ext_resource type="TileSet" uid="uid://dv1s41vxk3fuv" path="res://Assets/TileSets/business_district.tres" id="2_llsxy"]
@@ -8,8 +8,12 @@
 [ext_resource type="PackedScene" uid="uid://cfol60xahev3c" path="res://scenes/characters/maya_sister.tscn" id="6_eh5wb"]
 [ext_resource type="Script" uid="uid://3t2u77lm7cv3" path="res://scripts/quest_system/quest_obj/EndTrigger.gd" id="7_fg6qr"]
 [ext_resource type="PackedScene" uid="uid://cinhhb4fjvssc" path="res://scenes/characters/massager.tscn" id="8_xc4mc"]
+[ext_resource type="Script" uid="uid://ccgxtk8wanjfh" path="res://scripts/save/SafehouseArea.gd" id="9_llsxy"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_636f2"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1ifif"]
+size = Vector2(66, 37)
 
 [node name="PlayersHome" type="Node2D" groups=["interiors"]]
 script = ExtResource("1_1bob4")
@@ -64,3 +68,10 @@ shape = SubResource("RectangleShape2D_636f2")
 
 [node name="Massager" parent="." instance=ExtResource("8_xc4mc")]
 position = Vector2(-97, -1)
+
+[node name="save_zone" type="Area2D" parent="."]
+position = Vector2(-96, 3)
+script = ExtResource("9_llsxy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="save_zone"]
+shape = SubResource("RectangleShape2D_1ifif")

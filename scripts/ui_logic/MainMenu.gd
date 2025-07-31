@@ -30,7 +30,7 @@ func _on_LoadGame_pressed() -> void:
 func _on_Continue_pressed() -> void:
 		var saves := SaveMgr.list_saves()
 		if saves.size() > 0:
-				SaveMgr.load(saves.back().slot)
+				SaveMgr.load_save(saves.back().slot)
 
 
 func _on_level_1_button_pressed() -> void:
