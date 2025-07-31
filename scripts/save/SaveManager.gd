@@ -26,18 +26,21 @@ func set_last_driven_car(car: Node) -> void:
 
 func save_min(slot: int = 1) -> void:
 	var player := _get_player()
+	var level : PackedScene = GameState.get_selected_level()
+	var level_path := level.resource_path if level != null else ""
 	var data := {
-		version           = SAVE_VERSION,
-		timestamp         = Time.get_datetime_string_from_system(),
-		current_scene     = get_tree().current_scene.scene_file_path,
-		maya_seconds_left = GameState.get_maya_seconds_left(),
-		player = {
-			hp     = _safe_get(player, "current_hp", 0),
-			max_hp = _safe_get(player, "max_hp", 0),
-			money  = GameState.get_money()
-		},
-		quests   = QuestSys.get_save_dict(),
-		last_car = _last_car_data
+				version              = SAVE_VERSION,
+				timestamp            = Time.get_datetime_string_from_system(),
+				current_scene        = get_tree().current_scene.scene_file_path,
+				current_level_scene  = level_path,
+				maya_seconds_left    = GameState.get_maya_seconds_left(),
+				player = {
+						hp     = _safe_get(player, "current_hp", 0),
+						max_hp = _safe_get(player, "max_hp", 0),
+						money  = GameState.get_money()
+				},
+				quests   = QuestSys.get_save_dict(),
+				last_car = _last_car_data
 	}
 
 	var path: String = SAVE_PATH_FMT % slot
@@ -54,14 +57,23 @@ func save_min(slot: int = 1) -> void:
 func load_save(slot: int = 1) -> void:          # ⬅ zmiana nazwy (unikamy kolizji z ResourceLoader.load)
 	var path := SAVE_PATH_FMT % slot
 	if !FileAccess.file_exists(path):
-				push_error("No save file: %s" % path)
-				return
+								push_error("No save file: %s" % path)
+								return
 	var f := FileAccess.open(path, FileAccess.READ)
 	var data: Variant = JSON.parse_string(f.get_as_text())
 	f.close()
 	if typeof(data) != TYPE_DICTIONARY:
-			push_error("Corrupted save file")
-			return
+						push_error("Corrupted save file")
+						return
+
+	if data.has("current_level_scene"):
+				var lvl_path : String = str(data.current_level_scene)
+				if lvl_path != "" and ResourceLoader.exists(lvl_path):
+						var lvl_ps := load(lvl_path)
+						if lvl_ps is PackedScene:
+								GameState.set_selected_level(lvl_ps)
+				else:
+						GameState.set_selected_level(null)
 
 	get_tree().change_scene_to_file(data.current_scene)
 	await get_tree().process_frame
@@ -119,16 +131,18 @@ func list_saves() -> Array:                      # dokładny typ niepotrzebny
 func _peek_metadata(path: String) -> Dictionary:
 	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
-			return {}
+				return {}
 	var txt := f.get_as_text()
 	f.close()
 	var data: Variant = JSON.parse_string(txt)
 	if typeof(data) != TYPE_DICTIONARY:
-				return {}
+								return {}
 	return {
-				timestamp = data.get("timestamp", ""),
-				maya      = data.get("maya_seconds_left", 0),
-	}
+								timestamp = data.get("timestamp", ""),
+								maya      = data.get("maya_seconds_left", 0),
+								money     = data.get("player", {}).get("money", 0),
+		}
+
 
 func _get_player() -> Node:
 	var players := get_tree().get_nodes_in_group("player")
