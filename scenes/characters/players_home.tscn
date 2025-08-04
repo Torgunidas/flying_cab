@@ -72,6 +72,7 @@ position = Vector2(-97, -1)
 [node name="save_zone" type="Area2D" parent="."]
 position = Vector2(-96, 3)
 script = ExtResource("9_llsxy")
+slot = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="save_zone"]
 shape = SubResource("RectangleShape2D_1ifif")
