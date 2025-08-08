@@ -5,7 +5,7 @@ class_name GasStation
 #  KONFIGURACJA
 # ─────────────────────────────────────────────────────────────
 @export var price_per_10 : int   = 5         # $ za 10 jednostek paliwa
-@export var refuel_speed : float = 150.0     # jednostek paliwa na sekundę
+@export var refuel_speed : float = 600.0     # jednostek paliwa na sekundę
 
 # ─────────────────────────────────────────────────────────────
 #  ZMIENNE ROBOCZE
