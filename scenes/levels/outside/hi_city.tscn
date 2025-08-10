@@ -1043,6 +1043,18 @@ position = Vector2(209, -880)
 [node name="Door_fancy_inactive7" parent="entrances" instance=ExtResource("16_l7kxo")]
 position = Vector2(209, -1008)
 
+[node name="Door_fancy_inactive10" parent="entrances" instance=ExtResource("16_l7kxo")]
+position = Vector2(361, -1008)
+
+[node name="Door_fancy_inactive11" parent="entrances" instance=ExtResource("16_l7kxo")]
+position = Vector2(361, -880)
+
+[node name="Door_fancy_inactive12" parent="entrances" instance=ExtResource("16_l7kxo")]
+position = Vector2(489, -880)
+
+[node name="Door_fancy_inactive13" parent="entrances" instance=ExtResource("16_l7kxo")]
+position = Vector2(489, -1008)
+
 [node name="Door_home" parent="entrances" groups=["quest_goal"] instance=ExtResource("16_iumgf")]
 z_index = -1
 position = Vector2(-1167, 207)
@@ -2411,17 +2423,18 @@ scale = Vector2(0.906, 1)
 texture = ExtResource("12_f2ya4")
 
 [node name="Door" parent="architecture/market_street_below2" instance=ExtResource("18_3leuv")]
+z_index = 1
 position = Vector2(-478, -368)
 monitoring = false
 
 [node name="Door2" parent="architecture/market_street_below2" instance=ExtResource("18_3leuv")]
-z_index = -4
-position = Vector2(-1007, -159)
+z_index = 1
+position = Vector2(-1007, 304)
 monitoring = false
 
 [node name="Door3" parent="architecture/market_street_below2" instance=ExtResource("18_3leuv")]
-z_index = -4
-position = Vector2(-847, -159)
+z_index = 1
+position = Vector2(-750, 304)
 monitoring = false
 
 [node name="industy_bottom_E_group2" type="Node2D" parent="architecture"]
@@ -2677,6 +2690,46 @@ position = Vector2(-56, 0)
 [node name="SpawnTimer" parent="passangers/passenger_2ns_gasstation2" index="2"]
 wait_time = 8.0
 
+[node name="passenger_2ns_gasstation4" parent="passangers" instance=ExtResource("21_s5ica")]
+position = Vector2(-7833, -1478)
+delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash")])
+
+[node name="Waypoint" parent="passangers/passenger_2ns_gasstation4" index="1"]
+position = Vector2(-56, 0)
+
+[node name="SpawnTimer" parent="passangers/passenger_2ns_gasstation4" index="2"]
+wait_time = 8.0
+
+[node name="passenger_2ns_gasstation5" parent="passangers" instance=ExtResource("21_s5ica")]
+position = Vector2(-7705, -1478)
+delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash")])
+
+[node name="Waypoint" parent="passangers/passenger_2ns_gasstation5" index="1"]
+position = Vector2(77, 2)
+
+[node name="SpawnTimer" parent="passangers/passenger_2ns_gasstation5" index="2"]
+wait_time = 8.0
+
+[node name="passenger_2ns_gasstation6" parent="passangers" instance=ExtResource("21_s5ica")]
+position = Vector2(-7705, -1350)
+delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash")])
+
+[node name="Waypoint" parent="passangers/passenger_2ns_gasstation6" index="1"]
+position = Vector2(129, 0)
+
+[node name="SpawnTimer" parent="passangers/passenger_2ns_gasstation6" index="2"]
+wait_time = 8.0
+
+[node name="passenger_2ns_gasstation7" parent="passangers" instance=ExtResource("21_s5ica")]
+position = Vector2(-7833, -1350)
+delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash")])
+
+[node name="Waypoint" parent="passangers/passenger_2ns_gasstation7" index="1"]
+position = Vector2(-56, 0)
+
+[node name="SpawnTimer" parent="passangers/passenger_2ns_gasstation7" index="2"]
+wait_time = 8.0
+
 [node name="passenger_2ns_gasstation3" parent="passangers" instance=ExtResource("21_s5ica")]
 position = Vector2(-7385, -1478)
 delivery_groups = Array[NodePath]([NodePath("../../delivey_car_wash")])
@@ -2738,6 +2791,10 @@ position = Vector2(-104, 0)
 [editable path="delivey_car_wash/Point_Car_wash3"]
 [editable path="passangers/passenger_1st_gasstation"]
 [editable path="passangers/passenger_2ns_gasstation2"]
+[editable path="passangers/passenger_2ns_gasstation4"]
+[editable path="passangers/passenger_2ns_gasstation5"]
+[editable path="passangers/passenger_2ns_gasstation6"]
+[editable path="passangers/passenger_2ns_gasstation7"]
 [editable path="passangers/passenger_2ns_gasstation3"]
 [editable path="passangers/PassengerSpawnPoint"]
 [editable path="passangers/PassengerSpawnPoint2"]

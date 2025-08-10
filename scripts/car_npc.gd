@@ -138,6 +138,9 @@ func interact() -> void:
 		return
 	# — WEJŚCIE GRACZA —
 	if not pc.in_vehicle and pc.vehicle != self:
+		if not pc.can_use_vehicle_id(car_id):
+						MessageSystem.show_message("Car not authorized")
+						return
 		# 1) Przełączamy warstwy CarNPC na „Car” (bit 0 tylko):
 		self.collision_layer    = 1        # tylko layer 1
 		self.collision_mask     = 1        # tylko mask 1

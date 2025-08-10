@@ -5,43 +5,36 @@ const SAVE_VERSION := 1
 const SAVE_DIR := "user://saves"
 const SAVE_PATH_FMT := SAVE_DIR + "/slot_%02d.fcsave"
 
-var _last_car_data: Dictionary = {}
 
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
 
 # ---------- PUBLIC API ----------
 
-func set_last_driven_car(car: Node) -> void:
-	if car == null:
-		return
-	_last_car_data = {
-		car_id   = _safe_get(car, "car_id", ""),
-		hp       = _safe_get(car, "current_hp", 0),
-		max_hp   = _safe_get(car, "max_hp", 0),
-		fuel     = _safe_get(car, "current_fuel", 0),
-		max_fuel = _safe_get(car, "max_fuel", 0),
-		upgrades = _safe_get(car, "upgrades", [])
-	}
+
 
 func save_min(slot: int = 1) -> void:
 	var player := _get_player()
 	var level : PackedScene = GameState.get_selected_level()
 	var level_path := level.resource_path if level != null else ""
 	var data := {
-				version              = SAVE_VERSION,
-				timestamp            = Time.get_datetime_string_from_system(),
-				current_scene        = get_tree().current_scene.scene_file_path,
-				current_level_scene  = level_path,
-				maya_seconds_left    = GameState.get_maya_seconds_left(),
-				player = {
-						hp     = _safe_get(player, "current_hp", 0),
-						max_hp = _safe_get(player, "max_hp", 0),
-						money  = GameState.get_money()
-				},
-				quests   = QuestSys.get_save_dict(),
-				last_car = _last_car_data
-	}
+								version              = SAVE_VERSION,
+								timestamp            = Time.get_datetime_string_from_system(),
+								current_scene        = get_tree().current_scene.scene_file_path,
+								current_level_scene  = level_path,
+								maya_seconds_left    = GameState.get_maya_seconds_left(),
+								car_access = {
+												models    = GameState.allowed_models,
+												instances = GameState.allowed_instances
+								},
+								player = {
+												hp     = _safe_get(player, "current_hp", 0),
+												max_hp = _safe_get(player, "max_hp", 0),
+												money  = GameState.get_money()
+								},
+								quests   = QuestSys.get_save_dict(),
+								last_car = VehPers.export_last_state()
+		}
 
 	var path: String = SAVE_PATH_FMT % slot
 	if FileAccess.file_exists(path):
@@ -89,17 +82,27 @@ func load_save(slot: int = 1) -> void:          # ⬅ zmiana nazwy (unikamy koli
 
 	QuestSys.load_from_save_dict(data.quests)
 
-	if data.last_car and data.last_car.get("car_id", "") != "":
-		var car := VehPers.spawn_car_in_garage(data.last_car.car_id)
-		if car:
-			car.current_hp   = data.last_car.hp
-			car.max_hp       = data.last_car.max_hp
-			car.current_fuel = data.last_car.fuel
-			car.max_fuel     = data.last_car.max_fuel
-			if data.last_car.upgrades and car.has_method("apply_upgrades"):
-				car.apply_upgrades(data.last_car.upgrades)
+	if data.has("car_access"):
+			GameState.allowed_models.clear()
+			GameState.allowed_models.append_array(data.car_access.get("models", []))
+			GameState.allowed_instances.clear()
+			GameState.allowed_instances.append_array(data.car_access.get("instances", []))
+			for id in GameState.allowed_models:
+					GameState.emit_signal("vehicle_access_changed", true, id)
+			for id in GameState.allowed_instances:
+					GameState.emit_signal("vehicle_access_changed", true, id)
 
-	_last_car_data = data.last_car
+	VehPers.import_last_state(data.last_car)
+
+	if data.last_car and data.last_car.get("car_id", "") != "":
+			var car := VehPers.spawn_car_in_garage(data.last_car.car_id)
+			if car:
+					car.current_hp   = data.last_car.hp
+					car.max_hp       = data.last_car.max_hp
+					car.current_fuel = data.last_car.fuel
+					car.max_fuel     = data.last_car.max_fuel
+					if data.last_car.upgrades and car.has_method("apply_upgrades"):
+							car.apply_upgrades(data.last_car.upgrades)
 
 
 func has_save(slot: int = 1) -> bool:

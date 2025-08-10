@@ -38,6 +38,24 @@ func clear_car_state(world_name: String) -> void:
 
 func set_current_car(car: Car) -> void:
 	current_car = car
+	
+func export_last_state() -> Dictionary:
+		if last_world_id == "" or not _saved.has(last_world_id):
+				return {}
+		var data: Dictionary = _saved[last_world_id].duplicate(true)
+		data.world_id = last_world_id
+		return data
+
+func import_last_state(data: Dictionary) -> void:
+		if data.is_empty():
+				return
+		var world_id: String = data.get("world_id", "")
+		if world_id == "":
+				return
+		var copy := data.duplicate(true)
+		copy.erase("world_id")
+		_saved[world_id] = copy
+		last_world_id = world_id
 
 # ---------- Save ----------
 func save_car_state(world_root: Node) -> void:
