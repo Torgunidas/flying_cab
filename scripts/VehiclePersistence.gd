@@ -24,6 +24,30 @@ func _set_prop(obj: Object, name: String, value) -> void:
 			obj.set(name, value)
 			return
 
+# Bezpieczna konwersja na Vector2 (na wypadek starszych zapisów/niestandardowych danych)
+func _to_vec2(v: Variant) -> Vector2:
+	match typeof(v):
+		TYPE_VECTOR2:
+			return v
+		TYPE_DICTIONARY:
+			return Vector2(float(v.get("x", 0.0)), float(v.get("y", 0.0)))
+		TYPE_ARRAY:
+			if (v as Array).size() >= 2:
+				return Vector2(float(v[0]), float(v[1]))
+			else:
+				return Vector2.ZERO
+		TYPE_STRING:
+			var s := String(v)
+			# przykładowe formaty: "Vector2(123, 45)", "(123, 45)", "123,45"
+			s = s.replace("Vector2", "")
+			s = s.strip_edges()
+			s = s.replace("(", "").replace(")", "")
+			var parts := s.split(",", false)
+			if parts.size() >= 2:
+				return Vector2(parts[0].to_float(), parts[1].to_float())
+	return Vector2.ZERO
+
+
 # ---------- Public API ----------
 func is_world_level(level_root: Node) -> bool:
 	return level_root != null and level_root.name in WORLD_LEVEL_IDS
@@ -40,22 +64,22 @@ func set_current_car(car: Car) -> void:
 	current_car = car
 	
 func export_last_state() -> Dictionary:
-		if last_world_id == "" or not _saved.has(last_world_id):
-				return {}
-		var data: Dictionary = _saved[last_world_id].duplicate(true)
-		data.world_id = last_world_id
-		return data
+	if last_world_id == "" or not _saved.has(last_world_id):
+		return {}
+	var data: Dictionary = _saved[last_world_id].duplicate(true)
+	data["world_id"] = last_world_id
+	return data
 
 func import_last_state(data: Dictionary) -> void:
-		if data.is_empty():
-				return
-		var world_id: String = data.get("world_id", "")
-		if world_id == "":
-				return
-		var copy := data.duplicate(true)
-		copy.erase("world_id")
-		_saved[world_id] = copy
-		last_world_id = world_id
+	if data.is_empty():
+		return
+	var world_id: String = data.get("world_id", "")
+	if world_id == "":
+		return
+	var copy := data.duplicate(true)
+	copy.erase("world_id")
+	_saved[world_id] = copy
+	last_world_id = world_id
 
 # ---------- Save ----------
 func save_car_state(world_root: Node) -> void:
@@ -69,13 +93,12 @@ func save_car_state(world_root: Node) -> void:
 	var max_hp_val   = _get_prop(current_car, "max_hp")
 	var fuel_val     = _get_prop(current_car, "current_fuel")
 	var max_fuel_val = _get_prop(current_car, "max_fuel")
-	var car_id_val = _get_prop(current_car, "car_id")
+	var car_id_val   = _get_prop(current_car, "car_id")
 
 	_saved[world_root.name] = {
 		"car_scene_path": path,
 		"pos": current_car.global_position,
 		"rot": current_car.rotation,
-		"vel": current_car.velocity,
 		"hp": hp_val,
 		"max_hp": max_hp_val,
 		"fuel": fuel_val,
@@ -103,21 +126,17 @@ func restore_car_state(world_root: Node2D, parent: Node) -> Car:
 		return null
 
 	var packed: PackedScene = load(path)
-	var car := packed.instantiate() as Car
+	var car: Car = packed.instantiate() as Car
 	parent.add_child(car)
 
-	# Transform
-	car.global_position = data.pos
-	car.rotation = data.rot
-
-	# Velocity (po _ready)
-	if data.has("vel") and typeof(data.vel) == TYPE_VECTOR2:
-		call_deferred("_apply_velocity", car, data.vel)
+	# Transform (bezpieczny odczyt pos/rot)
+	car.global_position = _to_vec2(data.get("pos", Vector2.ZERO))
+	car.rotation = float(data.get("rot", 0.0))
 
 	# Deferred stats (aby nie nadpisało ich _ready() w car.gd)
 	call_deferred("_restore_stats_after_ready", car, data)
 	
-		# po zainstancjowaniu:
+	# po zainstancjowaniu:
 	if saved_car_id != null:
 		_set_prop(car, "car_id", saved_car_id)   # jeśli chcesz zachować identyfikator
 	car.set_meta("player_owned", true)
@@ -126,10 +145,6 @@ func restore_car_state(world_root: Node2D, parent: Node) -> Car:
 
 	current_car = car
 	return car
-
-func _apply_velocity(car: Car, vel: Vector2) -> void:
-	if car and car.is_inside_tree():
-		car.velocity = vel
 
 func _restore_stats_after_ready(car: Car, data: Dictionary) -> void:
 	if car == null or not car.is_inside_tree():
@@ -157,9 +172,8 @@ func _restore_stats_after_ready(car: Car, data: Dictionary) -> void:
 func _dbg(tag: String, extra := "") -> void:
 	print("[VehPers]", tag, extra, " keys=", _saved.keys())
 	
-	
-	# -----------------------------------------------------------------------
-#  RESET – kasuje cały runtime’owy zapis pojazdu
+# -----------------------------------------------------------------------
+# RESET – kasuje cały runtime’owy zapis pojazdu
 # -----------------------------------------------------------------------
 func reset_vehicle_persistence() -> void:
 	_saved.clear()
@@ -168,20 +182,25 @@ func reset_vehicle_persistence() -> void:
 	_dbg("reset", "vehicle state cleared")
 	
 func spawn_car_in_garage(car_id:String) -> Car:
-		var scene_path := _get_scene_for_car(car_id)
-		var packed: PackedScene = load(scene_path)
-		var car := packed.instantiate() as Car
-		var garage := get_tree().get_current_scene().get_node_or_null("GarageSpawn")
-		if garage:
-				garage.add_child(car)
-				car.global_position = garage.global_position
-		else:
-				get_tree().get_current_scene().add_child(car)
-		return car
+	var scene_path := _get_scene_for_car(car_id)
+	var packed: PackedScene = load(scene_path)
+	var car := packed.instantiate() as Car
+	var current_scene := get_tree().get_current_scene()
+	var garage: Node = null
+	if current_scene:
+		garage = current_scene.get_node_or_null("GarageSpawn")
+	if garage:
+		garage.add_child(car)
+		car.global_position = garage.global_position
+	elif current_scene:
+		current_scene.add_child(car)
+	else:
+		get_tree().root.add_child(car)
+	return car
 
 func _get_scene_for_car(car_id:String) -> String:
-		var map := {
-				"cab_neo": "res://scenes/cars/cab_neo.tscn",
-				"taxi": "res://scenes/cars/car_yellow_cab.tscn"
-		}
-		return map.get(car_id, "res://scenes/cars/car_yellow_cab.tscn")
+	var map := {
+		"cab_neo": "res://scenes/cars/cab_neo.tscn",
+		"taxi": "res://scenes/cars/car_yellow_cab.tscn"
+	}
+	return map.get(car_id, "res://scenes/cars/car_yellow_cab.tscn")

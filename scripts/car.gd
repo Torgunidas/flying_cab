@@ -118,6 +118,13 @@ var fuel_enabled: bool = true
 # --- Control & state flags ------------------------------------------
 var player_input_enabled : bool = true       # ◆ NOWE
 
+func _get_mobile_controls() -> Node:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return null
+	return scene.get_node_or_null("MobileControls")
+
+
 func set_player_input_enabled(v: bool) -> void:   # ◆ NOWE
 	player_input_enabled = v
 
@@ -200,6 +207,7 @@ func _ready() -> void:
 	_level = _find_level_node()
 	add_to_group("vehicles")
 	add_to_group("interactables")
+	call_deferred("_init_ui")
 
 	current_hp = max_hp
 	current_fuel = clamp(current_fuel, 0.0, max_fuel)   # zachowuje to, co wpiszesz w Inspectorze
@@ -211,7 +219,7 @@ func _ready() -> void:
 	# Inicjalizacja UI (MobileControls) ─ aktualizuj tylko dla pojazdu
 		# sterowanego przez gracza. Dzięki temu spawnowanie innych aut nie
 		# nadpisze wartości w HUD‑zie.
-	var mobile_controls = get_tree().get_current_scene().get_node_or_null("MobileControls")
+	var mobile_controls = _get_mobile_controls()
 	var player = get_tree().get_first_node_in_group("player")
 	if mobile_controls and player and player.in_vehicle and player.vehicle == self:
 			mobile_controls.update_hp_display(current_hp, max_hp)
@@ -219,6 +227,13 @@ func _ready() -> void:
 		
 			# połącz timeout na start reload
 	death_timer.connect("timeout", Callable(self, "_on_death_timer_timeout"))
+	
+func _init_ui() -> void:
+	var mobile_controls = _get_mobile_controls()
+	var player = get_tree().get_first_node_in_group("player")
+	if mobile_controls and player and player.in_vehicle and player.vehicle == self:
+		mobile_controls.update_hp_display(current_hp, max_hp)
+		mobile_controls.update_fuel_display(current_fuel, max_fuel)
 
 func _process(_delta: float) -> void:
 	if not controls_enabled:
@@ -336,7 +351,7 @@ func _physics_process(delta: float) -> void:
 
 		_apply_damage(int(delta_v * collision_damage_factor))
 	# UI (jeśli masz MobileControls)
-	var ui = get_tree().get_current_scene().get_node_or_null("MobileControls")
+	var ui = _get_mobile_controls()
 	var player = get_tree().get_first_node_in_group("player")
 	if ui and player and player.in_vehicle and player.vehicle == self:
 		ui.update_fuel_display(current_fuel, max_fuel)
@@ -434,7 +449,7 @@ func _apply_damage(dmg: int) -> void:
 	current_hp = max(current_hp - dmg, 0)
 	print("Collision! Dmg=", dmg, " HP=", current_hp)
 
-	var mobile_controls = get_tree().get_current_scene().get_node_or_null("MobileControls")
+	var mobile_controls = _get_mobile_controls()
 	var player = get_tree().get_first_node_in_group("player")
 	if mobile_controls and player and player.in_vehicle and player.vehicle == self:
 				mobile_controls.update_hp_display(current_hp, max_hp)

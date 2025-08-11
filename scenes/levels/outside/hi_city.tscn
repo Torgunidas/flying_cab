@@ -2225,6 +2225,10 @@ texture = ExtResource("12_f2ya4")
 position = Vector2(-478, -368)
 monitoring = false
 
+[node name="Door4" parent="architecture/market_street_below3" instance=ExtResource("18_3leuv")]
+position = Vector2(-478, -160)
+monitoring = false
+
 [node name="Door2" parent="architecture/market_street_below3" instance=ExtResource("18_3leuv")]
 z_index = -4
 position = Vector2(-1007, -159)
@@ -2663,7 +2667,7 @@ position = Vector2(-88, 0)
 position = Vector2(2320, -689)
 
 [node name="PassengerWaypoint" parent="delivey_car_wash/Point_Car_wash3" index="2"]
-position = Vector2(-88, 0)
+position = Vector2(-86, -2)
 
 [node name="MrFroggy" parent="." instance=ExtResource("33_th6as")]
 position = Vector2(-5686, -1357)
@@ -2750,6 +2754,16 @@ position = Vector2(-144, 0)
 [node name="SpawnTimer" parent="passangers/PassengerSpawnPoint" index="2"]
 wait_time = 10.0
 
+[node name="PassengerSpawnPoint3" parent="passangers" instance=ExtResource("21_s5ica")]
+position = Vector2(-3778, -1834)
+delivery_groups = Array[NodePath]([NodePath("../../delivery_player_building")])
+
+[node name="Waypoint" parent="passangers/PassengerSpawnPoint3" index="1"]
+position = Vector2(-144, 0)
+
+[node name="SpawnTimer" parent="passangers/PassengerSpawnPoint3" index="2"]
+wait_time = 10.0
+
 [node name="PassengerSpawnPoint2" parent="passangers" instance=ExtResource("21_s5ica")]
 position = Vector2(-6098, -1346)
 delivery_groups = Array[NodePath]([NodePath("../../delivery_player_building")])
@@ -2797,6 +2811,7 @@ position = Vector2(-104, 0)
 [editable path="passangers/passenger_2ns_gasstation7"]
 [editable path="passangers/passenger_2ns_gasstation3"]
 [editable path="passangers/PassengerSpawnPoint"]
+[editable path="passangers/PassengerSpawnPoint3"]
 [editable path="passangers/PassengerSpawnPoint2"]
 [editable path="delivery_player_building/DeliveryPoint"]
 [editable path="delivery_player_building/DeliveryPoint2"]
