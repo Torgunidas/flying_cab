@@ -1100,6 +1100,9 @@ position = Vector2(4513, -93)
 [node name="GasStation_by_the_carwash" parent="gas_stations" instance=ExtResource("10_nvfoa")]
 position = Vector2(-2072, 331)
 
+[node name="GasStation_by_the_carwash2" parent="gas_stations" instance=ExtResource("10_nvfoa")]
+position = Vector2(-2072, 667)
+
 [node name="architecture" type="Node2D" parent="."]
 
 [node name="business_buildings" type="Node2D" parent="architecture"]
