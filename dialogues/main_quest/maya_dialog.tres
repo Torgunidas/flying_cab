@@ -10,15 +10,12 @@
 [sub_resource type="Resource" id="Resource_jiexr"]
 script = ExtResource("4_2jftd")
 type = "active_quest"
-amount = 0
-cmp = ">"
 quest_id = "1_1_talk_to_maya"
 metadata/_custom_type_script = "uid://2aako6y61wi5"
 
 [sub_resource type="Resource" id="Resource_x5eyt"]
 script = ExtResource("2_l7org")
 text = "How are you feeling today?"
-actions = Array[ExtResource("3_xjnsa")]([])
 goto_page = 1
 requirements = Array[ExtResource("4_2jftd")]([SubResource("Resource_jiexr")])
 show_if_unavailable = false
@@ -27,11 +24,6 @@ metadata/_custom_type_script = "uid://enivet37mn8j"
 [sub_resource type="Resource" id="Resource_qckf5"]
 script = ExtResource("3_xjnsa")
 type = "grant_vehicle_access"
-amount = 0
-quest_id = ""
-anim_name = ""
-loop_count = 1
-npc_text_id = ""
 vehicle_id = "yellow_cab"
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
@@ -39,24 +31,17 @@ metadata/_custom_type_script = "uid://cke3kl33pylr5"
 script = ExtResource("2_l7org")
 text = "Dawaj kluczyki"
 actions = Array[ExtResource("3_xjnsa")]([SubResource("Resource_qckf5")])
-goto_page = -1
-requirements = Array[ExtResource("4_2jftd")]([])
-show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_g6ne0"]
 script = ExtResource("4_2jftd")
 type = "has_item"
-amount = 0
-cmp = ">"
-quest_id = ""
 item = ExtResource("5_xjnsa")
 metadata/_custom_type_script = "uid://2aako6y61wi5"
 
 [sub_resource type="Resource" id="Resource_p4lck"]
 script = ExtResource("2_l7org")
 text = "I have the cure. That should do for some time."
-actions = Array[ExtResource("3_xjnsa")]([])
 goto_page = 6
 requirements = Array[ExtResource("4_2jftd")]([SubResource("Resource_g6ne0")])
 show_if_unavailable = false
@@ -71,10 +56,7 @@ metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 [sub_resource type="Resource" id="Resource_xjnsa"]
 script = ExtResource("2_l7org")
 text = "The substance is wearing off?"
-actions = Array[ExtResource("3_xjnsa")]([])
 goto_page = 2
-requirements = Array[ExtResource("4_2jftd")]([])
-show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_l7org"]
@@ -86,10 +68,7 @@ metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 [sub_resource type="Resource" id="Resource_tvxdt"]
 script = ExtResource("2_l7org")
 text = "Give me some money that father left us."
-actions = Array[ExtResource("3_xjnsa")]([])
 goto_page = 3
-requirements = Array[ExtResource("4_2jftd")]([])
-show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_2jftd"]
@@ -101,10 +80,7 @@ metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 [sub_resource type="Resource" id="Resource_jnjql"]
 script = ExtResource("2_l7org")
 text = "M. No one is going to die. Your big brother will take care of you."
-actions = Array[ExtResource("3_xjnsa")]([])
 goto_page = 4
-requirements = Array[ExtResource("4_2jftd")]([])
-show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_0odqd"]
@@ -117,42 +93,24 @@ metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 script = ExtResource("3_xjnsa")
 type = "add_money"
 amount = 10000
-quest_id = ""
-anim_name = ""
-loop_count = 1
-npc_text_id = ""
-vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_m80b5"]
 script = ExtResource("3_xjnsa")
 type = "start_quest"
-amount = 0
 quest_id = "1_2_find_your_car"
-anim_name = ""
-loop_count = 1
-npc_text_id = ""
-vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_8c70r"]
 script = ExtResource("3_xjnsa")
 type = "finish_quest"
-amount = 0
 quest_id = "1_1_talk_to_maya"
-anim_name = ""
-loop_count = 1
-npc_text_id = ""
-vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_b8fjn"]
 script = ExtResource("2_l7org")
 text = "As always. I'll be right back"
 actions = Array[ExtResource("3_xjnsa")]([SubResource("Resource_bs6x2"), SubResource("Resource_m80b5"), SubResource("Resource_8c70r")])
-goto_page = -1
-requirements = Array[ExtResource("4_2jftd")]([])
-show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_5l0x3"]
@@ -164,18 +122,11 @@ metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 [sub_resource type="Resource" id="Resource_rlc84"]
 script = ExtResource("1_upblg")
 npc_text = "...."
-answers = Array[ExtResource("2_l7org")]([])
 metadata/_custom_type_script = "uid://dcxxfy4h8m8tn"
 
 [sub_resource type="Resource" id="Resource_n32ei"]
 script = ExtResource("3_xjnsa")
 type = "revoke_item"
-amount = 0
-quest_id = ""
-anim_name = ""
-loop_count = 1
-npc_text_id = ""
-vehicle_id = ""
 item = ExtResource("5_xjnsa")
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
@@ -183,42 +134,24 @@ metadata/_custom_type_script = "uid://cke3kl33pylr5"
 script = ExtResource("3_xjnsa")
 type = "add_maya_time"
 amount = 10
-quest_id = ""
-anim_name = ""
-loop_count = 1
-npc_text_id = ""
-vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_fvtq2"]
 script = ExtResource("3_xjnsa")
 type = "finish_quest"
-amount = 0
 quest_id = "1_7_bring_cure_to_maya"
-anim_name = ""
-loop_count = 1
-npc_text_id = ""
-vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_mki21"]
 script = ExtResource("3_xjnsa")
 type = "start_quest"
-amount = 0
 quest_id = "2_0_get_the_money_for_cure"
-anim_name = ""
-loop_count = 1
-npc_text_id = ""
-vehicle_id = ""
 metadata/_custom_type_script = "uid://cke3kl33pylr5"
 
 [sub_resource type="Resource" id="Resource_6cv8u"]
 script = ExtResource("2_l7org")
 text = "[You administer the cure]."
 actions = Array[ExtResource("3_xjnsa")]([SubResource("Resource_n32ei"), SubResource("Resource_ec28w"), SubResource("Resource_fvtq2"), SubResource("Resource_mki21")])
-goto_page = -1
-requirements = Array[ExtResource("4_2jftd")]([])
-show_if_unavailable = true
 metadata/_custom_type_script = "uid://enivet37mn8j"
 
 [sub_resource type="Resource" id="Resource_40wqe"]
