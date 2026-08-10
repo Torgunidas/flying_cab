@@ -4,7 +4,6 @@
 
 #include "Components/CapsuleComponent.h"
 #include "Components/PrimitiveComponent.h"
-#include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "FlyingCabCameraRig.h"
 #include "FlyingCabCharacter.h"
@@ -14,16 +13,12 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EngineUtils.h"
 #include "FlyingCabGameFlowWidget.h"
+#include "FlyingCabTouchControls.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabInteraction, Log, All);
-
-namespace
-{
-	constexpr uint64 InteractionMessageKey = 0xFCAB0005ULL;
-}
 
 AFlyingCabPlayerController::AFlyingCabPlayerController()
 {
@@ -221,6 +216,9 @@ void AFlyingCabPlayerController::SetupInputComponent()
 void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
+	CachedContextPrompt = FText::GetEmpty();
+	CachedContextPromptPawn.Reset();
+	LastContextPromptRefreshTime = -1.0;
 	if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(InPawn))
 	{
 		ActiveVehicle = Vehicle;
@@ -241,6 +239,7 @@ void AFlyingCabPlayerController::RequestContextInteraction()
 
 	if (AFlyingCabCharacter* OnFootPawn = Cast<AFlyingCabCharacter>(GetPawn()))
 	{
+		RefreshInteractionCacheIfNeeded();
 		if (TryInteractWithNearbyActor(OnFootPawn))
 		{
 			return;
@@ -255,28 +254,48 @@ void AFlyingCabPlayerController::RequestContextInteraction()
 	}
 }
 
-FText AFlyingCabPlayerController::GetContextPrompt() const
+FText AFlyingCabPlayerController::GetContextPrompt()
 {
-	const AFlyingCabCharacter* OnFootPawn = Cast<AFlyingCabCharacter>(GetPawn());
+	AFlyingCabCharacter* OnFootPawn = Cast<AFlyingCabCharacter>(GetPawn());
 	if (!OnFootPawn || OnFootPawn->IsDead())
 	{
+		CachedContextPrompt = FText::GetEmpty();
+		CachedContextPromptPawn.Reset();
 		return FText::GetEmpty();
+	}
+
+	RefreshInteractionCacheIfNeeded();
+	const double CurrentTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	if (CachedContextPromptPawn == OnFootPawn
+		&& LastContextPromptRefreshTime >= 0.0
+		&& CurrentTime - LastContextPromptRefreshTime < ContextPromptRefreshInterval)
+	{
+		return CachedContextPrompt;
 	}
 
 	if (AActor* InteractableActor = FindNearestInteractable(OnFootPawn))
 	{
 		if (const IFlyingCabInteractable* Interactable = Cast<IFlyingCabInteractable>(InteractableActor))
 		{
-			return Interactable->GetInteractionPrompt(OnFootPawn);
+			CachedContextPrompt = Interactable->GetInteractionPrompt(OnFootPawn);
+			CachedContextPromptPawn = OnFootPawn;
+			LastContextPromptRefreshTime = CurrentTime;
+			return CachedContextPrompt;
 		}
 	}
 
 	if (const AFlyingCabPawn* NearbyVehicle = FindNearestVehicle(OnFootPawn))
 	{
-		return NearbyVehicle->GetEntryPrompt();
+		CachedContextPrompt = NearbyVehicle->GetEntryPrompt();
+		CachedContextPromptPawn = OnFootPawn;
+		LastContextPromptRefreshTime = CurrentTime;
+		return CachedContextPrompt;
 	}
 
-	return FText::FromString(TEXT("EXPLORE ON FOOT"));
+	CachedContextPrompt = FText::FromString(TEXT("EXPLORE ON FOOT"));
+	CachedContextPromptPawn = OnFootPawn;
+	LastContextPromptRefreshTime = CurrentTime;
+	return CachedContextPrompt;
 }
 
 void AFlyingCabPlayerController::TryExitVehicle(AFlyingCabPawn* Vehicle)
@@ -387,20 +406,59 @@ bool AFlyingCabPlayerController::TryInteractWithNearbyActor(AFlyingCabCharacter*
 	return true;
 }
 
+void AFlyingCabPlayerController::RefreshInteractionCacheIfNeeded(bool bForce)
+{
+	if (!GetWorld())
+	{
+		CachedInteractables.Reset();
+		CachedVehicles.Reset();
+		return;
+	}
+
+	const double CurrentTime = GetWorld()->GetTimeSeconds();
+	if (!bForce
+		&& LastInteractionCacheRefreshTime >= 0.0
+		&& CurrentTime - LastInteractionCacheRefreshTime < InteractionCacheRefreshInterval)
+	{
+		return;
+	}
+
+	CachedInteractables.Reset();
+	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+	{
+		AActor* Candidate = *It;
+		if (Candidate
+			&& Candidate->GetClass()->ImplementsInterface(UFlyingCabInteractable::StaticClass()))
+		{
+			CachedInteractables.Add(Candidate);
+		}
+	}
+
+	CachedVehicles.Reset();
+	for (TActorIterator<AFlyingCabPawn> It(GetWorld()); It; ++It)
+	{
+		if (AFlyingCabPawn* Candidate = *It)
+		{
+			CachedVehicles.Add(Candidate);
+		}
+	}
+	LastInteractionCacheRefreshTime = CurrentTime;
+}
+
 AActor* AFlyingCabPlayerController::FindNearestInteractable(
 	const AFlyingCabCharacter* OnFootPawn) const
 {
-	if (!OnFootPawn || !GetWorld())
+	if (!OnFootPawn)
 	{
 		return nullptr;
 	}
 
 	AActor* NearestActor = nullptr;
 	float NearestDistance = WorldInteractionDistance;
-	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+	for (const TWeakObjectPtr<AActor>& CandidatePtr : CachedInteractables)
 	{
-		AActor* Candidate = *It;
-		if (!Candidate || !Candidate->GetClass()->ImplementsInterface(UFlyingCabInteractable::StaticClass()))
+		AActor* Candidate = CandidatePtr.Get();
+		if (!Candidate)
 		{
 			continue;
 		}
@@ -419,16 +477,16 @@ AActor* AFlyingCabPlayerController::FindNearestInteractable(
 AFlyingCabPawn* AFlyingCabPlayerController::FindNearestVehicle(
 	const AFlyingCabCharacter* OnFootPawn) const
 {
-	if (!OnFootPawn || !GetWorld())
+	if (!OnFootPawn)
 	{
 		return nullptr;
 	}
 
 	AFlyingCabPawn* NearestVehicle = nullptr;
 	float NearestDistance = VehicleInteractionDistance;
-	for (TActorIterator<AFlyingCabPawn> It(GetWorld()); It; ++It)
+	for (const TWeakObjectPtr<AFlyingCabPawn>& CandidatePtr : CachedVehicles)
 	{
-		AFlyingCabPawn* Candidate = *It;
+		AFlyingCabPawn* Candidate = CandidatePtr.Get();
 		if (!Candidate)
 		{
 			continue;
@@ -523,8 +581,31 @@ void AFlyingCabPlayerController::ShowInteractionMessage(
 	const FString& Message,
 	const FColor& Color) const
 {
-	if (GEngine)
+	ShowEventMessage(
+		FText::FromString(Message),
+		FLinearColor::FromSRGBColor(Color),
+		2.5f);
+}
+
+void AFlyingCabPlayerController::ShowEventMessage(
+	const FText& Message,
+	const FLinearColor& Color,
+	float DurationSeconds) const
+{
+	if (UFlyingCabTouchControls* InterfaceWidget = GetInterfaceWidget())
 	{
-		GEngine->AddOnScreenDebugMessage(InteractionMessageKey, 2.5f, Color, Message);
+		InterfaceWidget->ShowEventMessage(Message, Color, DurationSeconds);
 	}
+}
+
+UFlyingCabTouchControls* AFlyingCabPlayerController::GetInterfaceWidget() const
+{
+	if (const AFlyingCabPawn* ControlledVehicle = Cast<AFlyingCabPawn>(GetPawn()))
+	{
+		if (UFlyingCabTouchControls* Widget = ControlledVehicle->GetTouchControlsWidget())
+		{
+			return Widget;
+		}
+	}
+	return ActiveVehicle ? ActiveVehicle->GetTouchControlsWidget() : nullptr;
 }

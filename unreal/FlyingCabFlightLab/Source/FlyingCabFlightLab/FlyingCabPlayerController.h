@@ -25,7 +25,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Interaction")
 	void RequestContextInteraction();
-	FText GetContextPrompt() const;
+	FText GetContextPrompt();
+	void ShowEventMessage(
+		const FText& Message,
+		const FLinearColor& Color,
+		float DurationSeconds = 2.5f) const;
 	void StartRunMode(EFlyingCabRunMode Mode);
 	void RestartWithRunMode(EFlyingCabRunMode Mode);
 	void ReturnToModeSelection();
@@ -42,10 +46,12 @@ private:
 	void TryExitVehicle(AFlyingCabPawn* Vehicle);
 	void TryEnterVehicle(AFlyingCabCharacter* OnFootPawn, AFlyingCabPawn* Vehicle);
 	bool TryInteractWithNearbyActor(AFlyingCabCharacter* OnFootPawn);
+	void RefreshInteractionCacheIfNeeded(bool bForce = false);
 	AActor* FindNearestInteractable(const AFlyingCabCharacter* OnFootPawn) const;
 	AFlyingCabPawn* FindNearestVehicle(const AFlyingCabCharacter* OnFootPawn) const;
 	AFlyingCabCharacter* SpawnCharacterBesideVehicle(AFlyingCabPawn* Vehicle);
 	void ShowInteractionMessage(const FString& Message, const FColor& Color) const;
+	class UFlyingCabTouchControls* GetInterfaceWidget() const;
 	void ShowInitialModeSelection();
 	void EnterMenuInputMode();
 	void RestoreGameplayInputMode();
@@ -71,6 +77,14 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot", meta = (ClampMin = "0.0"))
 	float WorldInteractionDistance = 250.0f;
 
+	/** Full world discovery is rare; normal prompt queries use the small weak-reference cache. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot", meta = (ClampMin = "0.1"))
+	float InteractionCacheRefreshInterval = 1.0f;
+
+	/** Context text includes rounded values and does not need a per-frame world query. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot", meta = (ClampMin = "0.05"))
+	float ContextPromptRefreshInterval = 0.2f;
+
 	UPROPERTY(Transient)
 	TObjectPtr<AFlyingCabPawn> ActiveVehicle;
 
@@ -79,6 +93,13 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UFlyingCabGameFlowWidget> GameFlowWidget;
+
+	TArray<TWeakObjectPtr<AActor>> CachedInteractables;
+	TArray<TWeakObjectPtr<AFlyingCabPawn>> CachedVehicles;
+	TWeakObjectPtr<AFlyingCabCharacter> CachedContextPromptPawn;
+	FText CachedContextPrompt;
+	double LastInteractionCacheRefreshTime = -1.0;
+	double LastContextPromptRefreshTime = -1.0;
 
 	bool bGameFlowScreenOpen = false;
 };

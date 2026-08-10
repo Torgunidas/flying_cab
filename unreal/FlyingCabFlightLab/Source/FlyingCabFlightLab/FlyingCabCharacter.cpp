@@ -7,7 +7,6 @@
 #include "Components/InputComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Engine/Engine.h"
 #include "FlyingCabGameMode.h"
 #include "FlyingCabPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -18,11 +17,6 @@
 #include "UObject/ConstructorHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabCharacter, Log, All);
-
-namespace
-{
-	constexpr uint64 CharacterStatusMessageKey = 0xFCAB0006ULL;
-}
 
 AFlyingCabCharacter::AFlyingCabCharacter()
 {
@@ -305,16 +299,16 @@ void AFlyingCabCharacter::ApplyCharacterDamage(float DamageAmount, const TCHAR* 
 
 	CurrentHealth = FMath::Max(0.0f, CurrentHealth - DamageAmount);
 	DamageFlashRemaining = 0.18f;
-	if (GEngine)
+	if (const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController()))
 	{
-		GEngine->AddOnScreenDebugMessage(
-			CharacterStatusMessageKey,
-			1.5f,
-			FColor(255, 80, 30),
-			FString::Printf(
+		PlayerController->ShowEventMessage(
+			FText::FromString(FString::Printf(
 				TEXT("%s // HEALTH %.0f%%"),
 				DamageSource ? DamageSource : TEXT("DAMAGE"),
-				GetHealthPercent() * 100.0f));
+				GetHealthPercent() * 100.0f)),
+			FLinearColor::FromSRGBColor(FColor(255, 80, 30)),
+			1.5f);
 	}
 
 	if (CurrentHealth <= UE_SMALL_NUMBER)
@@ -334,13 +328,13 @@ void AFlyingCabCharacter::EnterDeathState()
 	ClearInputState();
 	GetCharacterMovement()->DisableMovement();
 	UpdateDamageAppearance();
-	if (GEngine)
+	if (const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController()))
 	{
-		GEngine->AddOnScreenDebugMessage(
-			CharacterStatusMessageKey,
-			DeathRestartDelay,
-			FColor(255, 35, 20),
-			TEXT("DRIVER DOWN // RELOADING LEVEL"));
+		PlayerController->ShowEventMessage(
+			FText::FromString(TEXT("DRIVER DOWN // RELOADING LEVEL")),
+			FLinearColor::FromSRGBColor(FColor(255, 35, 20)),
+			DeathRestartDelay);
 	}
 	UE_LOG(LogFlyingCabCharacter, Warning, TEXT("On-foot character died; reloading current level."));
 

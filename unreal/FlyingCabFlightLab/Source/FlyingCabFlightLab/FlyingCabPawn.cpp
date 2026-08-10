@@ -926,13 +926,17 @@ void AFlyingCabPawn::ConsumeOrRegenerateFuel(
 	if (CurrentFuel <= UE_SMALL_NUMBER && !bFuelEmptyWarningShown)
 	{
 		bFuelEmptyWarningShown = true;
-		if (GEngine && IsLocallyControlled())
+		if (IsLocallyControlled())
 		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				3.0f,
-				FColor(255, 80, 30),
-				TEXT("ENERGY EMPTY // DESCEND TO RECOVER A RESERVE OR REACH A FUEL STATION"));
+			if (const AFlyingCabPlayerController* PlayerController =
+				Cast<AFlyingCabPlayerController>(GetController()))
+			{
+				PlayerController->ShowEventMessage(
+					FText::FromString(TEXT(
+						"ENERGY EMPTY // DESCEND TO RECOVER A RESERVE OR REACH A FUEL STATION")),
+					FLinearColor::FromSRGBColor(FColor(255, 80, 30)),
+					3.0f);
+			}
 		}
 	}
 }
@@ -988,13 +992,18 @@ void AFlyingCabPawn::ApplyCollisionDamage(float NormalSpeedChange)
 		CurrentHull,
 		MaxHull);
 
-	if (GEngine && IsLocallyControlled())
+	if (IsLocallyControlled())
 	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			1.2f,
-			FColor(255, 110, 35),
-			FString::Printf(TEXT("IMPACT // HULL %.0f%%"), 100.0f * CurrentHull / MaxHull));
+		if (const AFlyingCabPlayerController* PlayerController =
+			Cast<AFlyingCabPlayerController>(GetController()))
+		{
+			PlayerController->ShowEventMessage(
+				FText::FromString(FString::Printf(
+					TEXT("IMPACT // HULL %.0f%%"),
+					100.0f * CurrentHull / MaxHull)),
+				FLinearColor::FromSRGBColor(FColor(255, 110, 35)),
+				1.2f);
+		}
 	}
 
 	if (CurrentHull <= UE_SMALL_NUMBER)

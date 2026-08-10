@@ -8,9 +8,11 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/TextBlock.h"
+#include "Engine/World.h"
 #include "FlyingCabCharacter.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
+#include "TimerManager.h"
 
 namespace
 {
@@ -36,6 +38,10 @@ TSharedRef<SWidget> UFlyingCabTouchControls::RebuildWidget()
 void UFlyingCabTouchControls::NativeDestruct()
 {
 	ReleaseAllInputs();
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(EventMessageTimerHandle);
+	}
 	Super::NativeDestruct();
 }
 
@@ -74,6 +80,54 @@ void UFlyingCabTouchControls::SetObjectiveText(const FText& Text)
 	if (ObjectiveText)
 	{
 		ObjectiveText->SetText(PendingObjectiveText);
+	}
+}
+
+void UFlyingCabTouchControls::ShowEventMessage(
+	const FText& Text,
+	const FLinearColor& Color,
+	float DurationSeconds)
+{
+	PendingEventMessageText = Text;
+	PendingEventMessageColor = Color;
+	if (EventMessageText)
+	{
+		EventMessageText->SetText(PendingEventMessageText);
+		EventMessageText->SetColorAndOpacity(FSlateColor(PendingEventMessageColor));
+	}
+	if (EventMessagePanel)
+	{
+		EventMessagePanel->SetVisibility(
+			PendingEventMessageText.IsEmpty()
+				? ESlateVisibility::Collapsed
+				: ESlateVisibility::HitTestInvisible);
+	}
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(EventMessageTimerHandle);
+		if (!PendingEventMessageText.IsEmpty() && DurationSeconds > 0.0f)
+		{
+			World->GetTimerManager().SetTimer(
+				EventMessageTimerHandle,
+				this,
+				&UFlyingCabTouchControls::ClearEventMessage,
+				DurationSeconds,
+				false);
+		}
+	}
+}
+
+void UFlyingCabTouchControls::ClearEventMessage()
+{
+	PendingEventMessageText = FText::GetEmpty();
+	if (EventMessageText)
+	{
+		EventMessageText->SetText(PendingEventMessageText);
+	}
+	if (EventMessagePanel)
+	{
+		EventMessagePanel->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
 
@@ -408,6 +462,35 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	ObjectiveSlot->SetPosition(FVector2D(-12.0f, 88.0f));
 	ObjectiveSlot->SetSize(FVector2D(195.0f, 112.0f));
 	ObjectiveSlot->SetZOrder(20);
+
+	EventMessagePanel = WidgetTree->ConstructWidget<UBorder>(
+		UBorder::StaticClass(),
+		TEXT("EventMessagePanel"));
+	EventMessagePanel->SetBrushColor(FLinearColor(0.005f, 0.012f, 0.025f, 0.94f));
+	EventMessagePanel->SetPadding(FMargin(16.0f, 10.0f));
+	EventMessageText = WidgetTree->ConstructWidget<UTextBlock>(
+		UTextBlock::StaticClass(),
+		TEXT("EventMessageText"));
+	EventMessageText->SetText(PendingEventMessageText);
+	EventMessageText->SetJustification(ETextJustify::Center);
+	EventMessageText->SetAutoWrapText(true);
+	EventMessageText->SetColorAndOpacity(FSlateColor(PendingEventMessageColor));
+	EventMessageText->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f));
+	EventMessageText->SetShadowOffset(FVector2D(2.0f, 2.0f));
+	FSlateFontInfo EventMessageFont = EventMessageText->GetFont();
+	EventMessageFont.Size = 20;
+	EventMessageText->SetFont(EventMessageFont);
+	EventMessagePanel->AddChild(EventMessageText);
+	EventMessagePanel->SetVisibility(
+		PendingEventMessageText.IsEmpty()
+			? ESlateVisibility::Collapsed
+			: ESlateVisibility::HitTestInvisible);
+	UCanvasPanelSlot* EventMessageSlot = RootCanvas->AddChildToCanvas(EventMessagePanel);
+	EventMessageSlot->SetAnchors(FAnchors(0.5f, 0.0f));
+	EventMessageSlot->SetAlignment(FVector2D(0.5f, 0.0f));
+	EventMessageSlot->SetPosition(FVector2D(0.0f, 154.0f));
+	EventMessageSlot->SetSize(FVector2D(520.0f, 72.0f));
+	EventMessageSlot->SetZOrder(40);
 
 	TrafficAlertText = WidgetTree->ConstructWidget<UTextBlock>(
 		UTextBlock::StaticClass(),

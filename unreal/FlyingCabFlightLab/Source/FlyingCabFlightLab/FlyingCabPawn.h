@@ -80,6 +80,7 @@ public:
 	bool CanPlayerEnter(FText& OutFailureReason) const;
 	FText GetEntryPrompt() const;
 	const FString& GetVehicleDisplayName() const { return VehicleDisplayName; }
+	UFlyingCabTouchControls* GetTouchControlsWidget() const { return TouchControlsWidget; }
 	UFlyingCabTouchControls* DetachTouchControlsWidget();
 	void AdoptTouchControlsWidget(UFlyingCabTouchControls* Widget);
 	bool IsRefuelRequested() const;

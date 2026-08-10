@@ -23,6 +23,10 @@ public:
 	void SetControlsVisible(bool bVisible);
 	void SetOnFootMode(bool bOnFoot);
 	void SetObjectiveText(const FText& Text);
+	void ShowEventMessage(
+		const FText& Text,
+		const FLinearColor& Color,
+		float DurationSeconds = 2.5f);
 	void SetTrafficAlert(const FText& Text, const FLinearColor& Color);
 	void SetMinimapState(
 		const FVector2D& CabWorldPosition,
@@ -70,6 +74,7 @@ private:
 	AFlyingCabCharacter* GetFlyingCabCharacter() const;
 	void UpdateHorizontalInput();
 	void RefreshControlMode();
+	void ClearEventMessage();
 	FVector2D WorldToMinimap(const FVector2D& WorldPosition) const;
 	void UpdateMinimapMarkers();
 	UBorder* AddMinimapPoint(
@@ -140,6 +145,12 @@ private:
 	TObjectPtr<UTextBlock> ObjectiveText;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UBorder> EventMessagePanel;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> EventMessageText;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> TrafficAlertText;
 
 	UPROPERTY(Transient)
@@ -164,6 +175,8 @@ private:
 	TArray<TObjectPtr<UBorder>> PassengerOfferMarkers;
 
 	FText PendingObjectiveText = FText::FromString(TEXT("FLIGHT LAB"));
+	FText PendingEventMessageText;
+	FLinearColor PendingEventMessageColor = FLinearColor::White;
 	FText PendingTrafficAlertText;
 	FLinearColor PendingTrafficAlertColor = FLinearColor::Transparent;
 	FVector2D PendingCabWorldPosition = FVector2D::ZeroVector;
@@ -191,4 +204,5 @@ private:
 	bool bRightPressed = false;
 	bool bThrustPressed = false;
 	bool bRefuelPressed = false;
+	FTimerHandle EventMessageTimerHandle;
 };

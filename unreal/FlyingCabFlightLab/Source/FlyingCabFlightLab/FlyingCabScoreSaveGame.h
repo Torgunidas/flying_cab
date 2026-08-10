@@ -13,6 +13,10 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabScoreSaveGame : public USaveGame
 	GENERATED_BODY()
 
 public:
+	/** Increment before making an incompatible persistent-score format change. */
+	UPROPERTY(SaveGame)
+	int32 SaveVersion = 1;
+
 	UPROPERTY(SaveGame)
 	TArray<float> BestTimeAttackSeconds;
 };

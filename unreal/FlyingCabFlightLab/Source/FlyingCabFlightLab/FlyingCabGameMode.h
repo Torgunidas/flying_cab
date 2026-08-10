@@ -30,6 +30,7 @@ public:
 	AFlyingCabGameMode();
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaSeconds) override;
 	void StartRun(EFlyingCabRunMode Mode);
 	TArray<float> GetBestTimeAttackTimes() const;
@@ -51,6 +52,7 @@ private:
 	void InitializeTraffic();
 	void InitializeOnFootSlice();
 	void InitializeServiceVehicle();
+	void RegisterVehicle(class AFlyingCabPawn* Pawn);
 	void EnsurePawnBinding();
 	void UpdatePassengerOffers(float DeltaSeconds);
 	void SpawnPassengerOffer();
@@ -61,7 +63,8 @@ private:
 	void UpdateActiveFare();
 	void HandleZoneReady(class AFlyingCabDeliveryZone* Zone);
 	void HandleVehicleDestroyed(class AFlyingCabPawn* Pawn);
-	void RecoverVehicleAfterTow();
+	void ScheduleVehicleRecovery(class AFlyingCabPawn* Pawn);
+	void RecoverVehicleAfterTow(class AFlyingCabPawn* Pawn);
 	void UpdateObjectiveStatus();
 	void UpdateTrafficAwareness(float DeltaSeconds);
 	void UpdateRunModeStatus();
@@ -72,6 +75,10 @@ private:
 	void HandleTrafficNearMiss(
 		class AFlyingCabTrafficVehicle* Vehicle,
 		class AFlyingCabPawn* Pawn);
+	void ShowPlayerEventMessage(
+		const FText& Message,
+		const FLinearColor& Color,
+		float DurationSeconds) const;
 	bool IsPlayerOnFoot() const;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery")
@@ -209,6 +216,9 @@ private:
 	TArray<TObjectPtr<class AFlyingCabTrafficVehicle>> TrafficVehicles;
 
 	UPROPERTY(Transient)
+	TArray<TObjectPtr<class AFlyingCabPawn>> TrackedVehicles;
+
+	UPROPERTY(Transient)
 	TObjectPtr<class AFlyingCabPawn> BoundPawn;
 
 	UPROPERTY(Transient)
@@ -239,5 +249,5 @@ private:
 	float PassengerSpawnCountdown = 0.0f;
 	bool bPassengerOnBoard = false;
 	FRandomStream DispatchRandom;
-	FTimerHandle RecoveryTimerHandle;
+	TMap<TWeakObjectPtr<class AFlyingCabPawn>, FTimerHandle> VehicleRecoveryTimerHandles;
 };
