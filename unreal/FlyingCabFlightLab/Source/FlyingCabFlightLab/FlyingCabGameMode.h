@@ -48,12 +48,9 @@ public:
 	bool CanPlayerExitVehicle(FText& OutFailureReason) const;
 
 private:
-	void InitializeCityExpansion();
+	void InitializeWorldBootstrap();
 	void InitializeDeliveryLoop();
 	void InitializePassengerMarket();
-	void InitializeTraffic();
-	void InitializeOnFootSlice();
-	void InitializeServiceVehicle();
 	void RegisterVehicle(class AFlyingCabPawn* Pawn);
 	void EnsurePawnBinding();
 	void UpdatePassengerOffers(float DeltaSeconds);
@@ -158,30 +155,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float RecoveryFuelPercent = 0.25f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy")
-	TArray<FVector> FuelStationLocations;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy")
-	TArray<FString> FuelStationNames;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy")
-	TArray<FVector> RepairStationLocations;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy")
-	TArray<FString> RepairStationNames;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot")
-	FVector NightshiftEntranceLocation = FVector(470.0f, 0.0f, 4120.0f);
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot")
-	FVector NightshiftExteriorReturnLocation = FVector(310.0f, 0.0f, 4068.0f);
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot")
-	FVector NightshiftOfficeLocation = FVector(23000.0f, 0.0f, 650.0f);
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot")
-	FVector ServiceVehicleLocation = FVector(-600.0f, 0.0f, 4040.0f);
-
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Traffic", meta = (ClampMin = "0"))
 	int32 NearMissRewardCredits = 3;
 
@@ -192,28 +165,7 @@ private:
 	TArray<FFlyingCabPassengerOfferState> PassengerOffers;
 
 	UPROPERTY(Transient)
-	TArray<TObjectPtr<class AFlyingCabFuelStation>> FuelStations;
-
-	UPROPERTY(Transient)
-	TArray<TObjectPtr<class AFlyingCabRepairStation>> RepairStations;
-
-	UPROPERTY(Transient)
-	TObjectPtr<class AFlyingCabCityExpansion> CityExpansion;
-
-	UPROPERTY(Transient)
-	TObjectPtr<class AFlyingCabNightshiftOffice> NightshiftOffice;
-
-	UPROPERTY(Transient)
-	TObjectPtr<class AFlyingCabOnFootPortal> NightshiftEntrance;
-
-	UPROPERTY(Transient)
-	TObjectPtr<class AFlyingCabOnFootPortal> NightshiftExit;
-
-	UPROPERTY(Transient)
-	TObjectPtr<class AFlyingCabAccessTerminal> ServiceAccessTerminal;
-
-	UPROPERTY(Transient)
-	TObjectPtr<class AFlyingCabPawn> ServiceVehicle;
+	TObjectPtr<class AFlyingCabWorldBootstrap> WorldBootstrap;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Traffic")
 	TObjectPtr<class UFlyingCabTrafficAwarenessComponent> TrafficAwareness;

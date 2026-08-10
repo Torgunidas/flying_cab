@@ -3,21 +3,16 @@
 #include "FlyingCabGameMode.h"
 
 #include "Engine/GameInstance.h"
-#include "FlyingCabAccessTerminal.h"
 #include "FlyingCabCharacter.h"
 #include "FlyingCabCityData.h"
-#include "FlyingCabCityExpansion.h"
 #include "FlyingCabDeliveryZone.h"
-#include "FlyingCabFuelStation.h"
-#include "FlyingCabNightshiftOffice.h"
-#include "FlyingCabOnFootPortal.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
-#include "FlyingCabRepairStation.h"
 #include "FlyingCabScoreSaveGame.h"
 #include "FlyingCabTrafficAwarenessComponent.h"
 #include "FlyingCabTrafficVehicle.h"
+#include "FlyingCabWorldBootstrap.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
@@ -51,20 +46,6 @@ AFlyingCabGameMode::AFlyingCabGameMode()
 		DeliveryStops.Add(District.StopLocation);
 		DeliveryStopNames.Emplace(District.DisplayName);
 	}
-	const TArray<FFlyingCabServiceDefinition> DefaultFuelStations =
-		FlyingCabCityData::GetFuelStations();
-	for (const FFlyingCabServiceDefinition& Station : DefaultFuelStations)
-	{
-		FuelStationLocations.Add(Station.Location);
-		FuelStationNames.Emplace(Station.DisplayName);
-	}
-	const TArray<FFlyingCabServiceDefinition> DefaultRepairStations =
-		FlyingCabCityData::GetRepairStations();
-	for (const FFlyingCabServiceDefinition& Station : DefaultRepairStations)
-	{
-		RepairStationLocations.Add(Station.Location);
-		RepairStationNames.Emplace(Station.DisplayName);
-	}
 }
 
 void AFlyingCabGameMode::BeginPlay()
@@ -77,11 +58,8 @@ void AFlyingCabGameMode::BeginPlay()
 			&AFlyingCabGameMode::HandleTrafficAlertChanged);
 	}
 	Credits = FMath::Max(0, StartingCredits);
-	InitializeCityExpansion();
+	InitializeWorldBootstrap();
 	InitializeDeliveryLoop();
-	InitializeOnFootSlice();
-	InitializeServiceVehicle();
-	InitializeTraffic();
 	EnsurePawnBinding();
 }
 
@@ -151,9 +129,9 @@ void AFlyingCabGameMode::StartRun(EFlyingCabRunMode Mode)
 				Progression->ResetAccess();
 			}
 		}
-		if (ServiceAccessTerminal)
+		if (WorldBootstrap)
 		{
-			ServiceAccessTerminal->Configure(TEXT("Vehicle.Service"), TEXT("SERVICE VEHICLES"));
+			WorldBootstrap->RefreshServiceAccess();
 		}
 	}
 
@@ -196,125 +174,53 @@ TArray<float> AFlyingCabGameMode::GetBestTimeAttackTimes() const
 	return Times;
 }
 
-void AFlyingCabGameMode::InitializeCityExpansion()
+void AFlyingCabGameMode::InitializeWorldBootstrap()
 {
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.Owner = this;
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	CityExpansion = GetWorld()->SpawnActor<AFlyingCabCityExpansion>(
-		AFlyingCabCityExpansion::StaticClass(),
-		FVector::ZeroVector,
-		FRotator::ZeroRotator,
-		SpawnParameters);
-	if (!CityExpansion)
-	{
-		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not create east city extension."));
-	}
-}
-
-void AFlyingCabGameMode::InitializeOnFootSlice()
-{
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.Owner = this;
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	NightshiftOffice = GetWorld()->SpawnActor<AFlyingCabNightshiftOffice>(
-		AFlyingCabNightshiftOffice::StaticClass(),
-		NightshiftOfficeLocation,
-		FRotator::ZeroRotator,
-		SpawnParameters);
-	NightshiftEntrance = GetWorld()->SpawnActor<AFlyingCabOnFootPortal>(
-		AFlyingCabOnFootPortal::StaticClass(),
-		NightshiftEntranceLocation,
-		FRotator::ZeroRotator,
-		SpawnParameters);
-	if (!NightshiftOffice || !NightshiftEntrance)
-	{
-		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not create Nightshift Office entrance."));
-		return;
-	}
-
-	NightshiftExit = GetWorld()->SpawnActor<AFlyingCabOnFootPortal>(
-		AFlyingCabOnFootPortal::StaticClass(),
-		NightshiftOffice->GetExitPortalLocation(),
-		FRotator::ZeroRotator,
-		SpawnParameters);
-	ServiceAccessTerminal = GetWorld()->SpawnActor<AFlyingCabAccessTerminal>(
-		AFlyingCabAccessTerminal::StaticClass(),
-		NightshiftOffice->GetTerminalLocation(),
-		FRotator::ZeroRotator,
-		SpawnParameters);
-	if (!NightshiftExit || !ServiceAccessTerminal)
-	{
-		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not complete Nightshift Office interactables."));
-		return;
-	}
-
-	NightshiftEntrance->Configure(
-		TEXT("NIGHTSHIFT OFFICE"),
-		FText::FromString(TEXT("Q // ENTER NIGHTSHIFT OFFICE")),
-		NightshiftOffice->GetEntryLocation(),
-		FLinearColor(0.80f, 0.08f, 1.0f));
-	NightshiftExit->Configure(
-		TEXT("CITY PLATFORM"),
-		FText::FromString(TEXT("Q // RETURN TO CITY")),
-		NightshiftExteriorReturnLocation,
-		FLinearColor(0.05f, 0.78f, 1.0f));
-	ServiceAccessTerminal->Configure(TEXT("Vehicle.Service"), TEXT("SERVICE VEHICLES"));
-
-	UE_LOG(
-		LogFlyingCabDelivery,
-		Display,
-		TEXT("Nightshift Office initialized at %s with foot-only entrance at %s."),
-		*NightshiftOfficeLocation.ToCompactString(),
-		*NightshiftEntranceLocation.ToCompactString());
-}
-
-void AFlyingCabGameMode::InitializeServiceVehicle()
-{
-	FVector GroundedLocation = ServiceVehicleLocation;
-	FHitResult GroundHit;
-	const FVector TraceStart = ServiceVehicleLocation + FVector(0.0f, 0.0f, 600.0f);
-	const FVector TraceEnd = ServiceVehicleLocation - FVector(0.0f, 0.0f, 900.0f);
-	const FCollisionObjectQueryParams WorldStaticObjects(ECC_WorldStatic);
-	const FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(ServiceVehicleGround), false);
-	if (GetWorld()->LineTraceSingleByObjectType(
-		GroundHit,
-		TraceStart,
-		TraceEnd,
-		WorldStaticObjects,
-		QueryParams)
-		&& GroundHit.ImpactNormal.Z >= 0.65f)
-	{
-		GroundedLocation.Z = GroundHit.ImpactPoint.Z + 39.0f;
-	}
-
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.Owner = this;
 	SpawnParameters.SpawnCollisionHandlingOverride =
-		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	ServiceVehicle = GetWorld()->SpawnActor<AFlyingCabPawn>(
-		DefaultPawnClass,
-		GroundedLocation,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	WorldBootstrap = GetWorld()->SpawnActor<AFlyingCabWorldBootstrap>(
+		AFlyingCabWorldBootstrap::StaticClass(),
+		FVector::ZeroVector,
 		FRotator::ZeroRotator,
 		SpawnParameters);
-	if (!ServiceVehicle)
+	if (!WorldBootstrap)
 	{
-		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not spawn Nightshift service vehicle."));
+		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not create the world bootstrap actor."));
 		return;
 	}
 
-	ServiceVehicle->ConfigureVehicleIdentity(
-		TEXT("Vehicle.Service.01"),
-		TEXT("NIGHTSHIFT SERVICE CAB"),
-		TEXT("Vehicle.Service"),
-		FLinearColor(0.06f, 0.78f, 0.92f));
-	RegisterVehicle(ServiceVehicle);
+	WorldBootstrap->Bootstrap(DefaultPawnClass);
+	if (AFlyingCabPawn* ServiceVehicle = WorldBootstrap->GetServiceVehicle())
+	{
+		RegisterVehicle(ServiceVehicle);
+	}
+
+	if (TrafficAwareness)
+	{
+		TrafficAwareness->ResetTrafficVehicles();
+	}
+	for (AFlyingCabTrafficVehicle* Vehicle : WorldBootstrap->GetTrafficVehicles())
+	{
+		if (!Vehicle)
+		{
+			continue;
+		}
+		Vehicle->OnNearMiss.AddUObject(this, &AFlyingCabGameMode::HandleTrafficNearMiss);
+		if (TrafficAwareness)
+		{
+			TrafficAwareness->RegisterTrafficVehicle(Vehicle);
+		}
+	}
+
 	UE_LOG(
 		LogFlyingCabDelivery,
 		Display,
-		TEXT("Nightshift service vehicle spawned at %s; access requires Vehicle.Service."),
-		*GroundedLocation.ToCompactString());
+		TEXT("Traffic initialized with %d/%d vehicles; clean near misses award %d credits."),
+		WorldBootstrap->GetTrafficVehicles().Num(),
+		AFlyingCabWorldBootstrap::GetExpectedTrafficVehicleCount(),
+		NearMissRewardCredits);
 }
 
 void AFlyingCabGameMode::Tick(float DeltaSeconds)
@@ -352,46 +258,9 @@ void AFlyingCabGameMode::InitializeDeliveryLoop()
 		DeliveryStops[1],
 		FRotator::ZeroRotator,
 		SpawnParameters);
-	FuelStations.Reset();
-	for (int32 StationIndex = 0; StationIndex < FuelStationLocations.Num(); ++StationIndex)
+	if (!DropoffZone)
 	{
-		AFlyingCabFuelStation* Station = GetWorld()->SpawnActor<AFlyingCabFuelStation>(
-			AFlyingCabFuelStation::StaticClass(),
-			FuelStationLocations[StationIndex],
-			FRotator::ZeroRotator,
-			SpawnParameters);
-		if (Station)
-		{
-			const FString StationName = FuelStationNames.IsValidIndex(StationIndex)
-				? FuelStationNames[StationIndex]
-				: FString::Printf(TEXT("FUEL STATION %d"), StationIndex + 1);
-			Station->Configure(StationName);
-			FuelStations.Add(Station);
-		}
-	}
-	RepairStations.Reset();
-	for (int32 StationIndex = 0; StationIndex < RepairStationLocations.Num(); ++StationIndex)
-	{
-		AFlyingCabRepairStation* Station = GetWorld()->SpawnActor<AFlyingCabRepairStation>(
-			AFlyingCabRepairStation::StaticClass(),
-			RepairStationLocations[StationIndex],
-			FRotator::ZeroRotator,
-			SpawnParameters);
-		if (Station)
-		{
-			const FString StationName = RepairStationNames.IsValidIndex(StationIndex)
-				? RepairStationNames[StationIndex]
-				: FString::Printf(TEXT("REPAIR SHOP %d"), StationIndex + 1);
-			Station->Configure(StationName);
-			RepairStations.Add(Station);
-		}
-	}
-
-	if (!DropoffZone
-		|| FuelStations.Num() != FuelStationLocations.Num()
-		|| RepairStations.Num() != RepairStationLocations.Num())
-	{
-		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not spawn delivery zone or all service stations."));
+		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not spawn the delivery zone."));
 		return;
 	}
 
@@ -410,8 +279,8 @@ void AFlyingCabGameMode::InitializeDeliveryLoop()
 		Display,
 		TEXT("Delivery network initialized with %d stops, %d fuel stations and %d repair shops."),
 		DeliveryStops.Num(),
-		FuelStations.Num(),
-		RepairStations.Num());
+		WorldBootstrap ? WorldBootstrap->GetFuelStationCount() : 0,
+		WorldBootstrap ? WorldBootstrap->GetRepairStationCount() : 0);
 	UE_LOG(
 		LogFlyingCabDelivery,
 		Display,
@@ -465,68 +334,6 @@ void AFlyingCabGameMode::InitializePassengerMarket()
 		MaxWaitingPassengers,
 		PickupLinkDuration,
 		DropoffExitDuration);
-}
-
-void AFlyingCabGameMode::InitializeTraffic()
-{
-	struct FTrafficSpec
-	{
-		FVector Start;
-		FVector End;
-		float Speed;
-		float InitialAlpha;
-		FLinearColor Color;
-	};
-
-	const FTrafficSpec TrafficSpecs[] = {
-		{FVector(-4700.0f, 0.0f, 1500.0f), FVector(4700.0f, 0.0f, 1500.0f), 480.0f, 0.08f, FLinearColor(0.05f, 0.85f, 1.0f)},
-		{FVector(-4700.0f, 0.0f, 1500.0f), FVector(4700.0f, 0.0f, 1500.0f), 430.0f, 0.58f, FLinearColor(1.0f, 0.52f, 0.05f)},
-		{FVector(4700.0f, 0.0f, 2850.0f), FVector(-4700.0f, 0.0f, 2850.0f), 400.0f, 0.28f, FLinearColor(0.95f, 0.12f, 0.65f)},
-		{FVector(-4700.0f, 0.0f, 4550.0f), FVector(4700.0f, 0.0f, 4550.0f), 560.0f, 0.72f, FLinearColor(0.30f, 1.0f, 0.35f)},
-		{FVector(5250.0f, 0.0f, 1650.0f), FVector(14700.0f, 0.0f, 1650.0f), 520.0f, 0.18f, FLinearColor(0.12f, 0.82f, 1.0f)},
-		{FVector(14700.0f, 0.0f, 3150.0f), FVector(5250.0f, 0.0f, 3150.0f), 470.0f, 0.52f, FLinearColor(1.0f, 0.30f, 0.08f)},
-		{FVector(5250.0f, 0.0f, 4450.0f), FVector(14700.0f, 0.0f, 4450.0f), 590.0f, 0.76f, FLinearColor(0.90f, 0.08f, 0.72f)},
-		{FVector(14700.0f, 0.0f, 5550.0f), FVector(5250.0f, 0.0f, 5550.0f), 430.0f, 0.34f, FLinearColor(0.22f, 1.0f, 0.42f)}};
-
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.Owner = this;
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	if (TrafficAwareness)
-	{
-		TrafficAwareness->ResetTrafficVehicles();
-	}
-	int32 SpawnedTrafficCount = 0;
-	for (int32 Index = 0; Index < UE_ARRAY_COUNT(TrafficSpecs); ++Index)
-	{
-		const FTrafficSpec& Spec = TrafficSpecs[Index];
-		AFlyingCabTrafficVehicle* Vehicle = GetWorld()->SpawnActor<AFlyingCabTrafficVehicle>(
-			AFlyingCabTrafficVehicle::StaticClass(),
-			Spec.Start,
-			FRotator::ZeroRotator,
-			SpawnParameters);
-		if (Vehicle)
-		{
-			Vehicle->Configure(Spec.Start, Spec.End, Spec.Speed, Spec.InitialAlpha, Spec.Color);
-			Vehicle->OnNearMiss.AddUObject(this, &AFlyingCabGameMode::HandleTrafficNearMiss);
-			if (TrafficAwareness)
-			{
-				TrafficAwareness->RegisterTrafficVehicle(Vehicle);
-			}
-			++SpawnedTrafficCount;
-		}
-	}
-
-	UE_LOG(
-		LogFlyingCabDelivery,
-		Display,
-		TEXT("Traffic initialized with %d/%d vehicles; clean near misses award %d credits."),
-		SpawnedTrafficCount,
-		UE_ARRAY_COUNT(TrafficSpecs),
-		NearMissRewardCredits);
-	if (SpawnedTrafficCount != UE_ARRAY_COUNT(TrafficSpecs))
-	{
-		UE_LOG(LogFlyingCabDelivery, Warning, TEXT("One or more traffic vehicles failed to spawn."));
-	}
 }
 
 void AFlyingCabGameMode::EnsurePawnBinding()

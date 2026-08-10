@@ -7,6 +7,7 @@
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabTrafficAwarenessComponent.h"
+#include "FlyingCabWorldBootstrap.h"
 #include "Misc/AutomationTest.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -45,6 +46,44 @@ bool FFlyingCabTrafficThreatPredictionTest::RunTest(const FString& Parameters)
 			3.0f,
 			260.0f);
 	TestFalse(TEXT("Traffic outside the vertical warning range is ignored"), NoThreat.bFound);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabWorldBootstrapConfigurationTest,
+	"FlyingCab.Core.World.BootstrapConfiguration",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabWorldBootstrapConfigurationTest::RunTest(const FString& Parameters)
+{
+	const TConstArrayView<FFlyingCabTrafficRouteDefinition> Routes =
+		AFlyingCabWorldBootstrap::GetTrafficRoutes();
+	TestEqual(TEXT("The world bootstrap exposes eight traffic routes"), Routes.Num(), 8);
+
+	int32 ExpansionRouteCount = 0;
+	for (int32 RouteIndex = 0; RouteIndex < Routes.Num(); ++RouteIndex)
+	{
+		const FFlyingCabTrafficRouteDefinition& Route = Routes[RouteIndex];
+		TestFalse(
+			*FString::Printf(TEXT("Traffic route %d has distinct endpoints"), RouteIndex),
+			Route.Start.Equals(Route.End));
+		TestTrue(
+			*FString::Printf(TEXT("Traffic route %d has positive speed"), RouteIndex),
+			Route.Speed > 0.0f);
+		TestTrue(
+			*FString::Printf(TEXT("Traffic route %d starts within its path"), RouteIndex),
+			Route.InitialAlpha >= 0.0f && Route.InitialAlpha <= 1.0f);
+		TestTrue(
+			*FString::Printf(TEXT("Traffic route %d remains in the flight plane"), RouteIndex),
+			FMath::IsNearlyEqual(Route.Start.Y, Route.End.Y));
+		ExpansionRouteCount += FMath::Min(Route.Start.X, Route.End.X) > 5000.0f ? 1 : 0;
+	}
+
+	TestEqual(
+		TEXT("Four traffic routes cover the eastern city expansion"),
+		ExpansionRouteCount,
+		4);
 	return true;
 }
 

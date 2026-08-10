@@ -13,6 +13,7 @@ Ten dokument wskazuje źródła prawdy. Widgety oraz teksty HUD są odbiorcami s
 | Dostęp do pojazdów | `UFlyingCabProgressionSubsystem` | jawne `ResetAccess` na początku Time Attack | instancja aplikacji; przeżywa przeładowanie mapy |
 | Najlepsze czasy Time Attack | `UFlyingCabScoreSaveGame` | brak automatycznego resetu | dysk; format oznaczony `SaveVersion` |
 | Topologia dzielnic, stacji i granice minimapy | `FlyingCabCityData` | zmiana kodu/danych | stała konfiguracja projektu |
+| Aktorzy infrastruktury tworzonej w runtime: rozszerzenie miasta, stacje, biuro, portale, terminal, pojazd serwisowy i ruch | `AFlyingCabWorldBootstrap` utworzony przez `AFlyingCabGameMode` | przeładowanie poziomu | bieżący poziom; GameMode koordynuje tylko zdarzenia ekonomii, dostępu i recovery |
 | Lista śledzonego ruchu, predykcja zagrożeń i czas komunikatu near-miss | `UFlyingCabTrafficAwarenessComponent` na `AFlyingCabGameMode` | zmiana aktywnego pojazdu lub przeładowanie poziomu | bieżący poziom; wynik jest wysyłany zdarzeniem do HUD-u |
 | Stan wyświetlany przez HUD | `AFlyingCabPlayerController` posiada jeden `UFlyingCabTouchControls`; widget przechowuje wyłącznie ostatnią prezentację | `OnPossess` przełącza tryb, a timer 10 Hz pobiera zasoby aktywnego pojazdu | pochodna powyższych źródeł |
 
