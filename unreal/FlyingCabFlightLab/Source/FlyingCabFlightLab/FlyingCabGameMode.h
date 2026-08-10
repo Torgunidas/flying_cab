@@ -20,8 +20,8 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	void StartRun(EFlyingCabRunMode Mode);
 	TArray<float> GetBestTimeAttackTimes() const;
-	EFlyingCabRunMode GetCurrentRunMode() const { return CurrentRunMode; }
-	int32 GetTimeAttackTargetCredits() const { return TimeAttackTargetCredits; }
+	EFlyingCabRunMode GetCurrentRunMode() const;
+	int32 GetTimeAttackTargetCredits() const;
 
 	int32 TryPurchaseFuel(
 		class AFlyingCabPawn* Pawn,
@@ -46,10 +46,7 @@ private:
 	void UpdateProximityGuidance();
 	void UpdateObjectiveStatus();
 	void UpdateRunModeStatus();
-	void CheckTimeAttackGoal();
-	void FinishTimeAttack();
-	void SaveTimeAttackScore(float ElapsedSeconds);
-	float GetRunElapsedSeconds() const;
+	void HandleTimeAttackCompleted(const FFlyingCabTimeAttackResult& Result);
 	void HandleTrafficNearMiss(
 		class AFlyingCabTrafficVehicle* Vehicle,
 		class AFlyingCabPawn* Pawn);
@@ -73,12 +70,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0"))
 	int32 StartingCredits = 100;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Time Attack", meta = (ClampMin = "1"))
-	int32 TimeAttackTargetCredits = 1000;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Time Attack", meta = (ClampMin = "1", ClampMax = "20"))
-	int32 TimeAttackLeaderboardSize = 5;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0"))
 	int32 TowFee = 35;
 
@@ -97,6 +88,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Dispatch")
 	TObjectPtr<class UFlyingCabDispatchComponent> Dispatch;
 
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Run")
+	TObjectPtr<class UFlyingCabRunComponent> Run;
+
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Traffic")
 	TObjectPtr<class UFlyingCabTrafficAwarenessComponent> TrafficAwareness;
 
@@ -110,19 +104,6 @@ private:
 	TObjectPtr<class AFlyingCabPawn> PendingRecoveryPawn;
 
 	int32 Credits = 0;
-	EFlyingCabRunMode CurrentRunMode = EFlyingCabRunMode::None;
-	float RunStartWorldTime = 0.0f;
-	int32 RunStartingCredits = 0;
-	int32 RunCompletedDeliveries = 0;
-	int32 RunDeliveryCreditsEarned = 0;
-	int32 RunNearMissCount = 0;
-	int32 RunNearMissCreditsEarned = 0;
-	int32 RunFuelCreditsSpent = 0;
-	int32 RunRepairCreditsSpent = 0;
-	int32 RunTowCount = 0;
-	int32 RunTowCreditsSpent = 0;
-	bool bRunActive = false;
-	bool bRunCompleted = false;
 	float HudRefreshElapsed = 0.0f;
 	TMap<TWeakObjectPtr<class AFlyingCabPawn>, FTimerHandle> VehicleRecoveryTimerHandles;
 };

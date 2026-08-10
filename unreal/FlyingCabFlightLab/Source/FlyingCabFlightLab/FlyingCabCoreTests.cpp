@@ -7,6 +7,7 @@
 #include "FlyingCabDispatchComponent.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
+#include "FlyingCabRunComponent.h"
 #include "FlyingCabTrafficAwarenessComponent.h"
 #include "FlyingCabWorldBootstrap.h"
 #include "Misc/AutomationTest.h"
@@ -184,6 +185,66 @@ bool FFlyingCabProgressionAccessTest::RunTest(const FString& Parameters)
 
 	Progression->ResetAccess();
 	TestFalse(TEXT("Competitive-run reset removes session access"), Progression->HasAccess(ServiceAccess));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabRunResultAggregationTest,
+	"FlyingCab.Core.Run.ResultAggregation",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabRunResultAggregationTest::RunTest(const FString& Parameters)
+{
+	UFlyingCabRunComponent* Run = NewObject<UFlyingCabRunComponent>();
+	TestNotNull(TEXT("Run component can be created for an isolated test"), Run);
+	if (!Run)
+	{
+		return false;
+	}
+
+	bool bCompletionBroadcast = false;
+	FFlyingCabTimeAttackResult CompletedResult;
+	Run->OnTimeAttackCompleted.AddLambda(
+		[&bCompletionBroadcast, &CompletedResult](const FFlyingCabTimeAttackResult& Result)
+		{
+			bCompletionBroadcast = true;
+			CompletedResult = Result;
+		});
+
+	TestFalse(TEXT("A run cannot start without selecting a mode"), Run->StartRun(EFlyingCabRunMode::None));
+	TestTrue(TEXT("Time Attack starts from an idle state"), Run->StartRun(EFlyingCabRunMode::TimeAttack));
+	TestFalse(TEXT("A second run cannot replace an active run"), Run->StartRun(EFlyingCabRunMode::Freeroam));
+
+	Run->RecordDelivery(84);
+	Run->RecordNearMiss(3);
+	Run->RecordFuelPurchase(6);
+	Run->RecordRepairPurchase(4);
+	Run->RecordTow(35);
+	TestFalse(TEXT("Credits below the target do not finish Time Attack"), Run->CheckTimeAttackGoal(999));
+	TestTrue(TEXT("Reaching the target finishes Time Attack"), Run->CheckTimeAttackGoal(1000));
+
+	TestTrue(TEXT("Completion broadcasts the aggregated result"), bCompletionBroadcast);
+	TestFalse(TEXT("A completed run is no longer active"), Run->IsRunActive());
+	TestTrue(TEXT("The completed state remains available to the HUD"), Run->IsRunCompleted());
+	TestEqual(TEXT("The result keeps final credits"), CompletedResult.FinalCredits, 1000);
+	TestEqual(TEXT("The result keeps the configured target"), CompletedResult.TargetCredits, 1000);
+	TestEqual(TEXT("The result counts completed deliveries"), CompletedResult.CompletedDeliveries, 1);
+	TestEqual(TEXT("The result sums delivery income"), CompletedResult.DeliveryCreditsEarned, 84);
+	TestEqual(TEXT("The result counts near misses"), CompletedResult.NearMissCount, 1);
+	TestEqual(TEXT("The result sums near-miss income"), CompletedResult.NearMissCreditsEarned, 3);
+	TestEqual(TEXT("The result sums fuel spending"), CompletedResult.FuelCreditsSpent, 6);
+	TestEqual(TEXT("The result sums repair spending"), CompletedResult.RepairCreditsSpent, 4);
+	TestEqual(TEXT("The result counts towing"), CompletedResult.TowCount, 1);
+	TestEqual(TEXT("The result sums towing spending"), CompletedResult.TowCreditsSpent, 35);
+	TestFalse(TEXT("Completion cannot be emitted twice"), Run->CheckTimeAttackGoal(1000));
+
+	TArray<float> Times = {30.0f, -1.0f, 10.0f, 0.0f, 20.0f, 15.0f};
+	Times = UFlyingCabRunComponent::NormalizeLeaderboard(MoveTemp(Times), 3);
+	TestEqual(TEXT("The leaderboard keeps its configured capacity"), Times.Num(), 3);
+	TestTrue(TEXT("The leaderboard sorts the best time first"), FMath::IsNearlyEqual(Times[0], 10.0f));
+	TestTrue(TEXT("The leaderboard keeps the second-best time"), FMath::IsNearlyEqual(Times[1], 15.0f));
+	TestTrue(TEXT("The leaderboard discards slower times"), FMath::IsNearlyEqual(Times[2], 20.0f));
 	return true;
 }
 

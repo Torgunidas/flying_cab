@@ -9,7 +9,7 @@
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
-#include "FlyingCabScoreSaveGame.h"
+#include "FlyingCabRunComponent.h"
 #include "FlyingCabTrafficAwarenessComponent.h"
 #include "FlyingCabTrafficVehicle.h"
 #include "FlyingCabWorldBootstrap.h"
@@ -19,16 +19,11 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabDelivery, Log, All);
 
-namespace
-{
-	const FString TimeAttackSaveSlot = TEXT("FlyingCabTimeAttackScores");
-	constexpr int32 TimeAttackSaveUserIndex = 0;
-}
-
 AFlyingCabGameMode::AFlyingCabGameMode()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	Dispatch = CreateDefaultSubobject<UFlyingCabDispatchComponent>(TEXT("Dispatch"));
+	Run = CreateDefaultSubobject<UFlyingCabRunComponent>(TEXT("Run"));
 	TrafficAwareness = CreateDefaultSubobject<UFlyingCabTrafficAwarenessComponent>(
 		TEXT("TrafficAwareness"));
 
@@ -61,6 +56,12 @@ void AFlyingCabGameMode::BeginPlay()
 			this,
 			&AFlyingCabGameMode::HandleFareCompleted);
 	}
+	if (Run)
+	{
+		Run->OnTimeAttackCompleted.AddUObject(
+			this,
+			&AFlyingCabGameMode::HandleTimeAttackCompleted);
+	}
 	Credits = FMath::Max(0, StartingCredits);
 	InitializeWorldBootstrap();
 	InitializeDispatch();
@@ -77,6 +78,10 @@ void AFlyingCabGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		Dispatch->OnPassengerPickedUp.RemoveAll(this);
 		Dispatch->OnFareCompleted.RemoveAll(this);
+	}
+	if (Run)
+	{
+		Run->OnTimeAttackCompleted.RemoveAll(this);
 	}
 	for (TPair<TWeakObjectPtr<AFlyingCabPawn>, FTimerHandle>& Entry :
 		VehicleRecoveryTimerHandles)
@@ -97,25 +102,12 @@ void AFlyingCabGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AFlyingCabGameMode::StartRun(EFlyingCabRunMode Mode)
 {
-	if (Mode == EFlyingCabRunMode::None || bRunActive)
+	if (!Run || !Run->StartRun(Mode))
 	{
 		return;
 	}
 
-	CurrentRunMode = Mode;
-	bRunActive = true;
-	bRunCompleted = false;
 	Credits = FMath::Max(0, StartingCredits);
-	RunStartingCredits = Credits;
-	RunStartWorldTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
-	RunCompletedDeliveries = 0;
-	RunDeliveryCreditsEarned = 0;
-	RunNearMissCount = 0;
-	RunNearMissCreditsEarned = 0;
-	RunFuelCreditsSpent = 0;
-	RunRepairCreditsSpent = 0;
-	RunTowCount = 0;
-	RunTowCreditsSpent = 0;
 	if (Dispatch)
 	{
 		Dispatch->StartPassengerMarket(Mode == EFlyingCabRunMode::TimeAttack);
@@ -149,33 +141,24 @@ void AFlyingCabGameMode::StartRun(EFlyingCabRunMode Mode)
 		Mode == EFlyingCabRunMode::TimeAttack ? TEXT("Time Attack") : TEXT("Freeroam"),
 		Credits,
 		Mode == EFlyingCabRunMode::TimeAttack
-			? *FString::Printf(TEXT("; target %d"), TimeAttackTargetCredits)
+			? *FString::Printf(TEXT("; target %d"), Run->GetTimeAttackTargetCredits())
 			: TEXT(""));
-	CheckTimeAttackGoal();
+	Run->CheckTimeAttackGoal(Credits);
 }
 
 TArray<float> AFlyingCabGameMode::GetBestTimeAttackTimes() const
 {
-	if (!UGameplayStatics::DoesSaveGameExist(TimeAttackSaveSlot, TimeAttackSaveUserIndex))
-	{
-		return {};
-	}
+	return Run ? Run->GetBestTimeAttackTimes() : TArray<float>();
+}
 
-	const UFlyingCabScoreSaveGame* SaveGame = Cast<UFlyingCabScoreSaveGame>(
-		UGameplayStatics::LoadGameFromSlot(TimeAttackSaveSlot, TimeAttackSaveUserIndex));
-	if (!SaveGame)
-	{
-		return {};
-	}
+EFlyingCabRunMode AFlyingCabGameMode::GetCurrentRunMode() const
+{
+	return Run ? Run->GetCurrentRunMode() : EFlyingCabRunMode::None;
+}
 
-	TArray<float> Times = SaveGame->BestTimeAttackSeconds;
-	Times.RemoveAll([](float Seconds) { return Seconds <= 0.0f; });
-	Times.Sort();
-	if (Times.Num() > TimeAttackLeaderboardSize)
-	{
-		Times.SetNum(TimeAttackLeaderboardSize);
-	}
-	return Times;
+int32 AFlyingCabGameMode::GetTimeAttackTargetCredits() const
+{
+	return Run ? Run->GetTimeAttackTargetCredits() : 1000;
 }
 
 void AFlyingCabGameMode::InitializeWorldBootstrap()
@@ -240,7 +223,10 @@ void AFlyingCabGameMode::Tick(float DeltaSeconds)
 		UpdateObjectiveStatus();
 		UpdateRunModeStatus();
 	}
-	CheckTimeAttackGoal();
+	if (Run)
+	{
+		Run->CheckTimeAttackGoal(Credits);
+	}
 }
 
 void AFlyingCabGameMode::InitializeDispatch()
@@ -383,10 +369,9 @@ void AFlyingCabGameMode::HandleFareCompleted(
 {
 	const int32 EffectiveFarePayout = FMath::Max(0, FarePayout);
 	Credits += EffectiveFarePayout;
-	if (bRunActive)
+	if (Run)
 	{
-		++RunCompletedDeliveries;
-		RunDeliveryCreditsEarned += EffectiveFarePayout;
+		Run->RecordDelivery(EffectiveFarePayout);
 	}
 
 	ShowPlayerEventMessage(
@@ -404,7 +389,10 @@ void AFlyingCabGameMode::HandleFareCompleted(
 		EffectiveFarePayout,
 		Credits,
 		TotalDeliveries);
-	CheckTimeAttackGoal();
+	if (Run)
+	{
+		Run->CheckTimeAttackGoal(Credits);
+	}
 }
 
 int32 AFlyingCabGameMode::TryPurchaseFuel(
@@ -441,9 +429,9 @@ int32 AFlyingCabGameMode::TryPurchaseFuel(
 	const int32 ChargedUnits = FMath::CeilToInt(FuelAdded);
 	const int32 FuelCost = ChargedUnits * PricePerUnit;
 	Credits = FMath::Max(0, Credits - FuelCost);
-	if (bRunActive)
+	if (Run)
 	{
-		RunFuelCreditsSpent += FuelCost;
+		Run->RecordFuelPurchase(FuelCost);
 	}
 	PushEconomyStatus();
 	return ChargedUnits;
@@ -483,9 +471,9 @@ int32 AFlyingCabGameMode::TryPurchaseRepair(
 	const int32 ChargedUnits = FMath::CeilToInt(HullAdded);
 	const int32 RepairCost = ChargedUnits * PricePerUnit;
 	Credits = FMath::Max(0, Credits - RepairCost);
-	if (bRunActive)
+	if (Run)
 	{
-		RunRepairCreditsSpent += RepairCost;
+		Run->RecordRepairPurchase(RepairCost);
 	}
 	PushEconomyStatus();
 	return ChargedUnits;
@@ -526,10 +514,9 @@ void AFlyingCabGameMode::HandleVehicleDestroyed(AFlyingCabPawn* Pawn)
 	}
 	const int32 ChargedTowFee = FMath::Min(Credits, FMath::Max(0, TowFee));
 	Credits -= ChargedTowFee;
-	if (bRunActive)
+	if (Run)
 	{
-		++RunTowCount;
-		RunTowCreditsSpent += ChargedTowFee;
+		Run->RecordTow(ChargedTowFee);
 	}
 	PendingRecoveryPawn = Pawn;
 	if (Dispatch)
@@ -841,10 +828,9 @@ void AFlyingCabGameMode::HandleTrafficNearMiss(
 	}
 
 	Credits += NearMissRewardCredits;
-	if (bRunActive)
+	if (Run)
 	{
-		++RunNearMissCount;
-		RunNearMissCreditsEarned += NearMissRewardCredits;
+		Run->RecordNearMiss(NearMissRewardCredits);
 	}
 	if (TrafficAwareness)
 	{
@@ -857,7 +843,10 @@ void AFlyingCabGameMode::HandleTrafficNearMiss(
 		TEXT("Clean traffic near miss awarded %d credits. Balance %d."),
 		NearMissRewardCredits,
 		Credits);
-	CheckTimeAttackGoal();
+	if (Run)
+	{
+		Run->CheckTimeAttackGoal(Credits);
+	}
 }
 
 void AFlyingCabGameMode::HandleTrafficAlertChanged(
@@ -873,121 +862,39 @@ void AFlyingCabGameMode::HandleTrafficAlertChanged(
 void AFlyingCabGameMode::UpdateRunModeStatus()
 {
 	AFlyingCabPlayerController* PlayerController = GetFlyingCabPlayerController();
-	if (!PlayerController)
+	if (!PlayerController || !Run)
 	{
 		return;
 	}
 
-	const bool bShowTimeAttack = CurrentRunMode == EFlyingCabRunMode::TimeAttack
-		&& (bRunActive || bRunCompleted);
+	const bool bShowTimeAttack = Run->GetCurrentRunMode() == EFlyingCabRunMode::TimeAttack
+		&& (Run->IsRunActive() || Run->IsRunCompleted());
 	PlayerController->SetTimeAttackStatus(
 		bShowTimeAttack,
-		GetRunElapsedSeconds(),
+		Run->GetElapsedSeconds(),
 		Credits,
-		TimeAttackTargetCredits);
+		Run->GetTimeAttackTargetCredits());
 }
 
-void AFlyingCabGameMode::CheckTimeAttackGoal()
+void AFlyingCabGameMode::HandleTimeAttackCompleted(
+	const FFlyingCabTimeAttackResult& Result)
 {
-	if (!bRunActive || CurrentRunMode != EFlyingCabRunMode::TimeAttack
-		|| Credits < TimeAttackTargetCredits)
-	{
-		return;
-	}
-	FinishTimeAttack();
-}
-
-void AFlyingCabGameMode::FinishTimeAttack()
-{
-	if (!bRunActive || bRunCompleted)
-	{
-		return;
-	}
-
-	const float ElapsedSeconds = GetRunElapsedSeconds();
-	bRunActive = false;
-	bRunCompleted = true;
 	if (Dispatch)
 	{
 		Dispatch->SetMarketActive(false);
 	}
-
-	FFlyingCabTimeAttackResult Result;
-	Result.ElapsedSeconds = ElapsedSeconds;
-	Result.FinalCredits = Credits;
-	Result.TargetCredits = TimeAttackTargetCredits;
-	Result.CompletedDeliveries = RunCompletedDeliveries;
-	Result.DeliveryCreditsEarned = RunDeliveryCreditsEarned;
-	Result.NearMissCount = RunNearMissCount;
-	Result.NearMissCreditsEarned = RunNearMissCreditsEarned;
-	Result.FuelCreditsSpent = RunFuelCreditsSpent;
-	Result.RepairCreditsSpent = RunRepairCreditsSpent;
-	Result.TowCount = RunTowCount;
-	Result.TowCreditsSpent = RunTowCreditsSpent;
-
-	SaveTimeAttackScore(ElapsedSeconds);
 	UpdateRunModeStatus();
 	UE_LOG(
 		LogFlyingCabDelivery,
 		Display,
 		TEXT("Time Attack complete in %.2f seconds with %d credits, %d deliveries and %d near misses."),
-		ElapsedSeconds,
-		Credits,
-		RunCompletedDeliveries,
-		RunNearMissCount);
+		Result.ElapsedSeconds,
+		Result.FinalCredits,
+		Result.CompletedDeliveries,
+		Result.NearMissCount);
 
-	if (AFlyingCabPlayerController* Controller = Cast<AFlyingCabPlayerController>(
-		UGameplayStatics::GetPlayerController(this, 0)))
+	if (AFlyingCabPlayerController* Controller = GetFlyingCabPlayerController())
 	{
 		Controller->ShowTimeAttackResults(Result, GetBestTimeAttackTimes());
 	}
-}
-
-void AFlyingCabGameMode::SaveTimeAttackScore(float ElapsedSeconds)
-{
-	if (ElapsedSeconds <= 0.0f)
-	{
-		return;
-	}
-
-	UFlyingCabScoreSaveGame* SaveGame = nullptr;
-	if (UGameplayStatics::DoesSaveGameExist(TimeAttackSaveSlot, TimeAttackSaveUserIndex))
-	{
-		SaveGame = Cast<UFlyingCabScoreSaveGame>(
-			UGameplayStatics::LoadGameFromSlot(TimeAttackSaveSlot, TimeAttackSaveUserIndex));
-	}
-	if (!SaveGame)
-	{
-		SaveGame = Cast<UFlyingCabScoreSaveGame>(
-			UGameplayStatics::CreateSaveGameObject(UFlyingCabScoreSaveGame::StaticClass()));
-	}
-	if (!SaveGame)
-	{
-		UE_LOG(LogFlyingCabDelivery, Warning, TEXT("Could not create Time Attack score save."));
-		return;
-	}
-
-	SaveGame->BestTimeAttackSeconds.Add(ElapsedSeconds);
-	SaveGame->BestTimeAttackSeconds.RemoveAll([](float Seconds) { return Seconds <= 0.0f; });
-	SaveGame->BestTimeAttackSeconds.Sort();
-	if (SaveGame->BestTimeAttackSeconds.Num() > TimeAttackLeaderboardSize)
-	{
-		SaveGame->BestTimeAttackSeconds.SetNum(TimeAttackLeaderboardSize);
-	}
-	if (!UGameplayStatics::SaveGameToSlot(
-		SaveGame,
-		TimeAttackSaveSlot,
-		TimeAttackSaveUserIndex))
-	{
-		UE_LOG(LogFlyingCabDelivery, Warning, TEXT("Could not persist Time Attack leaderboard."));
-	}
-}
-
-float AFlyingCabGameMode::GetRunElapsedSeconds() const
-{
-	if (CurrentRunMode != EFlyingCabRunMode::TimeAttack || !GetWorld())
-	{
-		return 0.0f;
-	}
-	return FMath::Max(0.0f, GetWorld()->GetTimeSeconds() - RunStartWorldTime);
 }

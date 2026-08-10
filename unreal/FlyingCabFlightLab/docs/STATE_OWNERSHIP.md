@@ -4,9 +4,9 @@ Ten dokument wskazuje źródła prawdy. Widgety oraz teksty HUD są odbiorcami s
 
 | Stan | Źródło prawdy | Reset | Czas życia |
 |---|---|---|---|
-| Kredyty i statystyki biegu | `AFlyingCabGameMode` | `StartRun` | bieżący poziom; ukończony fare jest przekazywany z dispatchu zdarzeniem |
+| Kredyty | `AFlyingCabGameMode` | `StartRun` | bieżący poziom; nagrody i koszty są przekazywane zdarzeniami lub rejestrowane w komponencie runu |
 | Oferty pasażerów, aktywny kurs, opłata i liczba ukończonych kursów | `UFlyingCabDispatchComponent` na `AFlyingCabGameMode` | `StartPassengerMarket`; aktywny kurs także po dowozie lub zniszczeniu aktywnego pojazdu | bieżący poziom; GameMode nie kopiuje tego stanu |
-| Tryb biegu i cel Time Attack | `AFlyingCabGameMode` | `StartRun` | bieżący poziom; tryb jest przekazywany jako opcja podczas przeładowania |
+| Tryb biegu, cel Time Attack, czas i statystyki wyniku | `UFlyingCabRunComponent` na `AFlyingCabGameMode` | `StartRun` | bieżący poziom; ukończenie jest wysyłane zdarzeniem, a tryb przekazywany jako opcja podczas przeładowania |
 | Paliwo, kadłub, stan zniszczenia i fizyka pojazdu | `AFlyingCabPawn` | `ResetVehicle` albo `RecoverVehicle` | życie danego pojazdu |
 | Aktualny tryb gracza: pojazd, pieszo lub nieznany | `AFlyingCabPlayerController::PlayerMode` | każde `OnPossess` | bieżący kontroler/poziom |
 | Ostatni aktywny pojazd podczas chodzenia pieszo | `AFlyingCabPlayerController::ActiveVehicle` | wejście lub wyjście z pojazdu | bieżący kontroler/poziom |
