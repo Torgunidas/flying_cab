@@ -4,11 +4,60 @@
 
 #include "Engine/GameInstance.h"
 #include "FlyingCabCityData.h"
+#include "FlyingCabDispatchComponent.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabTrafficAwarenessComponent.h"
 #include "FlyingCabWorldBootstrap.h"
 #include "Misc/AutomationTest.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabDispatchFareTest,
+	"FlyingCab.Core.Dispatch.FareCalculation",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabDispatchFareTest::RunTest(const FString& Parameters)
+{
+	const int32 EstimatedFare = UFlyingCabDispatchComponent::CalculateEstimatedFare(
+		FVector::ZeroVector,
+		FVector(1000.0f, 0.0f, 0.0f),
+		20.0f,
+		1.1f);
+	TestEqual(TEXT("A ten-meter route estimates base plus distance fare"), EstimatedFare, 31);
+
+	const float FareAfterApproach = UFlyingCabDispatchComponent::CalculateUpdatedFare(
+		20.0f,
+		1000.0f,
+		500.0f,
+		20.0f,
+		1.1f,
+		0.5f);
+	TestTrue(
+		TEXT("Approaching the destination raises the fare at the full rate"),
+		FMath::IsNearlyEqual(FareAfterApproach, 25.5f));
+
+	const float FareAfterBacktrack = UFlyingCabDispatchComponent::CalculateUpdatedFare(
+		FareAfterApproach,
+		500.0f,
+		700.0f,
+		20.0f,
+		1.1f,
+		0.5f);
+	TestTrue(
+		TEXT("Backtracking applies the configured half-rate penalty"),
+		FMath::IsNearlyEqual(FareAfterBacktrack, 24.4f));
+
+	const float FareAtFloor = UFlyingCabDispatchComponent::CalculateUpdatedFare(
+		20.0f,
+		500.0f,
+		5000.0f,
+		20.0f,
+		1.1f,
+		0.5f);
+	TestTrue(TEXT("Backtracking never lowers fare below base"), FMath::IsNearlyEqual(FareAtFloor, 20.0f));
+	return true;
+}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FFlyingCabTrafficThreatPredictionTest,

@@ -7,20 +7,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "FlyingCabGameMode.generated.h"
 
-USTRUCT()
-struct FFlyingCabPassengerOfferState
-{
-	GENERATED_BODY()
-
-	UPROPERTY(Transient)
-	TObjectPtr<class AFlyingCabDeliveryZone> Zone;
-
-	int32 PickupIndex = INDEX_NONE;
-	int32 DropoffIndex = INDEX_NONE;
-	int32 EstimatedFareCredits = 0;
-	float RemainingSeconds = 0.0f;
-};
-
 UCLASS()
 class FLYINGCABFLIGHTLAB_API AFlyingCabGameMode : public AGameModeBase
 {
@@ -49,18 +35,11 @@ public:
 
 private:
 	void InitializeWorldBootstrap();
-	void InitializeDeliveryLoop();
-	void InitializePassengerMarket();
+	void InitializeDispatch();
 	void RegisterVehicle(class AFlyingCabPawn* Pawn);
 	void EnsurePawnBinding();
-	void UpdatePassengerOffers(float DeltaSeconds);
-	void SpawnPassengerOffer();
-	void RemovePassengerOfferAt(int32 OfferIndex, const TCHAR* Reason);
-	void SetPassengerOfferAcceptance(bool bEnabled);
-	int32 FindPassengerOfferIndex(const class AFlyingCabDeliveryZone* Zone) const;
-	int32 CalculateEstimatedFare(int32 PickupIndex, int32 DropoffIndex) const;
-	void UpdateActiveFare();
-	void HandleZoneReady(class AFlyingCabDeliveryZone* Zone);
+	void HandlePassengerPickedUp(const FString& DestinationName);
+	void HandleFareCompleted(int32 FarePayout, int32 TotalDeliveries);
 	void HandleVehicleDestroyed(class AFlyingCabPawn* Pawn);
 	void ScheduleVehicleRecovery(class AFlyingCabPawn* Pawn);
 	void RecoverVehicleAfterTow(class AFlyingCabPawn* Pawn);
@@ -83,43 +62,6 @@ private:
 	void PushEconomyStatus() const;
 	bool IsPlayerOnFoot() const;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery")
-	TArray<FVector> DeliveryStops;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery")
-	TArray<FString> DeliveryStopNames;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery", meta = (ClampMin = "0.0"))
-	float ArrivalMaxPlanarSpeed = 180.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery", meta = (ClampMin = "0.0"))
-	float PickupLinkDuration = 0.65f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery", meta = (ClampMin = "0.0"))
-	float DropoffExitDuration = 0.55f;
-
-	/** Fixed seed keeps Time Attack passenger availability repeatable. */
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery")
-	int32 DispatchRandomSeed = 1977;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Passengers", meta = (ClampMin = "1", ClampMax = "8"))
-	int32 MaxWaitingPassengers = 4;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Passengers", meta = (ClampMin = "1", ClampMax = "8"))
-	int32 InitialWaitingPassengers = 3;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Passengers", meta = (ClampMin = "1.0"))
-	float PassengerLifetimeMin = 32.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Passengers", meta = (ClampMin = "1.0"))
-	float PassengerLifetimeMax = 52.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Passengers", meta = (ClampMin = "0.1"))
-	float PassengerSpawnIntervalMin = 3.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Passengers", meta = (ClampMin = "0.1"))
-	float PassengerSpawnIntervalMax = 7.0f;
-
 	/** Exact in-world pointer appears only inside this range. */
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery", meta = (ClampMin = "0.0"))
 	float ProximityGuidanceRange = 1800.0f;
@@ -137,15 +79,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Time Attack", meta = (ClampMin = "1", ClampMax = "20"))
 	int32 TimeAttackLeaderboardSize = 5;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0.0"))
-	float BaseFare = 20.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0.0"))
-	float FarePerMeterTowardTarget = 1.10f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float FareBacktrackPenaltyRatio = 0.5f;
-
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0"))
 	int32 TowFee = 35;
 
@@ -159,13 +92,10 @@ private:
 	int32 NearMissRewardCredits = 3;
 
 	UPROPERTY(Transient)
-	TObjectPtr<class AFlyingCabDeliveryZone> DropoffZone;
-
-	UPROPERTY(Transient)
-	TArray<FFlyingCabPassengerOfferState> PassengerOffers;
-
-	UPROPERTY(Transient)
 	TObjectPtr<class AFlyingCabWorldBootstrap> WorldBootstrap;
+
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Dispatch")
+	TObjectPtr<class UFlyingCabDispatchComponent> Dispatch;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Traffic")
 	TObjectPtr<class UFlyingCabTrafficAwarenessComponent> TrafficAwareness;
@@ -179,11 +109,6 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<class AFlyingCabPawn> PendingRecoveryPawn;
 
-	int32 CurrentPickupIndex = 0;
-	int32 CurrentDropoffIndex = 1;
-	int32 LastCompletedPickupIndex = INDEX_NONE;
-	int32 LastCompletedDropoffIndex = INDEX_NONE;
-	int32 CompletedDeliveries = 0;
 	int32 Credits = 0;
 	EFlyingCabRunMode CurrentRunMode = EFlyingCabRunMode::None;
 	float RunStartWorldTime = 0.0f;
@@ -198,11 +123,6 @@ private:
 	int32 RunTowCreditsSpent = 0;
 	bool bRunActive = false;
 	bool bRunCompleted = false;
-	float ActiveFare = 0.0f;
-	float FareLastDistance = 0.0f;
-	float PassengerSpawnCountdown = 0.0f;
 	float HudRefreshElapsed = 0.0f;
-	bool bPassengerOnBoard = false;
-	FRandomStream DispatchRandom;
 	TMap<TWeakObjectPtr<class AFlyingCabPawn>, FTimerHandle> VehicleRecoveryTimerHandles;
 };
