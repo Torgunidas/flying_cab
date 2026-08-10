@@ -145,10 +145,7 @@ void AFlyingCabGameMode::StartRun(EFlyingCabRunMode Mode)
 	}
 
 	EnsurePawnBinding();
-	if (BoundPawn)
-	{
-		BoundPawn->SetEconomyStatus(Credits, 0);
-	}
+	PushEconomyStatus();
 	UpdateRunModeStatus();
 	UE_LOG(
 		LogFlyingCabDelivery,
@@ -313,9 +310,17 @@ void AFlyingCabGameMode::Tick(float DeltaSeconds)
 	EnsurePawnBinding();
 	UpdatePassengerOffers(DeltaSeconds);
 	UpdateActiveFare();
-	UpdateObjectiveStatus();
-	UpdateTrafficAwareness(DeltaSeconds);
-	UpdateRunModeStatus();
+	UpdateProximityGuidance();
+	HudRefreshElapsed += DeltaSeconds;
+	const float EffectiveHudRefreshInterval = FMath::Max(0.05f, HudRefreshInterval);
+	if (HudRefreshElapsed >= EffectiveHudRefreshInterval)
+	{
+		const float HudDeltaSeconds = HudRefreshElapsed;
+		HudRefreshElapsed = FMath::Fmod(HudRefreshElapsed, EffectiveHudRefreshInterval);
+		UpdateObjectiveStatus();
+		UpdateTrafficAwareness(HudDeltaSeconds);
+		UpdateRunModeStatus();
+	}
 	CheckTimeAttackGoal();
 }
 
@@ -521,10 +526,7 @@ void AFlyingCabGameMode::EnsurePawnBinding()
 
 	RegisterVehicle(Pawn);
 	BoundPawn = Pawn;
-	if (BoundPawn)
-	{
-		BoundPawn->SetEconomyStatus(Credits, FMath::RoundToInt(ActiveFare));
-	}
+	PushEconomyStatus();
 }
 
 void AFlyingCabGameMode::RegisterVehicle(AFlyingCabPawn* Pawn)
@@ -765,17 +767,30 @@ void AFlyingCabGameMode::ShowPlayerEventMessage(
 	const FLinearColor& Color,
 	float DurationSeconds) const
 {
-	if (const AFlyingCabPlayerController* PlayerController =
-		Cast<AFlyingCabPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+	if (const AFlyingCabPlayerController* PlayerController = GetFlyingCabPlayerController())
 	{
 		PlayerController->ShowEventMessage(Message, Color, DurationSeconds);
 	}
 }
 
+AFlyingCabPlayerController* AFlyingCabGameMode::GetFlyingCabPlayerController() const
+{
+	return Cast<AFlyingCabPlayerController>(UGameplayStatics::GetPlayerController(this, 0));
+}
+
+void AFlyingCabGameMode::PushEconomyStatus() const
+{
+	if (AFlyingCabPlayerController* PlayerController = GetFlyingCabPlayerController())
+	{
+		PlayerController->SetEconomyStatus(
+			Credits,
+			bPassengerOnBoard ? FMath::RoundToInt(ActiveFare) : 0);
+	}
+}
+
 bool AFlyingCabGameMode::IsPlayerOnFoot() const
 {
-	const AFlyingCabPlayerController* PlayerController =
-		Cast<AFlyingCabPlayerController>(UGameplayStatics::GetPlayerController(this, 0));
+	const AFlyingCabPlayerController* PlayerController = GetFlyingCabPlayerController();
 	return PlayerController
 		&& PlayerController->GetPlayerMode() == EFlyingCabPlayerMode::OnFoot;
 }
@@ -924,7 +939,7 @@ int32 AFlyingCabGameMode::TryPurchaseFuel(
 	{
 		RunFuelCreditsSpent += FuelCost;
 	}
-	Pawn->SetEconomyStatus(Credits, FMath::RoundToInt(ActiveFare));
+	PushEconomyStatus();
 	return ChargedUnits;
 }
 
@@ -966,7 +981,7 @@ int32 AFlyingCabGameMode::TryPurchaseRepair(
 	{
 		RunRepairCreditsSpent += RepairCost;
 	}
-	Pawn->SetEconomyStatus(Credits, FMath::RoundToInt(ActiveFare));
+	PushEconomyStatus();
 	return ChargedUnits;
 }
 
@@ -983,7 +998,7 @@ void AFlyingCabGameMode::HandleVehicleDestroyed(AFlyingCabPawn* Pawn)
 		|| (Pawn == BoundPawn && IsPlayerOnFoot());
 	if (!bAffectsActiveRun)
 	{
-		Pawn->SetEconomyStatus(Credits, 0);
+		PushEconomyStatus();
 		ShowPlayerEventMessage(
 			FText::FromString(FString::Printf(
 				TEXT("%s DAMAGED // REMOTE RECOVERY INBOUND"),
@@ -1015,8 +1030,11 @@ void AFlyingCabGameMode::HandleVehicleDestroyed(AFlyingCabPawn* Pawn)
 	{
 		DropoffZone->SetZoneActive(false);
 	}
-	Pawn->SetEconomyStatus(Credits, 0);
-	Pawn->ClearMinimapTarget();
+	PushEconomyStatus();
+	if (AFlyingCabPlayerController* PlayerController = GetFlyingCabPlayerController())
+	{
+		PlayerController->ClearMinimapTarget();
+	}
 
 	ShowPlayerEventMessage(
 		FText::FromString(FString::Printf(
@@ -1065,7 +1083,7 @@ void AFlyingCabGameMode::RecoverVehicleAfterTow(AFlyingCabPawn* Pawn)
 	if (Pawn)
 	{
 		Pawn->RecoverVehicle(RecoveryFuelPercent);
-		Pawn->SetEconomyStatus(Credits, 0);
+		PushEconomyStatus();
 		UE_LOG(
 			LogFlyingCabDelivery,
 			Display,
@@ -1079,9 +1097,57 @@ void AFlyingCabGameMode::RecoverVehicleAfterTow(AFlyingCabPawn* Pawn)
 	}
 }
 
+void AFlyingCabGameMode::UpdateProximityGuidance()
+{
+	AFlyingCabPawn* Pawn = BoundPawn;
+	if (!Pawn || IsPlayerOnFoot() || Pawn->IsDestroyed())
+	{
+		if (Pawn)
+		{
+			Pawn->SetProximityGuidance(false, FVector2D::ZeroVector, false);
+		}
+		return;
+	}
+
+	AFlyingCabDeliveryZone* ActiveZone = bPassengerOnBoard ? DropoffZone.Get() : nullptr;
+	if (!ActiveZone)
+	{
+		float NearestDistanceSquared = TNumericLimits<float>::Max();
+		for (const FFlyingCabPassengerOfferState& Offer : PassengerOffers)
+		{
+			if (!Offer.Zone || !Offer.Zone->IsZoneActive())
+			{
+				continue;
+			}
+			const FVector Delta = Offer.Zone->GetActorLocation() - Pawn->GetActorLocation();
+			const float DistanceSquared = FVector2D(Delta.X, Delta.Z).SizeSquared();
+			if (DistanceSquared < NearestDistanceSquared)
+			{
+				NearestDistanceSquared = DistanceSquared;
+				ActiveZone = Offer.Zone;
+			}
+		}
+	}
+
+	if (!ActiveZone || !ActiveZone->IsZoneActive())
+	{
+		Pawn->SetProximityGuidance(false, FVector2D::ZeroVector, false);
+		return;
+	}
+
+	const FVector ZoneLocation = ActiveZone->GetActorLocation();
+	const FVector Delta = ZoneLocation - Pawn->GetActorLocation();
+	const float Distance = FVector2D(Delta.X, Delta.Z).Size();
+	Pawn->SetProximityGuidance(
+		Distance <= ProximityGuidanceRange,
+		FVector2D(ZoneLocation.X, ZoneLocation.Z),
+		bPassengerOnBoard);
+}
+
 void AFlyingCabGameMode::UpdateObjectiveStatus()
 {
 	AFlyingCabPawn* Pawn = BoundPawn;
+	AFlyingCabPlayerController* PlayerController = GetFlyingCabPlayerController();
 	if (!Pawn)
 	{
 		return;
@@ -1109,10 +1175,13 @@ void AFlyingCabGameMode::UpdateObjectiveStatus()
 		}
 	}
 	const FVector2D CabMapPosition(Pawn->GetActorLocation().X, Pawn->GetActorLocation().Z);
-	Pawn->SetPassengerOfferMarkers(CabMapPosition, OfferPositions);
+	if (PlayerController)
+	{
+		PlayerController->SetPassengerOfferMarkers(CabMapPosition, OfferPositions);
+	}
 	AFlyingCabDeliveryZone* ActiveZone = bPassengerOnBoard ? DropoffZone.Get() : NearestOfferZone;
 
-	Pawn->SetEconomyStatus(Credits, bPassengerOnBoard ? FMath::RoundToInt(ActiveFare) : 0);
+	PushEconomyStatus();
 	if (IsPlayerOnFoot())
 	{
 		const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
@@ -1120,54 +1189,65 @@ void AFlyingCabGameMode::UpdateObjectiveStatus()
 		const FVector PlayerLocation = PlayerPawn ? PlayerPawn->GetActorLocation() : Pawn->GetActorLocation();
 		const FVector CabDelta = Pawn->GetActorLocation() - PlayerLocation;
 		const float CabDistanceMeters = FVector2D(CabDelta.X, CabDelta.Z).Size() / 100.0f;
-		Pawn->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
+		if (PlayerController)
+		{
+			PlayerController->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
+		}
 		if (OnFootCharacter && OnFootCharacter->IsDead())
 		{
-			Pawn->SetObjectiveStatus(FText::FromString(
-				TEXT("DRIVER DOWN\nRELOADING LEVEL")));
+			if (PlayerController)
+			{
+				PlayerController->SetObjectiveStatus(FText::FromString(
+					TEXT("DRIVER DOWN\nRELOADING LEVEL")));
+			}
 		}
 		else
 		{
 			const float HealthPercent = OnFootCharacter
 				? OnFootCharacter->GetHealthPercent() * 100.0f
 				: 0.0f;
-			AFlyingCabPlayerController* FlyingCabController = Cast<AFlyingCabPlayerController>(
-				UGameplayStatics::GetPlayerController(this, 0));
-			const FString ContextPrompt = FlyingCabController
-				? FlyingCabController->GetContextPrompt().ToString()
+			const FString ContextPrompt = PlayerController
+				? PlayerController->GetContextPrompt().ToString()
 				: FString(TEXT("EXPLORE ON FOOT"));
-			Pawn->SetObjectiveStatus(FText::FromString(FString::Printf(
-				TEXT("ON FOOT // HEALTH %.0f%% // CAB %.1f M\n%s"),
-				HealthPercent,
-				CabDistanceMeters,
-				*ContextPrompt)));
+			if (PlayerController)
+			{
+				PlayerController->SetObjectiveStatus(FText::FromString(FString::Printf(
+					TEXT("ON FOOT // HEALTH %.0f%% // CAB %.1f M\n%s"),
+					HealthPercent,
+					CabDistanceMeters,
+					*ContextPrompt)));
+			}
 		}
-		Pawn->SetProximityGuidance(false, FVector2D::ZeroVector, false);
-		if (bPassengerOnBoard && ActiveZone && ActiveZone->IsZoneActive())
+		if (PlayerController && bPassengerOnBoard && ActiveZone && ActiveZone->IsZoneActive())
 		{
-			Pawn->SetMinimapState(
+			PlayerController->SetMinimapState(
 				CabMapPosition,
 				FVector2D(ActiveZone->GetActorLocation().X, ActiveZone->GetActorLocation().Z),
 				true);
 		}
-		else
+		else if (PlayerController)
 		{
-			Pawn->ClearMinimapTarget();
+			PlayerController->ClearMinimapTarget();
 		}
 		return;
 	}
 	if (Pawn->IsDestroyed())
 	{
-		Pawn->SetObjectiveStatus(FText::FromString(TEXT("CAB DESTROYED\nRECOVERY CREW INBOUND")));
-		Pawn->SetProximityGuidance(false, FVector2D::ZeroVector, false);
+		if (PlayerController)
+		{
+			PlayerController->SetObjectiveStatus(FText::FromString(
+				TEXT("CAB DESTROYED\nRECOVERY CREW INBOUND")));
+		}
 		return;
 	}
 	if (!ActiveZone || !ActiveZone->IsZoneActive())
 	{
-		Pawn->SetObjectiveStatus(FText::FromString(
-			TEXT("NO CURBSIDE CALLS\nPASSENGER NETWORK SEARCHING")));
-		Pawn->ClearMinimapTarget();
-		Pawn->SetProximityGuidance(false, FVector2D::ZeroVector, false);
+		if (PlayerController)
+		{
+			PlayerController->SetObjectiveStatus(FText::FromString(
+				TEXT("NO CURBSIDE CALLS\nPASSENGER NETWORK SEARCHING")));
+			PlayerController->ClearMinimapTarget();
+		}
 		return;
 	}
 
@@ -1231,44 +1311,44 @@ void AFlyingCabGameMode::UpdateObjectiveStatus()
 				PassengerOffers.Num());
 		}
 	}
-	Pawn->SetObjectiveStatus(FText::FromString(Status));
-	if (bPassengerOnBoard)
+	if (PlayerController)
 	{
-		Pawn->SetMinimapState(
-			CabMapPosition,
-			FVector2D(ActiveZone->GetActorLocation().X, ActiveZone->GetActorLocation().Z),
-			true);
+		PlayerController->SetObjectiveStatus(FText::FromString(Status));
+		if (bPassengerOnBoard)
+		{
+			PlayerController->SetMinimapState(
+				CabMapPosition,
+				FVector2D(ActiveZone->GetActorLocation().X, ActiveZone->GetActorLocation().Z),
+				true);
+		}
+		else
+		{
+			PlayerController->ClearMinimapTarget();
+		}
 	}
-	else
-	{
-		Pawn->ClearMinimapTarget();
-	}
-	Pawn->SetProximityGuidance(
-		Distance <= ProximityGuidanceRange,
-		FVector2D(ActiveZone->GetActorLocation().X, ActiveZone->GetActorLocation().Z),
-		bPassengerOnBoard);
 }
 
 void AFlyingCabGameMode::UpdateTrafficAwareness(float DeltaSeconds)
 {
 	NearMissMessageRemaining = FMath::Max(0.0f, NearMissMessageRemaining - DeltaSeconds);
-	if (!BoundPawn)
+	AFlyingCabPlayerController* PlayerController = GetFlyingCabPlayerController();
+	if (!BoundPawn || !PlayerController)
 	{
 		return;
 	}
 	if (IsPlayerOnFoot())
 	{
-		BoundPawn->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
+		PlayerController->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
 		return;
 	}
 	if (BoundPawn->IsDestroyed())
 	{
-		BoundPawn->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
+		PlayerController->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
 		return;
 	}
 	if (NearMissMessageRemaining > 0.0f)
 	{
-		BoundPawn->SetTrafficAlert(
+		PlayerController->SetTrafficAlert(
 			FText::FromString(FString::Printf(TEXT("CLEAN NEAR MISS // +%d CR"), NearMissRewardCredits)),
 			FLinearColor(0.15f, 1.0f, 0.45f));
 		return;
@@ -1310,7 +1390,7 @@ void AFlyingCabGameMode::UpdateTrafficAwareness(float DeltaSeconds)
 
 	if (!ClosestThreat)
 	{
-		BoundPawn->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
+		PlayerController->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
 		return;
 	}
 
@@ -1318,7 +1398,7 @@ void AFlyingCabGameMode::UpdateTrafficAwareness(float DeltaSeconds)
 	const FLinearColor AlertColor = ClosestImpactTime <= 0.65f
 		? FLinearColor(1.0f, 0.12f, 0.03f)
 		: FLinearColor(1.0f, 0.66f, 0.05f);
-	BoundPawn->SetTrafficAlert(
+	PlayerController->SetTrafficAlert(
 		FText::FromString(FString::Printf(
 			TEXT("TRAFFIC // %.1f SEC\nINBOUND FROM %s"),
 			ClosestImpactTime,
@@ -1343,7 +1423,7 @@ void AFlyingCabGameMode::HandleTrafficNearMiss(
 		RunNearMissCreditsEarned += NearMissRewardCredits;
 	}
 	NearMissMessageRemaining = 1.25f;
-	Pawn->SetEconomyStatus(Credits, bPassengerOnBoard ? FMath::RoundToInt(ActiveFare) : 0);
+	PushEconomyStatus();
 	UE_LOG(
 		LogFlyingCabDelivery,
 		Display,
@@ -1355,14 +1435,15 @@ void AFlyingCabGameMode::HandleTrafficNearMiss(
 
 void AFlyingCabGameMode::UpdateRunModeStatus()
 {
-	if (!BoundPawn)
+	AFlyingCabPlayerController* PlayerController = GetFlyingCabPlayerController();
+	if (!PlayerController)
 	{
 		return;
 	}
 
 	const bool bShowTimeAttack = CurrentRunMode == EFlyingCabRunMode::TimeAttack
 		&& (bRunActive || bRunCompleted);
-	BoundPawn->SetTimeAttackStatus(
+	PlayerController->SetTimeAttackStatus(
 		bShowTimeAttack,
 		GetRunElapsedSeconds(),
 		Credits,

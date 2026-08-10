@@ -67,6 +67,7 @@ private:
 	void HandleVehicleDestroyed(class AFlyingCabPawn* Pawn);
 	void ScheduleVehicleRecovery(class AFlyingCabPawn* Pawn);
 	void RecoverVehicleAfterTow(class AFlyingCabPawn* Pawn);
+	void UpdateProximityGuidance();
 	void UpdateObjectiveStatus();
 	void UpdateTrafficAwareness(float DeltaSeconds);
 	void UpdateRunModeStatus();
@@ -81,6 +82,8 @@ private:
 		const FText& Message,
 		const FLinearColor& Color,
 		float DurationSeconds) const;
+	class AFlyingCabPlayerController* GetFlyingCabPlayerController() const;
+	void PushEconomyStatus() const;
 	bool IsPlayerOnFoot() const;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery")
@@ -123,6 +126,10 @@ private:
 	/** Exact in-world pointer appears only inside this range. */
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery", meta = (ClampMin = "0.0"))
 	float ProximityGuidanceRange = 1800.0f;
+
+	/** Text and minimap presentation do not need per-frame Slate invalidation. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Interface", meta = (ClampMin = "0.05"))
+	float HudRefreshInterval = 0.1f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0"))
 	int32 StartingCredits = 100;
@@ -249,6 +256,7 @@ private:
 	float FareLastDistance = 0.0f;
 	float NearMissMessageRemaining = 0.0f;
 	float PassengerSpawnCountdown = 0.0f;
+	float HudRefreshElapsed = 0.0f;
 	bool bPassengerOnBoard = false;
 	FRandomStream DispatchRandom;
 	TMap<TWeakObjectPtr<class AFlyingCabPawn>, FTimerHandle> VehicleRecoveryTimerHandles;

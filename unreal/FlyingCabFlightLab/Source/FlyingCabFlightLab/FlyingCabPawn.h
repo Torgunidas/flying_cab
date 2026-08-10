@@ -14,7 +14,6 @@ class USceneComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 class USpringArmComponent;
-class UFlyingCabTouchControls;
 class AFlyingCabPawn;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnFlyingCabDestroyed, AFlyingCabPawn*);
@@ -50,26 +49,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Flight")
 	void ResetVehicle();
 
-	void SetObjectiveStatus(const FText& Status);
-	void SetMinimapState(
-		const FVector2D& CabWorldPosition,
-		const FVector2D& TargetWorldPosition,
-		bool bTargetIsDropoff);
-	void SetPassengerOfferMarkers(
-		const FVector2D& CabWorldPosition,
-		const TArray<FVector2D>& OfferWorldPositions);
-	void ClearMinimapTarget();
 	void SetProximityGuidance(
 		bool bVisible,
 		const FVector2D& TargetWorldPosition,
 		bool bTargetIsDropoff);
-	void SetTimeAttackStatus(
-		bool bActive,
-		float ElapsedSeconds,
-		int32 Credits,
-		int32 TargetCredits);
-	void SetEconomyStatus(int32 Credits, int32 ActiveFare);
-	void SetTrafficAlert(const FText& Alert, const FLinearColor& Color);
 	void SetRefuelAvailable(bool bAvailable, int32 PricePerUnit);
 	void SetRepairAvailable(bool bAvailable, int32 PricePerHullUnit);
 	void ConfigureVehicleIdentity(
@@ -80,14 +63,17 @@ public:
 	bool CanPlayerEnter(FText& OutFailureReason) const;
 	FText GetEntryPrompt() const;
 	const FString& GetVehicleDisplayName() const { return VehicleDisplayName; }
-	UFlyingCabTouchControls* GetTouchControlsWidget() const { return TouchControlsWidget; }
-	UFlyingCabTouchControls* DetachTouchControlsWidget();
-	void AdoptTouchControlsWidget(UFlyingCabTouchControls* Widget);
 	bool IsRefuelRequested() const;
 	bool IsRepairRequested() const;
 	bool IsDestroyed() const { return bDestroyed; }
 	float GetFuel() const { return CurrentFuel; }
 	float GetMaxFuel() const { return MaxFuel; }
+	float GetFuelPercent() const { return MaxFuel > UE_SMALL_NUMBER ? CurrentFuel / MaxFuel : 0.0f; }
+	float GetHullPercent() const { return MaxHull > UE_SMALL_NUMBER ? CurrentHull / MaxHull : 0.0f; }
+	bool IsRefuelAvailable() const { return bRefuelAvailable; }
+	int32 GetRefuelPricePerUnit() const { return RefuelPricePerUnit; }
+	bool IsRepairAvailable() const { return bRepairAvailable; }
+	int32 GetRepairPricePerHullUnit() const { return RepairPricePerHullUnit; }
 	float GetFuelNeeded() const { return FMath::Max(0.0f, MaxFuel - CurrentFuel); }
 	float GetHullNeeded() const { return FMath::Max(0.0f, MaxHull - CurrentHull); }
 	FVector GetCameraTrackingOffset() const;
@@ -99,7 +85,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
 	void SetKeyboardHorizontalInput(float Value);
@@ -109,10 +94,6 @@ private:
 	void ToggleFlightTelemetry();
 	void DrawFlightTelemetry(float HorizontalInput, float ThrustInput, const FVector& Velocity) const;
 	void UpdateVisualResponse(float DeltaSeconds, const FVector& Velocity);
-	void TryCreateTouchControls();
-	void ToggleTouchControls();
-	void ApplyTouchControlsVisibility();
-	void RefreshResourceUI();
 	void RefreshVehicleIdentityAppearance(bool bForce = false);
 	bool HasRequiredVehicleAccess() const;
 	void ConsumeOrRegenerateFuel(
@@ -163,9 +144,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
 	TObjectPtr<UStaticMeshComponent> GuidanceArrowTip;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UFlyingCabTouchControls> TouchControlsWidget;
 
 	/** Acceleration produced by full vertical thrust, in cm/s^2. */
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Flight", meta = (ClampMin = "0.0"))
@@ -222,14 +200,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Debug")
 	bool bShowFlightTelemetry = false;
 
-	/** Prototype touch overlay. Toggle with F4 while testing on desktop. */
-	UPROPERTY(EditAnywhere, Category = "Flying Cab|Input")
-	bool bShowTouchControls = true;
-
-	/** Shows a cursor and uses Game+UI input mode for mouse testing in the editor. */
-	UPROPERTY(EditAnywhere, Category = "Flying Cab|Input")
-	bool bEnableMouseTouchTestingInEditor = true;
-
 	/** Normalized energy capacity. Values deliberately use percentages for fast tuning. */
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Resources", meta = (ClampMin = "1.0"))
 	float MaxFuel = 100.0f;
@@ -268,20 +238,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Damage", meta = (ClampMin = "0.0"))
 	float CollisionDamageCooldown = 0.15f;
 
-	FText ObjectiveStatus = FText::FromString(TEXT("FLIGHT LAB"));
-	FText TrafficAlert;
-	FLinearColor TrafficAlertColor = FLinearColor::Transparent;
-	FVector2D MinimapCabPosition = FVector2D::ZeroVector;
-	FVector2D MinimapTargetPosition = FVector2D::ZeroVector;
-	TArray<FVector2D> MinimapPassengerOfferPositions;
-	bool bMinimapTargetIsDropoff = false;
-	bool bHasMinimapState = false;
-	bool bMinimapTargetVisible = false;
-	bool bTimeAttackStatusActive = false;
-	float TimeAttackElapsedSeconds = 0.0f;
-	int32 TimeAttackTargetCredits = 1000;
-	int32 DisplayCredits = 0;
-	int32 DisplayActiveFare = 0;
 	int32 RefuelPricePerUnit = 0;
 	int32 RepairPricePerHullUnit = 0;
 	float CurrentFuel = 0.0f;

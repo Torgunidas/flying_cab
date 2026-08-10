@@ -76,7 +76,7 @@ void UFlyingCabTouchControls::SetOnFootMode(bool bOnFoot)
 void UFlyingCabTouchControls::SetObjectiveText(const FText& Text)
 {
 	PendingObjectiveText = Text;
-	if (ObjectiveText)
+	if (ObjectiveText && !ObjectiveText->GetText().EqualTo(PendingObjectiveText))
 	{
 		ObjectiveText->SetText(PendingObjectiveText);
 	}
@@ -136,12 +136,19 @@ void UFlyingCabTouchControls::SetTrafficAlert(const FText& Text, const FLinearCo
 	PendingTrafficAlertColor = Color;
 	if (TrafficAlertText)
 	{
-		TrafficAlertText->SetText(PendingTrafficAlertText);
+		if (!TrafficAlertText->GetText().EqualTo(PendingTrafficAlertText))
+		{
+			TrafficAlertText->SetText(PendingTrafficAlertText);
+		}
 		TrafficAlertText->SetColorAndOpacity(FSlateColor(PendingTrafficAlertColor));
-		TrafficAlertText->SetVisibility(
+		const ESlateVisibility DesiredVisibility =
 			PendingTrafficAlertText.IsEmpty()
 				? ESlateVisibility::Collapsed
-				: ESlateVisibility::HitTestInvisible);
+				: ESlateVisibility::HitTestInvisible;
+		if (TrafficAlertText->GetVisibility() != DesiredVisibility)
+		{
+			TrafficAlertText->SetVisibility(DesiredVisibility);
+		}
 	}
 }
 
@@ -186,21 +193,29 @@ void UFlyingCabTouchControls::SetTimeAttackState(
 	PendingTimeAttackTargetCredits = FMath::Max(1, TargetCredits);
 	if (TimeAttackPanel)
 	{
-		TimeAttackPanel->SetVisibility(
+		const ESlateVisibility DesiredVisibility =
 			bPendingTimeAttackActive
 				? ESlateVisibility::HitTestInvisible
-				: ESlateVisibility::Collapsed);
+				: ESlateVisibility::Collapsed;
+		if (TimeAttackPanel->GetVisibility() != DesiredVisibility)
+		{
+			TimeAttackPanel->SetVisibility(DesiredVisibility);
+		}
 	}
 	if (TimeAttackText)
 	{
 		const int32 Minutes = FMath::FloorToInt(PendingTimeAttackSeconds / 60.0f);
 		const float Seconds = PendingTimeAttackSeconds - Minutes * 60.0f;
-		TimeAttackText->SetText(FText::FromString(FString::Printf(
+		const FText DisplayText = FText::FromString(FString::Printf(
 			TEXT("TIME ATTACK  %02d:%04.1f\nBALANCE  %d / %d CR"),
 			Minutes,
 			Seconds,
 			PendingTimeAttackCredits,
-			PendingTimeAttackTargetCredits)));
+			PendingTimeAttackTargetCredits));
+		if (!TimeAttackText->GetText().EqualTo(DisplayText))
+		{
+			TimeAttackText->SetText(DisplayText);
+		}
 		const float Progress = static_cast<float>(PendingTimeAttackCredits)
 			/ static_cast<float>(PendingTimeAttackTargetCredits);
 		TimeAttackText->SetColorAndOpacity(FSlateColor(
@@ -243,14 +258,18 @@ void UFlyingCabTouchControls::SetResourceState(
 				: (bPendingRefuelAvailable
 					? FString::Printf(TEXT("FUEL SERVICE  %d CR/U  // HOLD E"), PendingRefuelPricePerUnit)
 					: FString()));
-		ResourceText->SetText(FText::FromString(FString::Printf(
+		const FText DisplayText = FText::FromString(FString::Printf(
 			TEXT("CREDITS  %d\nFUEL %3.0f%%  |  HULL %3.0f%%\n%s%s%s"),
 			PendingCredits,
 			PendingFuelPercent * 100.0f,
 			PendingHullPercent * 100.0f,
 			*FareText,
 			ServiceText.IsEmpty() ? TEXT("") : TEXT("\n"),
-			*ServiceText)));
+			*ServiceText));
+		if (!ResourceText->GetText().EqualTo(DisplayText))
+		{
+			ResourceText->SetText(DisplayText);
+		}
 
 		const bool bCritical = bPendingVehicleDestroyed
 			|| PendingFuelPercent <= 0.15f

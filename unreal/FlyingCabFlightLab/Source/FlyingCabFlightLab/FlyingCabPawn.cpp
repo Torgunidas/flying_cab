@@ -13,7 +13,6 @@
 #include "Engine/GameInstance.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabPlayerController.h"
-#include "FlyingCabTouchControls.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Materials/MaterialInterface.h"
@@ -154,27 +153,12 @@ void AFlyingCabPawn::BeginPlay()
 		VisualPitchResponseSpeed,
 		VisualPitchReturnSpeed);
 
-	TryCreateTouchControls();
-	RefreshResourceUI();
 	RefreshVehicleIdentityAppearance(true);
-}
-
-void AFlyingCabPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	if (TouchControlsWidget)
-	{
-		TouchControlsWidget->ReleaseAllInputs();
-		TouchControlsWidget->RemoveFromParent();
-		TouchControlsWidget = nullptr;
-	}
-
-	Super::EndPlay(EndPlayReason);
 }
 
 void AFlyingCabPawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	TryCreateTouchControls();
 	RefreshVehicleIdentityAppearance();
 
 	if (!CollisionBody || !CollisionBody->IsSimulatingPhysics())
@@ -229,7 +213,6 @@ void AFlyingCabPawn::Tick(float DeltaSeconds)
 
 	UpdateVisualResponse(DeltaSeconds, Velocity);
 	DrawFlightTelemetry(HorizontalInput, ThrustInput, Velocity);
-	RefreshResourceUI();
 }
 
 void AFlyingCabPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -251,27 +234,18 @@ void AFlyingCabPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		&AFlyingCabPawn::SetKeyboardServiceInput);
 	PlayerInputComponent->BindAction(TEXT("RestartFlight"), IE_Pressed, this, &AFlyingCabPawn::ResetVehicle);
 	PlayerInputComponent->BindAction(TEXT("ToggleFlightTelemetry"), IE_Pressed, this, &AFlyingCabPawn::ToggleFlightTelemetry);
-	PlayerInputComponent->BindAction(TEXT("ToggleTouchControls"), IE_Pressed, this, &AFlyingCabPawn::ToggleTouchControls);
 }
 
 void AFlyingCabPawn::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 	ClearAllInputState(TEXT("driver entered vehicle"), true);
-	if (TouchControlsWidget)
-	{
-		TouchControlsWidget->SetOnFootMode(false);
-	}
 	RefreshVehicleIdentityAppearance(true);
 }
 
 void AFlyingCabPawn::UnPossessed()
 {
 	ClearAllInputState(TEXT("driver exited vehicle"), true);
-	if (TouchControlsWidget)
-	{
-		TouchControlsWidget->SetOnFootMode(true);
-	}
 	Super::UnPossessed();
 	RefreshVehicleIdentityAppearance(true);
 }
@@ -319,7 +293,6 @@ void AFlyingCabPawn::ResetVehicle()
 	PreviousHorizontalVelocity = 0.0f;
 	VisualHorizontalAcceleration = 0.0f;
 	bHasPreviousHorizontalVelocity = false;
-	RefreshResourceUI();
 	UE_LOG(
 		LogFlyingCabFlight,
 		Display,
@@ -328,59 +301,6 @@ void AFlyingCabPawn::ResetVehicle()
 		MaxFuel,
 		CurrentHull,
 		MaxHull);
-}
-
-void AFlyingCabPawn::SetObjectiveStatus(const FText& Status)
-{
-	ObjectiveStatus = Status;
-	if (TouchControlsWidget)
-	{
-		TouchControlsWidget->SetObjectiveText(ObjectiveStatus);
-	}
-}
-
-void AFlyingCabPawn::SetMinimapState(
-	const FVector2D& CabWorldPosition,
-	const FVector2D& TargetWorldPosition,
-	bool bTargetIsDropoff)
-{
-	MinimapCabPosition = CabWorldPosition;
-	MinimapTargetPosition = TargetWorldPosition;
-	bMinimapTargetIsDropoff = bTargetIsDropoff;
-	bHasMinimapState = true;
-	bMinimapTargetVisible = true;
-
-	if (TouchControlsWidget)
-	{
-		TouchControlsWidget->SetMinimapState(
-			MinimapCabPosition,
-			MinimapTargetPosition,
-			bMinimapTargetIsDropoff);
-	}
-}
-
-void AFlyingCabPawn::SetPassengerOfferMarkers(
-	const FVector2D& CabWorldPosition,
-	const TArray<FVector2D>& OfferWorldPositions)
-{
-	MinimapCabPosition = CabWorldPosition;
-	MinimapPassengerOfferPositions = OfferWorldPositions;
-	bHasMinimapState = true;
-	if (TouchControlsWidget)
-	{
-		TouchControlsWidget->SetPassengerOfferMarkers(
-			MinimapCabPosition,
-			MinimapPassengerOfferPositions);
-	}
-}
-
-void AFlyingCabPawn::ClearMinimapTarget()
-{
-	bMinimapTargetVisible = false;
-	if (TouchControlsWidget)
-	{
-		TouchControlsWidget->SetMinimapTargetVisible(false);
-	}
 }
 
 void AFlyingCabPawn::SetProximityGuidance(
@@ -416,45 +336,9 @@ void AFlyingCabPawn::SetProximityGuidance(
 	}
 }
 
-void AFlyingCabPawn::SetTimeAttackStatus(
-	bool bActive,
-	float ElapsedSeconds,
-	int32 Credits,
-	int32 TargetCredits)
-{
-	bTimeAttackStatusActive = bActive;
-	TimeAttackElapsedSeconds = FMath::Max(0.0f, ElapsedSeconds);
-	TimeAttackTargetCredits = FMath::Max(1, TargetCredits);
-	if (TouchControlsWidget)
-	{
-		TouchControlsWidget->SetTimeAttackState(
-			bTimeAttackStatusActive,
-			TimeAttackElapsedSeconds,
-			Credits,
-			TimeAttackTargetCredits);
-	}
-}
-
-void AFlyingCabPawn::SetEconomyStatus(int32 Credits, int32 ActiveFare)
-{
-	DisplayCredits = FMath::Max(0, Credits);
-	DisplayActiveFare = FMath::Max(0, ActiveFare);
-	RefreshResourceUI();
-}
-
 FVector AFlyingCabPawn::GetCameraTrackingOffset() const
 {
 	return CameraBoom ? CameraBoom->TargetOffset : FVector::ZeroVector;
-}
-
-void AFlyingCabPawn::SetTrafficAlert(const FText& Alert, const FLinearColor& Color)
-{
-	TrafficAlert = Alert;
-	TrafficAlertColor = Color;
-	if (TouchControlsWidget)
-	{
-		TouchControlsWidget->SetTrafficAlert(TrafficAlert, TrafficAlertColor);
-	}
 }
 
 void AFlyingCabPawn::SetRefuelAvailable(bool bAvailable, int32 PricePerUnit)
@@ -465,7 +349,6 @@ void AFlyingCabPawn::SetRefuelAvailable(bool bAvailable, int32 PricePerUnit)
 	{
 		bTouchRefuelPressed = false;
 	}
-	RefreshResourceUI();
 }
 
 void AFlyingCabPawn::SetRepairAvailable(bool bAvailable, int32 PricePerHullUnit)
@@ -476,7 +359,6 @@ void AFlyingCabPawn::SetRepairAvailable(bool bAvailable, int32 PricePerHullUnit)
 	{
 		bTouchRefuelPressed = false;
 	}
-	RefreshResourceUI();
 }
 
 void AFlyingCabPawn::ConfigureVehicleIdentity(
@@ -524,57 +406,6 @@ FText AFlyingCabPawn::GetEntryPrompt() const
 	return FText::FromString(FString::Printf(TEXT("Q // ENTER %s"), *VehicleDisplayName));
 }
 
-UFlyingCabTouchControls* AFlyingCabPawn::DetachTouchControlsWidget()
-{
-	UFlyingCabTouchControls* Widget = TouchControlsWidget;
-	if (Widget)
-	{
-		Widget->ReleaseAllInputs();
-	}
-	TouchControlsWidget = nullptr;
-	return Widget;
-}
-
-void AFlyingCabPawn::AdoptTouchControlsWidget(UFlyingCabTouchControls* Widget)
-{
-	if (!Widget)
-	{
-		return;
-	}
-	if (TouchControlsWidget && TouchControlsWidget != Widget)
-	{
-		TouchControlsWidget->ReleaseAllInputs();
-		TouchControlsWidget->RemoveFromParent();
-	}
-
-	TouchControlsWidget = Widget;
-	if (!TouchControlsWidget->IsInViewport())
-	{
-		TouchControlsWidget->AddToViewport(100);
-	}
-	TouchControlsWidget->SetOnFootMode(!IsLocallyControlled());
-	TouchControlsWidget->SetObjectiveText(ObjectiveStatus);
-	TouchControlsWidget->SetTrafficAlert(TrafficAlert, TrafficAlertColor);
-	TouchControlsWidget->SetTimeAttackState(
-		bTimeAttackStatusActive,
-		TimeAttackElapsedSeconds,
-		DisplayCredits,
-		TimeAttackTargetCredits);
-	if (bHasMinimapState)
-	{
-		TouchControlsWidget->SetPassengerOfferMarkers(
-			MinimapCabPosition,
-			MinimapPassengerOfferPositions);
-		TouchControlsWidget->SetMinimapState(
-			MinimapCabPosition,
-			MinimapTargetPosition,
-			bMinimapTargetIsDropoff);
-	}
-	TouchControlsWidget->SetMinimapTargetVisible(bMinimapTargetVisible);
-	RefreshResourceUI();
-	ApplyTouchControlsVisibility();
-}
-
 bool AFlyingCabPawn::IsRefuelRequested() const
 {
 	return bRefuelAvailable && !bDestroyed
@@ -600,7 +431,6 @@ float AFlyingCabPawn::AddFuel(float Units)
 	{
 		bFuelEmptyWarningShown = false;
 	}
-	RefreshResourceUI();
 	return CurrentFuel - PreviousFuel;
 }
 
@@ -613,7 +443,6 @@ float AFlyingCabPawn::AddHull(float Units)
 
 	const float PreviousHull = CurrentHull;
 	CurrentHull = FMath::Clamp(CurrentHull + Units, 0.0f, MaxHull);
-	RefreshResourceUI();
 	return CurrentHull - PreviousHull;
 }
 
@@ -640,7 +469,6 @@ void AFlyingCabPawn::RecoverVehicle(float RecoveryFuelPercent)
 	{
 		DamageLight->SetIntensity(0.0f);
 	}
-	RefreshResourceUI();
 }
 
 void AFlyingCabPawn::SetKeyboardHorizontalInput(float Value)
@@ -678,9 +506,10 @@ void AFlyingCabPawn::ClearAllInputState(const TCHAR* Reason, bool bFlushPressedK
 			PlayerController->FlushPressedKeys();
 		}
 	}
-	if (TouchControlsWidget)
+	if (AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController()))
 	{
-		TouchControlsWidget->ReleaseAllInputs();
+		PlayerController->ReleaseInterfaceInputs();
 	}
 
 	KeyboardHorizontalInput = 0.0f;
@@ -716,113 +545,6 @@ void AFlyingCabPawn::ToggleFlightTelemetry()
 	{
 		GEngine->RemoveOnScreenDebugMessage(FlightTelemetryMessageKey);
 	}
-}
-
-void AFlyingCabPawn::TryCreateTouchControls()
-{
-	if (TouchControlsWidget || !IsLocallyControlled())
-	{
-		return;
-	}
-
-	APlayerController* PlayerController = Cast<APlayerController>(GetController());
-	if (!PlayerController)
-	{
-		return;
-	}
-
-	TouchControlsWidget = CreateWidget<UFlyingCabTouchControls>(PlayerController);
-	if (!TouchControlsWidget)
-	{
-		return;
-	}
-
-	TouchControlsWidget->AddToViewport(100);
-	TouchControlsWidget->SetOnFootMode(!IsLocallyControlled());
-	TouchControlsWidget->SetObjectiveText(ObjectiveStatus);
-	TouchControlsWidget->SetTrafficAlert(TrafficAlert, TrafficAlertColor);
-	TouchControlsWidget->SetTimeAttackState(
-		bTimeAttackStatusActive,
-		TimeAttackElapsedSeconds,
-		DisplayCredits,
-		TimeAttackTargetCredits);
-	RefreshResourceUI();
-	if (bHasMinimapState)
-	{
-		TouchControlsWidget->SetPassengerOfferMarkers(
-			MinimapCabPosition,
-			MinimapPassengerOfferPositions);
-		TouchControlsWidget->SetMinimapState(
-			MinimapCabPosition,
-			MinimapTargetPosition,
-			bMinimapTargetIsDropoff);
-	}
-	TouchControlsWidget->SetMinimapTargetVisible(bMinimapTargetVisible);
-	ApplyTouchControlsVisibility();
-	UE_LOG(LogFlyingCabFlight, Display, TEXT("Touch controls created (F4 toggles visibility)."));
-}
-
-void AFlyingCabPawn::ToggleTouchControls()
-{
-	bShowTouchControls = !bShowTouchControls;
-	ApplyTouchControlsVisibility();
-}
-
-void AFlyingCabPawn::ApplyTouchControlsVisibility()
-{
-	if (!TouchControlsWidget)
-	{
-		return;
-	}
-
-	TouchControlsWidget->SetControlsVisible(bShowTouchControls);
-
-#if WITH_EDITOR
-	if (bEnableMouseTouchTestingInEditor)
-	{
-		if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
-		{
-			if (const AFlyingCabPlayerController* FlyingCabController =
-				Cast<AFlyingCabPlayerController>(PlayerController);
-				FlyingCabController && FlyingCabController->IsGameFlowScreenOpen())
-			{
-				return;
-			}
-			PlayerController->SetShowMouseCursor(bShowTouchControls);
-			if (bShowTouchControls)
-			{
-				FInputModeGameAndUI InputMode;
-				InputMode.SetHideCursorDuringCapture(false);
-				PlayerController->SetInputMode(InputMode);
-			}
-			else
-			{
-				PlayerController->SetInputMode(FInputModeGameOnly());
-			}
-		}
-	}
-#endif
-}
-
-void AFlyingCabPawn::RefreshResourceUI()
-{
-	if (!TouchControlsWidget)
-	{
-		return;
-	}
-
-	const float FuelPercent = MaxFuel > UE_SMALL_NUMBER ? CurrentFuel / MaxFuel : 0.0f;
-	const float HullPercent = MaxHull > UE_SMALL_NUMBER ? CurrentHull / MaxHull : 0.0f;
-	TouchControlsWidget->SetResourceState(
-		FuelPercent,
-		HullPercent,
-		DisplayCredits,
-		DisplayActiveFare,
-		bRefuelAvailable,
-		RefuelPricePerUnit,
-		bRepairAvailable,
-		RepairPricePerHullUnit,
-		bDestroyed);
 }
 
 bool AFlyingCabPawn::HasRequiredVehicleAccess() const
@@ -1025,7 +747,6 @@ void AFlyingCabPawn::EnterDestroyedState()
 	bRepairAvailable = false;
 	VisualMesh->SetVectorParameterValueOnMaterials(TEXT("Color"), FVector(0.20f, 0.01f, 0.0f));
 	RefreshVehicleIdentityAppearance(true);
-	RefreshResourceUI();
 
 	UE_LOG(LogFlyingCabFlight, Warning, TEXT("Vehicle destroyed."));
 	OnVehicleDestroyed.Broadcast(this);

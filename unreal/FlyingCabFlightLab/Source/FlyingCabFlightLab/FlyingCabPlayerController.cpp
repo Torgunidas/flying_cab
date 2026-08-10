@@ -17,6 +17,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
+#include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabInteraction, Log, All);
 
@@ -28,6 +29,14 @@ AFlyingCabPlayerController::AFlyingCabPlayerController()
 void AFlyingCabPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	CreateInterfaceWidget();
+	GetWorldTimerManager().SetTimer(
+		InterfaceRefreshTimerHandle,
+		this,
+		&AFlyingCabPlayerController::RefreshInterface,
+		FMath::Max(0.05f, InterfaceRefreshInterval),
+		true);
+	RefreshInterface();
 
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.Owner = this;
@@ -59,6 +68,18 @@ void AFlyingCabPlayerController::BeginPlay()
 	ShowInitialModeSelection();
 }
 
+void AFlyingCabPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorldTimerManager().ClearTimer(InterfaceRefreshTimerHandle);
+	if (InterfaceWidget)
+	{
+		InterfaceWidget->ReleaseAllInputs();
+		InterfaceWidget->RemoveFromParent();
+		InterfaceWidget = nullptr;
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
 void AFlyingCabPlayerController::StartRunMode(EFlyingCabRunMode Mode)
 {
 	if (Mode == EFlyingCabRunMode::None)
@@ -81,6 +102,7 @@ void AFlyingCabPlayerController::StartRunMode(EFlyingCabRunMode Mode)
 	SetPause(false);
 	FlushPressedKeys();
 	RestoreGameplayInputMode();
+	ApplyTouchControlsVisibility();
 }
 
 void AFlyingCabPlayerController::RestartWithRunMode(EFlyingCabRunMode Mode)
@@ -165,6 +187,7 @@ void AFlyingCabPlayerController::ShowInitialModeSelection()
 
 void AFlyingCabPlayerController::EnterMenuInputMode()
 {
+	ReleaseInterfaceInputs();
 	FlushPressedKeys();
 	bShowMouseCursor = true;
 	FInputModeUIOnly InputMode;
@@ -212,6 +235,11 @@ void AFlyingCabPlayerController::SetupInputComponent()
 		IE_Pressed,
 		this,
 		&AFlyingCabPlayerController::RequestContextInteraction);
+	InputComponent->BindAction(
+		TEXT("ToggleTouchControls"),
+		IE_Pressed,
+		this,
+		&AFlyingCabPlayerController::ToggleTouchControls);
 }
 
 void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
@@ -232,6 +260,11 @@ void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
 	else
 	{
 		PlayerMode = EFlyingCabPlayerMode::Unknown;
+	}
+	if (InterfaceWidget)
+	{
+		InterfaceWidget->SetOnFootMode(PlayerMode == EFlyingCabPlayerMode::OnFoot);
+		RefreshInterface();
 	}
 	if (CameraRig && InPawn)
 	{
@@ -377,11 +410,7 @@ void AFlyingCabPlayerController::TryEnterVehicle(
 		return;
 	}
 
-	UFlyingCabTouchControls* InterfaceWidget = ActiveVehicle
-		? ActiveVehicle->DetachTouchControlsWidget()
-		: nullptr;
 	Possess(Vehicle);
-	Vehicle->AdoptTouchControlsWidget(InterfaceWidget);
 	OnFootPawn->Destroy();
 	ShowInteractionMessage(
 		FString::Printf(TEXT("%s // CONTROL ONLINE"), *Vehicle->GetVehicleDisplayName()),
@@ -602,20 +631,168 @@ void AFlyingCabPlayerController::ShowEventMessage(
 	const FLinearColor& Color,
 	float DurationSeconds) const
 {
-	if (UFlyingCabTouchControls* InterfaceWidget = GetInterfaceWidget())
+	if (UFlyingCabTouchControls* Widget = GetInterfaceWidget())
 	{
-		InterfaceWidget->ShowEventMessage(Message, Color, DurationSeconds);
+		Widget->ShowEventMessage(Message, Color, DurationSeconds);
 	}
 }
 
-UFlyingCabTouchControls* AFlyingCabPlayerController::GetInterfaceWidget() const
+void AFlyingCabPlayerController::SetObjectiveStatus(const FText& Status)
 {
-	if (const AFlyingCabPawn* ControlledVehicle = Cast<AFlyingCabPawn>(GetPawn()))
+	if (InterfaceWidget)
 	{
-		if (UFlyingCabTouchControls* Widget = ControlledVehicle->GetTouchControlsWidget())
+		InterfaceWidget->SetObjectiveText(Status);
+	}
+}
+
+void AFlyingCabPlayerController::SetMinimapState(
+	const FVector2D& CabWorldPosition,
+	const FVector2D& TargetWorldPosition,
+	bool bTargetIsDropoff)
+{
+	if (InterfaceWidget)
+	{
+		InterfaceWidget->SetMinimapState(
+			CabWorldPosition,
+			TargetWorldPosition,
+			bTargetIsDropoff);
+	}
+}
+
+void AFlyingCabPlayerController::SetPassengerOfferMarkers(
+	const FVector2D& CabWorldPosition,
+	const TArray<FVector2D>& OfferWorldPositions)
+{
+	if (InterfaceWidget)
+	{
+		InterfaceWidget->SetPassengerOfferMarkers(CabWorldPosition, OfferWorldPositions);
+	}
+}
+
+void AFlyingCabPlayerController::ClearMinimapTarget()
+{
+	if (InterfaceWidget)
+	{
+		InterfaceWidget->SetMinimapTargetVisible(false);
+	}
+}
+
+void AFlyingCabPlayerController::SetTimeAttackStatus(
+	bool bActive,
+	float ElapsedSeconds,
+	int32 Credits,
+	int32 TargetCredits)
+{
+	if (InterfaceWidget)
+	{
+		InterfaceWidget->SetTimeAttackState(
+			bActive,
+			ElapsedSeconds,
+			Credits,
+			TargetCredits);
+	}
+}
+
+void AFlyingCabPlayerController::SetEconomyStatus(int32 Credits, int32 ActiveFare)
+{
+	const int32 NewCredits = FMath::Max(0, Credits);
+	const int32 NewActiveFare = FMath::Max(0, ActiveFare);
+	if (DisplayCredits == NewCredits && DisplayActiveFare == NewActiveFare)
+	{
+		return;
+	}
+	DisplayCredits = NewCredits;
+	DisplayActiveFare = NewActiveFare;
+	RefreshInterface();
+}
+
+void AFlyingCabPlayerController::SetTrafficAlert(
+	const FText& Alert,
+	const FLinearColor& Color)
+{
+	if (InterfaceWidget)
+	{
+		InterfaceWidget->SetTrafficAlert(Alert, Color);
+	}
+}
+
+void AFlyingCabPlayerController::ReleaseInterfaceInputs()
+{
+	if (InterfaceWidget)
+	{
+		InterfaceWidget->ReleaseAllInputs();
+	}
+}
+
+void AFlyingCabPlayerController::CreateInterfaceWidget()
+{
+	if (InterfaceWidget)
+	{
+		return;
+	}
+
+	InterfaceWidget = CreateWidget<UFlyingCabTouchControls>(this);
+	if (!InterfaceWidget)
+	{
+		return;
+	}
+
+	InterfaceWidget->AddToViewport(100);
+	InterfaceWidget->SetOnFootMode(PlayerMode == EFlyingCabPlayerMode::OnFoot);
+	RefreshInterface();
+	ApplyTouchControlsVisibility();
+	UE_LOG(LogFlyingCabInteraction, Display, TEXT("PlayerController created the persistent touch HUD."));
+}
+
+void AFlyingCabPlayerController::RefreshInterface()
+{
+	if (!InterfaceWidget)
+	{
+		CreateInterfaceWidget();
+		return;
+	}
+
+	const AFlyingCabPawn* Vehicle = IsValid(ActiveVehicle) ? ActiveVehicle.Get() : nullptr;
+	InterfaceWidget->SetResourceState(
+		Vehicle ? Vehicle->GetFuelPercent() : 0.0f,
+		Vehicle ? Vehicle->GetHullPercent() : 0.0f,
+		DisplayCredits,
+		DisplayActiveFare,
+		Vehicle && Vehicle->IsRefuelAvailable(),
+		Vehicle ? Vehicle->GetRefuelPricePerUnit() : 0,
+		Vehicle && Vehicle->IsRepairAvailable(),
+		Vehicle ? Vehicle->GetRepairPricePerHullUnit() : 0,
+		!Vehicle || Vehicle->IsDestroyed());
+}
+
+void AFlyingCabPlayerController::ToggleTouchControls()
+{
+	bShowTouchControls = !bShowTouchControls;
+	ApplyTouchControlsVisibility();
+}
+
+void AFlyingCabPlayerController::ApplyTouchControlsVisibility()
+{
+	if (!InterfaceWidget)
+	{
+		return;
+	}
+	InterfaceWidget->SetControlsVisible(bShowTouchControls);
+
+#if WITH_EDITOR
+	if (bEnableMouseTouchTestingInEditor && !bGameFlowScreenOpen)
+	{
+		SetShowMouseCursor(bShowTouchControls);
+		if (bShowTouchControls)
 		{
-			return Widget;
+			FInputModeGameAndUI InputMode;
+			InputMode.SetHideCursorDuringCapture(false);
+			SetInputMode(InputMode);
+		}
+		else
+		{
+			SetInputMode(FInputModeGameOnly());
 		}
 	}
-	return ActiveVehicle ? ActiveVehicle->GetTouchControlsWidget() : nullptr;
+#endif
 }

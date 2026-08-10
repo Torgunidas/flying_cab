@@ -13,7 +13,7 @@ Ten dokument wskazuje źródła prawdy. Widgety oraz teksty HUD są odbiorcami s
 | Dostęp do pojazdów | `UFlyingCabProgressionSubsystem` | jawne `ResetAccess` na początku Time Attack | instancja aplikacji; przeżywa przeładowanie mapy |
 | Najlepsze czasy Time Attack | `UFlyingCabScoreSaveGame` | brak automatycznego resetu | dysk; format oznaczony `SaveVersion` |
 | Topologia dzielnic, stacji i granice minimapy | `FlyingCabCityData` | zmiana kodu/danych | stała konfiguracja projektu |
-| Stan wyświetlany przez HUD | kopia w pawnie i `UFlyingCabTouchControls` | synchronizacja po zmianie pojazdu | pochodna powyższych źródeł |
+| Stan wyświetlany przez HUD | `AFlyingCabPlayerController` posiada jeden `UFlyingCabTouchControls`; widget przechowuje wyłącznie ostatnią prezentację | `OnPossess` przełącza tryb, a timer 10 Hz pobiera zasoby aktywnego pojazdu | pochodna powyższych źródeł |
 
 ## Kontrakty resetu
 
@@ -25,4 +25,4 @@ Ten dokument wskazuje źródła prawdy. Widgety oraz teksty HUD są odbiorcami s
 
 ## Zasada zmian
 
-Nowa mechanika powinna modyfikować stan przez jego właściciela i przekazywać wynik do HUD zdarzeniem lub metodą synchronizującą. Nie należy tworzyć kolejnego niezależnego zestawu współrzędnych miasta ani odtwarzać trybu gracza przez porównywanie aktualnego pawna z `BoundPawn`.
+Nowa mechanika powinna modyfikować stan przez jego właściciela i przekazywać wynik do HUD zdarzeniem lub metodą synchronizującą. Pawn nie może tworzyć ani przejmować widgetu HUD; udostępnia kontrolerowi jedynie dane pojazdu. Nie należy tworzyć kolejnego niezależnego zestawu współrzędnych miasta ani odtwarzać trybu gracza przez porównywanie aktualnego pawna z `BoundPawn`.

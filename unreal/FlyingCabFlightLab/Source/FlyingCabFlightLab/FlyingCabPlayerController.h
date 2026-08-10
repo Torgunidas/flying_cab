@@ -11,6 +11,7 @@ class AFlyingCabCharacter;
 class AFlyingCabCameraRig;
 class AFlyingCabPawn;
 class UFlyingCabGameFlowWidget;
+class UFlyingCabTouchControls;
 
 enum class EFlyingCabPlayerMode : uint8
 {
@@ -29,6 +30,7 @@ public:
 	AFlyingCabPlayerController();
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Interaction")
 	void RequestContextInteraction();
@@ -37,6 +39,23 @@ public:
 		const FText& Message,
 		const FLinearColor& Color,
 		float DurationSeconds = 2.5f) const;
+	void SetObjectiveStatus(const FText& Status);
+	void SetMinimapState(
+		const FVector2D& CabWorldPosition,
+		const FVector2D& TargetWorldPosition,
+		bool bTargetIsDropoff);
+	void SetPassengerOfferMarkers(
+		const FVector2D& CabWorldPosition,
+		const TArray<FVector2D>& OfferWorldPositions);
+	void ClearMinimapTarget();
+	void SetTimeAttackStatus(
+		bool bActive,
+		float ElapsedSeconds,
+		int32 Credits,
+		int32 TargetCredits);
+	void SetEconomyStatus(int32 Credits, int32 ActiveFare);
+	void SetTrafficAlert(const FText& Alert, const FLinearColor& Color);
+	void ReleaseInterfaceInputs();
 	void StartRunMode(EFlyingCabRunMode Mode);
 	void RestartWithRunMode(EFlyingCabRunMode Mode);
 	void ReturnToModeSelection();
@@ -59,7 +78,11 @@ private:
 	AFlyingCabPawn* FindNearestVehicle(const AFlyingCabCharacter* OnFootPawn) const;
 	AFlyingCabCharacter* SpawnCharacterBesideVehicle(AFlyingCabPawn* Vehicle);
 	void ShowInteractionMessage(const FString& Message, const FColor& Color) const;
-	class UFlyingCabTouchControls* GetInterfaceWidget() const;
+	UFlyingCabTouchControls* GetInterfaceWidget() const { return InterfaceWidget; }
+	void CreateInterfaceWidget();
+	void RefreshInterface();
+	void ToggleTouchControls();
+	void ApplyTouchControlsVisibility();
 	void ShowInitialModeSelection();
 	void EnterMenuInputMode();
 	void RestoreGameplayInputMode();
@@ -93,6 +116,18 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot", meta = (ClampMin = "0.05"))
 	float ContextPromptRefreshInterval = 0.2f;
 
+	/** Dynamic vehicle resources are sampled at 10 Hz instead of invalidating Slate every frame. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Interface", meta = (ClampMin = "0.05"))
+	float InterfaceRefreshInterval = 0.1f;
+
+	/** Prototype touch overlay. Toggle with F4 while testing on desktop. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Interface")
+	bool bShowTouchControls = true;
+
+	/** Shows a cursor and uses Game+UI input mode for mouse testing in the editor. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Interface")
+	bool bEnableMouseTouchTestingInEditor = true;
+
 	UPROPERTY(Transient)
 	TObjectPtr<AFlyingCabPawn> ActiveVehicle;
 
@@ -102,6 +137,9 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UFlyingCabGameFlowWidget> GameFlowWidget;
 
+	UPROPERTY(Transient)
+	TObjectPtr<UFlyingCabTouchControls> InterfaceWidget;
+
 	TArray<TWeakObjectPtr<AActor>> CachedInteractables;
 	TArray<TWeakObjectPtr<AFlyingCabPawn>> CachedVehicles;
 	TWeakObjectPtr<AFlyingCabCharacter> CachedContextPromptPawn;
@@ -109,6 +147,9 @@ private:
 	double LastInteractionCacheRefreshTime = -1.0;
 	double LastContextPromptRefreshTime = -1.0;
 	EFlyingCabPlayerMode PlayerMode = EFlyingCabPlayerMode::Unknown;
+	int32 DisplayCredits = 0;
+	int32 DisplayActiveFare = 0;
+	FTimerHandle InterfaceRefreshTimerHandle;
 
 	bool bGameFlowScreenOpen = false;
 };
