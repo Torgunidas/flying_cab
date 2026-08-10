@@ -37,6 +37,9 @@ public:
 		EFlyingCabDeliveryZoneType InZoneType,
 		float InArrivalMaxPlanarSpeed,
 		float InConfirmationDuration);
+	void ConfigurePassengerOffer(const FString& DestinationName, int32 EstimatedFareCredits);
+	void SetOfferRemainingSeconds(float RemainingSeconds);
+	void SetAcceptanceEnabled(bool bEnabled);
 	void SetZoneActive(bool bNewActive);
 	bool IsZoneActive() const { return bZoneActive; }
 	bool IsPawnInside(const AFlyingCabPawn* Pawn) const;
@@ -83,7 +86,11 @@ private:
 	float ConfirmationElapsed = 0.0f;
 	float PassengerCabX = 0.0f;
 	float PassengerExitX = 0.0f;
+	FString PassengerDestinationName;
+	int32 PassengerEstimatedFareCredits = 0;
+	int32 PassengerRemainingSeconds = 0;
 	bool bZoneActive = false;
+	bool bAcceptanceEnabled = true;
 	bool bTriggered = false;
 	bool bConfirmationInProgress = false;
 };

@@ -7,6 +7,7 @@
 #include "FlyingCabTouchControls.generated.h"
 
 class AFlyingCabPawn;
+class AFlyingCabCharacter;
 class UBorder;
 class UButton;
 class UCanvasPanel;
@@ -20,13 +21,22 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabTouchControls : public UUserWidget
 
 public:
 	void SetControlsVisible(bool bVisible);
+	void SetOnFootMode(bool bOnFoot);
 	void SetObjectiveText(const FText& Text);
 	void SetTrafficAlert(const FText& Text, const FLinearColor& Color);
 	void SetMinimapState(
 		const FVector2D& CabWorldPosition,
 		const FVector2D& TargetWorldPosition,
 		bool bTargetIsDropoff);
+	void SetPassengerOfferMarkers(
+		const FVector2D& CabWorldPosition,
+		const TArray<FVector2D>& OfferWorldPositions);
 	void SetMinimapTargetVisible(bool bVisible);
+	void SetTimeAttackState(
+		bool bActive,
+		float ElapsedSeconds,
+		int32 Credits,
+		int32 TargetCredits);
 	void SetResourceState(
 		float FuelPercent,
 		float HullPercent,
@@ -57,7 +67,9 @@ private:
 		const FVector2D& Size,
 		const FLinearColor& Color);
 	AFlyingCabPawn* GetFlyingCabPawn() const;
+	AFlyingCabCharacter* GetFlyingCabCharacter() const;
 	void UpdateHorizontalInput();
+	void RefreshControlMode();
 	FVector2D WorldToMinimap(const FVector2D& WorldPosition) const;
 	void UpdateMinimapMarkers();
 	UBorder* AddMinimapPoint(
@@ -89,6 +101,9 @@ private:
 	void HandleResetPressed();
 
 	UFUNCTION()
+	void HandleInteractPressed();
+
+	UFUNCTION()
 	void HandleRefuelPressed();
 
 	UFUNCTION()
@@ -104,7 +119,16 @@ private:
 	TObjectPtr<UButton> ThrustButton;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> ThrustButtonText;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UButton> ResetButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> InteractButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> InteractButtonText;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UButton> RefuelButton;
@@ -119,6 +143,12 @@ private:
 	TObjectPtr<UTextBlock> TrafficAlertText;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UBorder> TimeAttackPanel;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> TimeAttackText;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> ResourceText;
 
 	UPROPERTY(Transient)
@@ -130,14 +160,22 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UBorder> TargetMarker;
 
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UBorder>> PassengerOfferMarkers;
+
 	FText PendingObjectiveText = FText::FromString(TEXT("FLIGHT LAB"));
 	FText PendingTrafficAlertText;
 	FLinearColor PendingTrafficAlertColor = FLinearColor::Transparent;
 	FVector2D PendingCabWorldPosition = FVector2D::ZeroVector;
 	FVector2D PendingTargetWorldPosition = FVector2D::ZeroVector;
+	TArray<FVector2D> PendingPassengerOfferWorldPositions;
 	bool bPendingTargetIsDropoff = false;
 	bool bPendingTargetVisible = false;
 	bool bHasMinimapState = false;
+	bool bPendingTimeAttackActive = false;
+	float PendingTimeAttackSeconds = 0.0f;
+	int32 PendingTimeAttackCredits = 0;
+	int32 PendingTimeAttackTargetCredits = 1000;
 	float PendingFuelPercent = 1.0f;
 	float PendingHullPercent = 1.0f;
 	int32 PendingCredits = 0;
@@ -147,6 +185,7 @@ private:
 	int32 PendingRepairPricePerHullUnit = 0;
 	bool bPendingRepairAvailable = false;
 	bool bPendingVehicleDestroyed = false;
+	bool bOnFootMode = false;
 
 	bool bLeftPressed = false;
 	bool bRightPressed = false;

@@ -16,7 +16,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabRepair, Log, All);
 namespace
 {
 	constexpr float IdleLightIntensity = 1800.0f;
-	const TCHAR* RepairStationName = TEXT("NIGHTSHIFT REPAIR");
 }
 
 AFlyingCabRepairStation::AFlyingCabRepairStation()
@@ -66,7 +65,7 @@ AFlyingCabRepairStation::AFlyingCabRepairStation()
 	ServiceLabel->SetVerticalAlignment(EVerticalTextAligment::EVRTA_TextCenter);
 	ServiceLabel->SetWorldSize(34.0f);
 	ServiceLabel->SetTextRenderColor(FColor(205, 70, 255));
-	ServiceLabel->SetText(FText::FromString(RepairStationName));
+	ServiceLabel->SetText(FText::FromString(ServiceName));
 
 	ServiceLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("ServiceLight"));
 	ServiceLight->SetupAttachment(ServiceZone);
@@ -75,6 +74,18 @@ AFlyingCabRepairStation::AFlyingCabRepairStation()
 	ServiceLight->SetIntensity(IdleLightIntensity);
 	ServiceLight->SetAttenuationRadius(650.0f);
 	ServiceLight->SetCastShadows(false);
+}
+
+void AFlyingCabRepairStation::Configure(const FString& InServiceName)
+{
+	if (!InServiceName.IsEmpty())
+	{
+		ServiceName = InServiceName;
+	}
+	if (ServiceLabel)
+	{
+		ServiceLabel->SetText(FText::FromString(ServiceName));
+	}
 }
 
 void AFlyingCabRepairStation::Tick(float DeltaSeconds)
@@ -87,7 +98,7 @@ void AFlyingCabRepairStation::Tick(float DeltaSeconds)
 	for (AActor* Actor : OverlappingActors)
 	{
 		AFlyingCabPawn* Pawn = Cast<AFlyingCabPawn>(Actor);
-		if (!Pawn || Pawn->IsDestroyed())
+		if (!Pawn || !Pawn->IsPlayerControlled() || Pawn->IsDestroyed())
 		{
 			continue;
 		}
@@ -109,7 +120,7 @@ void AFlyingCabRepairStation::Tick(float DeltaSeconds)
 	if (!EligiblePawn)
 	{
 		RepairUnitAccumulator = 0.0f;
-		ServiceLabel->SetText(FText::FromString(RepairStationName));
+		ServiceLabel->SetText(FText::FromString(ServiceName));
 		ServiceLight->SetIntensity(IdleLightIntensity);
 		return;
 	}

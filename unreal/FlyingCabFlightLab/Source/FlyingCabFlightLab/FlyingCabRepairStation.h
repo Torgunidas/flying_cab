@@ -12,7 +12,7 @@ class UPointLightComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 
-/** The city's single paid hull-repair point. */
+/** Paid hull-repair point. */
 UCLASS()
 class FLYINGCABFLIGHTLAB_API AFlyingCabRepairStation : public AActor
 {
@@ -23,6 +23,7 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	void Configure(const FString& InServiceName);
 
 private:
 	void ClearContextPawn();
@@ -50,6 +51,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Repair Station", meta = (ClampMin = "0.0"))
 	float RepairMaxPlanarSpeed = 140.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|Repair Station")
+	FString ServiceName = TEXT("NIGHTSHIFT REPAIR");
 
 	TWeakObjectPtr<AFlyingCabPawn> ContextPawn;
 	float RepairUnitAccumulator = 0.0f;

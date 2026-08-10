@@ -6,12 +6,17 @@
 #include "Components/BoxComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "CoreGlobals.h"
+#include "Components/TextRenderComponent.h"
 #include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
+#include "FlyingCabProgressionSubsystem.h"
+#include "FlyingCabPlayerController.h"
 #include "FlyingCabTouchControls.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Materials/MaterialInterface.h"
 #include "PhysicsEngine/BodyInstance.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -26,8 +31,6 @@ AFlyingCabPawn::AFlyingCabPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
-	AutoPossessPlayer = EAutoReceiveInput::Player0;
-
 	CollisionBody = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBody"));
 	SetRootComponent(CollisionBody);
 	CollisionBody->InitBoxExtent(FVector(110.0f, 45.0f, 35.0f));
@@ -51,6 +54,9 @@ AFlyingCabPawn::AFlyingCabPawn()
 	VisualMesh->SetRelativeScale3D(FVector(2.2f, 0.9f, 0.7f));
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> ConeMesh(TEXT("/Engine/BasicShapes/Cone.Cone"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> BasicMaterial(
+		TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
 	if (CubeMesh.Succeeded())
 	{
 		VisualMesh->SetStaticMesh(CubeMesh.Object);
@@ -77,6 +83,56 @@ AFlyingCabPawn::AFlyingCabPawn()
 	DamageLight->SetIntensity(0.0f);
 	DamageLight->SetAttenuationRadius(500.0f);
 	DamageLight->SetCastShadows(false);
+
+	VehicleLabel = CreateDefaultSubobject<UTextRenderComponent>(TEXT("VehicleLabel"));
+	VehicleLabel->SetupAttachment(CollisionBody);
+	VehicleLabel->SetRelativeLocation(FVector(0.0f, 58.0f, 92.0f));
+	VehicleLabel->SetRelativeRotation(FRotator(0.0f, 90.0f, 0.0f));
+	VehicleLabel->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
+	VehicleLabel->SetVerticalAlignment(EVerticalTextAligment::EVRTA_TextCenter);
+	VehicleLabel->SetWorldSize(23.0f);
+	VehicleLabel->SetVisibility(false, true);
+
+	AccessLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("AccessLight"));
+	AccessLight->SetupAttachment(CollisionBody);
+	AccessLight->SetRelativeLocation(FVector(0.0f, 70.0f, 72.0f));
+	AccessLight->SetIntensity(0.0f);
+	AccessLight->SetAttenuationRadius(420.0f);
+	AccessLight->SetCastShadows(false);
+
+	GuidanceArrowRoot = CreateDefaultSubobject<USceneComponent>(TEXT("GuidanceArrowRoot"));
+	GuidanceArrowRoot->SetupAttachment(CollisionBody);
+	GuidanceArrowRoot->SetRelativeLocation(FVector(0.0f, 72.0f, 155.0f));
+	GuidanceArrowRoot->SetMobility(EComponentMobility::Movable);
+
+	GuidanceArrowShaft = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("GuidanceArrowShaft"));
+	GuidanceArrowShaft->SetupAttachment(GuidanceArrowRoot);
+	GuidanceArrowShaft->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GuidanceArrowShaft->SetRelativeLocation(FVector(30.0f, 0.0f, 0.0f));
+	GuidanceArrowShaft->SetRelativeScale3D(FVector(0.60f, 0.07f, 0.07f));
+	if (CubeMesh.Succeeded())
+	{
+		GuidanceArrowShaft->SetStaticMesh(CubeMesh.Object);
+	}
+
+	GuidanceArrowTip = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("GuidanceArrowTip"));
+	GuidanceArrowTip->SetupAttachment(GuidanceArrowRoot);
+	GuidanceArrowTip->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GuidanceArrowTip->SetRelativeLocation(FVector(70.0f, 0.0f, 0.0f));
+	GuidanceArrowTip->SetRelativeRotation(FRotator(-90.0f, 0.0f, 0.0f));
+	GuidanceArrowTip->SetRelativeScale3D(FVector(0.22f, 0.22f, 0.30f));
+	if (ConeMesh.Succeeded())
+	{
+		GuidanceArrowTip->SetStaticMesh(ConeMesh.Object);
+	}
+	for (UStaticMeshComponent* ArrowPart : {GuidanceArrowShaft, GuidanceArrowTip})
+	{
+		if (BasicMaterial.Succeeded())
+		{
+			ArrowPart->SetMaterial(0, BasicMaterial.Object);
+		}
+		ArrowPart->SetVisibility(false, true);
+	}
 }
 
 void AFlyingCabPawn::BeginPlay()
@@ -100,6 +156,7 @@ void AFlyingCabPawn::BeginPlay()
 
 	TryCreateTouchControls();
 	RefreshResourceUI();
+	RefreshVehicleIdentityAppearance(true);
 }
 
 void AFlyingCabPawn::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -118,7 +175,7 @@ void AFlyingCabPawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	TryCreateTouchControls();
-	UpdateKeyboardInputState();
+	RefreshVehicleIdentityAppearance();
 
 	if (!CollisionBody || !CollisionBody->IsSimulatingPhysics())
 	{
@@ -155,12 +212,13 @@ void AFlyingCabPawn::Tick(float DeltaSeconds)
 		RequestedThrustInput,
 		Velocity);
 
-	if (FMath::IsNearlyZero(HorizontalInput))
+	const bool bHasDriverControl = IsPlayerControlled();
+	if (bHasDriverControl && FMath::IsNearlyZero(HorizontalInput))
 	{
 		Velocity.X = FMath::FInterpTo(Velocity.X, 0.0f, DeltaSeconds, HorizontalCoastDamping);
 	}
 
-	if (FMath::IsNearlyZero(ThrustInput) && Velocity.Z > 0.0f)
+	if (bHasDriverControl && FMath::IsNearlyZero(ThrustInput) && Velocity.Z > 0.0f)
 	{
 		Velocity.Z = FMath::FInterpTo(Velocity.Z, 0.0f, DeltaSeconds, UpwardCoastDamping);
 	}
@@ -179,9 +237,43 @@ void AFlyingCabPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	check(PlayerInputComponent);
+	PlayerInputComponent->BindAxis(
+		TEXT("HorizontalInput"),
+		this,
+		&AFlyingCabPawn::SetKeyboardHorizontalInput);
+	PlayerInputComponent->BindAxis(
+		TEXT("PrimaryThrustInput"),
+		this,
+		&AFlyingCabPawn::SetKeyboardThrustInput);
+	PlayerInputComponent->BindAxis(
+		TEXT("ServiceInput"),
+		this,
+		&AFlyingCabPawn::SetKeyboardServiceInput);
 	PlayerInputComponent->BindAction(TEXT("RestartFlight"), IE_Pressed, this, &AFlyingCabPawn::ResetVehicle);
 	PlayerInputComponent->BindAction(TEXT("ToggleFlightTelemetry"), IE_Pressed, this, &AFlyingCabPawn::ToggleFlightTelemetry);
 	PlayerInputComponent->BindAction(TEXT("ToggleTouchControls"), IE_Pressed, this, &AFlyingCabPawn::ToggleTouchControls);
+}
+
+void AFlyingCabPawn::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	ClearAllInputState(TEXT("driver entered vehicle"), true);
+	if (TouchControlsWidget)
+	{
+		TouchControlsWidget->SetOnFootMode(false);
+	}
+	RefreshVehicleIdentityAppearance(true);
+}
+
+void AFlyingCabPawn::UnPossessed()
+{
+	ClearAllInputState(TEXT("driver exited vehicle"), true);
+	if (TouchControlsWidget)
+	{
+		TouchControlsWidget->SetOnFootMode(true);
+	}
+	Super::UnPossessed();
+	RefreshVehicleIdentityAppearance(true);
 }
 
 void AFlyingCabPawn::SetTouchHorizontalInput(float Value)
@@ -212,7 +304,7 @@ void AFlyingCabPawn::ResetVehicle()
 	DamageCooldownRemaining = 0.0f;
 	DamageFlashRemaining = 0.0f;
 	bFuelEmptyWarningShown = false;
-	VisualMesh->SetVectorParameterValueOnMaterials(TEXT("Color"), FVector(1.0f, 1.0f, 1.0f));
+	RefreshVehicleIdentityAppearance(true);
 	if (DamageLight)
 	{
 		DamageLight->SetIntensity(0.0f);
@@ -267,6 +359,21 @@ void AFlyingCabPawn::SetMinimapState(
 	}
 }
 
+void AFlyingCabPawn::SetPassengerOfferMarkers(
+	const FVector2D& CabWorldPosition,
+	const TArray<FVector2D>& OfferWorldPositions)
+{
+	MinimapCabPosition = CabWorldPosition;
+	MinimapPassengerOfferPositions = OfferWorldPositions;
+	bHasMinimapState = true;
+	if (TouchControlsWidget)
+	{
+		TouchControlsWidget->SetPassengerOfferMarkers(
+			MinimapCabPosition,
+			MinimapPassengerOfferPositions);
+	}
+}
+
 void AFlyingCabPawn::ClearMinimapTarget()
 {
 	bMinimapTargetVisible = false;
@@ -276,11 +383,68 @@ void AFlyingCabPawn::ClearMinimapTarget()
 	}
 }
 
+void AFlyingCabPawn::SetProximityGuidance(
+	bool bVisible,
+	const FVector2D& TargetWorldPosition,
+	bool bTargetIsDropoff)
+{
+	if (!GuidanceArrowRoot || !GuidanceArrowShaft || !GuidanceArrowTip)
+	{
+		return;
+	}
+
+	const FVector2D CabPosition(GetActorLocation().X, GetActorLocation().Z);
+	const FVector2D Delta = TargetWorldPosition - CabPosition;
+	const bool bShouldShow = bVisible && !Delta.IsNearlyZero();
+	GuidanceArrowShaft->SetVisibility(bShouldShow, true);
+	GuidanceArrowTip->SetVisibility(bShouldShow, true);
+	if (!bShouldShow)
+	{
+		return;
+	}
+
+	const float PitchDegrees = FMath::RadiansToDegrees(FMath::Atan2(Delta.Y, Delta.X));
+	GuidanceArrowRoot->SetRelativeRotation(FRotator(PitchDegrees, 0.0f, 0.0f));
+	const FLinearColor ArrowColor = bTargetIsDropoff
+		? FLinearColor(1.0f, 0.18f, 0.04f)
+		: FLinearColor(0.0f, 0.90f, 1.0f);
+	for (UStaticMeshComponent* ArrowPart : {GuidanceArrowShaft, GuidanceArrowTip})
+	{
+		ArrowPart->SetVectorParameterValueOnMaterials(
+			TEXT("Color"),
+			FVector(ArrowColor.R, ArrowColor.G, ArrowColor.B));
+	}
+}
+
+void AFlyingCabPawn::SetTimeAttackStatus(
+	bool bActive,
+	float ElapsedSeconds,
+	int32 Credits,
+	int32 TargetCredits)
+{
+	bTimeAttackStatusActive = bActive;
+	TimeAttackElapsedSeconds = FMath::Max(0.0f, ElapsedSeconds);
+	TimeAttackTargetCredits = FMath::Max(1, TargetCredits);
+	if (TouchControlsWidget)
+	{
+		TouchControlsWidget->SetTimeAttackState(
+			bTimeAttackStatusActive,
+			TimeAttackElapsedSeconds,
+			Credits,
+			TimeAttackTargetCredits);
+	}
+}
+
 void AFlyingCabPawn::SetEconomyStatus(int32 Credits, int32 ActiveFare)
 {
 	DisplayCredits = FMath::Max(0, Credits);
 	DisplayActiveFare = FMath::Max(0, ActiveFare);
 	RefreshResourceUI();
+}
+
+FVector AFlyingCabPawn::GetCameraTrackingOffset() const
+{
+	return CameraBoom ? CameraBoom->TargetOffset : FVector::ZeroVector;
 }
 
 void AFlyingCabPawn::SetTrafficAlert(const FText& Alert, const FLinearColor& Color)
@@ -313,6 +477,102 @@ void AFlyingCabPawn::SetRepairAvailable(bool bAvailable, int32 PricePerHullUnit)
 		bTouchRefuelPressed = false;
 	}
 	RefreshResourceUI();
+}
+
+void AFlyingCabPawn::ConfigureVehicleIdentity(
+	FName InVehicleId,
+	const FString& InDisplayName,
+	FName InRequiredAccessId,
+	const FLinearColor& InVehicleColor)
+{
+	VehicleId = InVehicleId.IsNone() ? FName(TEXT("Vehicle.Unregistered")) : InVehicleId;
+	VehicleDisplayName = InDisplayName.IsEmpty() ? FString(TEXT("CAB")) : InDisplayName;
+	RequiredAccessId = InRequiredAccessId;
+	VehicleColor = InVehicleColor;
+	bIdentityConfigured = true;
+	bHasCachedAccessState = false;
+	RefreshVehicleIdentityAppearance(true);
+}
+
+bool AFlyingCabPawn::CanPlayerEnter(FText& OutFailureReason) const
+{
+	if (bDestroyed)
+	{
+		OutFailureReason = FText::FromString(TEXT("VEHICLE UNAVAILABLE // HULL FAILURE"));
+		return false;
+	}
+	if (!HasRequiredVehicleAccess())
+	{
+		OutFailureReason = FText::FromString(TEXT("ACCESS DENIED // SERVICE LICENSE REQUIRED"));
+		return false;
+	}
+
+	OutFailureReason = FText::GetEmpty();
+	return true;
+}
+
+FText AFlyingCabPawn::GetEntryPrompt() const
+{
+	if (bDestroyed)
+	{
+		return FText::FromString(TEXT("Q // VEHICLE UNAVAILABLE"));
+	}
+	if (!HasRequiredVehicleAccess())
+	{
+		return FText::FromString(TEXT("Q // SERVICE LICENSE REQUIRED"));
+	}
+	return FText::FromString(FString::Printf(TEXT("Q // ENTER %s"), *VehicleDisplayName));
+}
+
+UFlyingCabTouchControls* AFlyingCabPawn::DetachTouchControlsWidget()
+{
+	UFlyingCabTouchControls* Widget = TouchControlsWidget;
+	if (Widget)
+	{
+		Widget->ReleaseAllInputs();
+	}
+	TouchControlsWidget = nullptr;
+	return Widget;
+}
+
+void AFlyingCabPawn::AdoptTouchControlsWidget(UFlyingCabTouchControls* Widget)
+{
+	if (!Widget)
+	{
+		return;
+	}
+	if (TouchControlsWidget && TouchControlsWidget != Widget)
+	{
+		TouchControlsWidget->ReleaseAllInputs();
+		TouchControlsWidget->RemoveFromParent();
+	}
+
+	TouchControlsWidget = Widget;
+	if (!TouchControlsWidget->IsInViewport())
+	{
+		TouchControlsWidget->AddToViewport(100);
+	}
+	TouchControlsWidget->SetOnFootMode(!IsLocallyControlled());
+	TouchControlsWidget->SetObjectiveText(ObjectiveStatus);
+	TouchControlsWidget->SetTrafficAlert(TrafficAlert, TrafficAlertColor);
+	TouchControlsWidget->SetTimeAttackState(
+		bTimeAttackStatusActive,
+		TimeAttackElapsedSeconds,
+		DisplayCredits,
+		TimeAttackTargetCredits);
+	if (bHasMinimapState)
+	{
+		TouchControlsWidget->SetPassengerOfferMarkers(
+			MinimapCabPosition,
+			MinimapPassengerOfferPositions);
+		TouchControlsWidget->SetMinimapState(
+			MinimapCabPosition,
+			MinimapTargetPosition,
+			bMinimapTargetIsDropoff);
+	}
+	TouchControlsWidget->SetMinimapTargetVisible(bMinimapTargetVisible);
+	RefreshResourceUI();
+	ApplyTouchControlsVisibility();
 }
 
 bool AFlyingCabPawn::IsRefuelRequested() const
@@ -375,7 +635,7 @@ void AFlyingCabPawn::RecoverVehicle(float RecoveryFuelPercent)
 	CollisionBody->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
 	SetActorTransform(SpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
 	CollisionBody->WakeAllRigidBodies();
-	VisualMesh->SetVectorParameterValueOnMaterials(TEXT("Color"), FVector(1.0f, 1.0f, 1.0f));
+	RefreshVehicleIdentityAppearance(true);
 	if (DamageLight)
 	{
 		DamageLight->SetIntensity(0.0f);
@@ -383,66 +643,19 @@ void AFlyingCabPawn::RecoverVehicle(float RecoveryFuelPercent)
 	RefreshResourceUI();
 }
 
-void AFlyingCabPawn::UpdateKeyboardInputState()
+void AFlyingCabPawn::SetKeyboardHorizontalInput(float Value)
 {
-	APlayerController* PlayerController = Cast<APlayerController>(GetController());
-	if (!PlayerController)
-	{
-		KeyboardHorizontalInput = 0.0f;
-		KeyboardThrustInput = 0.0f;
-		bKeyboardRefuelPressed = false;
-		bKeyA = false;
-		bKeyD = false;
-		bKeyLeft = false;
-		bKeyRight = false;
-		bKeyW = false;
-		bKeyUp = false;
-		bKeySpace = false;
-		bKeyService = false;
-		return;
-	}
+	KeyboardHorizontalInput = FMath::Clamp(Value, -1.0f, 1.0f);
+}
 
-	bKeyA = PlayerController->IsInputKeyDown(EKeys::A);
-	bKeyD = PlayerController->IsInputKeyDown(EKeys::D);
-	bKeyLeft = PlayerController->IsInputKeyDown(EKeys::Left);
-	bKeyRight = PlayerController->IsInputKeyDown(EKeys::Right);
-	bKeyW = PlayerController->IsInputKeyDown(EKeys::W);
-	bKeyUp = PlayerController->IsInputKeyDown(EKeys::Up);
-	bKeySpace = PlayerController->IsInputKeyDown(EKeys::SpaceBar);
-	bKeyService = PlayerController->IsInputKeyDown(EKeys::E);
+void AFlyingCabPawn::SetKeyboardThrustInput(float Value)
+{
+	KeyboardThrustInput = FMath::Clamp(Value, 0.0f, 1.0f);
+}
 
-	const float RawHorizontalInput = FMath::Clamp(
-		static_cast<float>(bKeyD || bKeyRight) - static_cast<float>(bKeyA || bKeyLeft),
-		-1.0f,
-		1.0f);
-	const float RawThrustInput = (bKeyW || bKeyUp || bKeySpace) ? 1.0f : 0.0f;
-	bKeyboardRefuelPressed = bKeyService;
-
-	if (bSuppressKeyboardHorizontalUntilNeutral)
-	{
-		if (FMath::IsNearlyZero(RawHorizontalInput) && GFrameCounter > KeyboardInputSuppressionFrame)
-		{
-			bSuppressKeyboardHorizontalUntilNeutral = false;
-		}
-		KeyboardHorizontalInput = 0.0f;
-	}
-	else
-	{
-		KeyboardHorizontalInput = RawHorizontalInput;
-	}
-
-	if (bSuppressKeyboardThrustUntilNeutral)
-	{
-		if (FMath::IsNearlyZero(RawThrustInput) && GFrameCounter > KeyboardInputSuppressionFrame)
-		{
-			bSuppressKeyboardThrustUntilNeutral = false;
-		}
-		KeyboardThrustInput = 0.0f;
-	}
-	else
-	{
-		KeyboardThrustInput = RawThrustInput;
-	}
+void AFlyingCabPawn::SetKeyboardServiceInput(float Value)
+{
+	bKeyboardRefuelPressed = Value > 0.5f;
 }
 
 void AFlyingCabPawn::ClearAllInputState(const TCHAR* Reason, bool bFlushPressedKeys)
@@ -476,21 +689,10 @@ void AFlyingCabPawn::ClearAllInputState(const TCHAR* Reason, bool bFlushPressedK
 	TouchThrustInput = 0.0f;
 	bKeyboardRefuelPressed = false;
 	bTouchRefuelPressed = false;
-	KeyboardInputSuppressionFrame = GFrameCounter;
-	bSuppressKeyboardHorizontalUntilNeutral = true;
-	bSuppressKeyboardThrustUntilNeutral = true;
-	bKeyA = false;
-	bKeyD = false;
-	bKeyLeft = false;
-	bKeyRight = false;
-	bKeyW = false;
-	bKeyUp = false;
-	bKeySpace = false;
-	bKeyService = false;
 	++ForcedInputResetCount;
 
 	const FString ClearSummary = FString::Printf(
-		TEXT("Input state cleared during %s (keyboard X %.2f, thrust %.2f; touch X %.2f, thrust %.2f). Waiting for neutral axes."),
+		TEXT("Input state cleared during %s (keyboard X %.2f, thrust %.2f; touch X %.2f, thrust %.2f)."),
 		Reason ? Reason : TEXT("unknown transition"),
 		PreviousKeyboardHorizontal,
 		PreviousKeyboardThrust,
@@ -536,11 +738,20 @@ void AFlyingCabPawn::TryCreateTouchControls()
 	}
 
 	TouchControlsWidget->AddToViewport(100);
+	TouchControlsWidget->SetOnFootMode(!IsLocallyControlled());
 	TouchControlsWidget->SetObjectiveText(ObjectiveStatus);
 	TouchControlsWidget->SetTrafficAlert(TrafficAlert, TrafficAlertColor);
+	TouchControlsWidget->SetTimeAttackState(
+		bTimeAttackStatusActive,
+		TimeAttackElapsedSeconds,
+		DisplayCredits,
+		TimeAttackTargetCredits);
 	RefreshResourceUI();
 	if (bHasMinimapState)
 	{
+		TouchControlsWidget->SetPassengerOfferMarkers(
+			MinimapCabPosition,
+			MinimapPassengerOfferPositions);
 		TouchControlsWidget->SetMinimapState(
 			MinimapCabPosition,
 			MinimapTargetPosition,
@@ -571,6 +782,12 @@ void AFlyingCabPawn::ApplyTouchControlsVisibility()
 	{
 		if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 		{
+			if (const AFlyingCabPlayerController* FlyingCabController =
+				Cast<AFlyingCabPlayerController>(PlayerController);
+				FlyingCabController && FlyingCabController->IsGameFlowScreenOpen())
+			{
+				return;
+			}
 			PlayerController->SetShowMouseCursor(bShowTouchControls);
 			if (bShowTouchControls)
 			{
@@ -606,6 +823,72 @@ void AFlyingCabPawn::RefreshResourceUI()
 		bRepairAvailable,
 		RepairPricePerHullUnit,
 		bDestroyed);
+}
+
+bool AFlyingCabPawn::HasRequiredVehicleAccess() const
+{
+	if (RequiredAccessId.IsNone())
+	{
+		return true;
+	}
+
+	UGameInstance* GameInstance = GetGameInstance();
+	const UFlyingCabProgressionSubsystem* Progression = GameInstance
+		? GameInstance->GetSubsystem<UFlyingCabProgressionSubsystem>()
+		: nullptr;
+	return Progression && Progression->HasAccess(RequiredAccessId);
+}
+
+void AFlyingCabPawn::RefreshVehicleIdentityAppearance(bool bForce)
+{
+	if (!bIdentityConfigured)
+	{
+		if (!bDestroyed && VisualMesh)
+		{
+			VisualMesh->SetVectorParameterValueOnMaterials(TEXT("Color"), FVector(1.0f));
+		}
+		return;
+	}
+
+	const bool bHasAccess = HasRequiredVehicleAccess();
+	if (!bForce && bHasCachedAccessState && bCachedAccessState == bHasAccess)
+	{
+		return;
+	}
+	bHasCachedAccessState = true;
+	bCachedAccessState = bHasAccess;
+
+	const FLinearColor StatusColor = bHasAccess
+		? FLinearColor(0.10f, 1.0f, 0.48f)
+		: FLinearColor(1.0f, 0.28f, 0.04f);
+	if (VisualMesh && !bDestroyed)
+	{
+		const FLinearColor DisplayColor = bHasAccess
+			? VehicleColor
+			: VehicleColor * 0.32f;
+		VisualMesh->SetVectorParameterValueOnMaterials(
+			TEXT("Color"),
+			FVector(DisplayColor.R, DisplayColor.G, DisplayColor.B));
+	}
+	if (AccessLight)
+	{
+		AccessLight->SetLightColor(StatusColor);
+		AccessLight->SetIntensity(bDestroyed ? 0.0f : 1500.0f);
+	}
+	if (VehicleLabel)
+	{
+		VehicleLabel->SetVisibility(true, true);
+		VehicleLabel->SetTextRenderColor(StatusColor.ToFColor(true));
+		const FString Status = bDestroyed
+			? FString(TEXT("OUT OF SERVICE"))
+			: (IsPlayerControlled()
+				? FString(TEXT("ACTIVE"))
+				: (bHasAccess ? FString(TEXT("Q // ENTER")) : FString(TEXT("LICENSE REQUIRED"))));
+		VehicleLabel->SetText(FText::FromString(FString::Printf(
+			TEXT("%s\n%s"),
+			*VehicleDisplayName,
+			*Status)));
+	}
 }
 
 void AFlyingCabPawn::ConsumeOrRegenerateFuel(
@@ -732,6 +1015,7 @@ void AFlyingCabPawn::EnterDestroyedState()
 	bRefuelAvailable = false;
 	bRepairAvailable = false;
 	VisualMesh->SetVectorParameterValueOnMaterials(TEXT("Color"), FVector(0.20f, 0.01f, 0.0f));
+	RefreshVehicleIdentityAppearance(true);
 	RefreshResourceUI();
 
 	UE_LOG(LogFlyingCabFlight, Warning, TEXT("Vehicle destroyed."));
@@ -755,13 +1039,12 @@ void AFlyingCabPawn::DrawFlightTelemetry(float HorizontalInput, float ThrustInpu
 		TEXT("FLIGHT TELEMETRY [F3]  |  Physics: %s\n")
 		TEXT("Horizontal  keyboard:%+.2f  touch:%+.2f  effective:%+.2f\n")
 		TEXT("Thrust      keyboard:%+.2f  touch:%+.2f  effective:%+.2f\n")
-		TEXT("Keys        A:%d D:%d LEFT:%d RIGHT:%d  W:%d UP:%d SPACE:%d E:%d\n")
 		TEXT("Velocity    X:%+7.1f  Z:%+7.1f  planar:%7.1f cm/s\n")
 		TEXT("Command     X:%+7.1f  Z:%+7.1f cm/s^2\n")
 		TEXT("Position    X:%+7.1f  Z:%+7.1f cm\n")
 		TEXT("Presentation accel X:%+7.1f  pitch:%+5.1f deg  camera X:%+6.1f  Z:%+6.1f cm\n")
 		TEXT("Resources   fuel:%5.1f/%5.1f  hull:%5.1f/%5.1f  destroyed:%s\n")
-		TEXT("Input reset guard  horizontal:%s  thrust:%s  forced clears:%u"),
+		TEXT("Input source  Unreal axis bindings + focus/reset flush  |  forced clears:%u"),
 		PhysicsState,
 		KeyboardHorizontalInput,
 		TouchHorizontalInput,
@@ -769,14 +1052,6 @@ void AFlyingCabPawn::DrawFlightTelemetry(float HorizontalInput, float ThrustInpu
 		KeyboardThrustInput,
 		TouchThrustInput,
 		ThrustInput,
-		bKeyA ? 1 : 0,
-		bKeyD ? 1 : 0,
-		bKeyLeft ? 1 : 0,
-		bKeyRight ? 1 : 0,
-		bKeyW ? 1 : 0,
-		bKeyUp ? 1 : 0,
-		bKeySpace ? 1 : 0,
-		bKeyService ? 1 : 0,
 		Velocity.X,
 		Velocity.Z,
 		PlanarSpeed,
@@ -793,8 +1068,6 @@ void AFlyingCabPawn::DrawFlightTelemetry(float HorizontalInput, float ThrustInpu
 		CurrentHull,
 		MaxHull,
 		bDestroyed ? TEXT("YES") : TEXT("NO"),
-		bSuppressKeyboardHorizontalUntilNeutral ? TEXT("WAITING") : TEXT("READY"),
-		bSuppressKeyboardThrustUntilNeutral ? TEXT("WAITING") : TEXT("READY"),
 		ForcedInputResetCount);
 
 	GEngine->AddOnScreenDebugMessage(

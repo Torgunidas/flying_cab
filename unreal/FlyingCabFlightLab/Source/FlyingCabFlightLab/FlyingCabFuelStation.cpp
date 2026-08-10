@@ -95,7 +95,7 @@ void AFlyingCabFuelStation::Tick(float DeltaSeconds)
 	for (AActor* Actor : OverlappingActors)
 	{
 		AFlyingCabPawn* Pawn = Cast<AFlyingCabPawn>(Actor);
-		if (!Pawn || Pawn->IsDestroyed())
+		if (!Pawn || !Pawn->IsPlayerControlled() || Pawn->IsDestroyed())
 		{
 			continue;
 		}

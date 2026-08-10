@@ -1,0 +1,530 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+#include "FlyingCabPlayerController.h"
+
+#include "Components/CapsuleComponent.h"
+#include "Components/PrimitiveComponent.h"
+#include "Engine/Engine.h"
+#include "Engine/World.h"
+#include "FlyingCabCameraRig.h"
+#include "FlyingCabCharacter.h"
+#include "FlyingCabGameMode.h"
+#include "FlyingCabInteractable.h"
+#include "FlyingCabPawn.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "EngineUtils.h"
+#include "FlyingCabGameFlowWidget.h"
+#include "Kismet/GameplayStatics.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabInteraction, Log, All);
+
+namespace
+{
+	constexpr uint64 InteractionMessageKey = 0xFCAB0005ULL;
+}
+
+AFlyingCabPlayerController::AFlyingCabPlayerController()
+{
+	bAutoManageActiveCameraTarget = false;
+}
+
+void AFlyingCabPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = this;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	CameraRig = GetWorld()->SpawnActor<AFlyingCabCameraRig>(
+		AFlyingCabCameraRig::StaticClass(),
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		SpawnParameters);
+
+	APawn* ControlledPawn = GetPawn();
+	if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(ControlledPawn))
+	{
+		ActiveVehicle = Vehicle;
+		ShowInteractionMessage(
+			TEXT("Q // EXIT CAB"),
+			FColor(60, 235, 255));
+	}
+	if (CameraRig && ControlledPawn)
+	{
+		CameraRig->SetFollowTarget(ControlledPawn, true);
+		SetViewTarget(CameraRig);
+	}
+	else if (ControlledPawn)
+	{
+		SetViewTarget(ControlledPawn);
+	}
+
+	ShowInitialModeSelection();
+}
+
+void AFlyingCabPlayerController::StartRunMode(EFlyingCabRunMode Mode)
+{
+	if (Mode == EFlyingCabRunMode::None)
+	{
+		return;
+	}
+
+	AFlyingCabGameMode* GameMode = GetWorld()->GetAuthGameMode<AFlyingCabGameMode>();
+	if (!GameMode)
+	{
+		return;
+	}
+
+	GameMode->StartRun(Mode);
+	bGameFlowScreenOpen = false;
+	if (GameFlowWidget)
+	{
+		GameFlowWidget->HideFlowScreen();
+	}
+	SetPause(false);
+	FlushPressedKeys();
+	RestoreGameplayInputMode();
+}
+
+void AFlyingCabPlayerController::RestartWithRunMode(EFlyingCabRunMode Mode)
+{
+	const FString LevelName = UGameplayStatics::GetCurrentLevelName(this, true);
+	if (!LevelName.IsEmpty())
+	{
+		UGameplayStatics::OpenLevel(
+			this,
+			FName(*LevelName),
+			true,
+			GetRunModeOption(Mode));
+	}
+}
+
+void AFlyingCabPlayerController::ReturnToModeSelection()
+{
+	const FString LevelName = UGameplayStatics::GetCurrentLevelName(this, true);
+	if (!LevelName.IsEmpty())
+	{
+		UGameplayStatics::OpenLevel(this, FName(*LevelName), true);
+	}
+}
+
+void AFlyingCabPlayerController::ShowTimeAttackResults(
+	const FFlyingCabTimeAttackResult& Result,
+	const TArray<float>& BestTimes)
+{
+	if (!GameFlowWidget)
+	{
+		GameFlowWidget = CreateWidget<UFlyingCabGameFlowWidget>(this);
+		if (GameFlowWidget)
+		{
+			GameFlowWidget->AddToViewport(500);
+		}
+	}
+	if (!GameFlowWidget)
+	{
+		return;
+	}
+
+	FlushPressedKeys();
+	bGameFlowScreenOpen = true;
+	GameFlowWidget->ShowTimeAttackResults(Result, BestTimes);
+	SetPause(true);
+	EnterMenuInputMode();
+}
+
+void AFlyingCabPlayerController::ShowInitialModeSelection()
+{
+	GameFlowWidget = CreateWidget<UFlyingCabGameFlowWidget>(this);
+	if (!GameFlowWidget)
+	{
+		StartRunMode(EFlyingCabRunMode::Freeroam);
+		return;
+	}
+	GameFlowWidget->AddToViewport(500);
+
+	const AFlyingCabGameMode* GameMode = GetWorld()->GetAuthGameMode<AFlyingCabGameMode>();
+	FString RequestedMode = GameMode
+		? UGameplayStatics::ParseOption(GameMode->OptionsString, TEXT("RunMode"))
+		: FString();
+	if (RequestedMode.IsEmpty())
+	{
+		FParse::Value(FCommandLine::Get(), TEXT("FlyingCabMode="), RequestedMode);
+	}
+	const EFlyingCabRunMode Mode = ParseRunMode(RequestedMode);
+	if (Mode != EFlyingCabRunMode::None)
+	{
+		StartRunMode(Mode);
+		return;
+	}
+
+	GameFlowWidget->ShowModeSelection(
+		GameMode ? GameMode->GetBestTimeAttackTimes() : TArray<float>());
+	bGameFlowScreenOpen = true;
+	SetPause(true);
+	EnterMenuInputMode();
+	UE_LOG(LogFlyingCabInteraction, Display, TEXT("Mode selection opened; gameplay paused."));
+}
+
+void AFlyingCabPlayerController::EnterMenuInputMode()
+{
+	FlushPressedKeys();
+	bShowMouseCursor = true;
+	FInputModeUIOnly InputMode;
+	SetInputMode(InputMode);
+}
+
+void AFlyingCabPlayerController::RestoreGameplayInputMode()
+{
+	FInputModeGameAndUI InputMode;
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+#if WITH_EDITOR
+	bShowMouseCursor = true;
+#else
+	bShowMouseCursor = false;
+#endif
+}
+
+EFlyingCabRunMode AFlyingCabPlayerController::ParseRunMode(const FString& Value)
+{
+	if (Value.Equals(TEXT("TimeAttack"), ESearchCase::IgnoreCase))
+	{
+		return EFlyingCabRunMode::TimeAttack;
+	}
+	if (Value.Equals(TEXT("Freeroam"), ESearchCase::IgnoreCase))
+	{
+		return EFlyingCabRunMode::Freeroam;
+	}
+	return EFlyingCabRunMode::None;
+}
+
+FString AFlyingCabPlayerController::GetRunModeOption(EFlyingCabRunMode Mode)
+{
+	return Mode == EFlyingCabRunMode::TimeAttack
+		? FString(TEXT("RunMode=TimeAttack"))
+		: FString(TEXT("RunMode=Freeroam"));
+}
+
+void AFlyingCabPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	check(InputComponent);
+	InputComponent->BindAction(
+		TEXT("Interact"),
+		IE_Pressed,
+		this,
+		&AFlyingCabPlayerController::RequestContextInteraction);
+}
+
+void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(InPawn))
+	{
+		ActiveVehicle = Vehicle;
+	}
+	if (CameraRig && InPawn)
+	{
+		CameraRig->SetFollowTarget(InPawn, false);
+	}
+}
+
+void AFlyingCabPlayerController::RequestContextInteraction()
+{
+	if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(GetPawn()))
+	{
+		TryExitVehicle(Vehicle);
+		return;
+	}
+
+	if (AFlyingCabCharacter* OnFootPawn = Cast<AFlyingCabCharacter>(GetPawn()))
+	{
+		if (TryInteractWithNearbyActor(OnFootPawn))
+		{
+			return;
+		}
+
+		if (AFlyingCabPawn* NearbyVehicle = FindNearestVehicle(OnFootPawn))
+		{
+			TryEnterVehicle(OnFootPawn, NearbyVehicle);
+			return;
+		}
+		ShowInteractionMessage(TEXT("NO INTERACTION NEARBY"), FColor(255, 170, 35));
+	}
+}
+
+FText AFlyingCabPlayerController::GetContextPrompt() const
+{
+	const AFlyingCabCharacter* OnFootPawn = Cast<AFlyingCabCharacter>(GetPawn());
+	if (!OnFootPawn || OnFootPawn->IsDead())
+	{
+		return FText::GetEmpty();
+	}
+
+	if (AActor* InteractableActor = FindNearestInteractable(OnFootPawn))
+	{
+		if (const IFlyingCabInteractable* Interactable = Cast<IFlyingCabInteractable>(InteractableActor))
+		{
+			return Interactable->GetInteractionPrompt(OnFootPawn);
+		}
+	}
+
+	if (const AFlyingCabPawn* NearbyVehicle = FindNearestVehicle(OnFootPawn))
+	{
+		return NearbyVehicle->GetEntryPrompt();
+	}
+
+	return FText::FromString(TEXT("EXPLORE ON FOOT"));
+}
+
+void AFlyingCabPlayerController::TryExitVehicle(AFlyingCabPawn* Vehicle)
+{
+	if (!Vehicle || Vehicle->IsDestroyed())
+	{
+		ShowInteractionMessage(TEXT("CAB UNAVAILABLE"), FColor(255, 80, 30));
+		return;
+	}
+
+	if (const AFlyingCabGameMode* GameMode = GetWorld()->GetAuthGameMode<AFlyingCabGameMode>())
+	{
+		FText FailureReason;
+		if (!GameMode->CanPlayerExitVehicle(FailureReason))
+		{
+			ShowInteractionMessage(FailureReason.ToString(), FColor(255, 170, 35));
+			return;
+		}
+	}
+
+	AFlyingCabCharacter* OnFootPawn = SpawnCharacterBesideVehicle(Vehicle);
+	if (!OnFootPawn)
+	{
+		ShowInteractionMessage(
+			TEXT("NO CLEAR EXIT SPACE BESIDE CAB"),
+			FColor(255, 100, 35));
+		return;
+	}
+
+	ActiveVehicle = Vehicle;
+	Possess(OnFootPawn);
+	ShowInteractionMessage(
+		TEXT("ON FOOT // A-D MOVE // SPACE JUMP // Q ENTER CAB"),
+		FColor(60, 235, 255));
+	UE_LOG(
+		LogFlyingCabInteraction,
+		Display,
+		TEXT("Player exited cab at %s; on-foot pawn spawned at %s."),
+		*Vehicle->GetActorLocation().ToCompactString(),
+		*OnFootPawn->GetActorLocation().ToCompactString());
+}
+
+void AFlyingCabPlayerController::TryEnterVehicle(
+	AFlyingCabCharacter* OnFootPawn,
+	AFlyingCabPawn* Vehicle)
+{
+	if (!OnFootPawn || OnFootPawn->IsDead() || !Vehicle)
+	{
+		ShowInteractionMessage(TEXT("NO AVAILABLE CAB"), FColor(255, 100, 35));
+		return;
+	}
+
+	const FVector Delta = Vehicle->GetActorLocation() - OnFootPawn->GetActorLocation();
+	const float Distance = FVector2D(Delta.X, Delta.Z).Size();
+	if (Distance > VehicleInteractionDistance)
+	{
+		ShowInteractionMessage(
+			FString::Printf(
+				TEXT("MOVE CLOSER TO CAB // %.1f M"),
+				Distance / 100.0f),
+			FColor(255, 170, 35));
+		return;
+	}
+
+	FText FailureReason;
+	if (!Vehicle->CanPlayerEnter(FailureReason))
+	{
+		ShowInteractionMessage(FailureReason.ToString(), FColor(255, 170, 35));
+		return;
+	}
+
+	UFlyingCabTouchControls* InterfaceWidget = ActiveVehicle
+		? ActiveVehicle->DetachTouchControlsWidget()
+		: nullptr;
+	Possess(Vehicle);
+	Vehicle->AdoptTouchControlsWidget(InterfaceWidget);
+	OnFootPawn->Destroy();
+	ShowInteractionMessage(
+		FString::Printf(TEXT("%s // CONTROL ONLINE"), *Vehicle->GetVehicleDisplayName()),
+		FColor(70, 255, 150));
+	UE_LOG(
+		LogFlyingCabInteraction,
+		Display,
+		TEXT("Player entered vehicle %s at distance %.1f cm."),
+		*Vehicle->GetVehicleDisplayName(),
+		Distance);
+}
+
+bool AFlyingCabPlayerController::TryInteractWithNearbyActor(AFlyingCabCharacter* OnFootPawn)
+{
+	AActor* InteractableActor = FindNearestInteractable(OnFootPawn);
+	IFlyingCabInteractable* Interactable = InteractableActor
+		? Cast<IFlyingCabInteractable>(InteractableActor)
+		: nullptr;
+	if (!Interactable)
+	{
+		return false;
+	}
+
+	FText InteractionMessage;
+	const bool bSucceeded = Interactable->Interact(OnFootPawn, InteractionMessage);
+	if (!InteractionMessage.IsEmpty())
+	{
+		ShowInteractionMessage(
+			InteractionMessage.ToString(),
+			bSucceeded ? FColor(70, 255, 150) : FColor(255, 170, 35));
+	}
+	return true;
+}
+
+AActor* AFlyingCabPlayerController::FindNearestInteractable(
+	const AFlyingCabCharacter* OnFootPawn) const
+{
+	if (!OnFootPawn || !GetWorld())
+	{
+		return nullptr;
+	}
+
+	AActor* NearestActor = nullptr;
+	float NearestDistance = WorldInteractionDistance;
+	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+	{
+		AActor* Candidate = *It;
+		if (!Candidate || !Candidate->GetClass()->ImplementsInterface(UFlyingCabInteractable::StaticClass()))
+		{
+			continue;
+		}
+
+		const FVector Delta = Candidate->GetActorLocation() - OnFootPawn->GetActorLocation();
+		const float Distance = FVector2D(Delta.X, Delta.Z).Size();
+		if (Distance <= NearestDistance)
+		{
+			NearestDistance = Distance;
+			NearestActor = Candidate;
+		}
+	}
+	return NearestActor;
+}
+
+AFlyingCabPawn* AFlyingCabPlayerController::FindNearestVehicle(
+	const AFlyingCabCharacter* OnFootPawn) const
+{
+	if (!OnFootPawn || !GetWorld())
+	{
+		return nullptr;
+	}
+
+	AFlyingCabPawn* NearestVehicle = nullptr;
+	float NearestDistance = VehicleInteractionDistance;
+	for (TActorIterator<AFlyingCabPawn> It(GetWorld()); It; ++It)
+	{
+		AFlyingCabPawn* Candidate = *It;
+		if (!Candidate)
+		{
+			continue;
+		}
+
+		const FVector Delta = Candidate->GetActorLocation() - OnFootPawn->GetActorLocation();
+		const float Distance = FVector2D(Delta.X, Delta.Z).Size();
+		if (Distance <= NearestDistance)
+		{
+			NearestDistance = Distance;
+			NearestVehicle = Candidate;
+		}
+	}
+	return NearestVehicle;
+}
+
+AFlyingCabCharacter* AFlyingCabPlayerController::SpawnCharacterBesideVehicle(
+	AFlyingCabPawn* Vehicle)
+{
+	if (!Vehicle || !GetWorld())
+	{
+		return nullptr;
+	}
+
+	const AFlyingCabCharacter* CharacterDefaults = GetDefault<AFlyingCabCharacter>();
+	const UCapsuleComponent* CharacterCapsule = CharacterDefaults
+		? CharacterDefaults->GetCapsuleComponent()
+		: nullptr;
+	const float CharacterRadius = CharacterCapsule
+		? CharacterCapsule->GetUnscaledCapsuleRadius()
+		: 28.0f;
+	const float CharacterHalfHeight = CharacterCapsule
+		? CharacterCapsule->GetUnscaledCapsuleHalfHeight()
+		: 66.0f;
+
+	const UPrimitiveComponent* VehicleRoot = Cast<UPrimitiveComponent>(Vehicle->GetRootComponent());
+	const FVector VehicleExtent = VehicleRoot
+		? VehicleRoot->Bounds.BoxExtent
+		: FVector(110.0f, 45.0f, 35.0f);
+	const FVector VehicleLocation = Vehicle->GetActorLocation();
+	const float SideOffset = VehicleExtent.X + CharacterRadius + ExitSideClearance;
+	const float VehicleBottom = VehicleLocation.Z - VehicleExtent.Z;
+
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(FlyingCabExitGround), false, Vehicle);
+	for (const float Side : {1.0f, -1.0f})
+	{
+		const FVector TraceStart(
+			VehicleLocation.X + Side * SideOffset,
+			VehicleLocation.Y,
+			VehicleBottom + 40.0f);
+		const FVector TraceEnd = TraceStart - FVector(0.0f, 0.0f, ExitGroundReach + 40.0f);
+		FHitResult GroundHit;
+		const bool bHasGround = GetWorld()->LineTraceSingleByChannel(
+			GroundHit,
+			TraceStart,
+			TraceEnd,
+			ECC_Visibility,
+			QueryParams);
+		const bool bUseGroundExit = bHasGround && GroundHit.ImpactNormal.Z >= 0.65f;
+		const FVector CandidateLocation(
+			TraceStart.X,
+			VehicleLocation.Y,
+			bUseGroundExit
+				? GroundHit.ImpactPoint.Z + CharacterHalfHeight + 2.0f
+				: VehicleBottom + CharacterHalfHeight);
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.Owner = this;
+		SpawnParameters.SpawnCollisionHandlingOverride =
+			ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+		if (AFlyingCabCharacter* SpawnedOnFootPawn = GetWorld()->SpawnActor<AFlyingCabCharacter>(
+			AFlyingCabCharacter::StaticClass(),
+			CandidateLocation,
+			FRotator::ZeroRotator,
+			SpawnParameters))
+		{
+			FVector ExitVelocity = Vehicle->GetVelocity();
+			ExitVelocity.Y = 0.0f;
+			if (!bUseGroundExit)
+			{
+				ExitVelocity.X += Side * AirborneExitSeparationSpeed;
+				ExitVelocity.Z += AirborneExitUpwardSpeed;
+			}
+			SpawnedOnFootPawn->GetCharacterMovement()->Velocity = ExitVelocity;
+			return SpawnedOnFootPawn;
+		}
+	}
+
+	return nullptr;
+}
+
+void AFlyingCabPlayerController::ShowInteractionMessage(
+	const FString& Message,
+	const FColor& Color) const
+{
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(InteractionMessageKey, 2.5f, Color, Message);
+	}
+}

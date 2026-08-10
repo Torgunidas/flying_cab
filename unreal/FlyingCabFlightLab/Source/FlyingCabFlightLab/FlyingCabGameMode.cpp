@@ -3,10 +3,19 @@
 #include "FlyingCabGameMode.h"
 
 #include "Engine/Engine.h"
+#include "Engine/GameInstance.h"
+#include "FlyingCabAccessTerminal.h"
+#include "FlyingCabCharacter.h"
+#include "FlyingCabCityExpansion.h"
 #include "FlyingCabDeliveryZone.h"
 #include "FlyingCabFuelStation.h"
+#include "FlyingCabNightshiftOffice.h"
+#include "FlyingCabOnFootPortal.h"
 #include "FlyingCabPawn.h"
+#include "FlyingCabPlayerController.h"
+#include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabRepairStation.h"
+#include "FlyingCabScoreSaveGame.h"
 #include "FlyingCabTrafficVehicle.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
@@ -19,6 +28,8 @@ namespace
 	constexpr uint64 DeliveryMessageKey = 0xFCAB0002ULL;
 	constexpr uint64 FuelMessageKey = 0xFCAB0003ULL;
 	constexpr uint64 RepairMessageKey = 0xFCAB0004ULL;
+	const FString TimeAttackSaveSlot = TEXT("FlyingCabTimeAttackScores");
+	constexpr int32 TimeAttackSaveUserIndex = 0;
 }
 
 AFlyingCabGameMode::AFlyingCabGameMode()
@@ -29,6 +40,7 @@ AFlyingCabGameMode::AFlyingCabGameMode()
 		TEXT("/Game/Blueprints/BP_FlyingCabPawn"));
 
 	DefaultPawnClass = AFlyingCabPawn::StaticClass();
+	PlayerControllerClass = AFlyingCabPlayerController::StaticClass();
 	if (TunablePawnClass.Succeeded())
 	{
 		DefaultPawnClass = TunablePawnClass.Class;
@@ -40,20 +52,36 @@ AFlyingCabGameMode::AFlyingCabGameMode()
 		FVector(-750.0f, 0.0f, 3150.0f),
 		FVector(-3800.0f, 0.0f, 2500.0f),
 		FVector(3650.0f, 0.0f, 1150.0f),
-		FVector(3350.0f, 0.0f, 5200.0f)};
+		FVector(3350.0f, 0.0f, 5200.0f),
+		FVector(6500.0f, 0.0f, 1150.0f),
+		FVector(8650.0f, 0.0f, 2700.0f),
+		FVector(11150.0f, 0.0f, 3950.0f),
+		FVector(13250.0f, 0.0f, 5450.0f)};
 	DeliveryStopNames = {
 		TEXT("YELLOW PROJECTS"),
 		TEXT("MIDTOWN EXCHANGE"),
 		TEXT("SKYLINE TERRACES"),
 		TEXT("ASHLINE MARKET"),
 		TEXT("NEON DOCKS"),
-		TEXT("ZENITH SPIRE")};
+		TEXT("ZENITH SPIRE"),
+		TEXT("GLASSWARD TRANSIT"),
+		TEXT("RAINLINE BAZAAR"),
+		TEXT("COBALT HEIGHTS"),
+		TEXT("ORBITAL GARDENS")};
 	FuelStationLocations = {
 		FVector(850.0f, 0.0f, 2050.0f),
-		FVector(-3800.0f, 0.0f, 2500.0f)};
+		FVector(-3800.0f, 0.0f, 2500.0f),
+		FVector(8650.0f, 0.0f, 2700.0f)};
 	FuelStationNames = {
 		TEXT("MIDTOWN FUEL"),
-		TEXT("ASHLINE CHARGE")};
+		TEXT("ASHLINE CHARGE"),
+		TEXT("RAINLINE ENERGY")};
+	RepairStationLocations = {
+		FVector(0.0f, 0.0f, 4200.0f),
+		FVector(13250.0f, 0.0f, 5450.0f)};
+	RepairStationNames = {
+		TEXT("NIGHTSHIFT REPAIR"),
+		TEXT("ORBITAL BODYWORKS")};
 }
 
 void AFlyingCabGameMode::BeginPlay()
@@ -61,18 +89,224 @@ void AFlyingCabGameMode::BeginPlay()
 	Super::BeginPlay();
 	Credits = FMath::Max(0, StartingCredits);
 	DispatchRandom.Initialize(DispatchRandomSeed);
+	InitializeCityExpansion();
 	InitializeDeliveryLoop();
+	InitializeOnFootSlice();
+	InitializeServiceVehicle();
 	InitializeTraffic();
 	EnsurePawnBinding();
+}
+
+void AFlyingCabGameMode::StartRun(EFlyingCabRunMode Mode)
+{
+	if (Mode == EFlyingCabRunMode::None || bRunActive)
+	{
+		return;
+	}
+
+	CurrentRunMode = Mode;
+	bRunActive = true;
+	bRunCompleted = false;
+	Credits = FMath::Max(0, StartingCredits);
+	RunStartingCredits = Credits;
+	RunStartWorldTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
+	RunCompletedDeliveries = 0;
+	RunDeliveryCreditsEarned = 0;
+	RunNearMissCount = 0;
+	RunNearMissCreditsEarned = 0;
+	RunFuelCreditsSpent = 0;
+	RunRepairCreditsSpent = 0;
+	RunTowCount = 0;
+	RunTowCreditsSpent = 0;
+
+	if (Mode == EFlyingCabRunMode::TimeAttack)
+	{
+		if (UGameInstance* GameInstance = GetGameInstance())
+		{
+			if (UFlyingCabProgressionSubsystem* Progression =
+				GameInstance->GetSubsystem<UFlyingCabProgressionSubsystem>())
+			{
+				Progression->ResetAccess();
+			}
+		}
+		if (ServiceAccessTerminal)
+		{
+			ServiceAccessTerminal->Configure(TEXT("Vehicle.Service"), TEXT("SERVICE VEHICLES"));
+		}
+	}
+
+	EnsurePawnBinding();
+	if (BoundPawn)
+	{
+		BoundPawn->SetEconomyStatus(Credits, 0);
+	}
+	UpdateRunModeStatus();
+	UE_LOG(
+		LogFlyingCabDelivery,
+		Display,
+		TEXT("Run started in %s mode with %d credits%s."),
+		Mode == EFlyingCabRunMode::TimeAttack ? TEXT("Time Attack") : TEXT("Freeroam"),
+		Credits,
+		Mode == EFlyingCabRunMode::TimeAttack
+			? *FString::Printf(TEXT("; target %d"), TimeAttackTargetCredits)
+			: TEXT(""));
+	CheckTimeAttackGoal();
+}
+
+TArray<float> AFlyingCabGameMode::GetBestTimeAttackTimes() const
+{
+	if (!UGameplayStatics::DoesSaveGameExist(TimeAttackSaveSlot, TimeAttackSaveUserIndex))
+	{
+		return {};
+	}
+
+	const UFlyingCabScoreSaveGame* SaveGame = Cast<UFlyingCabScoreSaveGame>(
+		UGameplayStatics::LoadGameFromSlot(TimeAttackSaveSlot, TimeAttackSaveUserIndex));
+	if (!SaveGame)
+	{
+		return {};
+	}
+
+	TArray<float> Times = SaveGame->BestTimeAttackSeconds;
+	Times.RemoveAll([](float Seconds) { return Seconds <= 0.0f; });
+	Times.Sort();
+	if (Times.Num() > TimeAttackLeaderboardSize)
+	{
+		Times.SetNum(TimeAttackLeaderboardSize);
+	}
+	return Times;
+}
+
+void AFlyingCabGameMode::InitializeCityExpansion()
+{
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = this;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	CityExpansion = GetWorld()->SpawnActor<AFlyingCabCityExpansion>(
+		AFlyingCabCityExpansion::StaticClass(),
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		SpawnParameters);
+	if (!CityExpansion)
+	{
+		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not create east city extension."));
+	}
+}
+
+void AFlyingCabGameMode::InitializeOnFootSlice()
+{
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = this;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	NightshiftOffice = GetWorld()->SpawnActor<AFlyingCabNightshiftOffice>(
+		AFlyingCabNightshiftOffice::StaticClass(),
+		NightshiftOfficeLocation,
+		FRotator::ZeroRotator,
+		SpawnParameters);
+	NightshiftEntrance = GetWorld()->SpawnActor<AFlyingCabOnFootPortal>(
+		AFlyingCabOnFootPortal::StaticClass(),
+		NightshiftEntranceLocation,
+		FRotator::ZeroRotator,
+		SpawnParameters);
+	if (!NightshiftOffice || !NightshiftEntrance)
+	{
+		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not create Nightshift Office entrance."));
+		return;
+	}
+
+	NightshiftExit = GetWorld()->SpawnActor<AFlyingCabOnFootPortal>(
+		AFlyingCabOnFootPortal::StaticClass(),
+		NightshiftOffice->GetExitPortalLocation(),
+		FRotator::ZeroRotator,
+		SpawnParameters);
+	ServiceAccessTerminal = GetWorld()->SpawnActor<AFlyingCabAccessTerminal>(
+		AFlyingCabAccessTerminal::StaticClass(),
+		NightshiftOffice->GetTerminalLocation(),
+		FRotator::ZeroRotator,
+		SpawnParameters);
+	if (!NightshiftExit || !ServiceAccessTerminal)
+	{
+		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not complete Nightshift Office interactables."));
+		return;
+	}
+
+	NightshiftEntrance->Configure(
+		TEXT("NIGHTSHIFT OFFICE"),
+		FText::FromString(TEXT("Q // ENTER NIGHTSHIFT OFFICE")),
+		NightshiftOffice->GetEntryLocation(),
+		FLinearColor(0.80f, 0.08f, 1.0f));
+	NightshiftExit->Configure(
+		TEXT("CITY PLATFORM"),
+		FText::FromString(TEXT("Q // RETURN TO CITY")),
+		NightshiftExteriorReturnLocation,
+		FLinearColor(0.05f, 0.78f, 1.0f));
+	ServiceAccessTerminal->Configure(TEXT("Vehicle.Service"), TEXT("SERVICE VEHICLES"));
+
+	UE_LOG(
+		LogFlyingCabDelivery,
+		Display,
+		TEXT("Nightshift Office initialized at %s with foot-only entrance at %s."),
+		*NightshiftOfficeLocation.ToCompactString(),
+		*NightshiftEntranceLocation.ToCompactString());
+}
+
+void AFlyingCabGameMode::InitializeServiceVehicle()
+{
+	FVector GroundedLocation = ServiceVehicleLocation;
+	FHitResult GroundHit;
+	const FVector TraceStart = ServiceVehicleLocation + FVector(0.0f, 0.0f, 600.0f);
+	const FVector TraceEnd = ServiceVehicleLocation - FVector(0.0f, 0.0f, 900.0f);
+	const FCollisionObjectQueryParams WorldStaticObjects(ECC_WorldStatic);
+	const FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(ServiceVehicleGround), false);
+	if (GetWorld()->LineTraceSingleByObjectType(
+		GroundHit,
+		TraceStart,
+		TraceEnd,
+		WorldStaticObjects,
+		QueryParams)
+		&& GroundHit.ImpactNormal.Z >= 0.65f)
+	{
+		GroundedLocation.Z = GroundHit.ImpactPoint.Z + 39.0f;
+	}
+
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = this;
+	SpawnParameters.SpawnCollisionHandlingOverride =
+		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	ServiceVehicle = GetWorld()->SpawnActor<AFlyingCabPawn>(
+		DefaultPawnClass,
+		GroundedLocation,
+		FRotator::ZeroRotator,
+		SpawnParameters);
+	if (!ServiceVehicle)
+	{
+		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not spawn Nightshift service vehicle."));
+		return;
+	}
+
+	ServiceVehicle->ConfigureVehicleIdentity(
+		TEXT("Vehicle.Service.01"),
+		TEXT("NIGHTSHIFT SERVICE CAB"),
+		TEXT("Vehicle.Service"),
+		FLinearColor(0.06f, 0.78f, 0.92f));
+	UE_LOG(
+		LogFlyingCabDelivery,
+		Display,
+		TEXT("Nightshift service vehicle spawned at %s; access requires Vehicle.Service."),
+		*GroundedLocation.ToCompactString());
 }
 
 void AFlyingCabGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	EnsurePawnBinding();
+	UpdatePassengerOffers(DeltaSeconds);
 	UpdateActiveFare();
 	UpdateObjectiveStatus();
 	UpdateTrafficAwareness(DeltaSeconds);
+	UpdateRunModeStatus();
+	CheckTimeAttackGoal();
 }
 
 void AFlyingCabGameMode::InitializeDeliveryLoop()
@@ -87,11 +321,6 @@ void AFlyingCabGameMode::InitializeDeliveryLoop()
 	SpawnParameters.Owner = this;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	PickupZone = GetWorld()->SpawnActor<AFlyingCabDeliveryZone>(
-		AFlyingCabDeliveryZone::StaticClass(),
-		DeliveryStops[0],
-		FRotator::ZeroRotator,
-		SpawnParameters);
 	DropoffZone = GetWorld()->SpawnActor<AFlyingCabDeliveryZone>(
 		AFlyingCabDeliveryZone::StaticClass(),
 		DeliveryStops[1],
@@ -114,46 +343,68 @@ void AFlyingCabGameMode::InitializeDeliveryLoop()
 			FuelStations.Add(Station);
 		}
 	}
-	RepairStation = GetWorld()->SpawnActor<AFlyingCabRepairStation>(
-		AFlyingCabRepairStation::StaticClass(),
-		RepairStationLocation,
-		FRotator::ZeroRotator,
-		SpawnParameters);
-
-	if (!PickupZone || !DropoffZone || !RepairStation
-		|| FuelStations.Num() != FuelStationLocations.Num())
+	RepairStations.Reset();
+	for (int32 StationIndex = 0; StationIndex < RepairStationLocations.Num(); ++StationIndex)
 	{
-		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not spawn delivery zones or all service stations."));
+		AFlyingCabRepairStation* Station = GetWorld()->SpawnActor<AFlyingCabRepairStation>(
+			AFlyingCabRepairStation::StaticClass(),
+			RepairStationLocations[StationIndex],
+			FRotator::ZeroRotator,
+			SpawnParameters);
+		if (Station)
+		{
+			const FString StationName = RepairStationNames.IsValidIndex(StationIndex)
+				? RepairStationNames[StationIndex]
+				: FString::Printf(TEXT("REPAIR SHOP %d"), StationIndex + 1);
+			Station->Configure(StationName);
+			RepairStations.Add(Station);
+		}
+	}
+
+	if (!DropoffZone
+		|| FuelStations.Num() != FuelStationLocations.Num()
+		|| RepairStations.Num() != RepairStationLocations.Num())
+	{
+		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not spawn delivery zone or all service stations."));
 		return;
 	}
 
-	PickupZone->Configure(
-		EFlyingCabDeliveryZoneType::Pickup,
-		ArrivalMaxPlanarSpeed,
-		PickupLinkDuration);
 	DropoffZone->Configure(
 		EFlyingCabDeliveryZoneType::Dropoff,
 		ArrivalMaxPlanarSpeed,
 		DropoffExitDuration);
-	PickupZone->OnCabReady.AddUObject(this, &AFlyingCabGameMode::HandleZoneReady);
 	DropoffZone->OnCabReady.AddUObject(this, &AFlyingCabGameMode::HandleZoneReady);
-	DispatchNextJob();
+	DropoffZone->SetZoneActive(false);
+
+	PassengerOffers.Reset();
+	const int32 InitialOfferCount = FMath::Clamp(
+		InitialWaitingPassengers,
+		1,
+		FMath::Min(MaxWaitingPassengers, DeliveryStops.Num()));
+	for (int32 Index = 0; Index < InitialOfferCount; ++Index)
+	{
+		SpawnPassengerOffer();
+	}
+	PassengerSpawnCountdown = DispatchRandom.FRandRange(
+		PassengerSpawnIntervalMin,
+		PassengerSpawnIntervalMax);
 
 	UE_LOG(
 		LogFlyingCabDelivery,
 		Display,
-		TEXT("Delivery dispatcher initialized with %d stops (link %.2f s, exit %.2f s, next call %.2f s)."),
+		TEXT("Passenger network initialized with %d stops and %d/%d waiting passengers (link %.2f s, exit %.2f s)."),
 		DeliveryStops.Num(),
+		PassengerOffers.Num(),
+		MaxWaitingPassengers,
 		PickupLinkDuration,
-		DropoffExitDuration,
-		DispatchDelay);
+		DropoffExitDuration);
 	UE_LOG(
 		LogFlyingCabDelivery,
 		Display,
-		TEXT("Economy initialized with %d credits, %d fuel stations and repair at %s."),
+		TEXT("Economy initialized with %d credits, %d fuel stations and %d repair shops."),
 		Credits,
 		FuelStations.Num(),
-		*RepairStationLocation.ToCompactString());
+		RepairStations.Num());
 }
 
 void AFlyingCabGameMode::InitializeTraffic()
@@ -171,7 +422,11 @@ void AFlyingCabGameMode::InitializeTraffic()
 		{FVector(-4700.0f, 0.0f, 1500.0f), FVector(4700.0f, 0.0f, 1500.0f), 480.0f, 0.08f, FLinearColor(0.05f, 0.85f, 1.0f)},
 		{FVector(-4700.0f, 0.0f, 1500.0f), FVector(4700.0f, 0.0f, 1500.0f), 430.0f, 0.58f, FLinearColor(1.0f, 0.52f, 0.05f)},
 		{FVector(4700.0f, 0.0f, 2850.0f), FVector(-4700.0f, 0.0f, 2850.0f), 400.0f, 0.28f, FLinearColor(0.95f, 0.12f, 0.65f)},
-		{FVector(-4700.0f, 0.0f, 4550.0f), FVector(4700.0f, 0.0f, 4550.0f), 560.0f, 0.72f, FLinearColor(0.30f, 1.0f, 0.35f)}};
+		{FVector(-4700.0f, 0.0f, 4550.0f), FVector(4700.0f, 0.0f, 4550.0f), 560.0f, 0.72f, FLinearColor(0.30f, 1.0f, 0.35f)},
+		{FVector(5250.0f, 0.0f, 1650.0f), FVector(14700.0f, 0.0f, 1650.0f), 520.0f, 0.18f, FLinearColor(0.12f, 0.82f, 1.0f)},
+		{FVector(14700.0f, 0.0f, 3150.0f), FVector(5250.0f, 0.0f, 3150.0f), 470.0f, 0.52f, FLinearColor(1.0f, 0.30f, 0.08f)},
+		{FVector(5250.0f, 0.0f, 4450.0f), FVector(14700.0f, 0.0f, 4450.0f), 590.0f, 0.76f, FLinearColor(0.90f, 0.08f, 0.72f)},
+		{FVector(14700.0f, 0.0f, 5550.0f), FVector(5250.0f, 0.0f, 5550.0f), 430.0f, 0.34f, FLinearColor(0.22f, 1.0f, 0.42f)}};
 
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.Owner = this;
@@ -209,6 +464,12 @@ void AFlyingCabGameMode::InitializeTraffic()
 void AFlyingCabGameMode::EnsurePawnBinding()
 {
 	AFlyingCabPawn* Pawn = Cast<AFlyingCabPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (!Pawn)
+	{
+		// The cab remains the active world vehicle while the controller possesses
+		// the on-foot character. Do not discard its delivery/economy binding.
+		return;
+	}
 	if (Pawn == BoundPawn)
 	{
 		return;
@@ -224,6 +485,219 @@ void AFlyingCabGameMode::EnsurePawnBinding()
 		BoundPawn->OnVehicleDestroyed.AddUObject(this, &AFlyingCabGameMode::HandleVehicleDestroyed);
 		BoundPawn->SetEconomyStatus(Credits, FMath::RoundToInt(ActiveFare));
 	}
+}
+
+void AFlyingCabGameMode::UpdatePassengerOffers(float DeltaSeconds)
+{
+	for (int32 OfferIndex = PassengerOffers.Num() - 1; OfferIndex >= 0; --OfferIndex)
+	{
+		FFlyingCabPassengerOfferState& Offer = PassengerOffers[OfferIndex];
+		if (!Offer.Zone)
+		{
+			PassengerOffers.RemoveAt(OfferIndex);
+			continue;
+		}
+		if (!Offer.Zone->IsConfirmationInProgress())
+		{
+			Offer.RemainingSeconds = FMath::Max(0.0f, Offer.RemainingSeconds - DeltaSeconds);
+			Offer.Zone->SetOfferRemainingSeconds(Offer.RemainingSeconds);
+		}
+		if (Offer.RemainingSeconds <= 0.0f)
+		{
+			RemovePassengerOfferAt(OfferIndex, TEXT("expired"));
+		}
+	}
+
+	if (PassengerOffers.Num() >= MaxWaitingPassengers)
+	{
+		return;
+	}
+
+	PassengerSpawnCountdown -= DeltaSeconds;
+	if (PassengerSpawnCountdown <= 0.0f)
+	{
+		SpawnPassengerOffer();
+		PassengerSpawnCountdown = DispatchRandom.FRandRange(
+			PassengerSpawnIntervalMin,
+			PassengerSpawnIntervalMax);
+	}
+}
+
+void AFlyingCabGameMode::SpawnPassengerOffer()
+{
+	if (DeliveryStops.Num() < 2 || PassengerOffers.Num() >= MaxWaitingPassengers)
+	{
+		return;
+	}
+
+	TArray<int32> AvailablePickupIndices;
+	for (int32 StopIndex = 0; StopIndex < DeliveryStops.Num(); ++StopIndex)
+	{
+		const bool bAlreadyOccupied = PassengerOffers.ContainsByPredicate(
+			[StopIndex](const FFlyingCabPassengerOfferState& Offer)
+			{
+				return Offer.PickupIndex == StopIndex;
+			});
+		const bool bActiveDropoff = bPassengerOnBoard && StopIndex == CurrentDropoffIndex;
+		if (!bAlreadyOccupied && !bActiveDropoff)
+		{
+			AvailablePickupIndices.Add(StopIndex);
+		}
+	}
+	if (AvailablePickupIndices.IsEmpty())
+	{
+		return;
+	}
+
+	const int32 PickupIndex = AvailablePickupIndices[
+		DispatchRandom.RandRange(0, AvailablePickupIndices.Num() - 1)];
+	TArray<int32> DestinationIndices;
+	for (int32 StopIndex = 0; StopIndex < DeliveryStops.Num(); ++StopIndex)
+	{
+		if (StopIndex != PickupIndex)
+		{
+			DestinationIndices.Add(StopIndex);
+		}
+	}
+	const int32 DropoffIndex = DestinationIndices[
+		DispatchRandom.RandRange(0, DestinationIndices.Num() - 1)];
+
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = this;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AFlyingCabDeliveryZone* Zone = GetWorld()->SpawnActor<AFlyingCabDeliveryZone>(
+		AFlyingCabDeliveryZone::StaticClass(),
+		DeliveryStops[PickupIndex],
+		FRotator::ZeroRotator,
+		SpawnParameters);
+	if (!Zone)
+	{
+		UE_LOG(LogFlyingCabDelivery, Warning, TEXT("Could not spawn passenger offer."));
+		return;
+	}
+
+	const FString DestinationName = DeliveryStopNames.IsValidIndex(DropoffIndex)
+		? DeliveryStopNames[DropoffIndex]
+		: FString::Printf(TEXT("STOP %d"), DropoffIndex + 1);
+	const int32 EstimatedFare = CalculateEstimatedFare(PickupIndex, DropoffIndex);
+	const float Lifetime = DispatchRandom.FRandRange(
+		FMath::Min(PassengerLifetimeMin, PassengerLifetimeMax),
+		FMath::Max(PassengerLifetimeMin, PassengerLifetimeMax));
+	Zone->Configure(EFlyingCabDeliveryZoneType::Pickup, ArrivalMaxPlanarSpeed, PickupLinkDuration);
+	Zone->ConfigurePassengerOffer(DestinationName, EstimatedFare);
+	Zone->SetOfferRemainingSeconds(Lifetime);
+	Zone->SetAcceptanceEnabled(!bPassengerOnBoard && !PendingRecoveryPawn);
+	Zone->OnCabReady.AddUObject(this, &AFlyingCabGameMode::HandleZoneReady);
+	Zone->SetZoneActive(true);
+
+	FFlyingCabPassengerOfferState& Offer = PassengerOffers.AddDefaulted_GetRef();
+	Offer.Zone = Zone;
+	Offer.PickupIndex = PickupIndex;
+	Offer.DropoffIndex = DropoffIndex;
+	Offer.EstimatedFareCredits = EstimatedFare;
+	Offer.RemainingSeconds = Lifetime;
+
+	const FString PickupName = DeliveryStopNames.IsValidIndex(PickupIndex)
+		? DeliveryStopNames[PickupIndex]
+		: FString::Printf(TEXT("STOP %d"), PickupIndex + 1);
+	UE_LOG(
+		LogFlyingCabDelivery,
+		Display,
+		TEXT("Passenger appeared at %s for %s (~%d credits, %.1f seconds)."),
+		*PickupName,
+		*DestinationName,
+		EstimatedFare,
+		Lifetime);
+}
+
+void AFlyingCabGameMode::RemovePassengerOfferAt(int32 OfferIndex, const TCHAR* Reason)
+{
+	if (!PassengerOffers.IsValidIndex(OfferIndex))
+	{
+		return;
+	}
+
+	const FFlyingCabPassengerOfferState Offer = PassengerOffers[OfferIndex];
+	PassengerOffers.RemoveAt(OfferIndex);
+	if (Offer.Zone)
+	{
+		Offer.Zone->OnCabReady.RemoveAll(this);
+		Offer.Zone->SetZoneActive(false);
+		Offer.Zone->Destroy();
+	}
+	PassengerSpawnCountdown = FMath::Min(
+		PassengerSpawnCountdown,
+		DispatchRandom.FRandRange(PassengerSpawnIntervalMin, PassengerSpawnIntervalMax));
+
+	UE_LOG(
+		LogFlyingCabDelivery,
+		Display,
+		TEXT("Passenger offer at stop %d removed (%s); %d still waiting."),
+		Offer.PickupIndex,
+		Reason ? Reason : TEXT("unknown"),
+		PassengerOffers.Num());
+}
+
+void AFlyingCabGameMode::SetPassengerOfferAcceptance(bool bEnabled)
+{
+	for (FFlyingCabPassengerOfferState& Offer : PassengerOffers)
+	{
+		if (Offer.Zone)
+		{
+			Offer.Zone->SetAcceptanceEnabled(bEnabled);
+		}
+	}
+}
+
+int32 AFlyingCabGameMode::FindPassengerOfferIndex(const AFlyingCabDeliveryZone* Zone) const
+{
+	return PassengerOffers.IndexOfByPredicate(
+		[Zone](const FFlyingCabPassengerOfferState& Offer)
+		{
+			return Offer.Zone == Zone;
+		});
+}
+
+int32 AFlyingCabGameMode::CalculateEstimatedFare(int32 PickupIndex, int32 DropoffIndex) const
+{
+	if (!DeliveryStops.IsValidIndex(PickupIndex) || !DeliveryStops.IsValidIndex(DropoffIndex))
+	{
+		return FMath::RoundToInt(BaseFare);
+	}
+	const FVector Delta = DeliveryStops[DropoffIndex] - DeliveryStops[PickupIndex];
+	const float DirectDistanceMeters = FVector2D(Delta.X, Delta.Z).Size() / 100.0f;
+	return FMath::Max(
+		0,
+		FMath::RoundToInt(BaseFare + DirectDistanceMeters * FarePerMeterTowardTarget));
+}
+
+bool AFlyingCabGameMode::CanPlayerExitVehicle(FText& OutFailureReason) const
+{
+	if (bPassengerOnBoard)
+	{
+		OutFailureReason = FText::FromString(
+			TEXT("PASSENGER ON BOARD // COMPLETE FARE BEFORE EXITING"));
+		return false;
+	}
+	const bool bLinkInProgress = PassengerOffers.ContainsByPredicate(
+		[](const FFlyingCabPassengerOfferState& Offer)
+		{
+			return Offer.Zone && Offer.Zone->IsConfirmationInProgress();
+		});
+	if (bLinkInProgress)
+	{
+		OutFailureReason = FText::FromString(
+			TEXT("CURBSIDE LINK IN PROGRESS // HOLD POSITION"));
+		return false;
+	}
+
+	OutFailureReason = FText::GetEmpty();
+	return true;
+}
+
+bool AFlyingCabGameMode::IsPlayerOnFoot() const
+{
+	return BoundPawn && UGameplayStatics::GetPlayerPawn(this, 0) != BoundPawn;
 }
 
 void AFlyingCabGameMode::UpdateActiveFare()
@@ -254,13 +728,22 @@ void AFlyingCabGameMode::UpdateActiveFare()
 
 void AFlyingCabGameMode::HandleZoneReady(AFlyingCabDeliveryZone* Zone)
 {
-	if (!Zone || !Zone->IsZoneActive() || bDispatchPending)
+	if (!Zone || !Zone->IsZoneActive())
 	{
 		return;
 	}
 
 	if (Zone->GetZoneType() == EFlyingCabDeliveryZoneType::Pickup && !bPassengerOnBoard)
 	{
+		const int32 OfferIndex = FindPassengerOfferIndex(Zone);
+		if (!PassengerOffers.IsValidIndex(OfferIndex))
+		{
+			return;
+		}
+		const FFlyingCabPassengerOfferState SelectedOffer = PassengerOffers[OfferIndex];
+		CurrentPickupIndex = SelectedOffer.PickupIndex;
+		CurrentDropoffIndex = SelectedOffer.DropoffIndex;
+		DropoffZone->SetActorLocation(DeliveryStops[CurrentDropoffIndex]);
 		bPassengerOnBoard = true;
 		ActiveFare = BaseFare;
 		if (BoundPawn && DropoffZone)
@@ -268,7 +751,8 @@ void AFlyingCabGameMode::HandleZoneReady(AFlyingCabDeliveryZone* Zone)
 			const FVector FareDelta = DropoffZone->GetActorLocation() - BoundPawn->GetActorLocation();
 			FareLastDistance = FVector2D(FareDelta.X, FareDelta.Z).Size();
 		}
-		PickupZone->SetZoneActive(false);
+		SetPassengerOfferAcceptance(false);
+		RemovePassengerOfferAt(OfferIndex, TEXT("boarded"));
 		DropoffZone->SetZoneActive(true);
 		if (GEngine)
 		{
@@ -278,7 +762,14 @@ void AFlyingCabGameMode::HandleZoneReady(AFlyingCabDeliveryZone* Zone)
 				FColor(60, 235, 255),
 				TEXT("CURBSIDE LINK // PASSENGER SECURED"));
 		}
-		UE_LOG(LogFlyingCabDelivery, Display, TEXT("Passenger picked up."));
+		const FString DestinationName = DeliveryStopNames.IsValidIndex(CurrentDropoffIndex)
+			? DeliveryStopNames[CurrentDropoffIndex]
+			: FString::Printf(TEXT("STOP %d"), CurrentDropoffIndex + 1);
+		UE_LOG(
+			LogFlyingCabDelivery,
+			Display,
+			TEXT("Passenger picked up for %s; one-seat capacity is now occupied."),
+			*DestinationName);
 		return;
 	}
 
@@ -286,6 +777,11 @@ void AFlyingCabGameMode::HandleZoneReady(AFlyingCabDeliveryZone* Zone)
 	{
 		const int32 FarePayout = FMath::Max(0, FMath::RoundToInt(ActiveFare));
 		Credits += FarePayout;
+		if (bRunActive)
+		{
+			++RunCompletedDeliveries;
+			RunDeliveryCreditsEarned += FarePayout;
+		}
 		bPassengerOnBoard = false;
 		++CompletedDeliveries;
 		LastCompletedPickupIndex = CurrentPickupIndex;
@@ -293,8 +789,7 @@ void AFlyingCabGameMode::HandleZoneReady(AFlyingCabDeliveryZone* Zone)
 		ActiveFare = 0.0f;
 		FareLastDistance = 0.0f;
 		DropoffZone->SetZoneActive(false);
-
-		ScheduleNextDispatch();
+		SetPassengerOfferAcceptance(!PendingRecoveryPawn);
 
 		if (GEngine)
 		{
@@ -315,6 +810,7 @@ void AFlyingCabGameMode::HandleZoneReady(AFlyingCabDeliveryZone* Zone)
 			FarePayout,
 			Credits,
 			CompletedDeliveries);
+		CheckTimeAttackGoal();
 	}
 }
 
@@ -351,7 +847,12 @@ int32 AFlyingCabGameMode::TryPurchaseFuel(
 	}
 
 	const int32 ChargedUnits = FMath::CeilToInt(FuelAdded);
-	Credits = FMath::Max(0, Credits - ChargedUnits * PricePerUnit);
+	const int32 FuelCost = ChargedUnits * PricePerUnit;
+	Credits = FMath::Max(0, Credits - FuelCost);
+	if (bRunActive)
+	{
+		RunFuelCreditsSpent += FuelCost;
+	}
 	Pawn->SetEconomyStatus(Credits, FMath::RoundToInt(ActiveFare));
 	return ChargedUnits;
 }
@@ -389,7 +890,12 @@ int32 AFlyingCabGameMode::TryPurchaseRepair(
 	}
 
 	const int32 ChargedUnits = FMath::CeilToInt(HullAdded);
-	Credits = FMath::Max(0, Credits - ChargedUnits * PricePerUnit);
+	const int32 RepairCost = ChargedUnits * PricePerUnit;
+	Credits = FMath::Max(0, Credits - RepairCost);
+	if (bRunActive)
+	{
+		RunRepairCreditsSpent += RepairCost;
+	}
 	Pawn->SetEconomyStatus(Credits, FMath::RoundToInt(ActiveFare));
 	return ChargedUnits;
 }
@@ -406,13 +912,13 @@ void AFlyingCabGameMode::HandleVehicleDestroyed(AFlyingCabPawn* Pawn)
 	FareLastDistance = 0.0f;
 	const int32 ChargedTowFee = FMath::Min(Credits, FMath::Max(0, TowFee));
 	Credits -= ChargedTowFee;
-	PendingRecoveryPawn = Pawn;
-	bDispatchPending = false;
-	GetWorldTimerManager().ClearTimer(DispatchTimerHandle);
-	if (PickupZone)
+	if (bRunActive)
 	{
-		PickupZone->SetZoneActive(false);
+		++RunTowCount;
+		RunTowCreditsSpent += ChargedTowFee;
 	}
+	PendingRecoveryPawn = Pawn;
+	SetPassengerOfferAcceptance(false);
 	if (DropoffZone)
 	{
 		DropoffZone->SetZoneActive(false);
@@ -454,155 +960,118 @@ void AFlyingCabGameMode::RecoverVehicleAfterTow()
 		UE_LOG(LogFlyingCabDelivery, Display, TEXT("Cab recovered after tow."));
 	}
 	PendingRecoveryPawn = nullptr;
-	DispatchNextJob();
-}
-
-void AFlyingCabGameMode::ScheduleNextDispatch()
-{
-	bDispatchPending = true;
-	if (PickupZone)
-	{
-		PickupZone->SetZoneActive(false);
-	}
-	if (DropoffZone)
-	{
-		DropoffZone->SetZoneActive(false);
-	}
-	if (BoundPawn)
-	{
-		BoundPawn->ClearMinimapTarget();
-	}
-
-	GetWorldTimerManager().ClearTimer(DispatchTimerHandle);
-	GetWorldTimerManager().SetTimer(
-		DispatchTimerHandle,
-		this,
-		&AFlyingCabGameMode::DispatchNextJob,
-		DispatchDelay,
-		false);
-}
-
-void AFlyingCabGameMode::DispatchNextJob()
-{
-	if (!PickupZone || !DropoffZone || DeliveryStops.Num() < 2)
-	{
-		return;
-	}
-
-	TArray<TPair<int32, int32>> RouteCandidates;
-	for (int32 PickupIndex = 0; PickupIndex < DeliveryStops.Num(); ++PickupIndex)
-	{
-		for (int32 DropoffIndex = 0; DropoffIndex < DeliveryStops.Num(); ++DropoffIndex)
-		{
-			const bool bSameStop = PickupIndex == DropoffIndex;
-			const bool bRepeatsLastRoute = PickupIndex == LastCompletedPickupIndex
-				&& DropoffIndex == LastCompletedDropoffIndex;
-			const bool bWouldSpawnAtLastDropoff = DeliveryStops.Num() > 2
-				&& PickupIndex == LastCompletedDropoffIndex;
-			if (!bSameStop && !bRepeatsLastRoute && !bWouldSpawnAtLastDropoff)
-			{
-				RouteCandidates.Emplace(PickupIndex, DropoffIndex);
-			}
-		}
-	}
-	if (RouteCandidates.IsEmpty())
-	{
-		for (int32 PickupIndex = 0; PickupIndex < DeliveryStops.Num(); ++PickupIndex)
-		{
-			for (int32 DropoffIndex = 0; DropoffIndex < DeliveryStops.Num(); ++DropoffIndex)
-			{
-				if (PickupIndex != DropoffIndex)
-				{
-					RouteCandidates.Emplace(PickupIndex, DropoffIndex);
-				}
-			}
-		}
-	}
-
-	const TPair<int32, int32>& Route = RouteCandidates[
-		DispatchRandom.RandRange(0, RouteCandidates.Num() - 1)];
-	const int32 PickupIndex = Route.Key;
-	const int32 DropoffIndex = Route.Value;
-	bDispatchPending = false;
-	SetRoute(PickupIndex, DropoffIndex);
-
-	const FString PickupName = DeliveryStopNames.IsValidIndex(PickupIndex)
-		? DeliveryStopNames[PickupIndex]
-		: FString::Printf(TEXT("STOP %d"), PickupIndex + 1);
-	const FString DropoffName = DeliveryStopNames.IsValidIndex(DropoffIndex)
-		? DeliveryStopNames[DropoffIndex]
-		: FString::Printf(TEXT("STOP %d"), DropoffIndex + 1);
-	UE_LOG(
-		LogFlyingCabDelivery,
-		Display,
-		TEXT("Dispatch assigned route %s -> %s."),
-		*PickupName,
-		*DropoffName);
-	if (GEngine && CompletedDeliveries > 0)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			DeliveryMessageKey,
-			1.5f,
-			FColor(60, 235, 255),
-			FString::Printf(TEXT("NEW CURBSIDE CALL // %s"), *PickupName));
-	}
-}
-
-void AFlyingCabGameMode::SetRoute(int32 PickupIndex, int32 DropoffIndex)
-{
-	if (!PickupZone || !DropoffZone || !DeliveryStops.IsValidIndex(PickupIndex)
-		|| !DeliveryStops.IsValidIndex(DropoffIndex))
-	{
-		return;
-	}
-
-	CurrentPickupIndex = PickupIndex;
-	CurrentDropoffIndex = DropoffIndex;
-	PickupZone->SetActorLocation(DeliveryStops[CurrentPickupIndex]);
-	DropoffZone->SetActorLocation(DeliveryStops[CurrentDropoffIndex]);
-	DropoffZone->SetZoneActive(false);
-	PickupZone->SetZoneActive(true);
+	SetPassengerOfferAcceptance(true);
 }
 
 void AFlyingCabGameMode::UpdateObjectiveStatus()
 {
-	AFlyingCabPawn* Pawn = Cast<AFlyingCabPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
-	AFlyingCabDeliveryZone* ActiveZone = bPassengerOnBoard ? DropoffZone : PickupZone;
+	AFlyingCabPawn* Pawn = BoundPawn;
 	if (!Pawn)
 	{
 		return;
 	}
 
+	TArray<FVector2D> OfferPositions;
+	AFlyingCabDeliveryZone* NearestOfferZone = nullptr;
+	const FFlyingCabPassengerOfferState* NearestOffer = nullptr;
+	float NearestOfferDistanceSquared = TNumericLimits<float>::Max();
+	for (const FFlyingCabPassengerOfferState& Offer : PassengerOffers)
+	{
+		if (!Offer.Zone || !Offer.Zone->IsZoneActive())
+		{
+			continue;
+		}
+		const FVector OfferLocation = Offer.Zone->GetActorLocation();
+		OfferPositions.Emplace(OfferLocation.X, OfferLocation.Z);
+		const FVector OfferDelta = OfferLocation - Pawn->GetActorLocation();
+		const float DistanceSquared = FVector2D(OfferDelta.X, OfferDelta.Z).SizeSquared();
+		if (DistanceSquared < NearestOfferDistanceSquared)
+		{
+			NearestOfferDistanceSquared = DistanceSquared;
+			NearestOfferZone = Offer.Zone;
+			NearestOffer = &Offer;
+		}
+	}
+	const FVector2D CabMapPosition(Pawn->GetActorLocation().X, Pawn->GetActorLocation().Z);
+	Pawn->SetPassengerOfferMarkers(CabMapPosition, OfferPositions);
+	AFlyingCabDeliveryZone* ActiveZone = bPassengerOnBoard ? DropoffZone.Get() : NearestOfferZone;
+
 	Pawn->SetEconomyStatus(Credits, bPassengerOnBoard ? FMath::RoundToInt(ActiveFare) : 0);
+	if (IsPlayerOnFoot())
+	{
+		const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+		const AFlyingCabCharacter* OnFootCharacter = Cast<AFlyingCabCharacter>(PlayerPawn);
+		const FVector PlayerLocation = PlayerPawn ? PlayerPawn->GetActorLocation() : Pawn->GetActorLocation();
+		const FVector CabDelta = Pawn->GetActorLocation() - PlayerLocation;
+		const float CabDistanceMeters = FVector2D(CabDelta.X, CabDelta.Z).Size() / 100.0f;
+		Pawn->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
+		if (OnFootCharacter && OnFootCharacter->IsDead())
+		{
+			Pawn->SetObjectiveStatus(FText::FromString(
+				TEXT("DRIVER DOWN\nRELOADING LEVEL")));
+		}
+		else
+		{
+			const float HealthPercent = OnFootCharacter
+				? OnFootCharacter->GetHealthPercent() * 100.0f
+				: 0.0f;
+			const AFlyingCabPlayerController* FlyingCabController = Cast<AFlyingCabPlayerController>(
+				UGameplayStatics::GetPlayerController(this, 0));
+			const FString ContextPrompt = FlyingCabController
+				? FlyingCabController->GetContextPrompt().ToString()
+				: FString(TEXT("EXPLORE ON FOOT"));
+			Pawn->SetObjectiveStatus(FText::FromString(FString::Printf(
+				TEXT("ON FOOT // HEALTH %.0f%% // CAB %.1f M\n%s"),
+				HealthPercent,
+				CabDistanceMeters,
+				*ContextPrompt)));
+		}
+		Pawn->SetProximityGuidance(false, FVector2D::ZeroVector, false);
+		if (bPassengerOnBoard && ActiveZone && ActiveZone->IsZoneActive())
+		{
+			Pawn->SetMinimapState(
+				CabMapPosition,
+				FVector2D(ActiveZone->GetActorLocation().X, ActiveZone->GetActorLocation().Z),
+				true);
+		}
+		else
+		{
+			Pawn->ClearMinimapTarget();
+		}
+		return;
+	}
 	if (Pawn->IsDestroyed())
 	{
 		Pawn->SetObjectiveStatus(FText::FromString(TEXT("CAB DESTROYED\nRECOVERY CREW INBOUND")));
-		return;
-	}
-	if (bDispatchPending)
-	{
-		Pawn->SetObjectiveStatus(FText::FromString(TEXT("DISPATCH // SCANNING CURBSIDE CALLS")));
-		Pawn->ClearMinimapTarget();
+		Pawn->SetProximityGuidance(false, FVector2D::ZeroVector, false);
 		return;
 	}
 	if (!ActiveZone || !ActiveZone->IsZoneActive())
 	{
+		Pawn->SetObjectiveStatus(FText::FromString(
+			TEXT("NO CURBSIDE CALLS\nPASSENGER NETWORK SEARCHING")));
+		Pawn->ClearMinimapTarget();
+		Pawn->SetProximityGuidance(false, FVector2D::ZeroVector, false);
 		return;
 	}
 
 	const FVector Delta = ActiveZone->GetActorLocation() - Pawn->GetActorLocation();
-	const float DistanceMeters = FVector2D(Delta.X, Delta.Z).Size() / 100.0f;
+	const float Distance = FVector2D(Delta.X, Delta.Z).Size();
+	const float DistanceMeters = Distance / 100.0f;
 	const FVector Velocity = Pawn->GetVelocity();
 	const float PlanarSpeed = FVector2D(Velocity.X, Velocity.Z).Size();
 	const bool bInsideTooFast = ActiveZone->IsPawnInside(Pawn)
 		&& PlanarSpeed > ActiveZone->GetArrivalMaxPlanarSpeed();
-	const int32 TargetIndex = bPassengerOnBoard ? CurrentDropoffIndex : CurrentPickupIndex;
+	const int32 TargetIndex = bPassengerOnBoard
+		? CurrentDropoffIndex
+		: (NearestOffer ? NearestOffer->PickupIndex : INDEX_NONE);
 	const FString TargetName = DeliveryStopNames.IsValidIndex(TargetIndex)
 		? DeliveryStopNames[TargetIndex]
 		: FString::Printf(TEXT("STOP %d"), TargetIndex + 1);
-	const FString Action = bPassengerOnBoard
-		? FString::Printf(TEXT("DROPOFF: %s"), *TargetName)
-		: FString::Printf(TEXT("PASSENGER IN %s"), *TargetName);
+	const FString DestinationName = !bPassengerOnBoard && NearestOffer
+		&& DeliveryStopNames.IsValidIndex(NearestOffer->DropoffIndex)
+		? DeliveryStopNames[NearestOffer->DropoffIndex]
+		: FString();
 
 	FString Status;
 	if (ActiveZone->IsConfirmationInProgress())
@@ -627,15 +1096,39 @@ void AFlyingCabGameMode::UpdateObjectiveStatus()
 	}
 	else
 	{
-		Status = FString::Printf(
-			TEXT("%s  |  %.0f m\nSTOP IN THE GATE  |  DELIVERIES: %d"),
-			*Action,
-			DistanceMeters,
-			CompletedDeliveries);
+		if (bPassengerOnBoard)
+		{
+			Status = FString::Printf(
+				TEXT("DROPOFF: %s  |  %.0f m\nSTOP IN THE GATE  |  DELIVERIES: %d"),
+				*TargetName,
+				DistanceMeters,
+				CompletedDeliveries);
+		}
+		else
+		{
+			Status = FString::Printf(
+				TEXT("NEAREST: %s -> %s  |  %.0f m\n~%d CR  |  %d CALLS ACTIVE // CHOOSE ON MAP"),
+				*TargetName,
+				*DestinationName,
+				DistanceMeters,
+				NearestOffer ? NearestOffer->EstimatedFareCredits : 0,
+				PassengerOffers.Num());
+		}
 	}
 	Pawn->SetObjectiveStatus(FText::FromString(Status));
-	Pawn->SetMinimapState(
-		FVector2D(Pawn->GetActorLocation().X, Pawn->GetActorLocation().Z),
+	if (bPassengerOnBoard)
+	{
+		Pawn->SetMinimapState(
+			CabMapPosition,
+			FVector2D(ActiveZone->GetActorLocation().X, ActiveZone->GetActorLocation().Z),
+			true);
+	}
+	else
+	{
+		Pawn->ClearMinimapTarget();
+	}
+	Pawn->SetProximityGuidance(
+		Distance <= ProximityGuidanceRange,
 		FVector2D(ActiveZone->GetActorLocation().X, ActiveZone->GetActorLocation().Z),
 		bPassengerOnBoard);
 }
@@ -645,6 +1138,11 @@ void AFlyingCabGameMode::UpdateTrafficAwareness(float DeltaSeconds)
 	NearMissMessageRemaining = FMath::Max(0.0f, NearMissMessageRemaining - DeltaSeconds);
 	if (!BoundPawn)
 	{
+		return;
+	}
+	if (IsPlayerOnFoot())
+	{
+		BoundPawn->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
 		return;
 	}
 	if (BoundPawn->IsDestroyed())
@@ -723,6 +1221,11 @@ void AFlyingCabGameMode::HandleTrafficNearMiss(
 	}
 
 	Credits += NearMissRewardCredits;
+	if (bRunActive)
+	{
+		++RunNearMissCount;
+		RunNearMissCreditsEarned += NearMissRewardCredits;
+	}
 	NearMissMessageRemaining = 1.25f;
 	Pawn->SetEconomyStatus(Credits, bPassengerOnBoard ? FMath::RoundToInt(ActiveFare) : 0);
 	UE_LOG(
@@ -731,4 +1234,122 @@ void AFlyingCabGameMode::HandleTrafficNearMiss(
 		TEXT("Clean traffic near miss awarded %d credits. Balance %d."),
 		NearMissRewardCredits,
 		Credits);
+	CheckTimeAttackGoal();
+}
+
+void AFlyingCabGameMode::UpdateRunModeStatus()
+{
+	if (!BoundPawn)
+	{
+		return;
+	}
+
+	const bool bShowTimeAttack = CurrentRunMode == EFlyingCabRunMode::TimeAttack
+		&& (bRunActive || bRunCompleted);
+	BoundPawn->SetTimeAttackStatus(
+		bShowTimeAttack,
+		GetRunElapsedSeconds(),
+		Credits,
+		TimeAttackTargetCredits);
+}
+
+void AFlyingCabGameMode::CheckTimeAttackGoal()
+{
+	if (!bRunActive || CurrentRunMode != EFlyingCabRunMode::TimeAttack
+		|| Credits < TimeAttackTargetCredits)
+	{
+		return;
+	}
+	FinishTimeAttack();
+}
+
+void AFlyingCabGameMode::FinishTimeAttack()
+{
+	if (!bRunActive || bRunCompleted)
+	{
+		return;
+	}
+
+	const float ElapsedSeconds = GetRunElapsedSeconds();
+	bRunActive = false;
+	bRunCompleted = true;
+
+	FFlyingCabTimeAttackResult Result;
+	Result.ElapsedSeconds = ElapsedSeconds;
+	Result.FinalCredits = Credits;
+	Result.TargetCredits = TimeAttackTargetCredits;
+	Result.CompletedDeliveries = RunCompletedDeliveries;
+	Result.DeliveryCreditsEarned = RunDeliveryCreditsEarned;
+	Result.NearMissCount = RunNearMissCount;
+	Result.NearMissCreditsEarned = RunNearMissCreditsEarned;
+	Result.FuelCreditsSpent = RunFuelCreditsSpent;
+	Result.RepairCreditsSpent = RunRepairCreditsSpent;
+	Result.TowCount = RunTowCount;
+	Result.TowCreditsSpent = RunTowCreditsSpent;
+
+	SaveTimeAttackScore(ElapsedSeconds);
+	UpdateRunModeStatus();
+	UE_LOG(
+		LogFlyingCabDelivery,
+		Display,
+		TEXT("Time Attack complete in %.2f seconds with %d credits, %d deliveries and %d near misses."),
+		ElapsedSeconds,
+		Credits,
+		RunCompletedDeliveries,
+		RunNearMissCount);
+
+	if (AFlyingCabPlayerController* Controller = Cast<AFlyingCabPlayerController>(
+		UGameplayStatics::GetPlayerController(this, 0)))
+	{
+		Controller->ShowTimeAttackResults(Result, GetBestTimeAttackTimes());
+	}
+}
+
+void AFlyingCabGameMode::SaveTimeAttackScore(float ElapsedSeconds)
+{
+	if (ElapsedSeconds <= 0.0f)
+	{
+		return;
+	}
+
+	UFlyingCabScoreSaveGame* SaveGame = nullptr;
+	if (UGameplayStatics::DoesSaveGameExist(TimeAttackSaveSlot, TimeAttackSaveUserIndex))
+	{
+		SaveGame = Cast<UFlyingCabScoreSaveGame>(
+			UGameplayStatics::LoadGameFromSlot(TimeAttackSaveSlot, TimeAttackSaveUserIndex));
+	}
+	if (!SaveGame)
+	{
+		SaveGame = Cast<UFlyingCabScoreSaveGame>(
+			UGameplayStatics::CreateSaveGameObject(UFlyingCabScoreSaveGame::StaticClass()));
+	}
+	if (!SaveGame)
+	{
+		UE_LOG(LogFlyingCabDelivery, Warning, TEXT("Could not create Time Attack score save."));
+		return;
+	}
+
+	SaveGame->BestTimeAttackSeconds.Add(ElapsedSeconds);
+	SaveGame->BestTimeAttackSeconds.RemoveAll([](float Seconds) { return Seconds <= 0.0f; });
+	SaveGame->BestTimeAttackSeconds.Sort();
+	if (SaveGame->BestTimeAttackSeconds.Num() > TimeAttackLeaderboardSize)
+	{
+		SaveGame->BestTimeAttackSeconds.SetNum(TimeAttackLeaderboardSize);
+	}
+	if (!UGameplayStatics::SaveGameToSlot(
+		SaveGame,
+		TimeAttackSaveSlot,
+		TimeAttackSaveUserIndex))
+	{
+		UE_LOG(LogFlyingCabDelivery, Warning, TEXT("Could not persist Time Attack leaderboard."));
+	}
+}
+
+float AFlyingCabGameMode::GetRunElapsedSeconds() const
+{
+	if (CurrentRunMode != EFlyingCabRunMode::TimeAttack || !GetWorld())
+	{
+		return 0.0f;
+	}
+	return FMath::Max(0.0f, GetWorld()->GetTimeSeconds() - RunStartWorldTime);
 }

@@ -121,6 +121,11 @@ void AFlyingCabDeliveryZone::Tick(float DeltaSeconds)
 	{
 		return;
 	}
+	if (!bAcceptanceEnabled)
+	{
+		ResetConfirmation();
+		return;
+	}
 
 	AFlyingCabPawn* ReadyPawn = nullptr;
 	TArray<AActor*> OverlappingActors;
@@ -128,7 +133,7 @@ void AFlyingCabDeliveryZone::Tick(float DeltaSeconds)
 	for (AActor* OverlappingActor : OverlappingActors)
 	{
 		AFlyingCabPawn* Pawn = Cast<AFlyingCabPawn>(OverlappingActor);
-		if (!Pawn)
+		if (!Pawn || !Pawn->IsPlayerControlled())
 		{
 			continue;
 		}
@@ -181,12 +186,51 @@ void AFlyingCabDeliveryZone::Configure(
 	ApplyZoneAppearance();
 }
 
+void AFlyingCabDeliveryZone::ConfigurePassengerOffer(
+	const FString& DestinationName,
+	int32 EstimatedFareCredits)
+{
+	PassengerDestinationName = DestinationName;
+	PassengerEstimatedFareCredits = FMath::Max(0, EstimatedFareCredits);
+	UpdateConfirmationVisuals();
+}
+
+void AFlyingCabDeliveryZone::SetOfferRemainingSeconds(float RemainingSeconds)
+{
+	const int32 NewRemainingSeconds = FMath::Max(0, FMath::CeilToInt(RemainingSeconds));
+	if (PassengerRemainingSeconds == NewRemainingSeconds)
+	{
+		return;
+	}
+	PassengerRemainingSeconds = NewRemainingSeconds;
+	if (!bConfirmationInProgress)
+	{
+		UpdateConfirmationVisuals();
+	}
+}
+
+void AFlyingCabDeliveryZone::SetAcceptanceEnabled(bool bEnabled)
+{
+	bAcceptanceEnabled = bEnabled;
+	if (!bAcceptanceEnabled)
+	{
+		ResetConfirmation();
+	}
+	TriggerBox->SetCollisionEnabled(
+		bZoneActive && bAcceptanceEnabled
+			? ECollisionEnabled::QueryOnly
+			: ECollisionEnabled::NoCollision);
+}
+
 void AFlyingCabDeliveryZone::SetZoneActive(bool bNewActive)
 {
 	bZoneActive = bNewActive;
 	bTriggered = false;
 	ResetConfirmation();
-	TriggerBox->SetCollisionEnabled(bZoneActive ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
+	TriggerBox->SetCollisionEnabled(
+		bZoneActive && bAcceptanceEnabled
+			? ECollisionEnabled::QueryOnly
+			: ECollisionEnabled::NoCollision);
 	MarkerBase->SetVisibility(bZoneActive, true);
 	MarkerLeft->SetVisibility(bZoneActive, true);
 	MarkerRight->SetVisibility(bZoneActive, true);
@@ -216,7 +260,8 @@ void AFlyingCabDeliveryZone::ApplyZoneAppearance()
 		: FLinearColor(1.0f, 0.18f, 0.04f);
 	const FColor TextColor = ZoneColor.ToFColor(true);
 
-	ZoneLabel->SetText(FText::FromString(bIsPickup ? TEXT("PICKUP") : TEXT("DROPOFF")));
+	ZoneLabel->SetText(FText::FromString(bIsPickup ? TEXT("TAXI") : TEXT("DROPOFF")));
+	ZoneLabel->SetWorldSize(bIsPickup ? 34.0f : 44.0f);
 	ZoneLabel->SetTextRenderColor(TextColor);
 	ZoneLight->SetLightColor(ZoneColor);
 
@@ -269,7 +314,18 @@ void AFlyingCabDeliveryZone::UpdateConfirmationVisuals()
 	}
 	else
 	{
-		ZoneLabel->SetText(FText::FromString(bIsPickup ? TEXT("PICKUP") : TEXT("DROPOFF")));
+		if (bIsPickup && !PassengerDestinationName.IsEmpty())
+		{
+			ZoneLabel->SetText(FText::FromString(FString::Printf(
+				TEXT("TAXI -> %s\n~%d CR  |  %ds"),
+				*PassengerDestinationName,
+				PassengerEstimatedFareCredits,
+				PassengerRemainingSeconds)));
+		}
+		else
+		{
+			ZoneLabel->SetText(FText::FromString(bIsPickup ? TEXT("TAXI") : TEXT("DROPOFF")));
+		}
 		ZoneLight->SetIntensity(BaseZoneLightIntensity);
 	}
 

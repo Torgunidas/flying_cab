@@ -8,16 +8,19 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/TextBlock.h"
+#include "FlyingCabCharacter.h"
 #include "FlyingCabPawn.h"
+#include "FlyingCabPlayerController.h"
 
 namespace
 {
 	constexpr float MinimapLeft = 10.0f;
-	constexpr float MinimapRight = 122.0f;
+	constexpr float MinimapRight = 216.0f;
 	constexpr float MinimapTop = 24.0f;
 	constexpr float MinimapBottom = 168.0f;
-	const FVector2D MinimapWorldMin(-4950.0f, 0.0f);
-	const FVector2D MinimapWorldMax(4950.0f, 6500.0f);
+	constexpr int32 MaxPassengerMinimapMarkers = 6;
+	const FVector2D MinimapWorldMin(-5000.0f, 0.0f);
+	const FVector2D MinimapWorldMax(15000.0f, 6500.0f);
 }
 
 TSharedRef<SWidget> UFlyingCabTouchControls::RebuildWidget()
@@ -56,6 +59,13 @@ void UFlyingCabTouchControls::SetControlsVisible(bool bVisible)
 	}
 
 	SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void UFlyingCabTouchControls::SetOnFootMode(bool bOnFoot)
+{
+	ReleaseAllInputs();
+	bOnFootMode = bOnFoot;
+	RefreshControlMode();
 }
 
 void UFlyingCabTouchControls::SetObjectiveText(const FText& Text)
@@ -101,6 +111,52 @@ void UFlyingCabTouchControls::SetMinimapTargetVisible(bool bVisible)
 	UpdateMinimapMarkers();
 }
 
+void UFlyingCabTouchControls::SetPassengerOfferMarkers(
+	const FVector2D& CabWorldPosition,
+	const TArray<FVector2D>& OfferWorldPositions)
+{
+	PendingCabWorldPosition = CabWorldPosition;
+	PendingPassengerOfferWorldPositions = OfferWorldPositions;
+	bHasMinimapState = true;
+	UpdateMinimapMarkers();
+}
+
+void UFlyingCabTouchControls::SetTimeAttackState(
+	bool bActive,
+	float ElapsedSeconds,
+	int32 Credits,
+	int32 TargetCredits)
+{
+	bPendingTimeAttackActive = bActive;
+	PendingTimeAttackSeconds = FMath::Max(0.0f, ElapsedSeconds);
+	PendingTimeAttackCredits = FMath::Max(0, Credits);
+	PendingTimeAttackTargetCredits = FMath::Max(1, TargetCredits);
+	if (TimeAttackPanel)
+	{
+		TimeAttackPanel->SetVisibility(
+			bPendingTimeAttackActive
+				? ESlateVisibility::HitTestInvisible
+				: ESlateVisibility::Collapsed);
+	}
+	if (TimeAttackText)
+	{
+		const int32 Minutes = FMath::FloorToInt(PendingTimeAttackSeconds / 60.0f);
+		const float Seconds = PendingTimeAttackSeconds - Minutes * 60.0f;
+		TimeAttackText->SetText(FText::FromString(FString::Printf(
+			TEXT("TIME ATTACK  %02d:%04.1f\nBALANCE  %d / %d CR"),
+			Minutes,
+			Seconds,
+			PendingTimeAttackCredits,
+			PendingTimeAttackTargetCredits)));
+		const float Progress = static_cast<float>(PendingTimeAttackCredits)
+			/ static_cast<float>(PendingTimeAttackTargetCredits);
+		TimeAttackText->SetColorAndOpacity(FSlateColor(
+			Progress >= 0.9f
+				? FLinearColor(0.25f, 1.0f, 0.42f)
+				: FLinearColor(1.0f, 0.62f, 0.06f)));
+	}
+}
+
 void UFlyingCabTouchControls::SetResourceState(
 	float FuelPercent,
 	float HullPercent,
@@ -127,11 +183,13 @@ void UFlyingCabTouchControls::SetResourceState(
 		const FString FareText = PendingActiveFare > 0
 			? FString::Printf(TEXT("FARE  +%d CR"), PendingActiveFare)
 			: FString(TEXT("FARE  --"));
-		const FString ServiceText = bPendingRepairAvailable
-			? FString::Printf(TEXT("REPAIR  %d CR/HP"), PendingRepairPricePerHullUnit)
-			: (bPendingRefuelAvailable
-				? FString::Printf(TEXT("FUEL SERVICE  %d CR/U"), PendingRefuelPricePerUnit)
-				: FString());
+		const FString ServiceText = bOnFootMode
+			? FString()
+			: (bPendingRepairAvailable
+				? FString::Printf(TEXT("REPAIR  %d CR/HP  // HOLD E"), PendingRepairPricePerHullUnit)
+				: (bPendingRefuelAvailable
+					? FString::Printf(TEXT("FUEL SERVICE  %d CR/U  // HOLD E"), PendingRefuelPricePerUnit)
+					: FString()));
 		ResourceText->SetText(FText::FromString(FString::Printf(
 			TEXT("CREDITS  %d\nFUEL %3.0f%%  |  HULL %3.0f%%\n%s%s%s"),
 			PendingCredits,
@@ -153,19 +211,17 @@ void UFlyingCabTouchControls::SetResourceState(
 	if (RefuelButton)
 	{
 		RefuelButton->SetVisibility(
-			bPendingRefuelAvailable || bPendingRepairAvailable
+			!bOnFootMode && (bPendingRefuelAvailable || bPendingRepairAvailable)
 				? ESlateVisibility::Visible
 				: ESlateVisibility::Collapsed);
 		RefuelButton->SetBackgroundColor(
 			bPendingRepairAvailable
 				? FLinearColor(0.62f, 0.08f, 0.88f, 0.90f)
-				: FLinearColor(0.05f, 0.65f, 0.28f, 0.88f));
+				: (bPendingRefuelAvailable
+					? FLinearColor(0.05f, 0.65f, 0.28f, 0.88f)
+					: FLinearColor(0.02f, 0.45f, 0.70f, 0.88f)));
 	}
-	if (ServiceButtonText)
-	{
-		ServiceButtonText->SetText(FText::FromString(
-			bPendingRepairAvailable ? TEXT("REPAIR") : TEXT("REFUEL")));
-	}
+	RefreshControlMode();
 }
 
 void UFlyingCabTouchControls::ReleaseAllInputs()
@@ -180,6 +236,11 @@ void UFlyingCabTouchControls::ReleaseAllInputs()
 		Pawn->SetTouchHorizontalInput(0.0f);
 		Pawn->SetTouchThrustPressed(false);
 		Pawn->SetTouchRefuelPressed(false);
+	}
+	if (AFlyingCabCharacter* Character = GetFlyingCabCharacter())
+	{
+		Character->SetTouchHorizontalInput(0.0f);
+		Character->SetTouchJumpPressed(false);
 	}
 }
 
@@ -204,7 +265,7 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	MinimapSlot->SetAnchors(FAnchors(0.0f, 0.0f));
 	MinimapSlot->SetAlignment(FVector2D(0.0f, 0.0f));
 	MinimapSlot->SetPosition(FVector2D(12.0f, 12.0f));
-	MinimapSlot->SetSize(FVector2D(132.0f, 180.0f));
+	MinimapSlot->SetSize(FVector2D(228.0f, 180.0f));
 	MinimapSlot->SetZOrder(20);
 
 	UTextBlock* MapTitle = WidgetTree->ConstructWidget<UTextBlock>();
@@ -215,7 +276,7 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	MapTitle->SetFont(MapTitleFont);
 	UCanvasPanelSlot* MapTitleSlot = MinimapCanvas->AddChildToCanvas(MapTitle);
 	MapTitleSlot->SetPosition(FVector2D(8.0f, 3.0f));
-	MapTitleSlot->SetSize(FVector2D(120.0f, 18.0f));
+	MapTitleSlot->SetSize(FVector2D(210.0f, 18.0f));
 
 	struct FStopPin
 	{
@@ -228,7 +289,11 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		{FVector2D(-750.0f, 3150.0f), TEXT("ST")},
 		{FVector2D(-3800.0f, 2500.0f), TEXT("AM")},
 		{FVector2D(3650.0f, 1150.0f), TEXT("ND")},
-		{FVector2D(3350.0f, 5200.0f), TEXT("ZS")}};
+		{FVector2D(3350.0f, 5200.0f), TEXT("ZS")},
+		{FVector2D(6500.0f, 1150.0f), TEXT("GT")},
+		{FVector2D(8650.0f, 2700.0f), TEXT("RB")},
+		{FVector2D(11150.0f, 3950.0f), TEXT("CH")},
+		{FVector2D(13250.0f, 5450.0f), TEXT("OG")}};
 
 	for (int32 Index = 0; Index < UE_ARRAY_COUNT(StopPins); ++Index)
 	{
@@ -253,7 +318,8 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 
 	const FVector2D FuelStationWorldPositions[] = {
 		FVector2D(850.0f, 2050.0f),
-		FVector2D(-3800.0f, 2500.0f)};
+		FVector2D(-3800.0f, 2500.0f),
+		FVector2D(8650.0f, 2700.0f)};
 	for (int32 Index = 0; Index < UE_ARRAY_COUNT(FuelStationWorldPositions); ++Index)
 	{
 		const FVector2D FuelStationMapPosition = WorldToMinimap(FuelStationWorldPositions[Index]);
@@ -274,23 +340,41 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		FuelCodeSlot->SetSize(FVector2D(18.0f, 16.0f));
 	}
 
-	const FVector2D RepairStationWorldPosition(0.0f, 4200.0f);
-	const FVector2D RepairStationMapPosition = WorldToMinimap(RepairStationWorldPosition);
-	AddMinimapPoint(
-		MinimapCanvas,
-		TEXT("RepairStationPin"),
-		RepairStationWorldPosition,
-		FVector2D(10.0f, 10.0f),
-		FLinearColor(0.78f, 0.12f, 1.0f, 0.95f));
-	UTextBlock* RepairCode = WidgetTree->ConstructWidget<UTextBlock>();
-	RepairCode->SetText(FText::FromString(TEXT("R")));
-	RepairCode->SetColorAndOpacity(FSlateColor(FLinearColor(0.78f, 0.12f, 1.0f)));
-	FSlateFontInfo RepairFont = RepairCode->GetFont();
-	RepairFont.Size = 9;
-	RepairCode->SetFont(RepairFont);
-	UCanvasPanelSlot* RepairCodeSlot = MinimapCanvas->AddChildToCanvas(RepairCode);
-	RepairCodeSlot->SetPosition(RepairStationMapPosition + FVector2D(6.0f, 2.0f));
-	RepairCodeSlot->SetSize(FVector2D(18.0f, 16.0f));
+	const FVector2D RepairStationWorldPositions[] = {
+		FVector2D(0.0f, 4200.0f),
+		FVector2D(13250.0f, 5450.0f)};
+	for (int32 Index = 0; Index < UE_ARRAY_COUNT(RepairStationWorldPositions); ++Index)
+	{
+		const FVector2D RepairStationMapPosition = WorldToMinimap(RepairStationWorldPositions[Index]);
+		AddMinimapPoint(
+			MinimapCanvas,
+			FName(*FString::Printf(TEXT("RepairStationPin%d"), Index)),
+			RepairStationWorldPositions[Index],
+			FVector2D(10.0f, 10.0f),
+			FLinearColor(0.78f, 0.12f, 1.0f, 0.95f));
+		UTextBlock* RepairCode = WidgetTree->ConstructWidget<UTextBlock>();
+		RepairCode->SetText(FText::FromString(TEXT("R")));
+		RepairCode->SetColorAndOpacity(FSlateColor(FLinearColor(0.78f, 0.12f, 1.0f)));
+		FSlateFontInfo RepairFont = RepairCode->GetFont();
+		RepairFont.Size = 9;
+		RepairCode->SetFont(RepairFont);
+		UCanvasPanelSlot* RepairCodeSlot = MinimapCanvas->AddChildToCanvas(RepairCode);
+		RepairCodeSlot->SetPosition(RepairStationMapPosition + FVector2D(6.0f, 2.0f));
+		RepairCodeSlot->SetSize(FVector2D(18.0f, 16.0f));
+	}
+
+	PassengerOfferMarkers.Reset();
+	for (int32 Index = 0; Index < MaxPassengerMinimapMarkers; ++Index)
+	{
+		UBorder* Marker = AddMinimapPoint(
+			MinimapCanvas,
+			FName(*FString::Printf(TEXT("PassengerOfferMarker%d"), Index)),
+			FVector2D::ZeroVector,
+			FVector2D(12.0f, 12.0f),
+			FLinearColor(1.0f, 0.78f, 0.05f, 1.0f));
+		Marker->SetVisibility(ESlateVisibility::Collapsed);
+		PassengerOfferMarkers.Add(Marker);
+	}
 
 	CabMarker = AddMinimapPoint(
 		MinimapCanvas,
@@ -346,6 +430,33 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	TrafficAlertSlot->SetPosition(FVector2D(0.0f, 18.0f));
 	TrafficAlertSlot->SetSize(FVector2D(280.0f, 54.0f));
 	TrafficAlertSlot->SetZOrder(30);
+
+	TimeAttackPanel = WidgetTree->ConstructWidget<UBorder>(
+		UBorder::StaticClass(),
+		TEXT("TimeAttackPanel"));
+	TimeAttackPanel->SetBrushColor(FLinearColor(0.015f, 0.025f, 0.055f, 0.93f));
+	TimeAttackPanel->SetPadding(FMargin(10.0f, 7.0f));
+	TimeAttackText = WidgetTree->ConstructWidget<UTextBlock>(
+		UTextBlock::StaticClass(),
+		TEXT("TimeAttackText"));
+	TimeAttackText->SetJustification(ETextJustify::Center);
+	TimeAttackText->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f));
+	TimeAttackText->SetShadowOffset(FVector2D(2.0f, 2.0f));
+	FSlateFontInfo TimeAttackFont = TimeAttackText->GetFont();
+	TimeAttackFont.Size = 18;
+	TimeAttackText->SetFont(TimeAttackFont);
+	TimeAttackPanel->AddChild(TimeAttackText);
+	UCanvasPanelSlot* TimeAttackSlot = RootCanvas->AddChildToCanvas(TimeAttackPanel);
+	TimeAttackSlot->SetAnchors(FAnchors(0.5f, 0.0f));
+	TimeAttackSlot->SetAlignment(FVector2D(0.5f, 0.0f));
+	TimeAttackSlot->SetPosition(FVector2D(0.0f, 78.0f));
+	TimeAttackSlot->SetSize(FVector2D(320.0f, 68.0f));
+	TimeAttackSlot->SetZOrder(25);
+	SetTimeAttackState(
+		bPendingTimeAttackActive,
+		PendingTimeAttackSeconds,
+		PendingTimeAttackCredits,
+		PendingTimeAttackTargetCredits);
 
 	UBorder* ResourcePanel = WidgetTree->ConstructWidget<UBorder>(
 		UBorder::StaticClass(),
@@ -404,6 +515,15 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		FVector2D(-24.0f, 24.0f),
 		FVector2D(104.0f, 56.0f),
 		FLinearColor(0.12f, 0.14f, 0.18f, 0.78f));
+	InteractButton = AddControlButton(
+		RootCanvas,
+		TEXT("InteractButton"),
+		TEXT("EXIT"),
+		FAnchors(1.0f, 0.0f),
+		FVector2D(1.0f, 0.0f),
+		FVector2D(-264.0f, 24.0f),
+		FVector2D(104.0f, 56.0f),
+		FLinearColor(0.02f, 0.45f, 0.70f, 0.88f));
 	RefuelButton = AddControlButton(
 		RootCanvas,
 		TEXT("RefuelButton"),
@@ -414,6 +534,8 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		FVector2D(116.0f, 56.0f),
 		FLinearColor(0.05f, 0.65f, 0.28f, 0.88f));
 	ServiceButtonText = Cast<UTextBlock>(RefuelButton->GetContent());
+	ThrustButtonText = Cast<UTextBlock>(ThrustButton->GetContent());
+	InteractButtonText = Cast<UTextBlock>(InteractButton->GetContent());
 
 	LeftButton->OnPressed.AddDynamic(this, &UFlyingCabTouchControls::HandleLeftPressed);
 	LeftButton->OnReleased.AddDynamic(this, &UFlyingCabTouchControls::HandleLeftReleased);
@@ -425,6 +547,7 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	ThrustButton->OnReleased.AddDynamic(this, &UFlyingCabTouchControls::HandleThrustReleased);
 	ThrustButton->OnUnhovered.AddDynamic(this, &UFlyingCabTouchControls::HandleThrustReleased);
 	ResetButton->OnPressed.AddDynamic(this, &UFlyingCabTouchControls::HandleResetPressed);
+	InteractButton->OnPressed.AddDynamic(this, &UFlyingCabTouchControls::HandleInteractPressed);
 	RefuelButton->OnPressed.AddDynamic(this, &UFlyingCabTouchControls::HandleRefuelPressed);
 	RefuelButton->OnReleased.AddDynamic(this, &UFlyingCabTouchControls::HandleRefuelReleased);
 	RefuelButton->OnUnhovered.AddDynamic(this, &UFlyingCabTouchControls::HandleRefuelReleased);
@@ -439,6 +562,7 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		bPendingRepairAvailable,
 		PendingRepairPricePerHullUnit,
 		bPendingVehicleDestroyed);
+	RefreshControlMode();
 }
 
 FVector2D UFlyingCabTouchControls::WorldToMinimap(const FVector2D& WorldPosition) const
@@ -471,6 +595,22 @@ void UFlyingCabTouchControls::UpdateMinimapMarkers()
 	if (!bHasMinimapState)
 	{
 		return;
+	}
+	for (int32 Index = 0; Index < PassengerOfferMarkers.Num(); ++Index)
+	{
+		UBorder* Marker = PassengerOfferMarkers[Index];
+		const bool bMarkerVisible = PendingPassengerOfferWorldPositions.IsValidIndex(Index);
+		Marker->SetVisibility(
+			bMarkerVisible
+				? ESlateVisibility::HitTestInvisible
+				: ESlateVisibility::Collapsed);
+		if (bMarkerVisible)
+		{
+			if (UCanvasPanelSlot* MarkerSlot = Cast<UCanvasPanelSlot>(Marker->Slot))
+			{
+				MarkerSlot->SetPosition(WorldToMinimap(PendingPassengerOfferWorldPositions[Index]));
+			}
+		}
 	}
 
 	if (UCanvasPanelSlot* CabSlot = Cast<UCanvasPanelSlot>(CabMarker->Slot))
@@ -545,12 +685,51 @@ AFlyingCabPawn* UFlyingCabTouchControls::GetFlyingCabPawn() const
 	return Cast<AFlyingCabPawn>(GetOwningPlayerPawn());
 }
 
+AFlyingCabCharacter* UFlyingCabTouchControls::GetFlyingCabCharacter() const
+{
+	return Cast<AFlyingCabCharacter>(GetOwningPlayerPawn());
+}
+
+void UFlyingCabTouchControls::RefreshControlMode()
+{
+	if (ThrustButtonText)
+	{
+		ThrustButtonText->SetText(FText::FromString(bOnFootMode ? TEXT("JUMP") : TEXT("THRUST")));
+	}
+	if (ResetButton)
+	{
+		ResetButton->SetVisibility(
+			bOnFootMode ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	}
+	if (RefuelButton)
+	{
+		RefuelButton->SetVisibility(
+			!bOnFootMode && (bPendingRefuelAvailable || bPendingRepairAvailable)
+				? ESlateVisibility::Visible
+				: ESlateVisibility::Collapsed);
+	}
+	if (ServiceButtonText)
+	{
+		const TCHAR* Label = bPendingRepairAvailable ? TEXT("REPAIR") : TEXT("REFUEL");
+		ServiceButtonText->SetText(FText::FromString(Label));
+	}
+	if (InteractButtonText)
+	{
+		InteractButtonText->SetText(FText::FromString(bOnFootMode ? TEXT("ENTER") : TEXT("EXIT")));
+	}
+}
+
 void UFlyingCabTouchControls::UpdateHorizontalInput()
 {
 	if (AFlyingCabPawn* Pawn = GetFlyingCabPawn())
 	{
 		const float HorizontalInput = static_cast<float>(bRightPressed) - static_cast<float>(bLeftPressed);
 		Pawn->SetTouchHorizontalInput(HorizontalInput);
+	}
+	if (AFlyingCabCharacter* Character = GetFlyingCabCharacter())
+	{
+		const float HorizontalInput = static_cast<float>(bRightPressed) - static_cast<float>(bLeftPressed);
+		Character->SetTouchHorizontalInput(HorizontalInput);
 	}
 }
 
@@ -585,6 +764,10 @@ void UFlyingCabTouchControls::HandleThrustPressed()
 	{
 		Pawn->SetTouchThrustPressed(true);
 	}
+	if (AFlyingCabCharacter* Character = GetFlyingCabCharacter())
+	{
+		Character->SetTouchJumpPressed(true);
+	}
 }
 
 void UFlyingCabTouchControls::HandleThrustReleased()
@@ -594,6 +777,10 @@ void UFlyingCabTouchControls::HandleThrustReleased()
 	{
 		Pawn->SetTouchThrustPressed(false);
 	}
+	if (AFlyingCabCharacter* Character = GetFlyingCabCharacter())
+	{
+		Character->SetTouchJumpPressed(false);
+	}
 }
 
 void UFlyingCabTouchControls::HandleResetPressed()
@@ -601,6 +788,15 @@ void UFlyingCabTouchControls::HandleResetPressed()
 	if (AFlyingCabPawn* Pawn = GetFlyingCabPawn())
 	{
 		Pawn->ResetVehicle();
+	}
+}
+
+void UFlyingCabTouchControls::HandleInteractPressed()
+{
+	if (AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetOwningPlayer()))
+	{
+		PlayerController->RequestContextInteraction();
 	}
 }
 

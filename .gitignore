@@ -20,5 +20,13 @@ unreal/**/Binaries/
 unreal/**/DerivedDataCache/
 unreal/**/Intermediate/
 unreal/**/Saved/
+unreal/**/.vs/
+unreal/**/*.sln
+unreal/**/*.suo
+unreal/**/*.sdf
+unreal/**/*.opensdf
+unreal/**/*.vcxproj
+unreal/**/*.vcxproj.filters
+unreal/**/*.vcxproj.user
 unreal/**/*.xcworkspace/
 unreal/**/*.xcodeproj/

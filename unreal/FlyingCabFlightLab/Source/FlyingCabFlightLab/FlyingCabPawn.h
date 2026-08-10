@@ -10,7 +10,9 @@ class UBoxComponent;
 class UCameraComponent;
 class UPointLightComponent;
 class UPrimitiveComponent;
+class USceneComponent;
 class UStaticMeshComponent;
+class UTextRenderComponent;
 class USpringArmComponent;
 class UFlyingCabTouchControls;
 class AFlyingCabPawn;
@@ -31,6 +33,8 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void UnPossessed() override;
 
 	/** Horizontal input for the future mobile UI: -1 is left, +1 is right. */
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Input")
@@ -51,11 +55,33 @@ public:
 		const FVector2D& CabWorldPosition,
 		const FVector2D& TargetWorldPosition,
 		bool bTargetIsDropoff);
+	void SetPassengerOfferMarkers(
+		const FVector2D& CabWorldPosition,
+		const TArray<FVector2D>& OfferWorldPositions);
 	void ClearMinimapTarget();
+	void SetProximityGuidance(
+		bool bVisible,
+		const FVector2D& TargetWorldPosition,
+		bool bTargetIsDropoff);
+	void SetTimeAttackStatus(
+		bool bActive,
+		float ElapsedSeconds,
+		int32 Credits,
+		int32 TargetCredits);
 	void SetEconomyStatus(int32 Credits, int32 ActiveFare);
 	void SetTrafficAlert(const FText& Alert, const FLinearColor& Color);
 	void SetRefuelAvailable(bool bAvailable, int32 PricePerUnit);
 	void SetRepairAvailable(bool bAvailable, int32 PricePerHullUnit);
+	void ConfigureVehicleIdentity(
+		FName InVehicleId,
+		const FString& InDisplayName,
+		FName InRequiredAccessId,
+		const FLinearColor& InVehicleColor);
+	bool CanPlayerEnter(FText& OutFailureReason) const;
+	FText GetEntryPrompt() const;
+	const FString& GetVehicleDisplayName() const { return VehicleDisplayName; }
+	UFlyingCabTouchControls* DetachTouchControlsWidget();
+	void AdoptTouchControlsWidget(UFlyingCabTouchControls* Widget);
 	bool IsRefuelRequested() const;
 	bool IsRepairRequested() const;
 	bool IsDestroyed() const { return bDestroyed; }
@@ -63,6 +89,7 @@ public:
 	float GetMaxFuel() const { return MaxFuel; }
 	float GetFuelNeeded() const { return FMath::Max(0.0f, MaxFuel - CurrentFuel); }
 	float GetHullNeeded() const { return FMath::Max(0.0f, MaxHull - CurrentHull); }
+	FVector GetCameraTrackingOffset() const;
 	float AddFuel(float Units);
 	float AddHull(float Units);
 	void RecoverVehicle(float RecoveryFuelPercent);
@@ -74,7 +101,9 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-	void UpdateKeyboardInputState();
+	void SetKeyboardHorizontalInput(float Value);
+	void SetKeyboardThrustInput(float Value);
+	void SetKeyboardServiceInput(float Value);
 	void ClearAllInputState(const TCHAR* Reason, bool bFlushPressedKeys);
 	void ToggleFlightTelemetry();
 	void DrawFlightTelemetry(float HorizontalInput, float ThrustInput, const FVector& Velocity) const;
@@ -83,6 +112,8 @@ private:
 	void ToggleTouchControls();
 	void ApplyTouchControlsVisibility();
 	void RefreshResourceUI();
+	void RefreshVehicleIdentityAppearance(bool bForce = false);
+	bool HasRequiredVehicleAccess() const;
 	void ConsumeOrRegenerateFuel(
 		float DeltaSeconds,
 		float HorizontalInput,
@@ -116,6 +147,21 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
 	TObjectPtr<UPointLightComponent> DamageLight;
+
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
+	TObjectPtr<UTextRenderComponent> VehicleLabel;
+
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
+	TObjectPtr<UPointLightComponent> AccessLight;
+
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
+	TObjectPtr<USceneComponent> GuidanceArrowRoot;
+
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
+	TObjectPtr<UStaticMeshComponent> GuidanceArrowShaft;
+
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
+	TObjectPtr<UStaticMeshComponent> GuidanceArrowTip;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UFlyingCabTouchControls> TouchControlsWidget;
@@ -226,9 +272,13 @@ private:
 	FLinearColor TrafficAlertColor = FLinearColor::Transparent;
 	FVector2D MinimapCabPosition = FVector2D::ZeroVector;
 	FVector2D MinimapTargetPosition = FVector2D::ZeroVector;
+	TArray<FVector2D> MinimapPassengerOfferPositions;
 	bool bMinimapTargetIsDropoff = false;
 	bool bHasMinimapState = false;
 	bool bMinimapTargetVisible = false;
+	bool bTimeAttackStatusActive = false;
+	float TimeAttackElapsedSeconds = 0.0f;
+	int32 TimeAttackTargetCredits = 1000;
 	int32 DisplayCredits = 0;
 	int32 DisplayActiveFare = 0;
 	int32 RefuelPricePerUnit = 0;
@@ -241,23 +291,19 @@ private:
 	bool bRepairAvailable = false;
 	bool bDestroyed = false;
 	bool bFuelEmptyWarningShown = false;
+	FName VehicleId = TEXT("Vehicle.PlayerCab");
+	FName RequiredAccessId = NAME_None;
+	FString VehicleDisplayName = TEXT("CAB");
+	FLinearColor VehicleColor = FLinearColor::White;
+	bool bIdentityConfigured = false;
+	bool bHasCachedAccessState = false;
+	bool bCachedAccessState = false;
 
 	FTransform SpawnTransform;
 
 	float KeyboardHorizontalInput = 0.0f;
 	float KeyboardThrustInput = 0.0f;
 	uint32 ForcedInputResetCount = 0;
-	uint64 KeyboardInputSuppressionFrame = 0;
-	bool bSuppressKeyboardHorizontalUntilNeutral = false;
-	bool bSuppressKeyboardThrustUntilNeutral = false;
-	bool bKeyA = false;
-	bool bKeyD = false;
-	bool bKeyLeft = false;
-	bool bKeyRight = false;
-	bool bKeyW = false;
-	bool bKeyUp = false;
-	bool bKeySpace = false;
-	bool bKeyService = false;
 	float PreviousHorizontalVelocity = 0.0f;
 	float VisualHorizontalAcceleration = 0.0f;
 	bool bHasPreviousHorizontalVelocity = false;
