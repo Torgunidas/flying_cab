@@ -80,6 +80,12 @@ void AFlyingCabPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReaso
 	Super::EndPlay(EndPlayReason);
 }
 
+void AFlyingCabPlayerController::FlushPressedKeys()
+{
+	Super::FlushPressedKeys();
+	ReleaseInterfaceInputs();
+}
+
 void AFlyingCabPlayerController::StartRunMode(EFlyingCabRunMode Mode)
 {
 	if (Mode == EFlyingCabRunMode::None)
@@ -187,7 +193,6 @@ void AFlyingCabPlayerController::ShowInitialModeSelection()
 
 void AFlyingCabPlayerController::EnterMenuInputMode()
 {
-	ReleaseInterfaceInputs();
 	FlushPressedKeys();
 	bShowMouseCursor = true;
 	FInputModeUIOnly InputMode;
@@ -235,11 +240,6 @@ void AFlyingCabPlayerController::SetupInputComponent()
 		IE_Pressed,
 		this,
 		&AFlyingCabPlayerController::RequestContextInteraction);
-	InputComponent->BindAction(
-		TEXT("ToggleTouchControls"),
-		IE_Pressed,
-		this,
-		&AFlyingCabPlayerController::ToggleTouchControls);
 }
 
 void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
@@ -765,34 +765,21 @@ void AFlyingCabPlayerController::RefreshInterface()
 		!Vehicle || Vehicle->IsDestroyed());
 }
 
-void AFlyingCabPlayerController::ToggleTouchControls()
-{
-	bShowTouchControls = !bShowTouchControls;
-	ApplyTouchControlsVisibility();
-}
-
 void AFlyingCabPlayerController::ApplyTouchControlsVisibility()
 {
 	if (!InterfaceWidget)
 	{
 		return;
 	}
-	InterfaceWidget->SetControlsVisible(bShowTouchControls);
+	InterfaceWidget->SetControlsVisible(true);
 
 #if WITH_EDITOR
 	if (bEnableMouseTouchTestingInEditor && !bGameFlowScreenOpen)
 	{
-		SetShowMouseCursor(bShowTouchControls);
-		if (bShowTouchControls)
-		{
-			FInputModeGameAndUI InputMode;
-			InputMode.SetHideCursorDuringCapture(false);
-			SetInputMode(InputMode);
-		}
-		else
-		{
-			SetInputMode(FInputModeGameOnly());
-		}
+		SetShowMouseCursor(true);
+		FInputModeGameAndUI InputMode;
+		InputMode.SetHideCursorDuringCapture(false);
+		SetInputMode(InputMode);
 	}
 #endif
 }

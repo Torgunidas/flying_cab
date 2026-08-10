@@ -4,8 +4,31 @@
 
 #include "Engine/GameInstance.h"
 #include "FlyingCabCityData.h"
+#include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "Misc/AutomationTest.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabInputFocusLossTest,
+	"FlyingCab.Core.Input.FocusLossFlushPolicy",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabInputFocusLossTest::RunTest(const FString& Parameters)
+{
+	const AFlyingCabPlayerController* ControllerDefaults =
+		GetDefault<AFlyingCabPlayerController>();
+	TestNotNull(TEXT("Flying Cab player controller defaults are available"), ControllerDefaults);
+	if (!ControllerDefaults)
+	{
+		return false;
+	}
+
+	TestTrue(
+		TEXT("Viewport focus loss always flushes held gameplay input"),
+		ControllerDefaults->ShouldFlushKeysWhenViewportFocusChanges());
+	return true;
+}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FFlyingCabProgressionAccessTest,

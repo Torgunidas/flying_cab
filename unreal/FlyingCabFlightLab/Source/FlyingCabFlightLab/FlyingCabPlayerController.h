@@ -31,6 +31,8 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void FlushPressedKeys() override;
+	virtual bool ShouldFlushKeysWhenViewportFocusChanges() const override { return true; }
 
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Interaction")
 	void RequestContextInteraction();
@@ -81,7 +83,6 @@ private:
 	UFlyingCabTouchControls* GetInterfaceWidget() const { return InterfaceWidget; }
 	void CreateInterfaceWidget();
 	void RefreshInterface();
-	void ToggleTouchControls();
 	void ApplyTouchControlsVisibility();
 	void ShowInitialModeSelection();
 	void EnterMenuInputMode();
@@ -119,10 +120,6 @@ private:
 	/** Dynamic vehicle resources are sampled at 10 Hz instead of invalidating Slate every frame. */
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Interface", meta = (ClampMin = "0.05"))
 	float InterfaceRefreshInterval = 0.1f;
-
-	/** Prototype touch overlay. Toggle with F4 while testing on desktop. */
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Interface")
-	bool bShowTouchControls = true;
 
 	/** Shows a cursor and uses Game+UI input mode for mouse testing in the editor. */
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Interface")
