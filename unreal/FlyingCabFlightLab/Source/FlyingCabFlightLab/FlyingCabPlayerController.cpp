@@ -155,7 +155,8 @@ void AFlyingCabPlayerController::ShowInitialModeSelection()
 	}
 
 	GameFlowWidget->ShowModeSelection(
-		GameMode ? GameMode->GetBestTimeAttackTimes() : TArray<float>());
+		GameMode ? GameMode->GetBestTimeAttackTimes() : TArray<float>(),
+		GameMode ? GameMode->GetTimeAttackTargetCredits() : 1000);
 	bGameFlowScreenOpen = true;
 	SetPause(true);
 	EnterMenuInputMode();

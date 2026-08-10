@@ -131,7 +131,7 @@
 - Gdy oferta wygaśnie poza trwającym `CURBSIDE LINK`, jej strefa i znacznik powinny zniknąć, a po losowym opóźnieniu powinna pojawić się kolejna oferta.
 - Rozpocznij `CURBSIDE LINK`. Czas wybranej oferty powinien przestać maleć w trakcie potwierdzania; przerwanie linku wznawia odliczanie.
 - Po odebraniu pasażera wszystkie pozostałe oferty powinny przestać przyjmować taksówkę, ale mogą pozostać widoczne do końca kursu.
-- Zapisz sześć kolejnych par odbiór–dowóz. Odbiór i dowóz jednego kursu zawsze muszą być różnymi punktami, a stały seed powinien dawać tę samą sekwencję po ponownym uruchomieniu tego samego trybu.
+- Zapisz sześć kolejnych par odbiór–dowóz. Odbiór i dowóz jednego kursu zawsze muszą być różnymi punktami. `TIME ATTACK` z seedem `1977` powinien dawać tę samą sekwencję po restarcie; `FREE ROAM` powinien rozpoczynać się od nowej losowej sekwencji.
 - Zniszcz taksówkę w trakcie kursu. Kurs ma zostać anulowany, oferty zablokowane na czas holowania, a po odzyskaniu pojazdu rynek ofert ponownie aktywny.
 
 ### 16. Rozbudowane miasto, paliwo i nowa krzywa obrażeń
@@ -173,7 +173,7 @@
 
 - Po uruchomieniu poziomu gra powinna być wstrzymana, a ekran wyboru pozwalać rozpocząć `FREE ROAM` albo `TIME ATTACK`.
 - Wybierz `FREE ROAM`. Ekran ma zniknąć, wejścia zostać wyzerowane, a rozgrywka wznowiona z saldem `100 CR`.
-- Uruchom ponownie poziom i wybierz `TIME ATTACK`. HUD powinien pokazywać czas oraz postęp salda do `1000 CR`.
+- Uruchom ponownie poziom i wybierz `TIME ATTACK`. Opis trybu i HUD powinny pokazywać ten sam skonfigurowany cel salda (`1000 CR` w ustawieniach domyślnych).
 - Zdobywaj kredyty przez kursy i near miss, a wydawaj je na paliwo, naprawy i holowanie. Wynik powinien uwzględniać wszystkie te operacje.
 - Po osiągnięciu `1000 CR` gra ma się zatrzymać i pokazać wynik wraz z maksymalnie pięcioma najlepszymi czasami.
 - `RETRY` powinno ponownie uruchomić Time Attack bez powrotu do wyboru trybu; `FREE ROAM` powinno otworzyć ten tryb bezpośrednio.

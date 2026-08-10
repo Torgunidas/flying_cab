@@ -84,7 +84,6 @@ void AFlyingCabGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	Credits = FMath::Max(0, StartingCredits);
-	DispatchRandom.Initialize(DispatchRandomSeed);
 	InitializeCityExpansion();
 	InitializeDeliveryLoop();
 	InitializeOnFootSlice();
@@ -133,6 +132,15 @@ void AFlyingCabGameMode::StartRun(EFlyingCabRunMode Mode)
 	RunRepairCreditsSpent = 0;
 	RunTowCount = 0;
 	RunTowCreditsSpent = 0;
+	if (Mode == EFlyingCabRunMode::TimeAttack)
+	{
+		DispatchRandom.Initialize(DispatchRandomSeed);
+	}
+	else
+	{
+		DispatchRandom.GenerateNewSeed();
+	}
+	InitializePassengerMarket();
 
 	if (Mode == EFlyingCabRunMode::TimeAttack)
 	{
@@ -393,6 +401,47 @@ void AFlyingCabGameMode::InitializeDeliveryLoop()
 	DropoffZone->SetZoneActive(false);
 
 	PassengerOffers.Reset();
+	PassengerSpawnCountdown = 0.0f;
+
+	UE_LOG(
+		LogFlyingCabDelivery,
+		Display,
+		TEXT("Delivery network initialized with %d stops, %d fuel stations and %d repair shops."),
+		DeliveryStops.Num(),
+		FuelStations.Num(),
+		RepairStations.Num());
+	UE_LOG(
+		LogFlyingCabDelivery,
+		Display,
+		TEXT("Economy initialized with %d credits."),
+		Credits);
+	if (bRunActive)
+	{
+		InitializePassengerMarket();
+	}
+}
+
+void AFlyingCabGameMode::InitializePassengerMarket()
+{
+	if (!DropoffZone || DeliveryStops.Num() < 2)
+	{
+		UE_LOG(
+			LogFlyingCabDelivery,
+			Error,
+			TEXT("Passenger market cannot start before the delivery network is ready."));
+		return;
+	}
+
+	for (FFlyingCabPassengerOfferState& Offer : PassengerOffers)
+	{
+		if (Offer.Zone)
+		{
+			Offer.Zone->OnCabReady.RemoveAll(this);
+			Offer.Zone->Destroy();
+		}
+	}
+	PassengerOffers.Reset();
+
 	const int32 InitialOfferCount = FMath::Clamp(
 		InitialWaitingPassengers,
 		1,
@@ -414,13 +463,6 @@ void AFlyingCabGameMode::InitializeDeliveryLoop()
 		MaxWaitingPassengers,
 		PickupLinkDuration,
 		DropoffExitDuration);
-	UE_LOG(
-		LogFlyingCabDelivery,
-		Display,
-		TEXT("Economy initialized with %d credits, %d fuel stations and %d repair shops."),
-		Credits,
-		FuelStations.Num(),
-		RepairStations.Num());
 }
 
 void AFlyingCabGameMode::InitializeTraffic()
@@ -521,6 +563,11 @@ void AFlyingCabGameMode::RegisterVehicle(AFlyingCabPawn* Pawn)
 
 void AFlyingCabGameMode::UpdatePassengerOffers(float DeltaSeconds)
 {
+	if (!bRunActive)
+	{
+		return;
+	}
+
 	for (int32 OfferIndex = PassengerOffers.Num() - 1; OfferIndex >= 0; --OfferIndex)
 	{
 		FFlyingCabPassengerOfferState& Offer = PassengerOffers[OfferIndex];

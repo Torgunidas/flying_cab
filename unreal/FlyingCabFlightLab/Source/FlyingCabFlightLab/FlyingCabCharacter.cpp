@@ -114,6 +114,12 @@ void AFlyingCabCharacter::BeginPlay()
 	UpdateDamageAppearance();
 }
 
+void AFlyingCabCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorldTimerManager().ClearTimer(RestartLevelTimerHandle);
+	Super::EndPlay(EndPlayReason);
+}
+
 void AFlyingCabCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);

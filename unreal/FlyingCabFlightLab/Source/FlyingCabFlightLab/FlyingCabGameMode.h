@@ -35,6 +35,7 @@ public:
 	void StartRun(EFlyingCabRunMode Mode);
 	TArray<float> GetBestTimeAttackTimes() const;
 	EFlyingCabRunMode GetCurrentRunMode() const { return CurrentRunMode; }
+	int32 GetTimeAttackTargetCredits() const { return TimeAttackTargetCredits; }
 
 	int32 TryPurchaseFuel(
 		class AFlyingCabPawn* Pawn,
@@ -49,6 +50,7 @@ public:
 private:
 	void InitializeCityExpansion();
 	void InitializeDeliveryLoop();
+	void InitializePassengerMarket();
 	void InitializeTraffic();
 	void InitializeOnFootSlice();
 	void InitializeServiceVehicle();

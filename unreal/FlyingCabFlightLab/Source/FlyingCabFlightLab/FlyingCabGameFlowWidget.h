@@ -17,7 +17,7 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabGameFlowWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void ShowModeSelection(const TArray<float>& BestTimes);
+	void ShowModeSelection(const TArray<float>& BestTimes, int32 TargetCredits);
 	void ShowTimeAttackResults(
 		const FFlyingCabTimeAttackResult& Result,
 		const TArray<float>& BestTimes);

@@ -12,6 +12,11 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabCityExpansion, Log, All);
 
+namespace
+{
+	const FName EastBoundaryTag(TEXT("EastBoundary"));
+}
+
 AFlyingCabCityExpansion::AFlyingCabCityExpansion()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -48,16 +53,28 @@ void AFlyingCabCityExpansion::OpenExistingEasternBoundary()
 		FVector BoundsOrigin = FVector::ZeroVector;
 		FVector BoundsExtent = FVector::ZeroVector;
 		MeshActor->GetActorBounds(false, BoundsOrigin, BoundsExtent);
-		bool bIsEasternBoundary = FMath::Abs(BoundsOrigin.X - 4950.0f) <= 350.0f
+		const bool bHasBoundaryTag = MeshActor->ActorHasTag(EastBoundaryTag);
+		bool bMatchesLegacyFallback = !bHasBoundaryTag
+			&& FMath::Abs(BoundsOrigin.X - 4950.0f) <= 350.0f
 			&& BoundsExtent.X <= 350.0f
 			&& BoundsExtent.Z >= 2200.0f;
 #if WITH_EDITOR
-		bIsEasternBoundary = bIsEasternBoundary
-			|| MeshActor->GetActorLabel().Equals(TEXT("Arena_RightBoundary"));
+		bMatchesLegacyFallback = bMatchesLegacyFallback
+			|| (!bHasBoundaryTag
+				&& MeshActor->GetActorLabel().Equals(TEXT("Arena_RightBoundary")));
 #endif
-		if (!bIsEasternBoundary)
+		if (!bHasBoundaryTag && !bMatchesLegacyFallback)
 		{
 			continue;
+		}
+		if (bMatchesLegacyFallback)
+		{
+			UE_LOG(
+				LogFlyingCabCityExpansion,
+				Warning,
+				TEXT("Opening %s through the legacy boundary heuristic; add Actor Tag '%s' to the map actor."),
+				*MeshActor->GetName(),
+				*EastBoundaryTag.ToString());
 		}
 
 		if (UStaticMeshComponent* Mesh = MeshActor->GetStaticMeshComponent())
@@ -82,6 +99,10 @@ void AFlyingCabCityExpansion::OpenExistingEasternBoundary()
 			LogFlyingCabCityExpansion,
 			Warning,
 			TEXT("Existing eastern arena boundary was not found."));
+		ensureMsgf(
+			false,
+			TEXT("FlightLab requires a static mesh actor tagged '%s' for the east boundary."),
+			*EastBoundaryTag.ToString());
 	}
 }
 

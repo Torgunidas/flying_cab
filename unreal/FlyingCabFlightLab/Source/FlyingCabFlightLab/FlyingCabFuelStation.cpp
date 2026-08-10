@@ -21,6 +21,7 @@ namespace
 AFlyingCabFuelStation::AFlyingCabFuelStation()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	ServiceZone = CreateDefaultSubobject<UBoxComponent>(TEXT("ServiceZone"));
 	SetRootComponent(ServiceZone);
@@ -29,6 +30,12 @@ AFlyingCabFuelStation::AFlyingCabFuelStation()
 	ServiceZone->SetCollisionResponseToAllChannels(ECR_Ignore);
 	ServiceZone->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	ServiceZone->SetGenerateOverlapEvents(true);
+	ServiceZone->OnComponentBeginOverlap.AddDynamic(
+		this,
+		&AFlyingCabFuelStation::HandleServiceZoneBeginOverlap);
+	ServiceZone->OnComponentEndOverlap.AddDynamic(
+		this,
+		&AFlyingCabFuelStation::HandleServiceZoneEndOverlap);
 
 	ServiceBase = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ServiceBase"));
 	ServicePillar = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ServicePillar"));
@@ -76,6 +83,23 @@ AFlyingCabFuelStation::AFlyingCabFuelStation()
 	ServiceLight->SetCastShadows(false);
 }
 
+void AFlyingCabFuelStation::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Catch actors that were already inside when the runtime station spawned.
+	TArray<AActor*> InitialOverlaps;
+	ServiceZone->GetOverlappingActors(InitialOverlaps, AFlyingCabPawn::StaticClass());
+	for (AActor* Actor : InitialOverlaps)
+	{
+		if (AFlyingCabPawn* Pawn = Cast<AFlyingCabPawn>(Actor))
+		{
+			OverlappingPawns.Add(Pawn);
+		}
+	}
+	RefreshTickState();
+}
+
 void AFlyingCabFuelStation::Configure(const FString& InServiceName)
 {
 	ServiceName = InServiceName.IsEmpty() ? FString(TEXT("FUEL SERVICE")) : InServiceName;
@@ -90,12 +114,15 @@ void AFlyingCabFuelStation::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	AFlyingCabPawn* EligiblePawn = nullptr;
-	TArray<AActor*> OverlappingActors;
-	ServiceZone->GetOverlappingActors(OverlappingActors, AFlyingCabPawn::StaticClass());
-	for (AActor* Actor : OverlappingActors)
+	for (auto It = OverlappingPawns.CreateIterator(); It; ++It)
 	{
-		AFlyingCabPawn* Pawn = Cast<AFlyingCabPawn>(Actor);
-		if (!Pawn || !Pawn->IsPlayerControlled() || Pawn->IsDestroyed())
+		AFlyingCabPawn* Pawn = It->Get();
+		if (!Pawn)
+		{
+			It.RemoveCurrent();
+			continue;
+		}
+		if (!Pawn->IsPlayerControlled() || Pawn->IsDestroyed())
 		{
 			continue;
 		}
@@ -117,9 +144,8 @@ void AFlyingCabFuelStation::Tick(float DeltaSeconds)
 
 	if (!EligiblePawn)
 	{
-		RefuelUnitAccumulator = 0.0f;
-		ServiceLabel->SetText(FText::FromString(ServiceName));
-		ServiceLight->SetIntensity(IdleLightIntensity);
+		ResetServiceState();
+		RefreshTickState();
 		return;
 	}
 
@@ -178,7 +204,40 @@ void AFlyingCabFuelStation::Tick(float DeltaSeconds)
 void AFlyingCabFuelStation::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	ClearContextPawn();
+	OverlappingPawns.Reset();
 	Super::EndPlay(EndPlayReason);
+}
+
+void AFlyingCabFuelStation::HandleServiceZoneBeginOverlap(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComponent,
+	int32 OtherBodyIndex,
+	bool bFromSweep,
+	const FHitResult& SweepResult)
+{
+	if (AFlyingCabPawn* Pawn = Cast<AFlyingCabPawn>(OtherActor))
+	{
+		OverlappingPawns.Add(Pawn);
+		SetActorTickEnabled(true);
+	}
+}
+
+void AFlyingCabFuelStation::HandleServiceZoneEndOverlap(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComponent,
+	int32 OtherBodyIndex)
+{
+	if (AFlyingCabPawn* Pawn = Cast<AFlyingCabPawn>(OtherActor))
+	{
+		OverlappingPawns.Remove(Pawn);
+		if (ContextPawn == Pawn)
+		{
+			ClearContextPawn();
+		}
+		RefreshTickState();
+	}
 }
 
 void AFlyingCabFuelStation::ClearContextPawn()
@@ -188,4 +247,29 @@ void AFlyingCabFuelStation::ClearContextPawn()
 		Pawn->SetRefuelAvailable(false, FuelPricePerUnit);
 	}
 	ContextPawn.Reset();
+}
+
+void AFlyingCabFuelStation::ResetServiceState()
+{
+	RefuelUnitAccumulator = 0.0f;
+	ServiceLabel->SetText(FText::FromString(ServiceName));
+	ServiceLight->SetIntensity(IdleLightIntensity);
+}
+
+void AFlyingCabFuelStation::RefreshTickState()
+{
+	for (auto It = OverlappingPawns.CreateIterator(); It; ++It)
+	{
+		if (!It->IsValid())
+		{
+			It.RemoveCurrent();
+		}
+	}
+	const bool bHasNearbyPawn = !OverlappingPawns.IsEmpty();
+	SetActorTickEnabled(bHasNearbyPawn);
+	if (!bHasNearbyPawn)
+	{
+		ClearContextPawn();
+		ResetServiceState();
+	}
 }
