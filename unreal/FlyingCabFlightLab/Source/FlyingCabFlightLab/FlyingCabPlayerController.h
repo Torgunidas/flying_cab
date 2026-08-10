@@ -12,6 +12,13 @@ class AFlyingCabCameraRig;
 class AFlyingCabPawn;
 class UFlyingCabGameFlowWidget;
 
+enum class EFlyingCabPlayerMode : uint8
+{
+	Unknown,
+	Vehicle,
+	OnFoot
+};
+
 /** Owns transitions between the persistent cab and the temporary on-foot pawn. */
 UCLASS()
 class FLYINGCABFLIGHTLAB_API AFlyingCabPlayerController : public APlayerController
@@ -37,6 +44,7 @@ public:
 		const FFlyingCabTimeAttackResult& Result,
 		const TArray<float>& BestTimes);
 	bool IsGameFlowScreenOpen() const { return bGameFlowScreenOpen; }
+	EFlyingCabPlayerMode GetPlayerMode() const { return PlayerMode; }
 
 protected:
 	virtual void SetupInputComponent() override;
@@ -100,6 +108,7 @@ private:
 	FText CachedContextPrompt;
 	double LastInteractionCacheRefreshTime = -1.0;
 	double LastContextPromptRefreshTime = -1.0;
+	EFlyingCabPlayerMode PlayerMode = EFlyingCabPlayerMode::Unknown;
 
 	bool bGameFlowScreenOpen = false;
 };

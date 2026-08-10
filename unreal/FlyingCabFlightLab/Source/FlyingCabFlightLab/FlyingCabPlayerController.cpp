@@ -223,6 +223,15 @@ void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
 	if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(InPawn))
 	{
 		ActiveVehicle = Vehicle;
+		PlayerMode = EFlyingCabPlayerMode::Vehicle;
+	}
+	else if (Cast<AFlyingCabCharacter>(InPawn))
+	{
+		PlayerMode = EFlyingCabPlayerMode::OnFoot;
+	}
+	else
+	{
+		PlayerMode = EFlyingCabPlayerMode::Unknown;
 	}
 	if (CameraRig && InPawn)
 	{

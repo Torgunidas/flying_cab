@@ -10,6 +10,7 @@
 #include "Components/TextBlock.h"
 #include "Engine/World.h"
 #include "FlyingCabCharacter.h"
+#include "FlyingCabCityData.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
 #include "TimerManager.h"
@@ -21,8 +22,6 @@ namespace
 	constexpr float MinimapTop = 24.0f;
 	constexpr float MinimapBottom = 168.0f;
 	constexpr int32 MaxPassengerMinimapMarkers = 6;
-	const FVector2D MinimapWorldMin(-5000.0f, 0.0f);
-	const FVector2D MinimapWorldMax(15000.0f, 6500.0f);
 }
 
 TSharedRef<SWidget> UFlyingCabTouchControls::RebuildWidget()
@@ -332,35 +331,22 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	MapTitleSlot->SetPosition(FVector2D(8.0f, 3.0f));
 	MapTitleSlot->SetSize(FVector2D(210.0f, 18.0f));
 
-	struct FStopPin
+	const TConstArrayView<FFlyingCabDistrictDefinition> Districts =
+		FlyingCabCityData::GetDistricts();
+	for (int32 Index = 0; Index < Districts.Num(); ++Index)
 	{
-		FVector2D WorldPosition;
-		const TCHAR* Code;
-	};
-	const FStopPin StopPins[] = {
-		{FVector2D(-900.0f, 1150.0f), TEXT("YP")},
-		{FVector2D(850.0f, 2050.0f), TEXT("ME")},
-		{FVector2D(-750.0f, 3150.0f), TEXT("ST")},
-		{FVector2D(-3800.0f, 2500.0f), TEXT("AM")},
-		{FVector2D(3650.0f, 1150.0f), TEXT("ND")},
-		{FVector2D(3350.0f, 5200.0f), TEXT("ZS")},
-		{FVector2D(6500.0f, 1150.0f), TEXT("GT")},
-		{FVector2D(8650.0f, 2700.0f), TEXT("RB")},
-		{FVector2D(11150.0f, 3950.0f), TEXT("CH")},
-		{FVector2D(13250.0f, 5450.0f), TEXT("OG")}};
-
-	for (int32 Index = 0; Index < UE_ARRAY_COUNT(StopPins); ++Index)
-	{
-		const FVector2D PinPosition = WorldToMinimap(StopPins[Index].WorldPosition);
+		const FFlyingCabDistrictDefinition& District = Districts[Index];
+		const FVector2D WorldPosition = District.GetMapPosition();
+		const FVector2D PinPosition = WorldToMinimap(WorldPosition);
 		AddMinimapPoint(
 			MinimapCanvas,
 			FName(*FString::Printf(TEXT("StopPin%d"), Index)),
-			StopPins[Index].WorldPosition,
+			WorldPosition,
 			FVector2D(7.0f, 7.0f),
 			FLinearColor(0.25f, 0.32f, 0.38f, 0.9f));
 
 		UTextBlock* StopCode = WidgetTree->ConstructWidget<UTextBlock>();
-		StopCode->SetText(FText::FromString(FString(StopPins[Index].Code)));
+		StopCode->SetText(FText::FromString(FString(District.MinimapCode)));
 		StopCode->SetColorAndOpacity(FSlateColor(FLinearColor(0.42f, 0.55f, 0.62f)));
 		FSlateFontInfo StopFont = StopCode->GetFont();
 		StopFont.Size = 9;
@@ -370,17 +356,16 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		StopCodeSlot->SetSize(FVector2D(30.0f, 16.0f));
 	}
 
-	const FVector2D FuelStationWorldPositions[] = {
-		FVector2D(850.0f, 2050.0f),
-		FVector2D(-3800.0f, 2500.0f),
-		FVector2D(8650.0f, 2700.0f)};
-	for (int32 Index = 0; Index < UE_ARRAY_COUNT(FuelStationWorldPositions); ++Index)
+	const TArray<FFlyingCabServiceDefinition> FuelStations =
+		FlyingCabCityData::GetFuelStations();
+	for (int32 Index = 0; Index < FuelStations.Num(); ++Index)
 	{
-		const FVector2D FuelStationMapPosition = WorldToMinimap(FuelStationWorldPositions[Index]);
+		const FVector2D WorldPosition = FuelStations[Index].GetMapPosition();
+		const FVector2D FuelStationMapPosition = WorldToMinimap(WorldPosition);
 		AddMinimapPoint(
 			MinimapCanvas,
 			FName(*FString::Printf(TEXT("FuelStationPin%d"), Index)),
-			FuelStationWorldPositions[Index],
+			WorldPosition,
 			FVector2D(9.0f, 9.0f),
 			FLinearColor(0.15f, 1.0f, 0.45f, 0.95f));
 		UTextBlock* FuelCode = WidgetTree->ConstructWidget<UTextBlock>();
@@ -394,16 +379,16 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		FuelCodeSlot->SetSize(FVector2D(18.0f, 16.0f));
 	}
 
-	const FVector2D RepairStationWorldPositions[] = {
-		FVector2D(0.0f, 4200.0f),
-		FVector2D(13250.0f, 5450.0f)};
-	for (int32 Index = 0; Index < UE_ARRAY_COUNT(RepairStationWorldPositions); ++Index)
+	const TArray<FFlyingCabServiceDefinition> RepairStations =
+		FlyingCabCityData::GetRepairStations();
+	for (int32 Index = 0; Index < RepairStations.Num(); ++Index)
 	{
-		const FVector2D RepairStationMapPosition = WorldToMinimap(RepairStationWorldPositions[Index]);
+		const FVector2D WorldPosition = RepairStations[Index].GetMapPosition();
+		const FVector2D RepairStationMapPosition = WorldToMinimap(WorldPosition);
 		AddMinimapPoint(
 			MinimapCanvas,
 			FName(*FString::Printf(TEXT("RepairStationPin%d"), Index)),
-			RepairStationWorldPositions[Index],
+			WorldPosition,
 			FVector2D(10.0f, 10.0f),
 			FLinearColor(0.78f, 0.12f, 1.0f, 0.95f));
 		UTextBlock* RepairCode = WidgetTree->ConstructWidget<UTextBlock>();
@@ -650,6 +635,8 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 
 FVector2D UFlyingCabTouchControls::WorldToMinimap(const FVector2D& WorldPosition) const
 {
+	const FVector2D MinimapWorldMin = FlyingCabCityData::GetMinimapWorldMin();
+	const FVector2D MinimapWorldMax = FlyingCabCityData::GetMinimapWorldMax();
 	const float NormalizedX = FMath::GetMappedRangeValueClamped(
 		FVector2D(MinimapWorldMin.X, MinimapWorldMax.X),
 		FVector2D(0.0f, 1.0f),

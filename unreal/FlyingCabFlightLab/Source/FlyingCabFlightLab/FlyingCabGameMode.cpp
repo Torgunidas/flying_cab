@@ -5,6 +5,7 @@
 #include "Engine/GameInstance.h"
 #include "FlyingCabAccessTerminal.h"
 #include "FlyingCabCharacter.h"
+#include "FlyingCabCityData.h"
 #include "FlyingCabCityExpansion.h"
 #include "FlyingCabDeliveryZone.h"
 #include "FlyingCabFuelStation.h"
@@ -42,42 +43,25 @@ AFlyingCabGameMode::AFlyingCabGameMode()
 		DefaultPawnClass = TunablePawnClass.Class;
 	}
 
-	DeliveryStops = {
-		FVector(-900.0f, 0.0f, 1150.0f),
-		FVector(850.0f, 0.0f, 2050.0f),
-		FVector(-750.0f, 0.0f, 3150.0f),
-		FVector(-3800.0f, 0.0f, 2500.0f),
-		FVector(3650.0f, 0.0f, 1150.0f),
-		FVector(3350.0f, 0.0f, 5200.0f),
-		FVector(6500.0f, 0.0f, 1150.0f),
-		FVector(8650.0f, 0.0f, 2700.0f),
-		FVector(11150.0f, 0.0f, 3950.0f),
-		FVector(13250.0f, 0.0f, 5450.0f)};
-	DeliveryStopNames = {
-		TEXT("YELLOW PROJECTS"),
-		TEXT("MIDTOWN EXCHANGE"),
-		TEXT("SKYLINE TERRACES"),
-		TEXT("ASHLINE MARKET"),
-		TEXT("NEON DOCKS"),
-		TEXT("ZENITH SPIRE"),
-		TEXT("GLASSWARD TRANSIT"),
-		TEXT("RAINLINE BAZAAR"),
-		TEXT("COBALT HEIGHTS"),
-		TEXT("ORBITAL GARDENS")};
-	FuelStationLocations = {
-		FVector(850.0f, 0.0f, 2050.0f),
-		FVector(-3800.0f, 0.0f, 2500.0f),
-		FVector(8650.0f, 0.0f, 2700.0f)};
-	FuelStationNames = {
-		TEXT("MIDTOWN FUEL"),
-		TEXT("ASHLINE CHARGE"),
-		TEXT("RAINLINE ENERGY")};
-	RepairStationLocations = {
-		FVector(0.0f, 0.0f, 4200.0f),
-		FVector(13250.0f, 0.0f, 5450.0f)};
-	RepairStationNames = {
-		TEXT("NIGHTSHIFT REPAIR"),
-		TEXT("ORBITAL BODYWORKS")};
+	for (const FFlyingCabDistrictDefinition& District : FlyingCabCityData::GetDistricts())
+	{
+		DeliveryStops.Add(District.StopLocation);
+		DeliveryStopNames.Emplace(District.DisplayName);
+	}
+	const TArray<FFlyingCabServiceDefinition> DefaultFuelStations =
+		FlyingCabCityData::GetFuelStations();
+	for (const FFlyingCabServiceDefinition& Station : DefaultFuelStations)
+	{
+		FuelStationLocations.Add(Station.Location);
+		FuelStationNames.Emplace(Station.DisplayName);
+	}
+	const TArray<FFlyingCabServiceDefinition> DefaultRepairStations =
+		FlyingCabCityData::GetRepairStations();
+	for (const FFlyingCabServiceDefinition& Station : DefaultRepairStations)
+	{
+		RepairStationLocations.Add(Station.Location);
+		RepairStationNames.Emplace(Station.DisplayName);
+	}
 }
 
 void AFlyingCabGameMode::BeginPlay()
@@ -144,6 +128,8 @@ void AFlyingCabGameMode::StartRun(EFlyingCabRunMode Mode)
 
 	if (Mode == EFlyingCabRunMode::TimeAttack)
 	{
+		// Competitive runs always begin without session-granted vehicle access.
+		// Freeroam intentionally keeps access across map reloads for this app session.
 		if (UGameInstance* GameInstance = GetGameInstance())
 		{
 			if (UFlyingCabProgressionSubsystem* Progression =
@@ -788,7 +774,10 @@ void AFlyingCabGameMode::ShowPlayerEventMessage(
 
 bool AFlyingCabGameMode::IsPlayerOnFoot() const
 {
-	return BoundPawn && UGameplayStatics::GetPlayerPawn(this, 0) != BoundPawn;
+	const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(UGameplayStatics::GetPlayerController(this, 0));
+	return PlayerController
+		&& PlayerController->GetPlayerMode() == EFlyingCabPlayerMode::OnFoot;
 }
 
 void AFlyingCabGameMode::UpdateActiveFare()
