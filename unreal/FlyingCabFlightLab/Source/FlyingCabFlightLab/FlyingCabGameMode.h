@@ -69,7 +69,6 @@ private:
 	void RecoverVehicleAfterTow(class AFlyingCabPawn* Pawn);
 	void UpdateProximityGuidance();
 	void UpdateObjectiveStatus();
-	void UpdateTrafficAwareness(float DeltaSeconds);
 	void UpdateRunModeStatus();
 	void CheckTimeAttackGoal();
 	void FinishTimeAttack();
@@ -78,6 +77,7 @@ private:
 	void HandleTrafficNearMiss(
 		class AFlyingCabTrafficVehicle* Vehicle,
 		class AFlyingCabPawn* Pawn);
+	void HandleTrafficAlertChanged(const FText& Alert, const FLinearColor& Color);
 	void ShowPlayerEventMessage(
 		const FText& Message,
 		const FLinearColor& Color,
@@ -185,12 +185,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Traffic", meta = (ClampMin = "0"))
 	int32 NearMissRewardCredits = 3;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Traffic", meta = (ClampMin = "0.1"))
-	float TrafficWarningLookAhead = 1.5f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Traffic", meta = (ClampMin = "0.0"))
-	float TrafficWarningVerticalRange = 260.0f;
-
 	UPROPERTY(Transient)
 	TObjectPtr<class AFlyingCabDeliveryZone> DropoffZone;
 
@@ -221,8 +215,8 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<class AFlyingCabPawn> ServiceVehicle;
 
-	UPROPERTY(Transient)
-	TArray<TObjectPtr<class AFlyingCabTrafficVehicle>> TrafficVehicles;
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Traffic")
+	TObjectPtr<class UFlyingCabTrafficAwarenessComponent> TrafficAwareness;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<class AFlyingCabPawn>> TrackedVehicles;
@@ -254,7 +248,6 @@ private:
 	bool bRunCompleted = false;
 	float ActiveFare = 0.0f;
 	float FareLastDistance = 0.0f;
-	float NearMissMessageRemaining = 0.0f;
 	float PassengerSpawnCountdown = 0.0f;
 	float HudRefreshElapsed = 0.0f;
 	bool bPassengerOnBoard = false;

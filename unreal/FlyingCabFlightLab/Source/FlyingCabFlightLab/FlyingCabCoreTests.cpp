@@ -6,7 +6,47 @@
 #include "FlyingCabCityData.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
+#include "FlyingCabTrafficAwarenessComponent.h"
 #include "Misc/AutomationTest.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabTrafficThreatPredictionTest,
+	"FlyingCab.Core.Traffic.ThreatPrediction",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabTrafficThreatPredictionTest::RunTest(const FString& Parameters)
+{
+	const FVector PawnLocation = FVector::ZeroVector;
+	const FVector PawnVelocity(100.0f, 0.0f, 0.0f);
+	const FFlyingCabTrafficSample Samples[] = {
+		{FVector(1000.0f, 0.0f, 100.0f), FVector(-400.0f, 0.0f, 0.0f)},
+		{FVector(-400.0f, 0.0f, 80.0f), FVector(400.0f, 0.0f, 0.0f)},
+		{FVector(200.0f, 0.0f, 500.0f), FVector(-400.0f, 0.0f, 0.0f)}};
+
+	const FFlyingCabTrafficThreat Threat =
+		UFlyingCabTrafficAwarenessComponent::FindClosestThreat(
+			PawnLocation,
+			PawnVelocity,
+			Samples,
+			3.0f,
+			260.0f);
+	TestTrue(TEXT("A converging traffic sample is detected"), Threat.bFound);
+	TestTrue(TEXT("The closest valid threat approaches from the left"), Threat.bFromLeft);
+	TestTrue(
+		TEXT("The closest impact time uses relative horizontal velocity"),
+		FMath::IsNearlyEqual(Threat.ImpactTime, 4.0f / 3.0f));
+
+	const FFlyingCabTrafficThreat NoThreat =
+		UFlyingCabTrafficAwarenessComponent::FindClosestThreat(
+			PawnLocation,
+			PawnVelocity,
+			MakeArrayView(&Samples[2], 1),
+			3.0f,
+			260.0f);
+	TestFalse(TEXT("Traffic outside the vertical warning range is ignored"), NoThreat.bFound);
+	return true;
+}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FFlyingCabInputFocusLossTest,

@@ -16,6 +16,7 @@
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabRepairStation.h"
 #include "FlyingCabScoreSaveGame.h"
+#include "FlyingCabTrafficAwarenessComponent.h"
 #include "FlyingCabTrafficVehicle.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
@@ -32,6 +33,8 @@ namespace
 AFlyingCabGameMode::AFlyingCabGameMode()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	TrafficAwareness = CreateDefaultSubobject<UFlyingCabTrafficAwarenessComponent>(
+		TEXT("TrafficAwareness"));
 
 	static ConstructorHelpers::FClassFinder<AFlyingCabPawn> TunablePawnClass(
 		TEXT("/Game/Blueprints/BP_FlyingCabPawn"));
@@ -67,6 +70,12 @@ AFlyingCabGameMode::AFlyingCabGameMode()
 void AFlyingCabGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+	if (TrafficAwareness)
+	{
+		TrafficAwareness->OnTrafficAlertChanged.AddUObject(
+			this,
+			&AFlyingCabGameMode::HandleTrafficAlertChanged);
+	}
 	Credits = FMath::Max(0, StartingCredits);
 	InitializeCityExpansion();
 	InitializeDeliveryLoop();
@@ -78,6 +87,10 @@ void AFlyingCabGameMode::BeginPlay()
 
 void AFlyingCabGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	if (TrafficAwareness)
+	{
+		TrafficAwareness->OnTrafficAlertChanged.RemoveAll(this);
+	}
 	for (TPair<TWeakObjectPtr<AFlyingCabPawn>, FTimerHandle>& Entry :
 		VehicleRecoveryTimerHandles)
 	{
@@ -315,10 +328,8 @@ void AFlyingCabGameMode::Tick(float DeltaSeconds)
 	const float EffectiveHudRefreshInterval = FMath::Max(0.05f, HudRefreshInterval);
 	if (HudRefreshElapsed >= EffectiveHudRefreshInterval)
 	{
-		const float HudDeltaSeconds = HudRefreshElapsed;
 		HudRefreshElapsed = FMath::Fmod(HudRefreshElapsed, EffectiveHudRefreshInterval);
 		UpdateObjectiveStatus();
-		UpdateTrafficAwareness(HudDeltaSeconds);
 		UpdateRunModeStatus();
 	}
 	CheckTimeAttackGoal();
@@ -480,7 +491,11 @@ void AFlyingCabGameMode::InitializeTraffic()
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.Owner = this;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	TrafficVehicles.Reset();
+	if (TrafficAwareness)
+	{
+		TrafficAwareness->ResetTrafficVehicles();
+	}
+	int32 SpawnedTrafficCount = 0;
 	for (int32 Index = 0; Index < UE_ARRAY_COUNT(TrafficSpecs); ++Index)
 	{
 		const FTrafficSpec& Spec = TrafficSpecs[Index];
@@ -493,7 +508,11 @@ void AFlyingCabGameMode::InitializeTraffic()
 		{
 			Vehicle->Configure(Spec.Start, Spec.End, Spec.Speed, Spec.InitialAlpha, Spec.Color);
 			Vehicle->OnNearMiss.AddUObject(this, &AFlyingCabGameMode::HandleTrafficNearMiss);
-			TrafficVehicles.Add(Vehicle);
+			if (TrafficAwareness)
+			{
+				TrafficAwareness->RegisterTrafficVehicle(Vehicle);
+			}
+			++SpawnedTrafficCount;
 		}
 	}
 
@@ -501,10 +520,10 @@ void AFlyingCabGameMode::InitializeTraffic()
 		LogFlyingCabDelivery,
 		Display,
 		TEXT("Traffic initialized with %d/%d vehicles; clean near misses award %d credits."),
-		TrafficVehicles.Num(),
+		SpawnedTrafficCount,
 		UE_ARRAY_COUNT(TrafficSpecs),
 		NearMissRewardCredits);
-	if (TrafficVehicles.Num() != UE_ARRAY_COUNT(TrafficSpecs))
+	if (SpawnedTrafficCount != UE_ARRAY_COUNT(TrafficSpecs))
 	{
 		UE_LOG(LogFlyingCabDelivery, Warning, TEXT("One or more traffic vehicles failed to spawn."));
 	}
@@ -526,6 +545,10 @@ void AFlyingCabGameMode::EnsurePawnBinding()
 
 	RegisterVehicle(Pawn);
 	BoundPawn = Pawn;
+	if (TrafficAwareness)
+	{
+		TrafficAwareness->SetTrackedPawn(BoundPawn);
+	}
 	PushEconomyStatus();
 }
 
@@ -1328,84 +1351,6 @@ void AFlyingCabGameMode::UpdateObjectiveStatus()
 	}
 }
 
-void AFlyingCabGameMode::UpdateTrafficAwareness(float DeltaSeconds)
-{
-	NearMissMessageRemaining = FMath::Max(0.0f, NearMissMessageRemaining - DeltaSeconds);
-	AFlyingCabPlayerController* PlayerController = GetFlyingCabPlayerController();
-	if (!BoundPawn || !PlayerController)
-	{
-		return;
-	}
-	if (IsPlayerOnFoot())
-	{
-		PlayerController->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
-		return;
-	}
-	if (BoundPawn->IsDestroyed())
-	{
-		PlayerController->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
-		return;
-	}
-	if (NearMissMessageRemaining > 0.0f)
-	{
-		PlayerController->SetTrafficAlert(
-			FText::FromString(FString::Printf(TEXT("CLEAN NEAR MISS // +%d CR"), NearMissRewardCredits)),
-			FLinearColor(0.15f, 1.0f, 0.45f));
-		return;
-	}
-
-	AFlyingCabTrafficVehicle* ClosestThreat = nullptr;
-	float ClosestImpactTime = TrafficWarningLookAhead + 1.0f;
-	const FVector PawnLocation = BoundPawn->GetActorLocation();
-	const FVector PawnVelocity = BoundPawn->GetVelocity();
-	for (AFlyingCabTrafficVehicle* Vehicle : TrafficVehicles)
-	{
-		if (!Vehicle)
-		{
-			continue;
-		}
-
-		const FVector RelativeLocation = Vehicle->GetActorLocation() - PawnLocation;
-		const FVector RelativeVelocity = Vehicle->GetTrafficVelocity() - PawnVelocity;
-		if (FMath::Abs(RelativeVelocity.X) <= UE_SMALL_NUMBER)
-		{
-			continue;
-		}
-
-		const float ImpactTime = -RelativeLocation.X / RelativeVelocity.X;
-		if (ImpactTime <= 0.0f || ImpactTime > TrafficWarningLookAhead
-			|| ImpactTime >= ClosestImpactTime)
-		{
-			continue;
-		}
-
-		const float PredictedVerticalSeparation = FMath::Abs(
-			RelativeLocation.Z + RelativeVelocity.Z * ImpactTime);
-		if (PredictedVerticalSeparation <= TrafficWarningVerticalRange)
-		{
-			ClosestThreat = Vehicle;
-			ClosestImpactTime = ImpactTime;
-		}
-	}
-
-	if (!ClosestThreat)
-	{
-		PlayerController->SetTrafficAlert(FText::GetEmpty(), FLinearColor::Transparent);
-		return;
-	}
-
-	const bool bFromLeft = ClosestThreat->GetActorLocation().X < PawnLocation.X;
-	const FLinearColor AlertColor = ClosestImpactTime <= 0.65f
-		? FLinearColor(1.0f, 0.12f, 0.03f)
-		: FLinearColor(1.0f, 0.66f, 0.05f);
-	PlayerController->SetTrafficAlert(
-		FText::FromString(FString::Printf(
-			TEXT("TRAFFIC // %.1f SEC\nINBOUND FROM %s"),
-			ClosestImpactTime,
-			bFromLeft ? TEXT("LEFT") : TEXT("RIGHT"))),
-		AlertColor);
-}
-
 void AFlyingCabGameMode::HandleTrafficNearMiss(
 	AFlyingCabTrafficVehicle* Vehicle,
 	AFlyingCabPawn* Pawn)
@@ -1422,7 +1367,10 @@ void AFlyingCabGameMode::HandleTrafficNearMiss(
 		++RunNearMissCount;
 		RunNearMissCreditsEarned += NearMissRewardCredits;
 	}
-	NearMissMessageRemaining = 1.25f;
+	if (TrafficAwareness)
+	{
+		TrafficAwareness->ShowNearMissReward(NearMissRewardCredits);
+	}
 	PushEconomyStatus();
 	UE_LOG(
 		LogFlyingCabDelivery,
@@ -1431,6 +1379,16 @@ void AFlyingCabGameMode::HandleTrafficNearMiss(
 		NearMissRewardCredits,
 		Credits);
 	CheckTimeAttackGoal();
+}
+
+void AFlyingCabGameMode::HandleTrafficAlertChanged(
+	const FText& Alert,
+	const FLinearColor& Color)
+{
+	if (AFlyingCabPlayerController* PlayerController = GetFlyingCabPlayerController())
+	{
+		PlayerController->SetTrafficAlert(Alert, Color);
+	}
 }
 
 void AFlyingCabGameMode::UpdateRunModeStatus()
