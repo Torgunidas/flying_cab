@@ -5,6 +5,7 @@
 #include "Engine/GameInstance.h"
 #include "FlyingCabCityData.h"
 #include "FlyingCabDispatchComponent.h"
+#include "FlyingCabGameMode.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabRunComponent.h"
@@ -58,6 +59,41 @@ bool FFlyingCabDispatchFareTest::RunTest(const FString& Parameters)
 		1.1f,
 		0.5f);
 	TestTrue(TEXT("Backtracking never lowers fare below base"), FMath::IsNearlyEqual(FareAtFloor, 20.0f));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabServicePurchaseLimitsTest,
+	"FlyingCab.Core.Economy.ServicePurchaseLimits",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabServicePurchaseLimitsTest::RunTest(const FString& Parameters)
+{
+	TestEqual(
+		TEXT("The request caps the number of service units"),
+		AFlyingCabGameMode::CalculateServicePurchaseUnits(4, 20.0f, 100, 2),
+		4);
+	TestEqual(
+		TEXT("Fractional resource need is rounded up to a whole service unit"),
+		AFlyingCabGameMode::CalculateServicePurchaseUnits(20, 8.2f, 100, 2),
+		9);
+	TestEqual(
+		TEXT("Available credits cap the service transaction"),
+		AFlyingCabGameMode::CalculateServicePurchaseUnits(20, 50.0f, 15, 2),
+		7);
+	TestEqual(
+		TEXT("A full resource rejects a purchase"),
+		AFlyingCabGameMode::CalculateServicePurchaseUnits(20, 0.0f, 100, 2),
+		0);
+	TestEqual(
+		TEXT("Insufficient credits reject a purchase"),
+		AFlyingCabGameMode::CalculateServicePurchaseUnits(20, 50.0f, 1, 2),
+		0);
+	TestEqual(
+		TEXT("Invalid request and price values reject a purchase"),
+		AFlyingCabGameMode::CalculateServicePurchaseUnits(0, 50.0f, 100, 0),
+		0);
 	return true;
 }
 

@@ -42,6 +42,7 @@ public:
 	void SetAcceptanceEnabled(bool bEnabled);
 	void SetZoneActive(bool bNewActive);
 	bool IsZoneActive() const { return bZoneActive; }
+	bool IsAcceptanceEnabled() const { return bAcceptanceEnabled; }
 	bool IsPawnInside(const AFlyingCabPawn* Pawn) const;
 	bool IsConfirmationInProgress() const { return bConfirmationInProgress; }
 	float GetConfirmationAlpha() const;

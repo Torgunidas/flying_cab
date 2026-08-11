@@ -168,6 +168,23 @@ int32 AFlyingCabGameMode::GetTimeAttackTargetCredits() const
 	return Run ? Run->GetTimeAttackTargetCredits() : 1000;
 }
 
+int32 AFlyingCabGameMode::CalculateServicePurchaseUnits(
+	int32 RequestedUnits,
+	float NeededUnits,
+	int32 AvailableCredits,
+	int32 PricePerUnit)
+{
+	if (RequestedUnits <= 0 || NeededUnits <= 0.0f
+		|| AvailableCredits <= 0 || PricePerUnit <= 0)
+	{
+		return 0;
+	}
+
+	const int32 RoundedNeededUnits = FMath::Max(0, FMath::CeilToInt(NeededUnits));
+	const int32 AffordableUnits = AvailableCredits / PricePerUnit;
+	return FMath::Min3(RequestedUnits, RoundedNeededUnits, AffordableUnits);
+}
+
 void AFlyingCabGameMode::InitializeWorldBootstrap()
 {
 	FActorSpawnParameters SpawnParameters;
@@ -405,9 +422,12 @@ int32 AFlyingCabGameMode::TryPurchaseFuel(
 		return 0;
 	}
 
-	const int32 NeededUnits = FMath::CeilToInt(Pawn->GetFuelNeeded());
 	const int32 AffordableUnits = Credits / PricePerUnit;
-	const int32 UnitsToPurchase = FMath::Min3(RequestedUnits, NeededUnits, AffordableUnits);
+	const int32 UnitsToPurchase = CalculateServicePurchaseUnits(
+		RequestedUnits,
+		Pawn->GetFuelNeeded(),
+		Credits,
+		PricePerUnit);
 	if (UnitsToPurchase <= 0)
 	{
 		if (AffordableUnits <= 0)
@@ -447,9 +467,12 @@ int32 AFlyingCabGameMode::TryPurchaseRepair(
 		return 0;
 	}
 
-	const int32 NeededUnits = FMath::CeilToInt(Pawn->GetHullNeeded());
 	const int32 AffordableUnits = Credits / PricePerUnit;
-	const int32 UnitsToPurchase = FMath::Min3(RequestedUnits, NeededUnits, AffordableUnits);
+	const int32 UnitsToPurchase = CalculateServicePurchaseUnits(
+		RequestedUnits,
+		Pawn->GetHullNeeded(),
+		Credits,
+		PricePerUnit);
 	if (UnitsToPurchase <= 0)
 	{
 		if (AffordableUnits <= 0)

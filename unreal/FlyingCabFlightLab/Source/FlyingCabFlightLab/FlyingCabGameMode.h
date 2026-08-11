@@ -22,6 +22,12 @@ public:
 	TArray<float> GetBestTimeAttackTimes() const;
 	EFlyingCabRunMode GetCurrentRunMode() const;
 	int32 GetTimeAttackTargetCredits() const;
+	int32 GetCredits() const { return Credits; }
+	static int32 CalculateServicePurchaseUnits(
+		int32 RequestedUnits,
+		float NeededUnits,
+		int32 AvailableCredits,
+		int32 PricePerUnit);
 
 	int32 TryPurchaseFuel(
 		class AFlyingCabPawn* Pawn,
