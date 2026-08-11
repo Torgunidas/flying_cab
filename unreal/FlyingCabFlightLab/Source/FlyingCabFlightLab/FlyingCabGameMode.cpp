@@ -2,18 +2,17 @@
 
 #include "FlyingCabGameMode.h"
 
-#include "Engine/GameInstance.h"
 #include "FlyingCabDispatchComponent.h"
+#include "FlyingCabEconomyComponent.h"
+#include "FlyingCabFleetComponent.h"
 #include "FlyingCabHudPresenterComponent.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
-#include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabRunComponent.h"
 #include "FlyingCabTrafficAwarenessComponent.h"
 #include "FlyingCabTrafficVehicle.h"
 #include "FlyingCabWorldBootstrap.h"
 #include "Kismet/GameplayStatics.h"
-#include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabDelivery, Log, All);
@@ -22,6 +21,8 @@ AFlyingCabGameMode::AFlyingCabGameMode()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	Dispatch = CreateDefaultSubobject<UFlyingCabDispatchComponent>(TEXT("Dispatch"));
+	Economy = CreateDefaultSubobject<UFlyingCabEconomyComponent>(TEXT("Economy"));
+	Fleet = CreateDefaultSubobject<UFlyingCabFleetComponent>(TEXT("Fleet"));
 	Run = CreateDefaultSubobject<UFlyingCabRunComponent>(TEXT("Run"));
 	HudPresenter = CreateDefaultSubobject<UFlyingCabHudPresenterComponent>(TEXT("HudPresenter"));
 	TrafficAwareness = CreateDefaultSubobject<UFlyingCabTrafficAwarenessComponent>(
@@ -43,9 +44,9 @@ void AFlyingCabGameMode::BeginPlay()
 	Super::BeginPlay();
 	if (TrafficAwareness)
 	{
-		TrafficAwareness->OnTrafficAlertChanged.AddUObject(
+		TrafficAwareness->OnNearMissDetected.AddUObject(
 			this,
-			&AFlyingCabGameMode::HandleTrafficAlertChanged);
+			&AFlyingCabGameMode::HandleTrafficNearMiss);
 	}
 	if (Dispatch)
 	{
@@ -56,16 +57,34 @@ void AFlyingCabGameMode::BeginPlay()
 			this,
 			&AFlyingCabGameMode::HandleFareCompleted);
 	}
+	if (Fleet)
+	{
+		Fleet->OnVehicleRecoveryStarted.AddUObject(
+			this,
+			&AFlyingCabGameMode::HandleVehicleRecoveryStarted);
+		Fleet->OnVehicleRecovered.AddUObject(
+			this,
+			&AFlyingCabGameMode::HandleVehicleRecovered);
+	}
+	if (Economy)
+	{
+		Economy->OnServicePurchase.AddUObject(
+			this,
+			&AFlyingCabGameMode::HandleServicePurchase);
+	}
 	if (Run)
 	{
 		Run->OnTimeAttackCompleted.AddUObject(
 			this,
 			&AFlyingCabGameMode::HandleTimeAttackCompleted);
 	}
-	Credits = FMath::Max(0, StartingCredits);
+	if (Economy)
+	{
+		Economy->ResetCredits();
+	}
 	if (HudPresenter)
 	{
-		HudPresenter->InitializePresenter(Dispatch, Run);
+		HudPresenter->InitializePresenter(Dispatch, Run, TrafficAwareness, Economy);
 	}
 	InitializeWorldBootstrap();
 	InitializeDispatch();
@@ -76,7 +95,7 @@ void AFlyingCabGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	if (TrafficAwareness)
 	{
-		TrafficAwareness->OnTrafficAlertChanged.RemoveAll(this);
+		TrafficAwareness->OnNearMissDetected.RemoveAll(this);
 	}
 	if (Dispatch)
 	{
@@ -87,20 +106,15 @@ void AFlyingCabGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		Run->OnTimeAttackCompleted.RemoveAll(this);
 	}
-	for (TPair<TWeakObjectPtr<AFlyingCabPawn>, FTimerHandle>& Entry :
-		VehicleRecoveryTimerHandles)
+	if (Fleet)
 	{
-		GetWorldTimerManager().ClearTimer(Entry.Value);
+		Fleet->OnVehicleRecoveryStarted.RemoveAll(this);
+		Fleet->OnVehicleRecovered.RemoveAll(this);
 	}
-	VehicleRecoveryTimerHandles.Empty();
-	for (AFlyingCabPawn* Vehicle : TrackedVehicles)
+	if (Economy)
 	{
-		if (Vehicle)
-		{
-			Vehicle->OnVehicleDestroyed.RemoveAll(this);
-		}
+		Economy->OnServicePurchase.RemoveAll(this);
 	}
-	TrackedVehicles.Empty();
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -111,7 +125,10 @@ void AFlyingCabGameMode::StartRun(EFlyingCabRunMode Mode)
 		return;
 	}
 
-	Credits = FMath::Max(0, StartingCredits);
+	if (Economy)
+	{
+		Economy->ResetCredits();
+	}
 	if (Dispatch)
 	{
 		Dispatch->StartPassengerMarket(Mode == EFlyingCabRunMode::TimeAttack);
@@ -121,36 +138,27 @@ void AFlyingCabGameMode::StartRun(EFlyingCabRunMode Mode)
 	{
 		// Competitive runs always begin without session-granted vehicle access.
 		// Freeroam intentionally keeps access across map reloads for this app session.
-		if (UGameInstance* GameInstance = GetGameInstance())
-		{
-			if (UFlyingCabProgressionSubsystem* Progression =
-				GameInstance->GetSubsystem<UFlyingCabProgressionSubsystem>())
-			{
-				Progression->ResetAccess();
-			}
-		}
 		if (WorldBootstrap)
 		{
-			WorldBootstrap->RefreshServiceAccess();
+			WorldBootstrap->ResetCompetitiveServiceAccess();
 		}
 	}
 
 	EnsurePawnBinding();
-	PushEconomyStatus();
 	if (HudPresenter)
 	{
-		HudPresenter->UpdateRunModeStatus(Credits);
+		HudPresenter->UpdateRunModeStatus(GetCredits());
 	}
 	UE_LOG(
 		LogFlyingCabDelivery,
 		Display,
 		TEXT("Run started in %s mode with %d credits%s."),
 		Mode == EFlyingCabRunMode::TimeAttack ? TEXT("Time Attack") : TEXT("Freeroam"),
-		Credits,
+		GetCredits(),
 		Mode == EFlyingCabRunMode::TimeAttack
 			? *FString::Printf(TEXT("; target %d"), Run->GetTimeAttackTargetCredits())
 			: TEXT(""));
-	Run->CheckTimeAttackGoal(Credits);
+	Run->CheckTimeAttackGoal(GetCredits());
 }
 
 TArray<float> AFlyingCabGameMode::GetBestTimeAttackTimes() const
@@ -168,21 +176,14 @@ int32 AFlyingCabGameMode::GetTimeAttackTargetCredits() const
 	return Run ? Run->GetTimeAttackTargetCredits() : 1000;
 }
 
-int32 AFlyingCabGameMode::CalculateServicePurchaseUnits(
-	int32 RequestedUnits,
-	float NeededUnits,
-	int32 AvailableCredits,
-	int32 PricePerUnit)
+int32 AFlyingCabGameMode::GetCredits() const
 {
-	if (RequestedUnits <= 0 || NeededUnits <= 0.0f
-		|| AvailableCredits <= 0 || PricePerUnit <= 0)
-	{
-		return 0;
-	}
+	return Economy ? Economy->GetCredits() : 0;
+}
 
-	const int32 RoundedNeededUnits = FMath::Max(0, FMath::CeilToInt(NeededUnits));
-	const int32 AffordableUnits = AvailableCredits / PricePerUnit;
-	return FMath::Min3(RequestedUnits, RoundedNeededUnits, AffordableUnits);
+AFlyingCabPawn* AFlyingCabGameMode::GetActiveVehicle() const
+{
+	return Fleet ? Fleet->GetActiveVehicle() : nullptr;
 }
 
 void AFlyingCabGameMode::InitializeWorldBootstrap()
@@ -203,26 +204,14 @@ void AFlyingCabGameMode::InitializeWorldBootstrap()
 	}
 
 	WorldBootstrap->Bootstrap(DefaultPawnClass);
-	if (AFlyingCabPawn* ServiceVehicle = WorldBootstrap->GetServiceVehicle())
+	if (Fleet)
 	{
-		RegisterVehicle(ServiceVehicle);
+		Fleet->RegisterVehicle(WorldBootstrap->GetServiceVehicle());
 	}
 
 	if (TrafficAwareness)
 	{
-		TrafficAwareness->ResetTrafficVehicles();
-	}
-	for (AFlyingCabTrafficVehicle* Vehicle : WorldBootstrap->GetTrafficVehicles())
-	{
-		if (!Vehicle)
-		{
-			continue;
-		}
-		Vehicle->OnNearMiss.AddUObject(this, &AFlyingCabGameMode::HandleTrafficNearMiss);
-		if (TrafficAwareness)
-		{
-			TrafficAwareness->RegisterTrafficVehicle(Vehicle);
-		}
+		TrafficAwareness->InitializeTrafficVehicles(WorldBootstrap->GetTrafficVehicles());
 	}
 
 	UE_LOG(
@@ -231,43 +220,31 @@ void AFlyingCabGameMode::InitializeWorldBootstrap()
 		TEXT("Traffic initialized with %d/%d vehicles; clean near misses award %d credits."),
 		WorldBootstrap->GetTrafficVehicles().Num(),
 		AFlyingCabWorldBootstrap::GetExpectedTrafficVehicleCount(),
-		NearMissRewardCredits);
+		Economy ? Economy->GetNearMissRewardCredits() : 0);
 }
 
 void AFlyingCabGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	EnsurePawnBinding();
+	AFlyingCabPawn* ActiveVehicle = Fleet ? Fleet->GetActiveVehicle() : nullptr;
 	if (HudPresenter)
 	{
-		HudPresenter->Refresh(DeltaSeconds, BoundPawn, Credits);
+		HudPresenter->Refresh(DeltaSeconds, ActiveVehicle, GetCredits());
 	}
 	if (Run)
 	{
-		Run->CheckTimeAttackGoal(Credits);
+		Run->CheckTimeAttackGoal(GetCredits());
 	}
 }
 
 void AFlyingCabGameMode::InitializeDispatch()
 {
-	if (!Dispatch || !Dispatch->InitializeNetwork())
+	if (Dispatch && Dispatch->InitializeNetwork())
 	{
-		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not initialize passenger dispatch."));
 		return;
 	}
-
-	UE_LOG(
-		LogFlyingCabDelivery,
-		Display,
-		TEXT("Delivery network initialized with %d stops, %d fuel stations and %d repair shops."),
-		Dispatch->GetStopCount(),
-		WorldBootstrap ? WorldBootstrap->GetFuelStationCount() : 0,
-		WorldBootstrap ? WorldBootstrap->GetRepairStationCount() : 0);
-	UE_LOG(
-		LogFlyingCabDelivery,
-		Display,
-		TEXT("Economy initialized with %d credits."),
-		Credits);
+	UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not initialize passenger dispatch."));
 }
 
 void AFlyingCabGameMode::EnsurePawnBinding()
@@ -279,100 +256,36 @@ void AFlyingCabGameMode::EnsurePawnBinding()
 		// the on-foot character. Do not discard its delivery/economy binding.
 		return;
 	}
-	if (Pawn == BoundPawn)
+	if (Fleet && Pawn == Fleet->GetActiveVehicle())
 	{
 		return;
 	}
 
-	RegisterVehicle(Pawn);
-	BoundPawn = Pawn;
+	if (Fleet)
+	{
+		Fleet->SetActiveVehicle(Pawn);
+	}
 	if (TrafficAwareness)
 	{
-		TrafficAwareness->SetTrackedPawn(BoundPawn);
+		TrafficAwareness->SetTrackedPawn(Pawn);
 	}
 	if (Dispatch)
 	{
-		Dispatch->SetTrackedPawn(BoundPawn);
+		Dispatch->SetTrackedPawn(Pawn);
 	}
-	PushEconomyStatus();
-}
-
-void AFlyingCabGameMode::RegisterVehicle(AFlyingCabPawn* Pawn)
-{
-	TrackedVehicles.RemoveAll([](const TObjectPtr<AFlyingCabPawn>& Vehicle)
-	{
-		return !IsValid(Vehicle);
-	});
-	if (!Pawn || TrackedVehicles.Contains(Pawn))
-	{
-		return;
-	}
-
-	TrackedVehicles.Add(Pawn);
-	Pawn->OnVehicleDestroyed.AddUObject(this, &AFlyingCabGameMode::HandleVehicleDestroyed);
-	UE_LOG(
-		LogFlyingCabDelivery,
-		Verbose,
-		TEXT("Vehicle registered for destruction recovery: %s."),
-		*Pawn->GetName());
 }
 
 bool AFlyingCabGameMode::CanPlayerExitVehicle(FText& OutFailureReason) const
 {
-	if (Dispatch && Dispatch->HasPassengerOnBoard())
-	{
-		OutFailureReason = FText::FromString(
-			TEXT("PASSENGER ON BOARD // COMPLETE FARE BEFORE EXITING"));
-		return false;
-	}
-	if (Dispatch && Dispatch->IsCurbsideLinkInProgress())
-	{
-		OutFailureReason = FText::FromString(
-			TEXT("CURBSIDE LINK IN PROGRESS // HOLD POSITION"));
-		return false;
-	}
-
-	OutFailureReason = FText::GetEmpty();
-	return true;
-}
-
-void AFlyingCabGameMode::ShowPlayerEventMessage(
-	const FText& Message,
-	const FLinearColor& Color,
-	float DurationSeconds) const
-{
-	if (HudPresenter)
-	{
-		HudPresenter->ShowEventMessage(Message, Color, DurationSeconds);
-	}
-}
-
-AFlyingCabPlayerController* AFlyingCabGameMode::GetFlyingCabPlayerController() const
-{
-	return Cast<AFlyingCabPlayerController>(UGameplayStatics::GetPlayerController(this, 0));
-}
-
-void AFlyingCabGameMode::PushEconomyStatus() const
-{
-	if (HudPresenter)
-	{
-		HudPresenter->PushEconomyStatus(Credits);
-	}
-}
-
-bool AFlyingCabGameMode::IsPlayerOnFoot() const
-{
-	const AFlyingCabPlayerController* PlayerController = GetFlyingCabPlayerController();
-	return PlayerController
-		&& PlayerController->GetPlayerMode() == EFlyingCabPlayerMode::OnFoot;
+	return !Dispatch || Dispatch->CanPlayerExitVehicle(OutFailureReason);
 }
 
 void AFlyingCabGameMode::HandlePassengerPickedUp(const FString& DestinationName)
 {
-	ShowPlayerEventMessage(
-		FText::FromString(TEXT("CURBSIDE LINK // PASSENGER SECURED")),
-		FLinearColor::FromSRGBColor(FColor(60, 235, 255)),
-		1.5f);
+	if (HudPresenter)
+	{
+		HudPresenter->ShowPassengerPickedUp();
+	}
 	UE_LOG(
 		LogFlyingCabDelivery,
 		Display,
@@ -384,31 +297,26 @@ void AFlyingCabGameMode::HandleFareCompleted(
 	int32 FarePayout,
 	int32 TotalDeliveries)
 {
-	const int32 EffectiveFarePayout = FMath::Max(0, FarePayout);
-	Credits += EffectiveFarePayout;
+	const int32 AwardedFare = Economy ? Economy->AddCredits(FarePayout) : 0;
 	if (Run)
 	{
-		Run->RecordDelivery(EffectiveFarePayout);
+		Run->RecordDelivery(AwardedFare);
 	}
 
-	ShowPlayerEventMessage(
-		FText::FromString(FString::Printf(
-				TEXT("PASSENGER CLEAR // +%d CR  |  BALANCE: %d  |  TOTAL: %d"),
-				EffectiveFarePayout,
-				Credits,
-				TotalDeliveries)),
-		FLinearColor::FromSRGBColor(FColor(70, 255, 150)),
-		2.5f);
+	if (HudPresenter)
+	{
+		HudPresenter->ShowFareCompleted(AwardedFare, GetCredits(), TotalDeliveries);
+	}
 	UE_LOG(
 		LogFlyingCabDelivery,
 		Display,
 		TEXT("Delivery completed for %d credits. Balance %d, total deliveries %d."),
-		EffectiveFarePayout,
-		Credits,
+		AwardedFare,
+		GetCredits(),
 		TotalDeliveries);
 	if (Run)
 	{
-		Run->CheckTimeAttackGoal(Credits);
+		Run->CheckTimeAttackGoal(GetCredits());
 	}
 }
 
@@ -417,44 +325,15 @@ int32 AFlyingCabGameMode::TryPurchaseFuel(
 	int32 RequestedUnits,
 	int32 PricePerUnit)
 {
-	if (!Pawn || Pawn->IsDestroyed() || RequestedUnits <= 0 || PricePerUnit <= 0)
+	if (!Economy)
 	{
 		return 0;
 	}
 
-	const int32 AffordableUnits = Credits / PricePerUnit;
-	const int32 UnitsToPurchase = CalculateServicePurchaseUnits(
+	return Economy->TryPurchaseFuel(
+		Pawn,
 		RequestedUnits,
-		Pawn->GetFuelNeeded(),
-		Credits,
-		PricePerUnit);
-	if (UnitsToPurchase <= 0)
-	{
-		if (AffordableUnits <= 0)
-		{
-			ShowPlayerEventMessage(
-				FText::FromString(TEXT("FUEL SERVICE // INSUFFICIENT CREDITS")),
-				FLinearColor::FromSRGBColor(FColor(255, 90, 30)),
-				1.0f);
-		}
-		return 0;
-	}
-
-	const float FuelAdded = Pawn->AddFuel(static_cast<float>(UnitsToPurchase));
-	if (FuelAdded <= UE_SMALL_NUMBER)
-	{
-		return 0;
-	}
-
-	const int32 ChargedUnits = FMath::CeilToInt(FuelAdded);
-	const int32 FuelCost = ChargedUnits * PricePerUnit;
-	Credits = FMath::Max(0, Credits - FuelCost);
-	if (Run)
-	{
-		Run->RecordFuelPurchase(FuelCost);
-	}
-	PushEconomyStatus();
-	return ChargedUnits;
+		PricePerUnit).UnitsPurchased;
 }
 
 int32 AFlyingCabGameMode::TryPurchaseRepair(
@@ -462,72 +341,52 @@ int32 AFlyingCabGameMode::TryPurchaseRepair(
 	int32 RequestedUnits,
 	int32 PricePerUnit)
 {
-	if (!Pawn || Pawn->IsDestroyed() || RequestedUnits <= 0 || PricePerUnit <= 0)
+	if (!Economy)
 	{
 		return 0;
 	}
 
-	const int32 AffordableUnits = Credits / PricePerUnit;
-	const int32 UnitsToPurchase = CalculateServicePurchaseUnits(
+	return Economy->TryPurchaseRepair(
+		Pawn,
 		RequestedUnits,
-		Pawn->GetHullNeeded(),
-		Credits,
-		PricePerUnit);
-	if (UnitsToPurchase <= 0)
-	{
-		if (AffordableUnits <= 0)
-		{
-			ShowPlayerEventMessage(
-				FText::FromString(TEXT("NIGHTSHIFT REPAIR // INSUFFICIENT CREDITS")),
-				FLinearColor::FromSRGBColor(FColor(255, 90, 30)),
-				1.0f);
-		}
-		return 0;
-	}
-
-	const float HullAdded = Pawn->AddHull(static_cast<float>(UnitsToPurchase));
-	if (HullAdded <= UE_SMALL_NUMBER)
-	{
-		return 0;
-	}
-
-	const int32 ChargedUnits = FMath::CeilToInt(HullAdded);
-	const int32 RepairCost = ChargedUnits * PricePerUnit;
-	Credits = FMath::Max(0, Credits - RepairCost);
-	if (Run)
-	{
-		Run->RecordRepairPurchase(RepairCost);
-	}
-	PushEconomyStatus();
-	return ChargedUnits;
+		PricePerUnit).UnitsPurchased;
 }
 
-void AFlyingCabGameMode::HandleVehicleDestroyed(AFlyingCabPawn* Pawn)
+void AFlyingCabGameMode::HandleServicePurchase(
+	const FFlyingCabServicePurchaseResult& Result)
+{
+	if (Result.bInsufficientCredits && HudPresenter)
+	{
+		HudPresenter->ShowInsufficientServiceCredits(Result.bRepairService);
+	}
+	if (Result.CreditsSpent > 0 && Run)
+	{
+		Result.bRepairService
+			? Run->RecordRepairPurchase(Result.CreditsSpent)
+			: Run->RecordFuelPurchase(Result.CreditsSpent);
+	}
+}
+
+void AFlyingCabGameMode::HandleVehicleRecoveryStarted(
+	AFlyingCabPawn* Pawn,
+	bool bAffectsActiveRun,
+	float RecoveryDelay)
 {
 	if (!Pawn)
 	{
 		return;
 	}
-	RegisterVehicle(Pawn);
 
-	const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
-	const bool bAffectsActiveRun = PlayerPawn == Pawn
-		|| (Pawn == BoundPawn && IsPlayerOnFoot());
 	if (!bAffectsActiveRun)
 	{
-		PushEconomyStatus();
-		ShowPlayerEventMessage(
-			FText::FromString(FString::Printf(
-				TEXT("%s DAMAGED // REMOTE RECOVERY INBOUND"),
-				*Pawn->GetVehicleDisplayName())),
-			FLinearColor::FromSRGBColor(FColor(255, 140, 35)),
-			DestroyedRecoveryDelay);
-		UE_LOG(
-			LogFlyingCabDelivery,
-			Warning,
-			TEXT("Parked vehicle %s destroyed; scheduling recovery without tow charge."),
-			*Pawn->GetName());
-		ScheduleVehicleRecovery(Pawn);
+		if (HudPresenter)
+		{
+			HudPresenter->ShowVehicleRecoveryStarted(
+				Pawn->GetVehicleDisplayName(),
+				false,
+				0,
+				RecoveryDelay);
+		}
 		return;
 	}
 
@@ -535,84 +394,42 @@ void AFlyingCabGameMode::HandleVehicleDestroyed(AFlyingCabPawn* Pawn)
 	{
 		Dispatch->AbortActiveRide();
 	}
-	const int32 ChargedTowFee = FMath::Min(Credits, FMath::Max(0, TowFee));
-	Credits -= ChargedTowFee;
+	const int32 ChargedTowFee = Economy ? Economy->ChargeTowFee() : 0;
 	if (Run)
 	{
 		Run->RecordTow(ChargedTowFee);
 	}
-	PendingRecoveryPawn = Pawn;
 	if (Dispatch)
 	{
 		Dispatch->SetOfferAcceptanceAllowed(false);
 	}
-	PushEconomyStatus();
 	if (HudPresenter)
 	{
 		HudPresenter->ClearMinimapTarget();
 	}
 
-	ShowPlayerEventMessage(
-		FText::FromString(FString::Printf(
-				TEXT("CAB DESTROYED // TOW CHARGE: %d CR // RECOVERY INBOUND"),
-				ChargedTowFee)),
-		FLinearColor::FromSRGBColor(FColor(255, 40, 20)),
-		DestroyedRecoveryDelay);
+	if (HudPresenter)
+	{
+		HudPresenter->ShowVehicleRecoveryStarted(
+			Pawn->GetVehicleDisplayName(),
+			true,
+			ChargedTowFee,
+			RecoveryDelay);
+	}
 	UE_LOG(
 		LogFlyingCabDelivery,
 		Warning,
 		TEXT("Cab destroyed. Course aborted and %d credit tow fee charged."),
 		ChargedTowFee);
-
-	ScheduleVehicleRecovery(Pawn);
 }
 
-void AFlyingCabGameMode::ScheduleVehicleRecovery(AFlyingCabPawn* Pawn)
+void AFlyingCabGameMode::HandleVehicleRecovered(
+	AFlyingCabPawn* Pawn,
+	bool bRecoveredActiveVehicle)
 {
-	if (!Pawn)
+	if (bRecoveredActiveVehicle && Dispatch)
 	{
-		return;
-	}
-
-	const TWeakObjectPtr<AFlyingCabPawn> VehicleKey(Pawn);
-	if (FTimerHandle* ExistingHandle = VehicleRecoveryTimerHandles.Find(VehicleKey))
-	{
-		GetWorldTimerManager().ClearTimer(*ExistingHandle);
-	}
-
-	FTimerDelegate RecoveryDelegate;
-	RecoveryDelegate.BindUObject(
-		this,
-		&AFlyingCabGameMode::RecoverVehicleAfterTow,
-		Pawn);
-	FTimerHandle& RecoveryHandle = VehicleRecoveryTimerHandles.FindOrAdd(VehicleKey);
-	GetWorldTimerManager().SetTimer(
-		RecoveryHandle,
-		RecoveryDelegate,
-		DestroyedRecoveryDelay,
-		false);
-}
-
-void AFlyingCabGameMode::RecoverVehicleAfterTow(AFlyingCabPawn* Pawn)
-{
-	VehicleRecoveryTimerHandles.Remove(TWeakObjectPtr<AFlyingCabPawn>(Pawn));
-	if (Pawn)
-	{
-		Pawn->RecoverVehicle(RecoveryFuelPercent);
-		PushEconomyStatus();
-		UE_LOG(
-			LogFlyingCabDelivery,
-			Display,
-			TEXT("Vehicle %s recovered after tow."),
-			*Pawn->GetName());
-	}
-	if (PendingRecoveryPawn == Pawn)
-	{
-		PendingRecoveryPawn = nullptr;
-		if (Dispatch)
-		{
-			Dispatch->SetOfferAcceptanceAllowed(true);
-		}
+		Dispatch->SetOfferAcceptanceAllowed(true);
 	}
 }
 
@@ -620,41 +437,34 @@ void AFlyingCabGameMode::HandleTrafficNearMiss(
 	AFlyingCabTrafficVehicle* Vehicle,
 	AFlyingCabPawn* Pawn)
 {
-	if (!Vehicle || !Pawn || Pawn != BoundPawn || Pawn->IsDestroyed()
-		|| NearMissRewardCredits <= 0)
+	if (!Vehicle || !Pawn || !Fleet || !Economy
+		|| Pawn != Fleet->GetActiveVehicle() || Pawn->IsDestroyed())
 	{
 		return;
 	}
 
-	Credits += NearMissRewardCredits;
+	const int32 AwardedCredits = Economy->AwardNearMiss();
+	if (AwardedCredits <= 0)
+	{
+		return;
+	}
 	if (Run)
 	{
-		Run->RecordNearMiss(NearMissRewardCredits);
+		Run->RecordNearMiss(AwardedCredits);
 	}
 	if (TrafficAwareness)
 	{
-		TrafficAwareness->ShowNearMissReward(NearMissRewardCredits);
+		TrafficAwareness->ShowNearMissReward(AwardedCredits);
 	}
-	PushEconomyStatus();
 	UE_LOG(
 		LogFlyingCabDelivery,
 		Display,
 		TEXT("Clean traffic near miss awarded %d credits. Balance %d."),
-		NearMissRewardCredits,
-		Credits);
+		AwardedCredits,
+		GetCredits());
 	if (Run)
 	{
-		Run->CheckTimeAttackGoal(Credits);
-	}
-}
-
-void AFlyingCabGameMode::HandleTrafficAlertChanged(
-	const FText& Alert,
-	const FLinearColor& Color)
-{
-	if (HudPresenter)
-	{
-		HudPresenter->SetTrafficAlert(Alert, Color);
+		Run->CheckTimeAttackGoal(GetCredits());
 	}
 }
 
@@ -667,7 +477,7 @@ void AFlyingCabGameMode::HandleTimeAttackCompleted(
 	}
 	if (HudPresenter)
 	{
-		HudPresenter->UpdateRunModeStatus(Credits);
+		HudPresenter->UpdateRunModeStatus(GetCredits());
 	}
 	UE_LOG(
 		LogFlyingCabDelivery,
@@ -678,7 +488,8 @@ void AFlyingCabGameMode::HandleTimeAttackCompleted(
 		Result.CompletedDeliveries,
 		Result.NearMissCount);
 
-	if (AFlyingCabPlayerController* Controller = GetFlyingCabPlayerController())
+	if (AFlyingCabPlayerController* Controller = Cast<AFlyingCabPlayerController>(
+		UGameplayStatics::GetPlayerController(this, 0)))
 	{
 		Controller->ShowTimeAttackResults(Result, GetBestTimeAttackTimes());
 	}

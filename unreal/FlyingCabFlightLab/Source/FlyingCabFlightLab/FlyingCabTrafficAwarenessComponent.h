@@ -26,6 +26,10 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(
 	FOnFlyingCabTrafficAlertChanged,
 	const FText&,
 	const FLinearColor&);
+DECLARE_MULTICAST_DELEGATE_TwoParams(
+	FOnFlyingCabNearMissDetected,
+	AFlyingCabTrafficVehicle*,
+	AFlyingCabPawn*);
 
 /** Predicts short-range traffic conflicts and owns their HUD presentation state. */
 UCLASS(ClassGroup = "Flying Cab", meta = (BlueprintSpawnableComponent))
@@ -37,6 +41,7 @@ public:
 	UFlyingCabTrafficAwarenessComponent();
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void TickComponent(
 		float DeltaSeconds,
 		ELevelTick TickType,
@@ -45,6 +50,8 @@ public:
 	void SetTrackedPawn(AFlyingCabPawn* Pawn);
 	void ResetTrafficVehicles();
 	void RegisterTrafficVehicle(AFlyingCabTrafficVehicle* Vehicle);
+	void InitializeTrafficVehicles(
+		const TArray<TObjectPtr<AFlyingCabTrafficVehicle>>& Vehicles);
 	void ShowNearMissReward(int32 RewardCredits);
 
 	static FFlyingCabTrafficThreat FindClosestThreat(
@@ -55,8 +62,10 @@ public:
 		float WarningVerticalRange);
 
 	FOnFlyingCabTrafficAlertChanged OnTrafficAlertChanged;
+	FOnFlyingCabNearMissDetected OnNearMissDetected;
 
 private:
+	void HandleNearMiss(AFlyingCabTrafficVehicle* Vehicle, AFlyingCabPawn* Pawn);
 	void UpdateTrafficAlert(float DeltaSeconds);
 	void SetTrafficAlert(const FText& Text, const FLinearColor& Color);
 

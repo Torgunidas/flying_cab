@@ -2,6 +2,7 @@
 
 #include "FlyingCabWorldBootstrap.h"
 
+#include "Engine/GameInstance.h"
 #include "FlyingCabAccessTerminal.h"
 #include "FlyingCabCityData.h"
 #include "FlyingCabCityExpansion.h"
@@ -9,6 +10,7 @@
 #include "FlyingCabNightshiftOffice.h"
 #include "FlyingCabOnFootPortal.h"
 #include "FlyingCabPawn.h"
+#include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabRepairStation.h"
 #include "FlyingCabTrafficVehicle.h"
 
@@ -78,6 +80,19 @@ void AFlyingCabWorldBootstrap::RefreshServiceAccess()
 	{
 		ServiceAccessTerminal->Configure(TEXT("Vehicle.Service"), TEXT("SERVICE VEHICLES"));
 	}
+}
+
+void AFlyingCabWorldBootstrap::ResetCompetitiveServiceAccess()
+{
+	if (UGameInstance* GameInstance = GetGameInstance())
+	{
+		if (UFlyingCabProgressionSubsystem* Progression =
+			GameInstance->GetSubsystem<UFlyingCabProgressionSubsystem>())
+		{
+			Progression->ResetAccess();
+		}
+	}
+	RefreshServiceAccess();
 }
 
 bool AFlyingCabWorldBootstrap::SpawnCityExpansion()

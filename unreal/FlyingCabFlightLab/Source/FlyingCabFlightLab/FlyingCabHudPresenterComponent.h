@@ -14,10 +14,13 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabHudPresenterComponent : public UActorComp
 
 public:
 	UFlyingCabHudPresenterComponent();
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	void InitializePresenter(
 		class UFlyingCabDispatchComponent* InDispatch,
-		class UFlyingCabRunComponent* InRun);
+		class UFlyingCabRunComponent* InRun,
+		class UFlyingCabTrafficAwarenessComponent* InTrafficAwareness,
+		class UFlyingCabEconomyComponent* InEconomy);
 	void Refresh(
 		float DeltaSeconds,
 		class AFlyingCabPawn* Pawn,
@@ -29,11 +32,21 @@ public:
 		const FText& Message,
 		const FLinearColor& Color,
 		float DurationSeconds) const;
+	void ShowPassengerPickedUp() const;
+	void ShowFareCompleted(int32 FarePayout, int32 Credits, int32 TotalDeliveries) const;
+	void ShowInsufficientServiceCredits(bool bRepairService) const;
+	void ShowVehicleRecoveryStarted(
+		const FString& VehicleName,
+		bool bAffectsActiveRun,
+		int32 TowFee,
+		float RecoveryDelay) const;
 	void SetTrafficAlert(const FText& Alert, const FLinearColor& Color) const;
 	void ClearMinimapTarget() const;
 
 private:
 	class AFlyingCabPlayerController* GetPlayerController() const;
+	void HandleCreditsChanged(int32 Credits);
+	void HandleTrafficAlertChanged(const FText& Alert, const FLinearColor& Color);
 	bool IsPlayerOnFoot() const;
 	void UpdateProximityGuidance(class AFlyingCabPawn* Pawn) const;
 	void UpdateObjectiveStatus(class AFlyingCabPawn* Pawn, int32 Credits) const;
@@ -51,6 +64,12 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<class UFlyingCabRunComponent> Run;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UFlyingCabTrafficAwarenessComponent> TrafficAwareness;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UFlyingCabEconomyComponent> Economy;
 
 	float HudRefreshElapsed = 0.0f;
 };

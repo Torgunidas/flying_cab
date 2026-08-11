@@ -5,9 +5,11 @@
 #include "FlyingCabCharacter.h"
 #include "FlyingCabDeliveryZone.h"
 #include "FlyingCabDispatchComponent.h"
+#include "FlyingCabEconomyComponent.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabRunComponent.h"
+#include "FlyingCabTrafficAwarenessComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 UFlyingCabHudPresenterComponent::UFlyingCabHudPresenterComponent()
@@ -17,11 +19,56 @@ UFlyingCabHudPresenterComponent::UFlyingCabHudPresenterComponent()
 
 void UFlyingCabHudPresenterComponent::InitializePresenter(
 	UFlyingCabDispatchComponent* InDispatch,
-	UFlyingCabRunComponent* InRun)
+	UFlyingCabRunComponent* InRun,
+	UFlyingCabTrafficAwarenessComponent* InTrafficAwareness,
+	UFlyingCabEconomyComponent* InEconomy)
 {
 	Dispatch = InDispatch;
 	Run = InRun;
+	TrafficAwareness = InTrafficAwareness;
+	Economy = InEconomy;
+	if (TrafficAwareness)
+	{
+		TrafficAwareness->OnTrafficAlertChanged.AddUObject(
+			this,
+			&UFlyingCabHudPresenterComponent::HandleTrafficAlertChanged);
+	}
+	if (Economy)
+	{
+		Economy->OnCreditsChanged.AddUObject(
+			this,
+			&UFlyingCabHudPresenterComponent::HandleCreditsChanged);
+		PushEconomyStatus(Economy->GetCredits());
+	}
 	HudRefreshElapsed = 0.0f;
+}
+
+void UFlyingCabHudPresenterComponent::EndPlay(
+	const EEndPlayReason::Type EndPlayReason)
+{
+	if (TrafficAwareness)
+	{
+		TrafficAwareness->OnTrafficAlertChanged.RemoveAll(this);
+	}
+	if (Economy)
+	{
+		Economy->OnCreditsChanged.RemoveAll(this);
+	}
+	TrafficAwareness = nullptr;
+	Economy = nullptr;
+	Super::EndPlay(EndPlayReason);
+}
+
+void UFlyingCabHudPresenterComponent::HandleCreditsChanged(int32 Credits)
+{
+	PushEconomyStatus(Credits);
+}
+
+void UFlyingCabHudPresenterComponent::HandleTrafficAlertChanged(
+	const FText& Alert,
+	const FLinearColor& Color)
+{
+	SetTrafficAlert(Alert, Color);
 }
 
 void UFlyingCabHudPresenterComponent::Refresh(
@@ -81,6 +128,61 @@ void UFlyingCabHudPresenterComponent::ShowEventMessage(
 	{
 		PlayerController->ShowEventMessage(Message, Color, DurationSeconds);
 	}
+}
+
+void UFlyingCabHudPresenterComponent::ShowPassengerPickedUp() const
+{
+	ShowEventMessage(
+		FText::FromString(TEXT("CURBSIDE LINK // PASSENGER SECURED")),
+		FLinearColor::FromSRGBColor(FColor(60, 235, 255)),
+		1.5f);
+}
+
+void UFlyingCabHudPresenterComponent::ShowFareCompleted(
+	int32 FarePayout,
+	int32 Credits,
+	int32 TotalDeliveries) const
+{
+	ShowEventMessage(
+		FText::FromString(FString::Printf(
+			TEXT("PASSENGER CLEAR // +%d CR  |  BALANCE: %d  |  TOTAL: %d"),
+			FarePayout,
+			Credits,
+			TotalDeliveries)),
+		FLinearColor::FromSRGBColor(FColor(70, 255, 150)),
+		2.5f);
+}
+
+void UFlyingCabHudPresenterComponent::ShowInsufficientServiceCredits(
+	bool bRepairService) const
+{
+	ShowEventMessage(
+		FText::FromString(bRepairService
+			? TEXT("NIGHTSHIFT REPAIR // INSUFFICIENT CREDITS")
+			: TEXT("FUEL SERVICE // INSUFFICIENT CREDITS")),
+		FLinearColor::FromSRGBColor(FColor(255, 90, 30)),
+		1.0f);
+}
+
+void UFlyingCabHudPresenterComponent::ShowVehicleRecoveryStarted(
+	const FString& VehicleName,
+	bool bAffectsActiveRun,
+	int32 TowFee,
+	float RecoveryDelay) const
+{
+	const FText Message = bAffectsActiveRun
+		? FText::FromString(FString::Printf(
+			TEXT("CAB DESTROYED // TOW CHARGE: %d CR // RECOVERY INBOUND"),
+			TowFee))
+		: FText::FromString(FString::Printf(
+			TEXT("%s DAMAGED // REMOTE RECOVERY INBOUND"),
+			*VehicleName));
+	ShowEventMessage(
+		Message,
+		bAffectsActiveRun
+			? FLinearColor::FromSRGBColor(FColor(255, 40, 20))
+			: FLinearColor::FromSRGBColor(FColor(255, 140, 35)),
+		RecoveryDelay);
 }
 
 void UFlyingCabHudPresenterComponent::SetTrafficAlert(

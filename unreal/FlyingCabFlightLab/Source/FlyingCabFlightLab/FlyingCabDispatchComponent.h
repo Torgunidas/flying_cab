@@ -52,6 +52,7 @@ public:
 	void SetTrackedPawn(AFlyingCabPawn* Pawn) { TrackedPawn = Pawn; }
 	void SetOfferAcceptanceAllowed(bool bAllowed);
 	void AbortActiveRide();
+	bool CanPlayerExitVehicle(FText& OutFailureReason) const;
 
 	bool HasPassengerOnBoard() const { return bPassengerOnBoard; }
 	bool IsCurbsideLinkInProgress() const;

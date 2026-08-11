@@ -22,12 +22,8 @@ public:
 	TArray<float> GetBestTimeAttackTimes() const;
 	EFlyingCabRunMode GetCurrentRunMode() const;
 	int32 GetTimeAttackTargetCredits() const;
-	int32 GetCredits() const { return Credits; }
-	static int32 CalculateServicePurchaseUnits(
-		int32 RequestedUnits,
-		float NeededUnits,
-		int32 AvailableCredits,
-		int32 PricePerUnit);
+	int32 GetCredits() const;
+	class AFlyingCabPawn* GetActiveVehicle() const;
 
 	int32 TryPurchaseFuel(
 		class AFlyingCabPawn* Pawn,
@@ -42,43 +38,27 @@ public:
 private:
 	void InitializeWorldBootstrap();
 	void InitializeDispatch();
-	void RegisterVehicle(class AFlyingCabPawn* Pawn);
 	void EnsurePawnBinding();
 	void HandlePassengerPickedUp(const FString& DestinationName);
 	void HandleFareCompleted(int32 FarePayout, int32 TotalDeliveries);
-	void HandleVehicleDestroyed(class AFlyingCabPawn* Pawn);
-	void ScheduleVehicleRecovery(class AFlyingCabPawn* Pawn);
-	void RecoverVehicleAfterTow(class AFlyingCabPawn* Pawn);
+	void HandleVehicleRecoveryStarted(
+		class AFlyingCabPawn* Pawn,
+		bool bAffectsActiveRun,
+		float RecoveryDelay);
+	void HandleVehicleRecovered(
+		class AFlyingCabPawn* Pawn,
+		bool bRecoveredActiveVehicle);
+	void HandleServicePurchase(const struct FFlyingCabServicePurchaseResult& Result);
 	void HandleTimeAttackCompleted(const FFlyingCabTimeAttackResult& Result);
 	void HandleTrafficNearMiss(
 		class AFlyingCabTrafficVehicle* Vehicle,
 		class AFlyingCabPawn* Pawn);
-	void HandleTrafficAlertChanged(const FText& Alert, const FLinearColor& Color);
-	void ShowPlayerEventMessage(
-		const FText& Message,
-		const FLinearColor& Color,
-		float DurationSeconds) const;
-	class AFlyingCabPlayerController* GetFlyingCabPlayerController() const;
-	void PushEconomyStatus() const;
-	bool IsPlayerOnFoot() const;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0"))
-	int32 StartingCredits = 100;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0"))
-	int32 TowFee = 35;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0.0"))
-	float DestroyedRecoveryDelay = 2.5f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Economy", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float RecoveryFuelPercent = 0.25f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Traffic", meta = (ClampMin = "0"))
-	int32 NearMissRewardCredits = 3;
 
 	UPROPERTY(Transient)
 	TObjectPtr<class AFlyingCabWorldBootstrap> WorldBootstrap;
+
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Economy")
+	TObjectPtr<class UFlyingCabEconomyComponent> Economy;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Dispatch")
 	TObjectPtr<class UFlyingCabDispatchComponent> Dispatch;
@@ -92,15 +72,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Traffic")
 	TObjectPtr<class UFlyingCabTrafficAwarenessComponent> TrafficAwareness;
 
-	UPROPERTY(Transient)
-	TArray<TObjectPtr<class AFlyingCabPawn>> TrackedVehicles;
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Fleet")
+	TObjectPtr<class UFlyingCabFleetComponent> Fleet;
 
-	UPROPERTY(Transient)
-	TObjectPtr<class AFlyingCabPawn> BoundPawn;
-
-	UPROPERTY(Transient)
-	TObjectPtr<class AFlyingCabPawn> PendingRecoveryPawn;
-
-	int32 Credits = 0;
-	TMap<TWeakObjectPtr<class AFlyingCabPawn>, FTimerHandle> VehicleRecoveryTimerHandles;
 };

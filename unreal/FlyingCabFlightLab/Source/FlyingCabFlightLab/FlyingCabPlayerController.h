@@ -126,9 +126,6 @@ private:
 	bool bEnableMouseTouchTestingInEditor = true;
 
 	UPROPERTY(Transient)
-	TObjectPtr<AFlyingCabPawn> ActiveVehicle;
-
-	UPROPERTY(Transient)
 	TObjectPtr<AFlyingCabCameraRig> CameraRig;
 
 	UPROPERTY(Transient)

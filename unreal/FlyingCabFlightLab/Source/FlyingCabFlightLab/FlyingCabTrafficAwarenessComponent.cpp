@@ -17,6 +17,15 @@ void UFlyingCabTrafficAwarenessComponent::BeginPlay()
 	PrimaryComponentTick.TickInterval = FMath::Max(0.05f, RefreshInterval);
 }
 
+void UFlyingCabTrafficAwarenessComponent::EndPlay(
+	const EEndPlayReason::Type EndPlayReason)
+{
+	ResetTrafficVehicles();
+	OnTrafficAlertChanged.Clear();
+	OnNearMissDetected.Clear();
+	Super::EndPlay(EndPlayReason);
+}
+
 void UFlyingCabTrafficAwarenessComponent::TickComponent(
 	float DeltaSeconds,
 	ELevelTick TickType,
@@ -40,6 +49,13 @@ void UFlyingCabTrafficAwarenessComponent::SetTrackedPawn(AFlyingCabPawn* Pawn)
 
 void UFlyingCabTrafficAwarenessComponent::ResetTrafficVehicles()
 {
+	for (AFlyingCabTrafficVehicle* Vehicle : TrafficVehicles)
+	{
+		if (Vehicle)
+		{
+			Vehicle->OnNearMiss.RemoveAll(this);
+		}
+	}
 	TrafficVehicles.Reset();
 }
 
@@ -49,7 +65,27 @@ void UFlyingCabTrafficAwarenessComponent::RegisterTrafficVehicle(
 	if (IsValid(Vehicle) && !TrafficVehicles.Contains(Vehicle))
 	{
 		TrafficVehicles.Add(Vehicle);
+		Vehicle->OnNearMiss.AddUObject(
+			this,
+			&UFlyingCabTrafficAwarenessComponent::HandleNearMiss);
 	}
+}
+
+void UFlyingCabTrafficAwarenessComponent::InitializeTrafficVehicles(
+	const TArray<TObjectPtr<AFlyingCabTrafficVehicle>>& Vehicles)
+{
+	ResetTrafficVehicles();
+	for (AFlyingCabTrafficVehicle* Vehicle : Vehicles)
+	{
+		RegisterTrafficVehicle(Vehicle);
+	}
+}
+
+void UFlyingCabTrafficAwarenessComponent::HandleNearMiss(
+	AFlyingCabTrafficVehicle* Vehicle,
+	AFlyingCabPawn* Pawn)
+{
+	OnNearMissDetected.Broadcast(Vehicle, Pawn);
 }
 
 void UFlyingCabTrafficAwarenessComponent::ShowNearMissReward(int32 RewardCredits)

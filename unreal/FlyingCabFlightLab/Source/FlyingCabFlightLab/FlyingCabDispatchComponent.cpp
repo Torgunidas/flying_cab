@@ -162,6 +162,25 @@ void UFlyingCabDispatchComponent::AbortActiveRide()
 	RefreshOfferAcceptance();
 }
 
+bool UFlyingCabDispatchComponent::CanPlayerExitVehicle(FText& OutFailureReason) const
+{
+	if (bPassengerOnBoard)
+	{
+		OutFailureReason = FText::FromString(
+			TEXT("PASSENGER ON BOARD // COMPLETE FARE BEFORE EXITING"));
+		return false;
+	}
+	if (IsCurbsideLinkInProgress())
+	{
+		OutFailureReason = FText::FromString(
+			TEXT("CURBSIDE LINK IN PROGRESS // HOLD POSITION"));
+		return false;
+	}
+
+	OutFailureReason = FText::GetEmpty();
+	return true;
+}
+
 bool UFlyingCabDispatchComponent::IsCurbsideLinkInProgress() const
 {
 	return PassengerOffers.ContainsByPredicate(

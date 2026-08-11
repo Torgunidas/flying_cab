@@ -50,7 +50,6 @@ void AFlyingCabPlayerController::BeginPlay()
 	APawn* ControlledPawn = GetPawn();
 	if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(ControlledPawn))
 	{
-		ActiveVehicle = Vehicle;
 		ShowInteractionMessage(
 			TEXT("Q // EXIT CAB"),
 			FColor(60, 235, 255));
@@ -250,7 +249,6 @@ void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
 	LastContextPromptRefreshTime = -1.0;
 	if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(InPawn))
 	{
-		ActiveVehicle = Vehicle;
 		PlayerMode = EFlyingCabPlayerMode::Vehicle;
 	}
 	else if (Cast<AFlyingCabCharacter>(InPawn))
@@ -368,7 +366,6 @@ void AFlyingCabPlayerController::TryExitVehicle(AFlyingCabPawn* Vehicle)
 		return;
 	}
 
-	ActiveVehicle = Vehicle;
 	Possess(OnFootPawn);
 	ShowInteractionMessage(
 		TEXT("ON FOOT // A-D MOVE // SPACE JUMP // Q ENTER CAB"),
@@ -752,7 +749,15 @@ void AFlyingCabPlayerController::RefreshInterface()
 		return;
 	}
 
-	const AFlyingCabPawn* Vehicle = IsValid(ActiveVehicle) ? ActiveVehicle.Get() : nullptr;
+	const AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(GetPawn());
+	if (!Vehicle)
+	{
+		if (const AFlyingCabGameMode* GameMode =
+			GetWorld()->GetAuthGameMode<AFlyingCabGameMode>())
+		{
+			Vehicle = GameMode->GetActiveVehicle();
+		}
+	}
 	InterfaceWidget->SetResourceState(
 		Vehicle ? Vehicle->GetFuelPercent() : 0.0f,
 		Vehicle ? Vehicle->GetHullPercent() : 0.0f,

@@ -35,6 +35,7 @@ public:
 
 	bool Bootstrap(UClass* ServiceVehicleClass);
 	void RefreshServiceAccess();
+	void ResetCompetitiveServiceAccess();
 
 	AFlyingCabPawn* GetServiceVehicle() const { return ServiceVehicle; }
 	const TArray<TObjectPtr<AFlyingCabTrafficVehicle>>& GetTrafficVehicles() const
