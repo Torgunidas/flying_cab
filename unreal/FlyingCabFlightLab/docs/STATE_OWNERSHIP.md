@@ -17,7 +17,8 @@ Ten dokument wskazuje źródła prawdy. Widgety oraz teksty HUD są odbiorcami s
 | Topologia dzielnic, stacji i granice minimapy | `FlyingCabCityData` | zmiana kodu/danych | stała konfiguracja projektu |
 | Aktorzy infrastruktury tworzonej w runtime: rozszerzenie miasta, stacje, biuro, portale, terminal, pojazd serwisowy i ruch | `AFlyingCabWorldBootstrap` utworzony przez `AFlyingCabGameMode` | przeładowanie poziomu | bieżący poziom; GameMode koordynuje tylko zdarzenia ekonomii, dostępu i recovery |
 | Lista śledzonego ruchu, predykcja zagrożeń i czas komunikatu near-miss | `UFlyingCabTrafficAwarenessComponent` na `AFlyingCabGameMode` | zmiana aktywnego pojazdu lub przeładowanie poziomu | bieżący poziom; wynik jest wysyłany zdarzeniem do HUD-u |
-| Stan wyświetlany przez HUD | `AFlyingCabPlayerController` posiada jeden `UFlyingCabTouchControls`; widget przechowuje wyłącznie ostatnią prezentację | `OnPossess` przełącza tryb, a timer 10 Hz pobiera zasoby aktywnego pojazdu | pochodna powyższych źródeł |
+| Projekcja celu, minimapy, ekonomii, ruchu i Time Attack do HUD-u | `UFlyingCabHudPresenterComponent` na `AFlyingCabGameMode` | zmiana poziomu; odświeżanie tekstów 10 Hz | pochodna powyższych źródeł; komponent nie jest właścicielem danych rozgrywki |
+| Stan wyświetlany przez HUD | `AFlyingCabPlayerController` posiada jeden `UFlyingCabTouchControls`; widget przechowuje wyłącznie ostatnią prezentację | `OnPossess` przełącza tryb, a timer 10 Hz pobiera zasoby aktywnego pojazdu | pochodna prezentera i powyższych źródeł |
 
 ## Kontrakty resetu
 
