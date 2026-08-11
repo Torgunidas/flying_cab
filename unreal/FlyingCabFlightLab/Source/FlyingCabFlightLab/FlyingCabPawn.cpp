@@ -2,7 +2,6 @@
 
 #include "FlyingCabPawn.h"
 
-#include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/PointLightComponent.h"
@@ -14,7 +13,6 @@
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabPlayerController.h"
 #include "GameFramework/PlayerController.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "PhysicsEngine/BodyInstance.h"
 #include "UObject/ConstructorHelpers.h"
@@ -46,6 +44,7 @@ AFlyingCabPawn::AFlyingCabPawn()
 	CollisionBody->BodyInstance.bLockXRotation = true;
 	CollisionBody->BodyInstance.bLockYRotation = true;
 	CollisionBody->BodyInstance.bLockZRotation = true;
+	Vitals = CreateDefaultSubobject<UFlyingCabVehicleVitalsComponent>(TEXT("Vitals"));
 
 	VisualMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualMesh"));
 	VisualMesh->SetupAttachment(CollisionBody);
@@ -60,20 +59,6 @@ AFlyingCabPawn::AFlyingCabPawn()
 	{
 		VisualMesh->SetStaticMesh(CubeMesh.Object);
 	}
-
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(CollisionBody);
-	CameraBoom->TargetArmLength = 1600.0f;
-	CameraBoom->SetRelativeRotation(FRotator(-5.0f, -90.0f, 0.0f));
-	CameraBoom->bDoCollisionTest = false;
-	CameraBoom->bEnableCameraLag = true;
-	CameraBoom->CameraLagSpeed = 5.0f;
-	CameraBoom->bUsePawnControlRotation = false;
-
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-	Camera->FieldOfView = 55.0f;
-	Camera->bUsePawnControlRotation = false;
 
 	DamageLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("DamageLight"));
 	DamageLight->SetupAttachment(CollisionBody);
@@ -141,8 +126,22 @@ void AFlyingCabPawn::BeginPlay()
 	CollisionBody->SetMassOverrideInKg(NAME_None, 100.0f, true);
 	CollisionBody->BodyInstance.SetDOFLock(EDOFMode::SixDOF);
 	SpawnTransform = GetActorTransform();
-	CurrentFuel = FMath::Clamp(StartingFuel, 0.0f, MaxFuel);
-	CurrentHull = MaxHull;
+	if (Vitals)
+	{
+		FFlyingCabVehicleVitalsConfig Config;
+		Config.MaxFuel = MaxFuel;
+		Config.StartingFuel = StartingFuel;
+		Config.VerticalFuelPerSecond = VerticalFuelPerSecond;
+		Config.HorizontalFuelPerSecond = HorizontalFuelPerSecond;
+		Config.DescentRegenerationPerSecond = DescentRegenerationPerSecond;
+		Config.RegenerationFullSpeed = RegenerationFullSpeed;
+		Config.MaxHull = MaxHull;
+		Config.DamageImpactSpeedThreshold = DamageImpactSpeedThreshold;
+		Config.DamageFullHullSpeed = DamageFullHullSpeed;
+		Config.CollisionDamageExponent = CollisionDamageExponent;
+		Config.CollisionDamageCooldown = CollisionDamageCooldown;
+		Vitals->InitializeVitals(Config);
+	}
 	CollisionBody->WakeAllRigidBodies();
 
 	UE_LOG(
@@ -166,19 +165,9 @@ void AFlyingCabPawn::Tick(float DeltaSeconds)
 		return;
 	}
 
-	DamageCooldownRemaining = FMath::Max(0.0f, DamageCooldownRemaining - DeltaSeconds);
-	DamageFlashRemaining = FMath::Max(0.0f, DamageFlashRemaining - DeltaSeconds);
-	if (DamageLight)
-	{
-		const float DamageIntensity = bDestroyed
-			? 6500.0f
-			: (DamageFlashRemaining > 0.0f ? 3500.0f : 0.0f);
-		DamageLight->SetIntensity(DamageIntensity);
-	}
-
 	const float RequestedHorizontalInput = GetHorizontalInput();
 	const float RequestedThrustInput = GetThrustInput();
-	const bool bCanUseThrusters = !bDestroyed && CurrentFuel > UE_SMALL_NUMBER;
+	const bool bCanUseThrusters = Vitals && Vitals->CanUseThrusters();
 	const float HorizontalInput = bCanUseThrusters ? RequestedHorizontalInput : 0.0f;
 	const float ThrustInput = bCanUseThrusters ? RequestedThrustInput : 0.0f;
 	const float Mass = CollisionBody->GetMass();
@@ -190,11 +179,21 @@ void AFlyingCabPawn::Tick(float DeltaSeconds)
 
 	FVector Velocity = CollisionBody->GetPhysicsLinearVelocity();
 	Velocity.Y = 0.0f;
-	ConsumeOrRegenerateFuel(
+	if (Vitals && Vitals->Advance(
 		DeltaSeconds,
 		RequestedHorizontalInput,
 		RequestedThrustInput,
-		Velocity);
+		Velocity.Z))
+	{
+		ShowFuelEmptyWarning();
+	}
+	if (DamageLight && Vitals)
+	{
+		const float DamageIntensity = Vitals->IsDestroyed()
+			? 6500.0f
+			: (Vitals->IsDamageFlashActive() ? 3500.0f : 0.0f);
+		DamageLight->SetIntensity(DamageIntensity);
+	}
 
 	const bool bHasDriverControl = IsPlayerControlled();
 	if (bHasDriverControl && FMath::IsNearlyZero(HorizontalInput))
@@ -268,16 +267,15 @@ void AFlyingCabPawn::SetTouchRefuelPressed(bool bPressed)
 void AFlyingCabPawn::ResetVehicle()
 {
 	ClearAllInputState(TEXT("manual reset"), true);
-	if (bDestroyed)
+	if (IsDestroyed())
 	{
 		return;
 	}
 
-	CurrentFuel = FMath::Clamp(StartingFuel, 0.0f, MaxFuel);
-	CurrentHull = MaxHull;
-	DamageCooldownRemaining = 0.0f;
-	DamageFlashRemaining = 0.0f;
-	bFuelEmptyWarningShown = false;
+	if (Vitals)
+	{
+		Vitals->ResetResources();
+	}
 	RefreshVehicleIdentityAppearance(true);
 	if (DamageLight)
 	{
@@ -289,7 +287,7 @@ void AFlyingCabPawn::ResetVehicle()
 	SetActorTransform(SpawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
 	CollisionBody->WakeAllRigidBodies();
 	VisualMesh->SetRelativeRotation(FRotator::ZeroRotator);
-	CameraBoom->TargetOffset = FVector::ZeroVector;
+	CameraTrackingOffset = FVector::ZeroVector;
 	PreviousHorizontalVelocity = 0.0f;
 	VisualHorizontalAcceleration = 0.0f;
 	bHasPreviousHorizontalVelocity = false;
@@ -297,10 +295,10 @@ void AFlyingCabPawn::ResetVehicle()
 		LogFlyingCabFlight,
 		Display,
 		TEXT("Manual reset restored starting vehicle resources: fuel %.1f/%.1f, hull %.1f/%.1f."),
-		CurrentFuel,
-		MaxFuel,
-		CurrentHull,
-		MaxHull);
+		GetFuel(),
+		GetMaxFuel(),
+		Vitals ? Vitals->GetHull() : 0.0f,
+		Vitals ? Vitals->GetMaxHull() : MaxHull);
 }
 
 void AFlyingCabPawn::SetProximityGuidance(
@@ -338,12 +336,12 @@ void AFlyingCabPawn::SetProximityGuidance(
 
 FVector AFlyingCabPawn::GetCameraTrackingOffset() const
 {
-	return CameraBoom ? CameraBoom->TargetOffset : FVector::ZeroVector;
+	return CameraTrackingOffset;
 }
 
 void AFlyingCabPawn::SetRefuelAvailable(bool bAvailable, int32 PricePerUnit)
 {
-	bRefuelAvailable = bAvailable && !bDestroyed;
+	bRefuelAvailable = bAvailable && !IsDestroyed();
 	RefuelPricePerUnit = FMath::Max(0, PricePerUnit);
 	if (!bRefuelAvailable && !bRepairAvailable)
 	{
@@ -353,7 +351,7 @@ void AFlyingCabPawn::SetRefuelAvailable(bool bAvailable, int32 PricePerUnit)
 
 void AFlyingCabPawn::SetRepairAvailable(bool bAvailable, int32 PricePerHullUnit)
 {
-	bRepairAvailable = bAvailable && !bDestroyed;
+	bRepairAvailable = bAvailable && !IsDestroyed();
 	RepairPricePerHullUnit = FMath::Max(0, PricePerHullUnit);
 	if (!bRepairAvailable && !bRefuelAvailable)
 	{
@@ -378,7 +376,7 @@ void AFlyingCabPawn::ConfigureVehicleIdentity(
 
 bool AFlyingCabPawn::CanPlayerEnter(FText& OutFailureReason) const
 {
-	if (bDestroyed)
+	if (IsDestroyed())
 	{
 		OutFailureReason = FText::FromString(TEXT("VEHICLE UNAVAILABLE // HULL FAILURE"));
 		return false;
@@ -395,7 +393,7 @@ bool AFlyingCabPawn::CanPlayerEnter(FText& OutFailureReason) const
 
 FText AFlyingCabPawn::GetEntryPrompt() const
 {
-	if (bDestroyed)
+	if (IsDestroyed())
 	{
 		return FText::FromString(TEXT("Q // VEHICLE UNAVAILABLE"));
 	}
@@ -408,55 +406,33 @@ FText AFlyingCabPawn::GetEntryPrompt() const
 
 bool AFlyingCabPawn::IsRefuelRequested() const
 {
-	return bRefuelAvailable && !bDestroyed
+	return bRefuelAvailable && !IsDestroyed()
 		&& (bKeyboardRefuelPressed || bTouchRefuelPressed);
 }
 
 bool AFlyingCabPawn::IsRepairRequested() const
 {
-	return bRepairAvailable && !bDestroyed
+	return bRepairAvailable && !IsDestroyed()
 		&& (bKeyboardRefuelPressed || bTouchRefuelPressed);
 }
 
 float AFlyingCabPawn::AddFuel(float Units)
 {
-	if (Units <= 0.0f || MaxFuel <= UE_SMALL_NUMBER)
-	{
-		return 0.0f;
-	}
-
-	const float PreviousFuel = CurrentFuel;
-	CurrentFuel = FMath::Clamp(CurrentFuel + Units, 0.0f, MaxFuel);
-	if (CurrentFuel > 1.0f)
-	{
-		bFuelEmptyWarningShown = false;
-	}
-	return CurrentFuel - PreviousFuel;
+	return Vitals ? Vitals->AddFuel(Units) : 0.0f;
 }
 
 float AFlyingCabPawn::AddHull(float Units)
 {
-	if (Units <= 0.0f || MaxHull <= UE_SMALL_NUMBER || bDestroyed)
-	{
-		return 0.0f;
-	}
-
-	const float PreviousHull = CurrentHull;
-	CurrentHull = FMath::Clamp(CurrentHull + Units, 0.0f, MaxHull);
-	return CurrentHull - PreviousHull;
+	return Vitals ? Vitals->AddHull(Units) : 0.0f;
 }
 
 void AFlyingCabPawn::RecoverVehicle(float RecoveryFuelPercent)
 {
 	ClearAllInputState(TEXT("tow recovery"), true);
-	bDestroyed = false;
-	CurrentHull = MaxHull;
-	CurrentFuel = FMath::Max(
-		CurrentFuel,
-		MaxFuel * FMath::Clamp(RecoveryFuelPercent, 0.0f, 1.0f));
-	DamageCooldownRemaining = 0.0f;
-	DamageFlashRemaining = 0.0f;
-	bFuelEmptyWarningShown = false;
+	if (Vitals)
+	{
+		Vitals->Recover(RecoveryFuelPercent);
+	}
 
 	CollisionBody->SetSimulatePhysics(true);
 	CollisionBody->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -565,7 +541,7 @@ void AFlyingCabPawn::RefreshVehicleIdentityAppearance(bool bForce)
 {
 	if (!bIdentityConfigured)
 	{
-		if (!bDestroyed && VisualMesh)
+		if (!IsDestroyed() && VisualMesh)
 		{
 			VisualMesh->SetVectorParameterValueOnMaterials(TEXT("Color"), FVector(1.0f));
 		}
@@ -583,7 +559,7 @@ void AFlyingCabPawn::RefreshVehicleIdentityAppearance(bool bForce)
 	const FLinearColor StatusColor = bHasAccess
 		? FLinearColor(0.10f, 1.0f, 0.48f)
 		: FLinearColor(1.0f, 0.28f, 0.04f);
-	if (VisualMesh && !bDestroyed)
+	if (VisualMesh && !IsDestroyed())
 	{
 		const FLinearColor DisplayColor = bHasAccess
 			? VehicleColor
@@ -595,13 +571,13 @@ void AFlyingCabPawn::RefreshVehicleIdentityAppearance(bool bForce)
 	if (AccessLight)
 	{
 		AccessLight->SetLightColor(StatusColor);
-		AccessLight->SetIntensity(bDestroyed ? 0.0f : 1500.0f);
+		AccessLight->SetIntensity(IsDestroyed() ? 0.0f : 1500.0f);
 	}
 	if (VehicleLabel)
 	{
 		VehicleLabel->SetVisibility(true, true);
 		VehicleLabel->SetTextRenderColor(StatusColor.ToFColor(true));
-		const FString Status = bDestroyed
+		const FString Status = IsDestroyed()
 			? FString(TEXT("OUT OF SERVICE"))
 			: (IsPlayerControlled()
 				? FString(TEXT("ACTIVE"))
@@ -613,53 +589,20 @@ void AFlyingCabPawn::RefreshVehicleIdentityAppearance(bool bForce)
 	}
 }
 
-void AFlyingCabPawn::ConsumeOrRegenerateFuel(
-	float DeltaSeconds,
-	float HorizontalInput,
-	float ThrustInput,
-	const FVector& Velocity)
+void AFlyingCabPawn::ShowFuelEmptyWarning() const
 {
-	if (bDestroyed || MaxFuel <= UE_SMALL_NUMBER)
+	if (!IsLocallyControlled())
 	{
 		return;
 	}
-
-	const bool bUsingThrusters = CurrentFuel > UE_SMALL_NUMBER
-		&& (!FMath::IsNearlyZero(HorizontalInput) || ThrustInput > UE_SMALL_NUMBER);
-	if (bUsingThrusters)
+	if (const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController()))
 	{
-		const float FuelUsed = (
-			FMath::Abs(HorizontalInput) * HorizontalFuelPerSecond
-			+ ThrustInput * VerticalFuelPerSecond) * DeltaSeconds;
-		CurrentFuel = FMath::Max(0.0f, CurrentFuel - FuelUsed);
-	}
-	else if (FMath::IsNearlyZero(HorizontalInput)
-		&& ThrustInput <= UE_SMALL_NUMBER
-		&& Velocity.Z < 0.0f)
-	{
-		const float RegenerationRatio = RegenerationFullSpeed > UE_SMALL_NUMBER
-			? FMath::Clamp(-Velocity.Z / RegenerationFullSpeed, 0.0f, 1.0f)
-			: 1.0f;
-		CurrentFuel = FMath::Min(
-			MaxFuel,
-			CurrentFuel + DescentRegenerationPerSecond * RegenerationRatio * DeltaSeconds);
-	}
-
-	if (CurrentFuel <= UE_SMALL_NUMBER && !bFuelEmptyWarningShown)
-	{
-		bFuelEmptyWarningShown = true;
-		if (IsLocallyControlled())
-		{
-			if (const AFlyingCabPlayerController* PlayerController =
-				Cast<AFlyingCabPlayerController>(GetController()))
-			{
-				PlayerController->ShowEventMessage(
-					FText::FromString(TEXT(
-						"ENERGY EMPTY // DESCEND TO RECOVER A RESERVE OR REACH A FUEL STATION")),
-					FLinearColor::FromSRGBColor(FColor(255, 80, 30)),
-					3.0f);
-			}
-		}
+		PlayerController->ShowEventMessage(
+			FText::FromString(TEXT(
+				"ENERGY EMPTY // DESCEND TO RECOVER A RESERVE OR REACH A FUEL STATION")),
+			FLinearColor::FromSRGBColor(FColor(255, 80, 30)),
+			3.0f);
 	}
 }
 
@@ -670,9 +613,7 @@ void AFlyingCabPawn::HandleCollisionHit(
 	FVector NormalImpulse,
 	const FHitResult& Hit)
 {
-	if (bDestroyed
-		|| DamageCooldownRemaining > 0.0f
-		|| !CollisionBody)
+	if (!CollisionBody)
 	{
 		return;
 	}
@@ -684,35 +625,25 @@ void AFlyingCabPawn::HandleCollisionHit(
 
 void AFlyingCabPawn::ApplyCollisionDamage(float NormalSpeedChange)
 {
-	if (NormalSpeedChange <= DamageImpactSpeedThreshold || bDestroyed)
+	if (!Vitals)
 	{
 		return;
 	}
 
-	const float DamageRange = FMath::Max(
-		DamageFullHullSpeed - DamageImpactSpeedThreshold,
-		1.0f);
-	const float ImpactAlpha = FMath::Clamp(
-		(NormalSpeedChange - DamageImpactSpeedThreshold) / DamageRange,
-		0.0f,
-		1.0f);
-	const float Damage = MaxHull * FMath::Pow(ImpactAlpha, CollisionDamageExponent);
-	if (Damage <= UE_SMALL_NUMBER)
+	const FFlyingCabImpactResult Impact = Vitals->ApplyImpact(NormalSpeedChange);
+	if (Impact.Damage <= UE_SMALL_NUMBER)
 	{
 		return;
 	}
 
-	CurrentHull = FMath::Max(0.0f, CurrentHull - Damage);
-	DamageCooldownRemaining = CollisionDamageCooldown;
-	DamageFlashRemaining = 0.12f;
 	UE_LOG(
 		LogFlyingCabFlight,
 		Display,
 		TEXT("Collision damage %.1f from normal speed change %.1f cm/s. Hull %.1f/%.1f."),
-		Damage,
+		Impact.Damage,
 		NormalSpeedChange,
-		CurrentHull,
-		MaxHull);
+		Vitals->GetHull(),
+		Vitals->GetMaxHull());
 
 	if (IsLocallyControlled())
 	{
@@ -722,13 +653,13 @@ void AFlyingCabPawn::ApplyCollisionDamage(float NormalSpeedChange)
 			PlayerController->ShowEventMessage(
 				FText::FromString(FString::Printf(
 					TEXT("IMPACT // HULL %.0f%%"),
-					100.0f * CurrentHull / MaxHull)),
+					100.0f * Vitals->GetHullPercent())),
 				FLinearColor::FromSRGBColor(FColor(255, 110, 35)),
 				1.2f);
 		}
 	}
 
-	if (CurrentHull <= UE_SMALL_NUMBER)
+	if (Impact.bDestroyedNow)
 	{
 		EnterDestroyedState();
 	}
@@ -736,12 +667,11 @@ void AFlyingCabPawn::ApplyCollisionDamage(float NormalSpeedChange)
 
 void AFlyingCabPawn::EnterDestroyedState()
 {
-	if (bDestroyed)
+	if (!Vitals || !Vitals->IsDestroyed())
 	{
 		return;
 	}
 
-	bDestroyed = true;
 	ClearAllInputState(TEXT("vehicle destroyed"), true);
 	bRefuelAvailable = false;
 	bRepairAvailable = false;
@@ -763,7 +693,7 @@ void AFlyingCabPawn::DrawFlightTelemetry(float HorizontalInput, float ThrustInpu
 	const float PlanarSpeed = FVector2D(Velocity.X, Velocity.Z).Size();
 	const TCHAR* PhysicsState = CollisionBody->IsAnyRigidBodyAwake() ? TEXT("AWAKE") : TEXT("SLEEPING");
 	const float VisualPitch = VisualMesh->GetRelativeRotation().Pitch;
-	const FVector CameraOffset = CameraBoom->TargetOffset;
+	const FVector CameraOffset = CameraTrackingOffset;
 
 	const FString Telemetry = FString::Printf(
 		TEXT("FLIGHT TELEMETRY [F3]  |  Physics: %s\n")
@@ -793,11 +723,11 @@ void AFlyingCabPawn::DrawFlightTelemetry(float HorizontalInput, float ThrustInpu
 		VisualPitch,
 		CameraOffset.X,
 		CameraOffset.Z,
-		CurrentFuel,
-		MaxFuel,
-		CurrentHull,
-		MaxHull,
-		bDestroyed ? TEXT("YES") : TEXT("NO"),
+		GetFuel(),
+		GetMaxFuel(),
+		Vitals ? Vitals->GetHull() : 0.0f,
+		Vitals ? Vitals->GetMaxHull() : MaxHull,
+		IsDestroyed() ? TEXT("YES") : TEXT("NO"),
 		ForcedInputResetCount);
 
 	GEngine->AddOnScreenDebugMessage(
@@ -851,8 +781,8 @@ void AFlyingCabPawn::UpdateVisualResponse(float DeltaSeconds, const FVector& Vel
 		0.0f,
 		VerticalRatio * VerticalCameraLookAhead);
 
-	CameraBoom->TargetOffset = FMath::VInterpTo(
-		CameraBoom->TargetOffset,
+	CameraTrackingOffset = FMath::VInterpTo(
+		CameraTrackingOffset,
 		TargetOffset,
 		DeltaSeconds,
 		CameraLookAheadInterpSpeed);

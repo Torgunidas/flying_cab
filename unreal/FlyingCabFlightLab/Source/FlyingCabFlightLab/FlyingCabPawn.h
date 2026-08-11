@@ -3,17 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FlyingCabVehicleVitalsComponent.h"
 #include "GameFramework/Pawn.h"
 #include "FlyingCabPawn.generated.h"
 
 class UBoxComponent;
-class UCameraComponent;
 class UPointLightComponent;
 class UPrimitiveComponent;
 class USceneComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
-class USpringArmComponent;
 class AFlyingCabPawn;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnFlyingCabDestroyed, AFlyingCabPawn*);
@@ -65,17 +64,17 @@ public:
 	const FString& GetVehicleDisplayName() const { return VehicleDisplayName; }
 	bool IsRefuelRequested() const;
 	bool IsRepairRequested() const;
-	bool IsDestroyed() const { return bDestroyed; }
-	float GetFuel() const { return CurrentFuel; }
-	float GetMaxFuel() const { return MaxFuel; }
-	float GetFuelPercent() const { return MaxFuel > UE_SMALL_NUMBER ? CurrentFuel / MaxFuel : 0.0f; }
-	float GetHullPercent() const { return MaxHull > UE_SMALL_NUMBER ? CurrentHull / MaxHull : 0.0f; }
+	bool IsDestroyed() const { return Vitals && Vitals->IsDestroyed(); }
+	float GetFuel() const { return Vitals ? Vitals->GetFuel() : 0.0f; }
+	float GetMaxFuel() const { return Vitals ? Vitals->GetMaxFuel() : MaxFuel; }
+	float GetFuelPercent() const { return Vitals ? Vitals->GetFuelPercent() : 0.0f; }
+	float GetHullPercent() const { return Vitals ? Vitals->GetHullPercent() : 0.0f; }
 	bool IsRefuelAvailable() const { return bRefuelAvailable; }
 	int32 GetRefuelPricePerUnit() const { return RefuelPricePerUnit; }
 	bool IsRepairAvailable() const { return bRepairAvailable; }
 	int32 GetRepairPricePerHullUnit() const { return RepairPricePerHullUnit; }
-	float GetFuelNeeded() const { return FMath::Max(0.0f, MaxFuel - CurrentFuel); }
-	float GetHullNeeded() const { return FMath::Max(0.0f, MaxHull - CurrentHull); }
+	float GetFuelNeeded() const { return Vitals ? Vitals->GetFuelNeeded() : 0.0f; }
+	float GetHullNeeded() const { return Vitals ? Vitals->GetHullNeeded() : 0.0f; }
 	FVector GetCameraTrackingOffset() const;
 	float AddFuel(float Units);
 	float AddHull(float Units);
@@ -96,11 +95,7 @@ private:
 	void UpdateVisualResponse(float DeltaSeconds, const FVector& Velocity);
 	void RefreshVehicleIdentityAppearance(bool bForce = false);
 	bool HasRequiredVehicleAccess() const;
-	void ConsumeOrRegenerateFuel(
-		float DeltaSeconds,
-		float HorizontalInput,
-		float ThrustInput,
-		const FVector& Velocity);
+	void ShowFuelEmptyWarning() const;
 	void ApplyCollisionDamage(float NormalSpeedChange);
 	void EnterDestroyedState();
 
@@ -122,10 +117,7 @@ private:
 	TObjectPtr<UStaticMeshComponent> VisualMesh;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
-	TObjectPtr<USpringArmComponent> CameraBoom;
-
-	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
-	TObjectPtr<UCameraComponent> Camera;
+	TObjectPtr<UFlyingCabVehicleVitalsComponent> Vitals;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
 	TObjectPtr<UPointLightComponent> DamageLight;
@@ -240,14 +232,8 @@ private:
 
 	int32 RefuelPricePerUnit = 0;
 	int32 RepairPricePerHullUnit = 0;
-	float CurrentFuel = 0.0f;
-	float CurrentHull = 0.0f;
-	float DamageCooldownRemaining = 0.0f;
-	float DamageFlashRemaining = 0.0f;
 	bool bRefuelAvailable = false;
 	bool bRepairAvailable = false;
-	bool bDestroyed = false;
-	bool bFuelEmptyWarningShown = false;
 	FName VehicleId = TEXT("Vehicle.PlayerCab");
 	FName RequiredAccessId = NAME_None;
 	FString VehicleDisplayName = TEXT("CAB");
@@ -264,6 +250,7 @@ private:
 	float PreviousHorizontalVelocity = 0.0f;
 	float VisualHorizontalAcceleration = 0.0f;
 	bool bHasPreviousHorizontalVelocity = false;
+	FVector CameraTrackingOffset = FVector::ZeroVector;
 	float TouchHorizontalInput = 0.0f;
 	float TouchThrustInput = 0.0f;
 	bool bKeyboardRefuelPressed = false;

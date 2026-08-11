@@ -9,6 +9,7 @@
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabRunComponent.h"
 #include "FlyingCabTrafficAwarenessComponent.h"
+#include "FlyingCabVehicleVitalsComponent.h"
 #include "FlyingCabWorldBootstrap.h"
 #include "Misc/AutomationTest.h"
 
@@ -245,6 +246,76 @@ bool FFlyingCabRunResultAggregationTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("The leaderboard sorts the best time first"), FMath::IsNearlyEqual(Times[0], 10.0f));
 	TestTrue(TEXT("The leaderboard keeps the second-best time"), FMath::IsNearlyEqual(Times[1], 15.0f));
 	TestTrue(TEXT("The leaderboard discards slower times"), FMath::IsNearlyEqual(Times[2], 20.0f));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabVehicleVitalsLifecycleTest,
+	"FlyingCab.Core.Vehicle.VitalsLifecycle",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabVehicleVitalsLifecycleTest::RunTest(const FString& Parameters)
+{
+	UFlyingCabVehicleVitalsComponent* Vitals =
+		NewObject<UFlyingCabVehicleVitalsComponent>();
+	TestNotNull(TEXT("Vehicle vitals can be created for an isolated test"), Vitals);
+	if (!Vitals)
+	{
+		return false;
+	}
+
+	FFlyingCabVehicleVitalsConfig Config;
+	Config.MaxFuel = 10.0f;
+	Config.StartingFuel = 5.0f;
+	Config.VerticalFuelPerSecond = 2.0f;
+	Config.HorizontalFuelPerSecond = 1.0f;
+	Config.DescentRegenerationPerSecond = 0.5f;
+	Config.RegenerationFullSpeed = 1000.0f;
+	Config.MaxHull = 100.0f;
+	Config.DamageImpactSpeedThreshold = 10.0f;
+	Config.DamageFullHullSpeed = 20.0f;
+	Config.CollisionDamageExponent = 1.0f;
+	Config.CollisionDamageCooldown = 0.5f;
+	Vitals->InitializeVitals(Config);
+
+	TestTrue(TEXT("Configured resources start at their expected values"),
+		FMath::IsNearlyEqual(Vitals->GetFuel(), 5.0f)
+			&& FMath::IsNearlyEqual(Vitals->GetHull(), 100.0f));
+	TestFalse(TEXT("Fuel above zero does not emit the empty transition"),
+		Vitals->Advance(1.0f, 1.0f, 1.0f, 0.0f));
+	TestTrue(TEXT("Horizontal and vertical thrust consume configured fuel"),
+		FMath::IsNearlyEqual(Vitals->GetFuel(), 2.0f));
+	TestTrue(TEXT("Fuel depletion emits a single empty transition"),
+		Vitals->Advance(1.0f, 1.0f, 1.0f, 0.0f));
+	TestFalse(TEXT("An empty reserve does not repeat its transition"),
+		Vitals->Advance(0.0f, 0.0f, 0.0f, 0.0f));
+	Vitals->Advance(1.0f, 0.0f, 0.0f, -1000.0f);
+	TestTrue(TEXT("Descending without thrust regenerates the reserve"),
+		FMath::IsNearlyEqual(Vitals->GetFuel(), 0.5f));
+	TestTrue(TEXT("Refuelling returns the amount actually accepted"),
+		FMath::IsNearlyEqual(Vitals->AddFuel(2.0f), 2.0f));
+	Vitals->Advance(1.0f, 0.0f, 1.0f, 0.0f);
+	TestTrue(TEXT("The recovery scenario begins below its guaranteed reserve"),
+		FMath::IsNearlyEqual(Vitals->GetFuel(), 0.5f));
+
+	const FFlyingCabImpactResult SafeImpact = Vitals->ApplyImpact(10.0f);
+	TestTrue(TEXT("An impact at the safe threshold deals no damage"),
+		FMath::IsNearlyZero(SafeImpact.Damage));
+	const FFlyingCabImpactResult DestructiveImpact = Vitals->ApplyImpact(20.0f);
+	TestTrue(TEXT("A full-speed impact consumes the complete hull"),
+		FMath::IsNearlyEqual(DestructiveImpact.Damage, 100.0f));
+	TestTrue(TEXT("Hull depletion marks the vehicle destroyed"),
+		DestructiveImpact.bDestroyedNow && Vitals->IsDestroyed());
+	TestTrue(TEXT("A destroyed vehicle cannot be repaired in place"),
+		FMath::IsNearlyZero(Vitals->AddHull(50.0f)));
+
+	Vitals->Recover(0.25f);
+	TestFalse(TEXT("Recovery clears the destroyed state"), Vitals->IsDestroyed());
+	TestTrue(TEXT("Recovery restores the hull"),
+		FMath::IsNearlyEqual(Vitals->GetHullPercent(), 1.0f));
+	TestTrue(TEXT("Recovery guarantees the configured fuel reserve"),
+		FMath::IsNearlyEqual(Vitals->GetFuel(), 2.5f));
 	return true;
 }
 

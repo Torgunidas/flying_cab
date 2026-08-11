@@ -7,7 +7,8 @@ Ten dokument wskazuje źródła prawdy. Widgety oraz teksty HUD są odbiorcami s
 | Kredyty | `AFlyingCabGameMode` | `StartRun` | bieżący poziom; nagrody i koszty są przekazywane zdarzeniami lub rejestrowane w komponencie runu |
 | Oferty pasażerów, aktywny kurs, opłata i liczba ukończonych kursów | `UFlyingCabDispatchComponent` na `AFlyingCabGameMode` | `StartPassengerMarket`; aktywny kurs także po dowozie lub zniszczeniu aktywnego pojazdu | bieżący poziom; GameMode nie kopiuje tego stanu |
 | Tryb biegu, cel Time Attack, czas i statystyki wyniku | `UFlyingCabRunComponent` na `AFlyingCabGameMode` | `StartRun` | bieżący poziom; ukończenie jest wysyłane zdarzeniem, a tryb przekazywany jako opcja podczas przeładowania |
-| Paliwo, kadłub, stan zniszczenia i fizyka pojazdu | `AFlyingCabPawn` | `ResetVehicle` albo `RecoverVehicle` | życie danego pojazdu |
+| Paliwo, kadłub i stan zniszczenia | `UFlyingCabVehicleVitalsComponent` na `AFlyingCabPawn` | `ResetResources` albo `Recover` wywołane przez Pawna | życie danego pojazdu; wartości strojenia pozostają w Class Defaults Pawna |
+| Fizyka, wejścia i prezentacja pojazdu | `AFlyingCabPawn` | `ResetVehicle` | życie danego pojazdu; `CameraRig` czyta wyłącznie obliczony wektor look-ahead, Pawn nie posiada własnej kamery |
 | Aktualny tryb gracza: pojazd, pieszo lub nieznany | `AFlyingCabPlayerController::PlayerMode` | każde `OnPossess` | bieżący kontroler/poziom |
 | Ostatni aktywny pojazd podczas chodzenia pieszo | `AFlyingCabPlayerController::ActiveVehicle` | wejście lub wyjście z pojazdu | bieżący kontroler/poziom |
 | Zdrowie postaci pieszej | `AFlyingCabCharacter` | utworzenie nowej postaci | pojedyncze wyjście z pojazdu |
