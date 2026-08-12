@@ -100,9 +100,10 @@ void AFlyingCabFuelStation::BeginPlay()
 	RefreshTickState();
 }
 
-void AFlyingCabFuelStation::Configure(const FString& InServiceName)
+void AFlyingCabFuelStation::Configure(const FString& InServiceName, int32 InPricePerUnit)
 {
 	ServiceName = InServiceName.IsEmpty() ? FString(TEXT("FUEL SERVICE")) : InServiceName;
+	FuelPricePerUnit = FMath::Max(1, InPricePerUnit);
 	if (ServiceLabel)
 	{
 		ServiceLabel->SetText(FText::FromString(ServiceName));

@@ -4,7 +4,9 @@
 
 #include "Engine/GameInstance.h"
 #include "FlyingCabCityData.h"
+#include "FlyingCabCityLayoutAsset.h"
 #include "FlyingCabDispatchComponent.h"
+#include "FlyingCabEconomyAsset.h"
 #include "FlyingCabEconomyComponent.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
@@ -408,13 +410,60 @@ bool FFlyingCabCityDataConsistencyTest::RunTest(const FString& Parameters)
 		{
 			const FVector2D Position = Station.GetMapPosition();
 			TestTrue(
-				*FString::Printf(TEXT("%s '%s' is inside minimap bounds"), ServiceType, Station.DisplayName),
+				*FString::Printf(TEXT("%s '%s' is inside minimap bounds"), ServiceType, *Station.DisplayName),
 				Position.X >= WorldMin.X && Position.X <= WorldMax.X
 					&& Position.Y >= WorldMin.Y && Position.Y <= WorldMax.Y);
 		}
 	};
 	TestServiceLocations(FuelStations, TEXT("Fuel station"));
 	TestServiceLocations(RepairStations, TEXT("Repair station"));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabDataAssetValidationTest,
+	"FlyingCab.Core.DataAssets.Validation",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabDataAssetValidationTest::RunTest(const FString& Parameters)
+{
+	UFlyingCabCityLayoutAsset* CityAsset = LoadObject<UFlyingCabCityLayoutAsset>(
+		nullptr,
+		TEXT("/Game/Data/DA_FlyingCabCityLayout.DA_FlyingCabCityLayout"));
+	TestNotNull(TEXT("The editable city layout asset can be loaded"), CityAsset);
+	if (CityAsset)
+	{
+		FString Error;
+		TestTrue(TEXT("The city layout asset passes structural validation"), CityAsset->IsConfigurationValid(Error));
+		TestEqual(TEXT("The city asset contains all districts"), CityAsset->Districts.Num(), 10);
+		TestEqual(TEXT("The city asset contains all traffic routes"), CityAsset->TrafficRoutes.Num(), 8);
+	}
+	UFlyingCabCityLayoutAsset* InvalidCity = NewObject<UFlyingCabCityLayoutAsset>();
+	InvalidCity->Districts[0].RuntimePlatformHalfWidth = 10.0f;
+	FString CityValidationError;
+	TestFalse(
+		TEXT("Mismatched runtime geometry tuning is rejected"),
+		InvalidCity->IsConfigurationValid(CityValidationError));
+
+	UFlyingCabEconomyAsset* EconomyAsset = LoadObject<UFlyingCabEconomyAsset>(
+		nullptr,
+		UFlyingCabEconomyAsset::GetDefaultAssetPath());
+	TestNotNull(TEXT("The editable economy asset can be loaded"), EconomyAsset);
+	if (EconomyAsset)
+	{
+		FString Error;
+		TestTrue(TEXT("The economy asset passes range validation"), EconomyAsset->IsConfigurationValid(Error));
+		TestEqual(TEXT("The asset owns the fuel price"), EconomyAsset->FuelPricePerUnit, 2);
+		TestEqual(TEXT("The asset owns the Time Attack target"), EconomyAsset->TimeAttackTargetCredits, 1000);
+	}
+
+	UFlyingCabEconomyAsset* InvalidEconomy = NewObject<UFlyingCabEconomyAsset>();
+	InvalidEconomy->FareBacktrackPenaltyRatio = 2.0f;
+	FString ValidationError;
+	TestFalse(
+		TEXT("Out-of-range economy tuning is rejected"),
+		InvalidEconomy->IsConfigurationValid(ValidationError));
 	return true;
 }
 

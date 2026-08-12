@@ -5,6 +5,7 @@ Ten dokument wskazuje źródła prawdy. Widgety oraz teksty HUD są odbiorcami s
 | Stan | Źródło prawdy | Reset | Czas życia |
 |---|---|---|---|
 | Kredyty i reguły transakcji | `UFlyingCabEconomyComponent` na `AFlyingCabGameMode` | `ResetCredits` podczas `StartRun` | bieżący poziom; każda zmiana salda jest wysyłana zdarzeniem do prezentera HUD |
+| Konfiguracja ekonomii: stawki, ceny usług, holowanie, near-miss, recovery i cel Time Attack | `Content/Data/DA_FlyingCabEconomy` (`UFlyingCabEconomyAsset`) | edycja assetu; walidacja podczas `PostLoad` | konfiguracja projektu; runtime ma bezpieczny fallback C++ na wypadek braku lub błędnych danych |
 | Oferty pasażerów, aktywny kurs, opłata i liczba ukończonych kursów | `UFlyingCabDispatchComponent` na `AFlyingCabGameMode` | `StartPassengerMarket`; aktywny kurs także po dowozie lub zniszczeniu aktywnego pojazdu | bieżący poziom; GameMode nie kopiuje tego stanu |
 | Tryb biegu, cel Time Attack, czas i statystyki wyniku | `UFlyingCabRunComponent` na `AFlyingCabGameMode` | `StartRun` | bieżący poziom; ukończenie jest wysyłane zdarzeniem, a tryb przekazywany jako opcja podczas przeładowania |
 | Paliwo, kadłub i stan zniszczenia | `UFlyingCabVehicleVitalsComponent` na `AFlyingCabPawn` | `ResetResources` albo `Recover` wywołane przez Pawna | życie danego pojazdu; wartości strojenia pozostają w Class Defaults Pawna |
@@ -14,7 +15,7 @@ Ten dokument wskazuje źródła prawdy. Widgety oraz teksty HUD są odbiorcami s
 | Zdrowie postaci pieszej | `AFlyingCabCharacter` | utworzenie nowej postaci | pojedyncze wyjście z pojazdu |
 | Dostęp do pojazdów | `UFlyingCabProgressionSubsystem` | jawne `ResetAccess` na początku Time Attack | instancja aplikacji; przeżywa przeładowanie mapy |
 | Najlepsze czasy Time Attack | `UFlyingCabScoreSaveGame` | brak automatycznego resetu | dysk; format oznaczony `SaveVersion` |
-| Topologia dzielnic, stacji i granice minimapy | `FlyingCabCityData` | zmiana kodu/danych | stała konfiguracja projektu |
+| Topologia dzielnic, stacji, tras ruchu i granice minimapy | `Content/Data/DA_FlyingCabCityLayout` (`UFlyingCabCityLayoutAsset`), odczytywany przez `FlyingCabCityData` | edycja assetu; walidacja podczas `PostLoad` | konfiguracja projektu; jeden asset zasila dispatch, geometrię, minimapę i bootstrap świata, z fallbackiem C++ |
 | Aktorzy infrastruktury tworzonej w runtime: rozszerzenie miasta, stacje, biuro, portale, terminal, pojazd serwisowy i ruch | `AFlyingCabWorldBootstrap` utworzony przez `AFlyingCabGameMode` | przeładowanie poziomu | bieżący poziom; bootstrap odświeża także stan infrastruktury dostępu |
 | Lista śledzonego ruchu, delegaty near-miss, predykcja zagrożeń i czas komunikatu | `UFlyingCabTrafficAwarenessComponent` na `AFlyingCabGameMode` | zmiana aktywnego pojazdu lub przeładowanie poziomu | bieżący poziom; alert jest wysyłany bezpośrednio do prezentera HUD, a near-miss do koordynatora nagrody |
 | Projekcja celu, minimapy, ekonomii, ruchu i Time Attack do HUD-u | `UFlyingCabHudPresenterComponent` na `AFlyingCabGameMode` | zmiana poziomu; odświeżanie tekstów 10 Hz | pochodna powyższych źródeł; komponent nie jest właścicielem danych rozgrywki |

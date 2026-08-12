@@ -138,7 +138,7 @@ void AFlyingCabCityExpansion::BuildExpansionGeometry()
 			continue;
 		}
 		AddBlock(
-			FString::Printf(TEXT("Platform%s"), District.RuntimeGeometryName),
+			FString::Printf(TEXT("Platform%s"), *District.RuntimeGeometryName),
 			District.StopLocation - FVector(0.0f, 0.0f, 190.0f),
 			FVector(District.RuntimePlatformHalfWidth, 4.8f, 0.8f),
 			District.AccentColor);

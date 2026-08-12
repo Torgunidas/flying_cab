@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FlyingCabCityData.h"
 #include "GameFramework/Actor.h"
 #include "FlyingCabWorldBootstrap.generated.h"
 
@@ -14,15 +15,7 @@ class AFlyingCabOnFootPortal;
 class AFlyingCabPawn;
 class AFlyingCabRepairStation;
 class AFlyingCabTrafficVehicle;
-
-struct FFlyingCabTrafficRouteDefinition
-{
-	FVector Start = FVector::ZeroVector;
-	FVector End = FVector::ZeroVector;
-	float Speed = 0.0f;
-	float InitialAlpha = 0.0f;
-	FLinearColor Color = FLinearColor::White;
-};
+class UFlyingCabEconomyAsset;
 
 /** Builds and owns the runtime-only infrastructure of the Flight Lab map. */
 UCLASS()
@@ -33,7 +26,7 @@ class FLYINGCABFLIGHTLAB_API AFlyingCabWorldBootstrap : public AActor
 public:
 	AFlyingCabWorldBootstrap();
 
-	bool Bootstrap(UClass* ServiceVehicleClass);
+	bool Bootstrap(UClass* ServiceVehicleClass, UFlyingCabEconomyAsset* InEconomyConfig);
 	void RefreshServiceAccess();
 	void ResetCompetitiveServiceAccess();
 
@@ -94,6 +87,9 @@ private:
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<AFlyingCabTrafficVehicle>> TrafficVehicles;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UFlyingCabEconomyAsset> EconomyConfig;
 
 	bool bBootstrapped = false;
 	bool bBootstrapSucceeded = false;

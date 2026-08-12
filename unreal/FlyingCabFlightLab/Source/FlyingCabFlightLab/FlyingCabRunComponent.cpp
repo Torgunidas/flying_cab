@@ -2,6 +2,7 @@
 
 #include "FlyingCabRunComponent.h"
 
+#include "FlyingCabEconomyAsset.h"
 #include "FlyingCabScoreSaveGame.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -16,6 +17,14 @@ namespace
 UFlyingCabRunComponent::UFlyingCabRunComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UFlyingCabRunComponent::Configure(const UFlyingCabEconomyAsset* Config)
+{
+	if (Config)
+	{
+		TimeAttackTargetCredits = FMath::Max(1, Config->TimeAttackTargetCredits);
+	}
 }
 
 void UFlyingCabRunComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

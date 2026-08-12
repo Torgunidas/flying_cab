@@ -25,7 +25,8 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	void Configure(const FString& InServiceName);
+	void Configure(const FString& InServiceName, int32 InPricePerUnit = 1);
+	int32 GetRepairPricePerHullUnit() const { return RepairPricePerHullUnit; }
 
 private:
 	void ClearContextPawn();

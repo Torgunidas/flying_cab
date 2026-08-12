@@ -2,11 +2,23 @@
 
 #include "FlyingCabEconomyComponent.h"
 
+#include "FlyingCabEconomyAsset.h"
 #include "FlyingCabPawn.h"
 
 UFlyingCabEconomyComponent::UFlyingCabEconomyComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UFlyingCabEconomyComponent::Configure(const UFlyingCabEconomyAsset* Config)
+{
+	if (!Config)
+	{
+		return;
+	}
+	StartingCredits = FMath::Max(0, Config->StartingCredits);
+	TowFee = FMath::Max(0, Config->TowFee);
+	NearMissRewardCredits = FMath::Max(0, Config->NearMissRewardCredits);
 }
 
 void UFlyingCabEconomyComponent::ResetCredits()

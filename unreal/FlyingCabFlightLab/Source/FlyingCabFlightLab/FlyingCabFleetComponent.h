@@ -7,6 +7,7 @@
 #include "FlyingCabFleetComponent.generated.h"
 
 class AFlyingCabPawn;
+class UFlyingCabEconomyAsset;
 
 DECLARE_MULTICAST_DELEGATE_ThreeParams(
 	FOnFlyingCabVehicleRecoveryStarted,
@@ -26,6 +27,7 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabFleetComponent : public UActorComponent
 
 public:
 	UFlyingCabFleetComponent();
+	void Configure(const UFlyingCabEconomyAsset* Config);
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 

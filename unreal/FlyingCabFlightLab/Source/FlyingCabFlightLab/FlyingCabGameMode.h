@@ -57,6 +57,9 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<class AFlyingCabWorldBootstrap> WorldBootstrap;
 
+	UPROPERTY(Transient)
+	TObjectPtr<class UFlyingCabEconomyAsset> EconomyConfig;
+
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Economy")
 	TObjectPtr<class UFlyingCabEconomyComponent> Economy;
 

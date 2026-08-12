@@ -8,6 +8,7 @@
 
 class AFlyingCabDeliveryZone;
 class AFlyingCabPawn;
+class UFlyingCabEconomyAsset;
 
 USTRUCT()
 struct FFlyingCabPassengerOfferState
@@ -39,6 +40,7 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabDispatchComponent : public UActorComponen
 
 public:
 	UFlyingCabDispatchComponent();
+	void Configure(const UFlyingCabEconomyAsset* Config);
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void TickComponent(

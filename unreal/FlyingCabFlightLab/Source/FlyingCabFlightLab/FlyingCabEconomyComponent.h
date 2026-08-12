@@ -7,6 +7,7 @@
 #include "FlyingCabEconomyComponent.generated.h"
 
 class AFlyingCabPawn;
+class UFlyingCabEconomyAsset;
 
 struct FFlyingCabServicePurchaseResult
 {
@@ -30,6 +31,7 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabEconomyComponent : public UActorComponent
 public:
 	UFlyingCabEconomyComponent();
 
+	void Configure(const UFlyingCabEconomyAsset* Config);
 	void ResetCredits();
 	int32 GetCredits() const { return Credits; }
 	int32 GetNearMissRewardCredits() const { return NearMissRewardCredits; }

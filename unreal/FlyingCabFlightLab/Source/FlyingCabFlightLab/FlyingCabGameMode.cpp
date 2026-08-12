@@ -3,6 +3,7 @@
 #include "FlyingCabGameMode.h"
 
 #include "FlyingCabDispatchComponent.h"
+#include "FlyingCabEconomyAsset.h"
 #include "FlyingCabEconomyComponent.h"
 #include "FlyingCabFleetComponent.h"
 #include "FlyingCabHudPresenterComponent.h"
@@ -42,6 +43,23 @@ AFlyingCabGameMode::AFlyingCabGameMode()
 void AFlyingCabGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+	EconomyConfig = UFlyingCabEconomyAsset::LoadDefaultAsset();
+	if (Economy)
+	{
+		Economy->Configure(EconomyConfig);
+	}
+	if (Dispatch)
+	{
+		Dispatch->Configure(EconomyConfig);
+	}
+	if (Fleet)
+	{
+		Fleet->Configure(EconomyConfig);
+	}
+	if (Run)
+	{
+		Run->Configure(EconomyConfig);
+	}
 	if (TrafficAwareness)
 	{
 		TrafficAwareness->OnNearMissDetected.AddUObject(
@@ -203,7 +221,7 @@ void AFlyingCabGameMode::InitializeWorldBootstrap()
 		return;
 	}
 
-	WorldBootstrap->Bootstrap(DefaultPawnClass);
+	WorldBootstrap->Bootstrap(DefaultPawnClass, EconomyConfig);
 	if (Fleet)
 	{
 		Fleet->RegisterVehicle(WorldBootstrap->GetServiceVehicle());

@@ -4,6 +4,7 @@
 
 #include "FlyingCabCityData.h"
 #include "FlyingCabDeliveryZone.h"
+#include "FlyingCabEconomyAsset.h"
 #include "FlyingCabPawn.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabDispatch, Log, All);
@@ -18,6 +19,17 @@ UFlyingCabDispatchComponent::UFlyingCabDispatchComponent()
 		DeliveryStops.Add(District.StopLocation);
 		DeliveryStopNames.Emplace(District.DisplayName);
 	}
+}
+
+void UFlyingCabDispatchComponent::Configure(const UFlyingCabEconomyAsset* Config)
+{
+	if (!Config)
+	{
+		return;
+	}
+	BaseFare = FMath::Max(0.0f, Config->BaseFare);
+	FarePerMeterTowardTarget = FMath::Max(0.0f, Config->FarePerMeterTowardTarget);
+	FareBacktrackPenaltyRatio = FMath::Clamp(Config->FareBacktrackPenaltyRatio, 0.0f, 1.0f);
 }
 
 void UFlyingCabDispatchComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

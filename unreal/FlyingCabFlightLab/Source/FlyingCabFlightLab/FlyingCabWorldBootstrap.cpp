@@ -6,6 +6,7 @@
 #include "FlyingCabAccessTerminal.h"
 #include "FlyingCabCityData.h"
 #include "FlyingCabCityExpansion.h"
+#include "FlyingCabEconomyAsset.h"
 #include "FlyingCabFuelStation.h"
 #include "FlyingCabNightshiftOffice.h"
 #include "FlyingCabOnFootPortal.h"
@@ -16,32 +17,21 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabWorldBootstrap, Log, All);
 
-namespace
-{
-	const FFlyingCabTrafficRouteDefinition TrafficRoutes[] = {
-		{FVector(-4700.0f, 0.0f, 1500.0f), FVector(4700.0f, 0.0f, 1500.0f), 480.0f, 0.08f, FLinearColor(0.05f, 0.85f, 1.0f)},
-		{FVector(-4700.0f, 0.0f, 1500.0f), FVector(4700.0f, 0.0f, 1500.0f), 430.0f, 0.58f, FLinearColor(1.0f, 0.52f, 0.05f)},
-		{FVector(4700.0f, 0.0f, 2850.0f), FVector(-4700.0f, 0.0f, 2850.0f), 400.0f, 0.28f, FLinearColor(0.95f, 0.12f, 0.65f)},
-		{FVector(-4700.0f, 0.0f, 4550.0f), FVector(4700.0f, 0.0f, 4550.0f), 560.0f, 0.72f, FLinearColor(0.30f, 1.0f, 0.35f)},
-		{FVector(5250.0f, 0.0f, 1650.0f), FVector(14700.0f, 0.0f, 1650.0f), 520.0f, 0.18f, FLinearColor(0.12f, 0.82f, 1.0f)},
-		{FVector(14700.0f, 0.0f, 3150.0f), FVector(5250.0f, 0.0f, 3150.0f), 470.0f, 0.52f, FLinearColor(1.0f, 0.30f, 0.08f)},
-		{FVector(5250.0f, 0.0f, 4450.0f), FVector(14700.0f, 0.0f, 4450.0f), 590.0f, 0.76f, FLinearColor(0.90f, 0.08f, 0.72f)},
-		{FVector(14700.0f, 0.0f, 5550.0f), FVector(5250.0f, 0.0f, 5550.0f), 430.0f, 0.34f, FLinearColor(0.22f, 1.0f, 0.42f)}};
-}
-
 AFlyingCabWorldBootstrap::AFlyingCabWorldBootstrap()
 {
 	PrimaryActorTick.bCanEverTick = false;
 }
 
 bool AFlyingCabWorldBootstrap::Bootstrap(
-	UClass* ServiceVehicleClass)
+	UClass* ServiceVehicleClass,
+	UFlyingCabEconomyAsset* InEconomyConfig)
 {
 	if (bBootstrapped)
 	{
 		return bBootstrapSucceeded;
 	}
 	bBootstrapped = true;
+	EconomyConfig = InEconomyConfig;
 
 	const bool bCityReady = SpawnCityExpansion();
 	const bool bStationsReady = SpawnServiceStations();
@@ -71,7 +61,7 @@ int32 AFlyingCabWorldBootstrap::GetExpectedTrafficVehicleCount()
 TConstArrayView<FFlyingCabTrafficRouteDefinition>
 AFlyingCabWorldBootstrap::GetTrafficRoutes()
 {
-	return MakeArrayView(TrafficRoutes);
+	return FlyingCabCityData::GetTrafficRoutes();
 }
 
 void AFlyingCabWorldBootstrap::RefreshServiceAccess()
@@ -123,7 +113,9 @@ bool AFlyingCabWorldBootstrap::SpawnServiceStations()
 			MakeSpawnParameters(ESpawnActorCollisionHandlingMethod::AlwaysSpawn));
 		if (Station)
 		{
-			Station->Configure(Definition.DisplayName);
+			Station->Configure(
+				Definition.DisplayName,
+				EconomyConfig ? EconomyConfig->FuelPricePerUnit : 2);
 			FuelStations.Add(Station);
 		}
 	}
@@ -140,7 +132,9 @@ bool AFlyingCabWorldBootstrap::SpawnServiceStations()
 			MakeSpawnParameters(ESpawnActorCollisionHandlingMethod::AlwaysSpawn));
 		if (Station)
 		{
-			Station->Configure(Definition.DisplayName);
+			Station->Configure(
+				Definition.DisplayName,
+				EconomyConfig ? EconomyConfig->RepairPricePerHullUnit : 1);
 			RepairStations.Add(Station);
 		}
 	}

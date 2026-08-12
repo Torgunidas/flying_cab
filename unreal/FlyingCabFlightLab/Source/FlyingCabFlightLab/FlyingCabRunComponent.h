@@ -7,6 +7,8 @@
 #include "FlyingCabRunTypes.h"
 #include "FlyingCabRunComponent.generated.h"
 
+class UFlyingCabEconomyAsset;
+
 DECLARE_MULTICAST_DELEGATE_OneParam(
 	FOnFlyingCabTimeAttackCompleted,
 	const FFlyingCabTimeAttackResult&);
@@ -19,6 +21,7 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabRunComponent : public UActorComponent
 
 public:
 	UFlyingCabRunComponent();
+	void Configure(const UFlyingCabEconomyAsset* Config);
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 

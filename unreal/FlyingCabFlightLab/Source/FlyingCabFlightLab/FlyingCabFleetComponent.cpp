@@ -2,6 +2,7 @@
 
 #include "FlyingCabFleetComponent.h"
 
+#include "FlyingCabEconomyAsset.h"
 #include "FlyingCabPawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
@@ -11,6 +12,16 @@ DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabFleet, Log, All);
 UFlyingCabFleetComponent::UFlyingCabFleetComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UFlyingCabFleetComponent::Configure(const UFlyingCabEconomyAsset* Config)
+{
+	if (!Config)
+	{
+		return;
+	}
+	DestroyedRecoveryDelay = FMath::Max(0.0f, Config->DestroyedRecoveryDelay);
+	RecoveryFuelPercent = FMath::Clamp(Config->RecoveryFuelPercent, 0.0f, 1.0f);
 }
 
 void UFlyingCabFleetComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

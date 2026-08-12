@@ -100,12 +100,13 @@ void AFlyingCabRepairStation::BeginPlay()
 	RefreshTickState();
 }
 
-void AFlyingCabRepairStation::Configure(const FString& InServiceName)
+void AFlyingCabRepairStation::Configure(const FString& InServiceName, int32 InPricePerUnit)
 {
 	if (!InServiceName.IsEmpty())
 	{
 		ServiceName = InServiceName;
 	}
+	RepairPricePerHullUnit = FMath::Max(1, InPricePerUnit);
 	if (ServiceLabel)
 	{
 		ServiceLabel->SetText(FText::FromString(ServiceName));
