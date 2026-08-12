@@ -35,6 +35,9 @@ public:
 
 	void SetTouchHorizontalInput(float Value);
 	void SetTouchJumpPressed(bool bPressed);
+
+	/** Immediately clears stored keyboard values when the controller flushes pressed keys. */
+	void ReleaseKeyboardInputState();
 	float GetHealthPercent() const;
 	bool IsDead() const { return bDead; }
 

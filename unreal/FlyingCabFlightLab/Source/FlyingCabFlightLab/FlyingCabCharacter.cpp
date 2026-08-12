@@ -242,6 +242,14 @@ void AFlyingCabCharacter::SetTouchJumpPressed(bool bPressed)
 	bTouchJumpPressed = bPressed;
 }
 
+void AFlyingCabCharacter::ReleaseKeyboardInputState()
+{
+	KeyboardHorizontalInput = 0.0f;
+	KeyboardThrustInput = 0.0f;
+	bPreviousJumpPressed = false;
+	StopJumping();
+}
+
 void AFlyingCabCharacter::SetKeyboardHorizontalInput(float Value)
 {
 	KeyboardHorizontalInput = FMath::Clamp(Value, -1.0f, 1.0f);
@@ -280,12 +288,9 @@ void AFlyingCabCharacter::UnPossessed()
 
 void AFlyingCabCharacter::ClearInputState()
 {
-	KeyboardHorizontalInput = 0.0f;
-	KeyboardThrustInput = 0.0f;
+	ReleaseKeyboardInputState();
 	TouchHorizontalInput = 0.0f;
 	bTouchJumpPressed = false;
-	bPreviousJumpPressed = false;
-	StopJumping();
 }
 
 void AFlyingCabCharacter::HandleCapsuleHit(

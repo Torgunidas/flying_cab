@@ -266,6 +266,13 @@ void AFlyingCabPawn::UnPossessed()
 	RefreshVehicleIdentityAppearance(true);
 }
 
+void AFlyingCabPawn::ReleaseKeyboardInputState()
+{
+	KeyboardHorizontalInput = 0.0f;
+	KeyboardThrustInput = 0.0f;
+	bKeyboardRefuelPressed = false;
+}
+
 void AFlyingCabPawn::SetTouchHorizontalInput(float Value)
 {
 	TouchHorizontalInput = FMath::Clamp(Value, -1.0f, 1.0f);
@@ -535,11 +542,9 @@ void AFlyingCabPawn::ClearAllInputState(const TCHAR* Reason, bool bFlushPressedK
 		PlayerController->ReleaseInterfaceInputs();
 	}
 
-	KeyboardHorizontalInput = 0.0f;
-	KeyboardThrustInput = 0.0f;
+	ReleaseKeyboardInputState();
 	TouchHorizontalInput = 0.0f;
 	TouchThrustInput = 0.0f;
-	bKeyboardRefuelPressed = false;
 	bTouchRefuelPressed = false;
 	++ForcedInputResetCount;
 
@@ -751,7 +756,7 @@ void AFlyingCabPawn::DrawFlightTelemetry(float HorizontalInput, float ThrustInpu
 		TEXT("Position    X:%+7.1f  Z:%+7.1f cm\n")
 		TEXT("Presentation accel X:%+7.1f  pitch:%+5.1f deg  camera X:%+6.1f  Z:%+6.1f cm\n")
 		TEXT("Resources   fuel:%5.1f/%5.1f  hull:%5.1f/%5.1f  destroyed:%s\n")
-		TEXT("Input source  Unreal axis bindings + focus/reset flush  |  forced clears:%u"),
+		TEXT("Input source  Enhanced Input + synchronous focus/reset flush  |  forced clears:%u"),
 		PhysicsState,
 		KeyboardHorizontalInput,
 		TouchHorizontalInput,

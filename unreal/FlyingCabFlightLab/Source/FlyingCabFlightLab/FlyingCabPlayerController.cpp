@@ -98,6 +98,14 @@ void AFlyingCabPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReaso
 void AFlyingCabPlayerController::FlushPressedKeys()
 {
 	Super::FlushPressedKeys();
+	if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(GetPawn()))
+	{
+		Vehicle->ReleaseKeyboardInputState();
+	}
+	else if (AFlyingCabCharacter* OnFootCharacter = Cast<AFlyingCabCharacter>(GetPawn()))
+	{
+		OnFootCharacter->ReleaseKeyboardInputState();
+	}
 	ReleaseInterfaceInputs();
 }
 

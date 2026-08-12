@@ -42,7 +42,7 @@ private:
 	float FollowSpeed = 5.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera", meta = (ClampMin = "0.0"))
-	float VehicleArmLength = 1600.0f;
+	float VehicleArmLength = 1900.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera", meta = (ClampMin = "0.0"))
 	float OnFootArmLength = 1050.0f;

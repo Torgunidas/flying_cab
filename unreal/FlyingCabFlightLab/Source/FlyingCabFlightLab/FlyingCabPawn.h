@@ -35,6 +35,9 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;
 
+	/** Immediately clears stored keyboard values when the controller flushes pressed keys. */
+	void ReleaseKeyboardInputState();
+
 	/** Horizontal input for the future mobile UI: -1 is left, +1 is right. */
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Input")
 	void SetTouchHorizontalInput(float Value);
@@ -192,13 +195,13 @@ private:
 
 	/** How far the camera framing moves ahead of horizontal and vertical velocity. */
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation", meta = (ClampMin = "0.0"))
-	float HorizontalCameraLookAhead = 240.0f;
+	float HorizontalCameraLookAhead = 380.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation", meta = (ClampMin = "0.0"))
-	float VerticalCameraLookAhead = 140.0f;
+	float VerticalCameraLookAhead = 160.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation", meta = (ClampMin = "0.0"))
-	float CameraLookAheadInterpSpeed = 2.5f;
+	float CameraLookAheadInterpSpeed = 3.5f;
 
 	/** Runtime readout used while tuning the FlightLab prototype. Toggle with F3. */
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Debug")

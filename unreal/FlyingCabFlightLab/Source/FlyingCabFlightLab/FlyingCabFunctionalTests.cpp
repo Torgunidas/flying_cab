@@ -486,6 +486,74 @@ namespace
 		double Deadline = 0.0;
 		int32 Phase = 0;
 	};
+
+	class FFlyingCabVerifyEnhancedInputFocusFlushCommand final : public IAutomationLatentCommand
+	{
+	public:
+		explicit FFlyingCabVerifyEnhancedInputFocusFlushCommand(FAutomationTestBase* InTest)
+			: Test(InTest)
+			, Deadline(FPlatformTime::Seconds() + FunctionalTestTimeoutSeconds)
+		{
+		}
+
+		virtual bool Update() override
+		{
+			FFlyingCabPIEState State;
+			if (!ResolvePIEState(State))
+			{
+				return WaitOrFail(TEXT("Enhanced Input focus-flush test could not resolve the PIE cab."));
+			}
+
+			switch (Phase)
+			{
+			case 0:
+				State.PlayerController->StartRunMode(EFlyingCabRunMode::Freeroam);
+				Test->TestTrue(
+					TEXT("Simulated W press reaches the player controller before focus flush"),
+					State.PlayerController->InputKey(
+						FInputKeyEventArgs::CreateSimulated(EKeys::W, IE_Pressed, 1.0f)));
+				Phase = 1;
+				return false;
+
+			case 1:
+				if (!FMath::IsNearlyEqual(State.Pawn->GetTestKeyboardThrustInput(), 1.0f))
+				{
+					return WaitOrFail(TEXT("Enhanced Input did not apply W before focus flush."));
+				}
+				State.PlayerController->FlushPressedKeys();
+				Test->TestTrue(
+					TEXT("Focus flush clears stored vertical thrust synchronously"),
+					FMath::IsNearlyZero(State.Pawn->GetTestKeyboardThrustInput()));
+				Phase = 2;
+				return false;
+
+			default:
+				if (!FMath::IsNearlyZero(State.Pawn->GetTestKeyboardThrustInput()))
+				{
+					return WaitOrFail(TEXT("Vertical thrust returned after the focus flush."));
+				}
+				Test->TestTrue(
+					TEXT("Vertical thrust remains clear after input processing resumes"),
+					FMath::IsNearlyZero(State.Pawn->GetTestKeyboardThrustInput()));
+				return true;
+			}
+		}
+
+	private:
+		bool WaitOrFail(const TCHAR* Message)
+		{
+			if (FPlatformTime::Seconds() < Deadline)
+			{
+				return false;
+			}
+			Test->AddError(Message);
+			return true;
+		}
+
+		FAutomationTestBase* Test = nullptr;
+		double Deadline = 0.0;
+		int32 Phase = 0;
+	};
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -502,6 +570,23 @@ bool FFlyingCabEnhancedInputReleasePIETest::RunTest(const FString& Parameters)
 		return false;
 	}
 	ADD_LATENT_AUTOMATION_COMMAND(FFlyingCabVerifyEnhancedInputReleaseCommand(this));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabEnhancedInputFocusFlushPIETest,
+	"FlyingCab.Functional.PIE.EnhancedInputFocusFlush",
+	EAutomationTestFlags::EditorContext
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabEnhancedInputFocusFlushPIETest::RunTest(const FString& Parameters)
+{
+	if (!AutomationOpenMap(FlightLabMap, true))
+	{
+		AddError(TEXT("FlightLab map could not be opened for the Enhanced Input focus-flush test."));
+		return false;
+	}
+	ADD_LATENT_AUTOMATION_COMMAND(FFlyingCabVerifyEnhancedInputFocusFlushCommand(this));
 	return true;
 }
 
