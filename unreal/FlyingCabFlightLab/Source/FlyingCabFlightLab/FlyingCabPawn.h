@@ -14,6 +14,7 @@ class USceneComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 class AFlyingCabPawn;
+struct FInputActionValue;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnFlyingCabDestroyed, AFlyingCabPawn*);
 
@@ -82,6 +83,11 @@ public:
 
 	FOnFlyingCabDestroyed OnVehicleDestroyed;
 
+#if WITH_DEV_AUTOMATION_TESTS
+	float GetTestKeyboardHorizontalInput() const { return KeyboardHorizontalInput; }
+	float GetTestKeyboardThrustInput() const { return KeyboardThrustInput; }
+#endif
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -89,6 +95,12 @@ private:
 	void SetKeyboardHorizontalInput(float Value);
 	void SetKeyboardThrustInput(float Value);
 	void SetKeyboardServiceInput(float Value);
+	void HandleEnhancedHorizontal(const FInputActionValue& Value);
+	void HandleEnhancedThrust(const FInputActionValue& Value);
+	void HandleEnhancedService(const FInputActionValue& Value);
+	void ReleaseEnhancedHorizontal();
+	void ReleaseEnhancedThrust();
+	void ReleaseEnhancedService();
 	void ClearAllInputState(const TCHAR* Reason, bool bFlushPressedKeys);
 	void ToggleFlightTelemetry();
 	void DrawFlightTelemetry(float HorizontalInput, float ThrustInput, const FVector& Velocity) const;

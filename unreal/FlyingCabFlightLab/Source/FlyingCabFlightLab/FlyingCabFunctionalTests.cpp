@@ -2,6 +2,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
+#include "EnhancedInputSubsystems.h"
 #include "Components/PrimitiveComponent.h"
 #include "EngineUtils.h"
 #include "FlyingCabAccessTerminal.h"
@@ -10,6 +11,7 @@
 #include "FlyingCabDispatchComponent.h"
 #include "FlyingCabFuelStation.h"
 #include "FlyingCabGameMode.h"
+#include "FlyingCabInputData.h"
 #include "FlyingCabNightshiftOffice.h"
 #include "FlyingCabOnFootPortal.h"
 #include "FlyingCabPawn.h"
@@ -19,6 +21,7 @@
 #include "FlyingCabVehicleVitalsComponent.h"
 #include "FlyingCabWorldBootstrap.h"
 #include "Misc/AutomationTest.h"
+#include "InputKeyEventArgs.h"
 #include "Tests/AutomationCommon.h"
 
 namespace
@@ -169,6 +172,16 @@ namespace
 				TEXT("The player cab and parked service cab both exist"),
 				CountActors<AFlyingCabPawn>(State.World) >= 2);
 			Test->TestNotNull(TEXT("The parked service cab is registered by bootstrap"), Bootstrap->GetServiceVehicle());
+			const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
+			UEnhancedInputLocalPlayerSubsystem* InputSubsystem =
+				State.PlayerController->GetLocalPlayer()
+					? State.PlayerController->GetLocalPlayer()->GetSubsystem<
+						UEnhancedInputLocalPlayerSubsystem>()
+					: nullptr;
+			Test->TestNotNull(TEXT("The local player owns an Enhanced Input subsystem"), InputSubsystem);
+			Test->TestTrue(
+				TEXT("The Flying Cab mapping context is active in PIE"),
+				InputSubsystem && InputSubsystem->HasMappingContext(InputAssets.MappingContext));
 			return true;
 		}
 
@@ -389,6 +402,107 @@ namespace
 		int32 CreditsAfterTow = 0;
 		bool bTowTriggered = false;
 	};
+
+	class FFlyingCabVerifyEnhancedInputReleaseCommand final : public IAutomationLatentCommand
+	{
+	public:
+		explicit FFlyingCabVerifyEnhancedInputReleaseCommand(FAutomationTestBase* InTest)
+			: Test(InTest)
+			, Deadline(FPlatformTime::Seconds() + FunctionalTestTimeoutSeconds)
+		{
+		}
+
+		virtual bool Update() override
+		{
+			FFlyingCabPIEState State;
+			if (!ResolvePIEState(State))
+			{
+				return WaitOrFail(TEXT("Enhanced Input release test could not resolve the PIE cab."));
+			}
+
+			switch (Phase)
+			{
+			case 0:
+				State.PlayerController->StartRunMode(EFlyingCabRunMode::Freeroam);
+				Test->TestTrue(
+					TEXT("Simulated D press reaches the player controller"),
+					State.PlayerController->InputKey(
+						FInputKeyEventArgs::CreateSimulated(EKeys::D, IE_Pressed, 1.0f)));
+				Phase = 1;
+				return false;
+
+			case 1:
+				if (!FMath::IsNearlyEqual(State.Pawn->GetTestKeyboardHorizontalInput(), 1.0f))
+				{
+					return WaitOrFail(TEXT("Enhanced Input did not apply right thrust."));
+				}
+				Test->TestTrue(
+					TEXT("Simulated W press reaches the player controller"),
+					State.PlayerController->InputKey(
+						FInputKeyEventArgs::CreateSimulated(EKeys::W, IE_Pressed, 1.0f)));
+				Phase = 2;
+				return false;
+
+			case 2:
+				if (!FMath::IsNearlyEqual(State.Pawn->GetTestKeyboardThrustInput(), 1.0f))
+				{
+					return WaitOrFail(TEXT("Enhanced Input did not apply vertical thrust."));
+				}
+				State.PlayerController->InputKey(
+					FInputKeyEventArgs::CreateSimulated(EKeys::D, IE_Released, 0.0f));
+				State.PlayerController->InputKey(
+					FInputKeyEventArgs::CreateSimulated(EKeys::W, IE_Released, 0.0f));
+				Phase = 3;
+				return false;
+
+			default:
+				if (!FMath::IsNearlyZero(State.Pawn->GetTestKeyboardHorizontalInput())
+					|| !FMath::IsNearlyZero(State.Pawn->GetTestKeyboardThrustInput()))
+				{
+					return WaitOrFail(TEXT("Released Enhanced Input remained latched on the cab."));
+				}
+				Test->TestTrue(
+					TEXT("Releasing D clears right thrust"),
+					FMath::IsNearlyZero(State.Pawn->GetTestKeyboardHorizontalInput()));
+				Test->TestTrue(
+					TEXT("Releasing W clears vertical thrust"),
+					FMath::IsNearlyZero(State.Pawn->GetTestKeyboardThrustInput()));
+				return true;
+			}
+		}
+
+	private:
+		bool WaitOrFail(const TCHAR* Message)
+		{
+			if (FPlatformTime::Seconds() < Deadline)
+			{
+				return false;
+			}
+			Test->AddError(Message);
+			return true;
+		}
+
+		FAutomationTestBase* Test = nullptr;
+		double Deadline = 0.0;
+		int32 Phase = 0;
+	};
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabEnhancedInputReleasePIETest,
+	"FlyingCab.Functional.PIE.EnhancedInputRelease",
+	EAutomationTestFlags::EditorContext
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabEnhancedInputReleasePIETest::RunTest(const FString& Parameters)
+{
+	if (!AutomationOpenMap(FlightLabMap, true))
+	{
+		AddError(TEXT("FlightLab map could not be opened for the Enhanced Input release test."));
+		return false;
+	}
+	ADD_LATENT_AUTOMATION_COMMAND(FFlyingCabVerifyEnhancedInputReleaseCommand(this));
+	return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(

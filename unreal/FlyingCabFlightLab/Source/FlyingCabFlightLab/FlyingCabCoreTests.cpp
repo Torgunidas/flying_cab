@@ -8,6 +8,7 @@
 #include "FlyingCabDispatchComponent.h"
 #include "FlyingCabEconomyAsset.h"
 #include "FlyingCabEconomyComponent.h"
+#include "FlyingCabInputData.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabRunComponent.h"
@@ -15,6 +16,9 @@
 #include "FlyingCabVehicleVitalsComponent.h"
 #include "FlyingCabWorldBootstrap.h"
 #include "Misc/AutomationTest.h"
+#include "InputAction.h"
+#include "InputMappingContext.h"
+#include "InputModifiers.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FFlyingCabDispatchFareTest,
@@ -464,6 +468,67 @@ bool FFlyingCabDataAssetValidationTest::RunTest(const FString& Parameters)
 	TestFalse(
 		TEXT("Out-of-range economy tuning is rejected"),
 		InvalidEconomy->IsConfigurationValid(ValidationError));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabEnhancedInputAssetsTest,
+	"FlyingCab.Core.Input.EnhancedAssetConfiguration",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabEnhancedInputAssetsTest::RunTest(const FString& Parameters)
+{
+	const FFlyingCabInputAssets& Assets = FlyingCabInputData::GetAssets();
+	TestTrue(TEXT("All Enhanced Input assets load from Content/Input"), Assets.IsValid());
+	if (!Assets.IsValid())
+	{
+		return false;
+	}
+
+	TestEqual(
+		TEXT("Horizontal movement uses a one-dimensional action"),
+		Assets.Horizontal->ValueType,
+		EInputActionValueType::Axis1D);
+	TestEqual(
+		TEXT("Opposite horizontal keys cancel each other"),
+		Assets.Horizontal->AccumulationBehavior,
+		EInputActionAccumulationBehavior::Cumulative);
+	TestEqual(
+		TEXT("The shared gameplay context contains every keyboard mapping"),
+		Assets.MappingContext->GetMappings().Num(),
+		11);
+
+	auto HasMapping = [&Assets](
+		const UInputAction* Action,
+		const FKey& Key,
+		bool bExpectNegate)
+	{
+		for (const FEnhancedActionKeyMapping& Mapping : Assets.MappingContext->GetMappings())
+		{
+			if (Mapping.Action != Action || Mapping.Key != Key)
+			{
+				continue;
+			}
+			const bool bHasNegate = Mapping.Modifiers.ContainsByPredicate(
+				[](const UInputModifier* Modifier)
+				{
+					return Modifier && Modifier->IsA<UInputModifierNegate>();
+				});
+			return bHasNegate == bExpectNegate;
+		}
+		return false;
+	};
+
+	TestTrue(TEXT("A maps to negative horizontal movement"),
+		HasMapping(Assets.Horizontal, EKeys::A, true));
+	TestTrue(TEXT("D maps to positive horizontal movement"),
+		HasMapping(Assets.Horizontal, EKeys::D, false));
+	TestTrue(TEXT("W maps to thrust"), HasMapping(Assets.Thrust, EKeys::W, false));
+	TestTrue(TEXT("E maps to vehicle service"), HasMapping(Assets.Service, EKeys::E, false));
+	TestTrue(TEXT("R maps to vehicle reset"), HasMapping(Assets.Restart, EKeys::R, false));
+	TestTrue(TEXT("F3 maps to flight telemetry"), HasMapping(Assets.Telemetry, EKeys::F3, false));
+	TestTrue(TEXT("Q maps to contextual interaction"), HasMapping(Assets.Interact, EKeys::Q, false));
 	return true;
 }
 

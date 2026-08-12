@@ -2,6 +2,7 @@
 
 #include "FlyingCabCharacter.h"
 
+#include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -9,6 +10,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "FlyingCabGameMode.h"
 #include "FlyingCabPlayerController.h"
+#include "FlyingCabInputData.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -124,14 +126,25 @@ void AFlyingCabCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	check(PlayerInputComponent);
-	PlayerInputComponent->BindAxis(
-		TEXT("HorizontalInput"),
-		this,
-		&AFlyingCabCharacter::SetKeyboardHorizontalInput);
-	PlayerInputComponent->BindAxis(
-		TEXT("PrimaryThrustInput"),
-		this,
-		&AFlyingCabCharacter::SetKeyboardThrustInput);
+	const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
+	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+		EnhancedInput && InputAssets.IsValid())
+	{
+		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Triggered,
+			this, &AFlyingCabCharacter::HandleEnhancedHorizontal);
+		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Completed,
+			this, &AFlyingCabCharacter::ReleaseEnhancedHorizontal);
+		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Canceled,
+			this, &AFlyingCabCharacter::ReleaseEnhancedHorizontal);
+		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Triggered,
+			this, &AFlyingCabCharacter::HandleEnhancedThrust);
+		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Completed,
+			this, &AFlyingCabCharacter::ReleaseEnhancedThrust);
+		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Canceled,
+			this, &AFlyingCabCharacter::ReleaseEnhancedThrust);
+		return;
+	}
+	UE_LOG(LogFlyingCabCharacter, Error, TEXT("On-foot input could not bind the Enhanced Input assets."));
 }
 
 void AFlyingCabCharacter::Tick(float DeltaSeconds)
@@ -237,6 +250,26 @@ void AFlyingCabCharacter::SetKeyboardHorizontalInput(float Value)
 void AFlyingCabCharacter::SetKeyboardThrustInput(float Value)
 {
 	KeyboardThrustInput = FMath::Clamp(Value, 0.0f, 1.0f);
+}
+
+void AFlyingCabCharacter::HandleEnhancedHorizontal(const FInputActionValue& Value)
+{
+	SetKeyboardHorizontalInput(Value.Get<float>());
+}
+
+void AFlyingCabCharacter::HandleEnhancedThrust(const FInputActionValue& Value)
+{
+	SetKeyboardThrustInput(Value.Get<bool>() ? 1.0f : 0.0f);
+}
+
+void AFlyingCabCharacter::ReleaseEnhancedHorizontal()
+{
+	SetKeyboardHorizontalInput(0.0f);
+}
+
+void AFlyingCabCharacter::ReleaseEnhancedThrust()
+{
+	SetKeyboardThrustInput(0.0f);
 }
 
 void AFlyingCabCharacter::UnPossessed()

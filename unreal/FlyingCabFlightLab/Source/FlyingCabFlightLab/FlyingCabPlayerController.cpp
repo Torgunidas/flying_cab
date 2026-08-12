@@ -2,6 +2,8 @@
 
 #include "FlyingCabPlayerController.h"
 
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Engine/World.h"
@@ -9,6 +11,7 @@
 #include "FlyingCabCharacter.h"
 #include "FlyingCabGameMode.h"
 #include "FlyingCabInteractable.h"
+#include "FlyingCabInputData.h"
 #include "FlyingCabPawn.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EngineUtils.h"
@@ -29,6 +32,7 @@ AFlyingCabPlayerController::AFlyingCabPlayerController()
 void AFlyingCabPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	EnsureEnhancedInputContext();
 	CreateInterfaceWidget();
 	GetWorldTimerManager().SetTimer(
 		InterfaceRefreshTimerHandle,
@@ -75,6 +79,18 @@ void AFlyingCabPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReaso
 		InterfaceWidget->ReleaseAllInputs();
 		InterfaceWidget->RemoveFromParent();
 		InterfaceWidget = nullptr;
+	}
+	const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
+	if (InputAssets.MappingContext)
+	{
+		if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
+		{
+			if (UEnhancedInputLocalPlayerSubsystem* InputSubsystem =
+				LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+			{
+				InputSubsystem->RemoveMappingContext(InputAssets.MappingContext);
+			}
+		}
 	}
 	Super::EndPlay(EndPlayReason);
 }
@@ -234,16 +250,27 @@ void AFlyingCabPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 	check(InputComponent);
-	InputComponent->BindAction(
-		TEXT("Interact"),
-		IE_Pressed,
-		this,
-		&AFlyingCabPlayerController::RequestContextInteraction);
+	const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
+	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent);
+		EnhancedInput && InputAssets.IsValid())
+	{
+		EnhancedInput->BindAction(
+			InputAssets.Interact,
+			ETriggerEvent::Started,
+			this,
+			&AFlyingCabPlayerController::RequestContextInteraction);
+		return;
+	}
+	UE_LOG(
+		LogFlyingCabInteraction,
+		Error,
+		TEXT("Controller input could not bind the Enhanced Input assets."));
 }
 
 void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
+	EnsureEnhancedInputContext();
 	CachedContextPrompt = FText::GetEmpty();
 	CachedContextPromptPawn.Reset();
 	LastContextPromptRefreshTime = -1.0;
@@ -268,6 +295,28 @@ void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
 	{
 		CameraRig->SetFollowTarget(InPawn, false);
 	}
+}
+
+bool AFlyingCabPlayerController::EnsureEnhancedInputContext()
+{
+	const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
+	ULocalPlayer* LocalPlayer = GetLocalPlayer();
+	if (!InputAssets.IsValid() || !LocalPlayer)
+	{
+		return false;
+	}
+
+	UEnhancedInputLocalPlayerSubsystem* InputSubsystem =
+		LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+	if (!InputSubsystem)
+	{
+		return false;
+	}
+	if (!InputSubsystem->HasMappingContext(InputAssets.MappingContext))
+	{
+		InputSubsystem->AddMappingContext(InputAssets.MappingContext, 0);
+	}
+	return true;
 }
 
 void AFlyingCabPlayerController::RequestContextInteraction()

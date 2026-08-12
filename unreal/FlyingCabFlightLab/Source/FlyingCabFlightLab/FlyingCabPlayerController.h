@@ -87,6 +87,7 @@ private:
 	void ShowInitialModeSelection();
 	void EnterMenuInputMode();
 	void RestoreGameplayInputMode();
+	bool EnsureEnhancedInputContext();
 	static EFlyingCabRunMode ParseRunMode(const FString& Value);
 	static FString GetRunModeOption(EFlyingCabRunMode Mode);
 

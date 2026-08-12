@@ -2,6 +2,7 @@
 
 #include "FlyingCabPawn.h"
 
+#include "EnhancedInputComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/PointLightComponent.h"
@@ -10,6 +11,7 @@
 #include "Components/TextRenderComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
+#include "FlyingCabInputData.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabPlayerController.h"
 #include "GameFramework/PlayerController.h"
@@ -219,20 +221,35 @@ void AFlyingCabPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	check(PlayerInputComponent);
-	PlayerInputComponent->BindAxis(
-		TEXT("HorizontalInput"),
-		this,
-		&AFlyingCabPawn::SetKeyboardHorizontalInput);
-	PlayerInputComponent->BindAxis(
-		TEXT("PrimaryThrustInput"),
-		this,
-		&AFlyingCabPawn::SetKeyboardThrustInput);
-	PlayerInputComponent->BindAxis(
-		TEXT("ServiceInput"),
-		this,
-		&AFlyingCabPawn::SetKeyboardServiceInput);
-	PlayerInputComponent->BindAction(TEXT("RestartFlight"), IE_Pressed, this, &AFlyingCabPawn::ResetVehicle);
-	PlayerInputComponent->BindAction(TEXT("ToggleFlightTelemetry"), IE_Pressed, this, &AFlyingCabPawn::ToggleFlightTelemetry);
+	const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
+	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+		EnhancedInput && InputAssets.IsValid())
+	{
+		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Triggered,
+			this, &AFlyingCabPawn::HandleEnhancedHorizontal);
+		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Completed,
+			this, &AFlyingCabPawn::ReleaseEnhancedHorizontal);
+		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Canceled,
+			this, &AFlyingCabPawn::ReleaseEnhancedHorizontal);
+		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Triggered,
+			this, &AFlyingCabPawn::HandleEnhancedThrust);
+		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Completed,
+			this, &AFlyingCabPawn::ReleaseEnhancedThrust);
+		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Canceled,
+			this, &AFlyingCabPawn::ReleaseEnhancedThrust);
+		EnhancedInput->BindAction(InputAssets.Service, ETriggerEvent::Triggered,
+			this, &AFlyingCabPawn::HandleEnhancedService);
+		EnhancedInput->BindAction(InputAssets.Service, ETriggerEvent::Completed,
+			this, &AFlyingCabPawn::ReleaseEnhancedService);
+		EnhancedInput->BindAction(InputAssets.Service, ETriggerEvent::Canceled,
+			this, &AFlyingCabPawn::ReleaseEnhancedService);
+		EnhancedInput->BindAction(InputAssets.Restart, ETriggerEvent::Started,
+			this, &AFlyingCabPawn::ResetVehicle);
+		EnhancedInput->BindAction(InputAssets.Telemetry, ETriggerEvent::Started,
+			this, &AFlyingCabPawn::ToggleFlightTelemetry);
+		return;
+	}
+	UE_LOG(LogFlyingCabFlight, Error, TEXT("Cab input could not bind the Enhanced Input assets."));
 }
 
 void AFlyingCabPawn::PossessedBy(AController* NewController)
@@ -460,6 +477,36 @@ void AFlyingCabPawn::SetKeyboardThrustInput(float Value)
 void AFlyingCabPawn::SetKeyboardServiceInput(float Value)
 {
 	bKeyboardRefuelPressed = Value > 0.5f;
+}
+
+void AFlyingCabPawn::HandleEnhancedHorizontal(const FInputActionValue& Value)
+{
+	SetKeyboardHorizontalInput(Value.Get<float>());
+}
+
+void AFlyingCabPawn::HandleEnhancedThrust(const FInputActionValue& Value)
+{
+	SetKeyboardThrustInput(Value.Get<bool>() ? 1.0f : 0.0f);
+}
+
+void AFlyingCabPawn::HandleEnhancedService(const FInputActionValue& Value)
+{
+	SetKeyboardServiceInput(Value.Get<bool>() ? 1.0f : 0.0f);
+}
+
+void AFlyingCabPawn::ReleaseEnhancedHorizontal()
+{
+	SetKeyboardHorizontalInput(0.0f);
+}
+
+void AFlyingCabPawn::ReleaseEnhancedThrust()
+{
+	SetKeyboardThrustInput(0.0f);
+}
+
+void AFlyingCabPawn::ReleaseEnhancedService()
+{
+	SetKeyboardServiceInput(0.0f);
 }
 
 void AFlyingCabPawn::ClearAllInputState(const TCHAR* Reason, bool bFlushPressedKeys)
