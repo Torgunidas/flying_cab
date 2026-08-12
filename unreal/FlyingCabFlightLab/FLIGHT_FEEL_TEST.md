@@ -13,6 +13,7 @@
 - Po zmianie wartości kliknij **Compile** i uruchom Play ponownie, aby zachować i sprawdzić ustawienie.
 - Do tymczasowego strojenia podczas Play użyj `Shift+F1`, zaznacz uruchomionego `BP_FlyingCabPawn` w **World Outliner** i zmieniaj wartości w panelu **Details**. Takie zmiany działają od razu, ale po zakończeniu Play zostaną cofnięte.
 - Za płynność powrotu do poziomu odpowiada `Visual Pitch Return Speed`: mniejsza wartość oznacza wolniejsze wyrównanie. Szybkość wejścia w przechylenie kontroluje osobno `Visual Pitch Response Speed`.
+- Aktualny zatwierdzony kadr pojazdu używa odległości kamery `1900 cm`, wyprzedzenia `380 cm` w poziomie i `160 cm` w pionie oraz szybkości interpolacji `3,5`. Odległość należy do `FlyingCabCameraRig`, a wyprzedzenie do parametrów `Flying Cab | Presentation` pojazdu.
 
 ## Testy bazowe
 
@@ -47,13 +48,15 @@
 - Zmień kierunek lotu z `D` na `A`; przechylenie powinno czytelnie zaakcentować hamowanie i ponowne rozpędzanie.
 - Rozpędź pojazd poziomo, a następnie rozpocznij wznoszenie i opadanie.
 - Kamera powinna łagodnie przesuwać kadr w kierunku ruchu, bez szarpnięcia przy zmianie kierunku.
+- Przy maksymalnej prędkości przed pojazdem powinno pozostać wystarczająco dużo widocznej przestrzeni na zauważenie przeszkody i rozpoczęcie hamowania.
 - W HUD sprawdź wartości `Presentation accel X`, `pitch` oraz `camera X/Z`; przy stałej prędkości `accel X` i `pitch` powinny dążyć do zera. Po naciśnięciu `R` powinny wrócić do zera natychmiast.
 
 ### 6. Regresja utraty wejścia
 
 - Przytrzymaj `D`, użyj `Shift+F1` albo `Alt+Tab`, puść `D` poza viewportem i wróć do gry.
-- `Horizontal effective` powinno wrócić do `0.00` najpóźniej po jednej klatce.
-- Włącz telemetrię `F3`. Wiersz `Keys` pokazuje teraz osobno `A`, `D`, `LEFT`, `RIGHT`, `W`, `UP`, `SPACE` i `E`; po puszczeniu każdy klawisz musi natychmiast wrócić do `0`.
+- `Horizontal keyboard` oraz `Horizontal effective` powinny natychmiast wrócić do `0.00`.
+- Powtórz próbę z `W`. `Thrust keyboard` oraz `Thrust effective` muszą wrócić do `0.00`; dodatnia `Velocity Z` może jeszcze krótko zanikać z powodu zamierzonej bezwładności, ale `Command Z` musi wynosić `0.0`.
+- Telemetria `F3` pokazuje osobno wartości `keyboard`, `touch` i `effective` dla kierunku oraz ciągu. Po utracie fokusu żadna wartość klawiatury nie może pozostać na `1.00`.
 - Przytrzymaj `D`, kliknij jeden z przycisków ekranowych i puść `D`, gdy kursor znajduje się nad HUD-em. Przycisk ekranowy nie może przejąć fokusu klawiatury, a `D` musi wrócić do `0`.
 - Wciśnij jednocześnie `A` i `D`, potem puszczaj je pojedynczo w różnej kolejności. Kierunek powinien być neutralny przy obu wciśniętych, a po puszczeniu jednego odpowiadać drugiemu bez pozostawania aktywnym po puszczeniu obu.
 - Przytrzymaj `W`, `Spację`, `A` albo `D` i w tym samym czasie wykonaj reset klawiszem `R`. Po resecie sterowanie musi pozostać neutralne, dopóki nie puścisz wszystkich klawiszy danej osi. Ponowne sterowanie powinno zadziałać dopiero po puszczeniu i kolejnym naciśnięciu.
@@ -62,7 +65,7 @@
 
 ### 7. Sterowanie dotykowe
 
-- Po uruchomieniu Play powinny być widoczne przyciski `LEFT`, `RIGHT`, `THRUST` i `RESET`; `F4` przełącza cały interfejs.
+- Po uruchomieniu Play powinny być stale widoczne przyciski `LEFT`, `RIGHT`, `THRUST` i `RESET`. Interfejs nie ma skrótu wyłączającego HUD, ponieważ zawiera również informacje i oświetlenie potrzebne podczas gry.
 - Przytrzymaj myszą `LEFT` lub `RIGHT`. W HUD wartość `touch` powinna wynosić odpowiednio `-1.00` albo `+1.00`, a po puszczeniu natychmiast wrócić do `0.00`.
 - Przytrzymaj `THRUST`; wiersz ciągu powinien pokazać `touch:+1.00`, a po puszczeniu `touch:+0.00`.
 - Przeciągnij kursor poza trzymany przycisk, a następnie puść mysz. `touch` musi wrócić do zera również wtedy, gdy puszczenie nie nastąpiło dokładnie nad przyciskiem.
@@ -82,7 +85,7 @@
 
 - Telemetria jest domyślnie ukryta; `F3` nadal pozwala ją włączyć na czas diagnostyki.
 - Na stałej minimapie `CITY GRID` biały punkt powinien śledzić pozycję auta bez obracania całej mapy.
-- Szare punkty `YP`, `ME`, `ST`, `AM`, `ND` i `ZS` oznaczają odpowiednio `Yellow Projects`, `Midtown Exchange`, `Skyline Terraces`, `Ashline Market`, `Neon Docks` i `Zenith Spire`.
+- Szare punkty `YP`, `ME`, `ST`, `AM`, `ND`, `ZS`, `GT`, `RB`, `CH` i `OG` oznaczają odpowiednio `Yellow Projects`, `Midtown Exchange`, `Skyline Terraces`, `Ashline Market`, `Neon Docks`, `Zenith Spire`, `Glassward Transit`, `Rainline Bazaar`, `Cobalt Heights` i `Orbital Gardens`.
 - Aktywny cel powinien być turkusowy podczas odbioru i pomarańczowy podczas dowozu.
 - Sprawdź, czy nazwa w zleceniu odpowiada punktowi na minimapie oraz czy sam dystans wystarcza do odnalezienia celu bez strzałki kierunkowej.
 

@@ -225,6 +225,11 @@ bool FFlyingCabProgressionAccessTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("A new permission is granted once"), Progression->GrantAccess(ServiceAccess));
 	TestTrue(TEXT("Granted permission can be queried"), Progression->HasAccess(ServiceAccess));
 	TestFalse(TEXT("Duplicate grants are rejected"), Progression->GrantAccess(ServiceAccess));
+	TestFalse(TEXT("NAME_None cannot be revoked"), Progression->RevokeAccess(NAME_None));
+	TestTrue(TEXT("An existing permission is revoked once"), Progression->RevokeAccess(ServiceAccess));
+	TestFalse(TEXT("Revoked permission is no longer available"), Progression->HasAccess(ServiceAccess));
+	TestFalse(TEXT("Duplicate revokes are rejected"), Progression->RevokeAccess(ServiceAccess));
+	TestTrue(TEXT("A revoked permission can be granted again"), Progression->GrantAccess(ServiceAccess));
 
 	Progression->ResetAccess();
 	TestFalse(TEXT("Competitive-run reset removes session access"), Progression->HasAccess(ServiceAccess));
