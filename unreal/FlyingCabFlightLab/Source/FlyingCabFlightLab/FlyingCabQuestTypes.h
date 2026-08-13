@@ -15,6 +15,18 @@ enum class EFlyingCabQuestStatus : uint8
 	Completed
 };
 
+/** Presentation-safe reason for a quest update. UI never has to infer transitions. */
+UENUM(BlueprintType)
+enum class EFlyingCabQuestChangeType : uint8
+{
+	Started,
+	Progressed,
+	ObjectiveCompleted,
+	ReadyToTurnIn,
+	Completed,
+	Reset
+};
+
 /** One sequential, event-driven objective configured inside a quest data asset. */
 USTRUCT(BlueprintType)
 struct FLYINGCABFLIGHTLAB_API FFlyingCabQuestObjectiveDefinition
@@ -70,6 +82,82 @@ struct FLYINGCABFLIGHTLAB_API FFlyingCabQuestRuntimeState
 
 	UPROPERTY(SaveGame, BlueprintReadOnly, Category = "Quest")
 	TArray<int32> ObjectiveProgress;
+
+	/** Stable journal order, independent from TMap iteration order. */
+	UPROPERTY(SaveGame, BlueprintReadOnly, Category = "Quest")
+	int32 ActivationOrder = 0;
+
+	UPROPERTY(SaveGame, BlueprintReadOnly, Category = "Quest")
+	int32 CompletionOrder = 0;
+};
+
+/** Read-only projection consumed by the player-facing quest journal. */
+USTRUCT(BlueprintType)
+struct FLYINGCABFLIGHTLAB_API FFlyingCabQuestJournalEntry
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	FName QuestId = NAME_None;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	FText Title;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	FText Description;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	EFlyingCabQuestStatus Status = EFlyingCabQuestStatus::Inactive;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	FText CurrentObjective;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	int32 CurrentProgress = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	int32 RequiredProgress = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	int32 RewardCredits = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	TArray<FName> RewardAccessIds;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	bool bTracked = false;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	int32 ActivationOrder = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	int32 CompletionOrder = 0;
+};
+
+/** Event payload used by presentation, audio and future analytics adapters. */
+USTRUCT(BlueprintType)
+struct FLYINGCABFLIGHTLAB_API FFlyingCabQuestUpdate
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	FName QuestId = NAME_None;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	EFlyingCabQuestStatus Status = EFlyingCabQuestStatus::Inactive;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	EFlyingCabQuestChangeType ChangeType = EFlyingCabQuestChangeType::Progressed;
+
+	/** Objective affected by this update, or INDEX_NONE for quest-wide changes. */
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	int32 ObjectiveIndex = INDEX_NONE;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	int32 CurrentProgress = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	int32 RequiredProgress = 0;
 };
 
 /** Canonical event identifiers shared by native systems and Blueprint content. */

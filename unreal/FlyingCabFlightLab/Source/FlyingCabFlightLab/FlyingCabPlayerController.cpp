@@ -15,7 +15,9 @@
 #include "FlyingCabInputData.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabQuestSubsystem.h"
+#include "FlyingCabQuestDefinition.h"
 #include "FlyingCabQuestEventComponent.h"
+#include "FlyingCabQuestJournalWidget.h"
 #include "FlyingCabQuestTypes.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EngineUtils.h"
@@ -38,6 +40,7 @@ void AFlyingCabPlayerController::BeginPlay()
 	Super::BeginPlay();
 	EnsureEnhancedInputContext();
 	CreateInterfaceWidget();
+	BindQuestPresentation();
 	GetWorldTimerManager().SetTimer(
 		InterfaceRefreshTimerHandle,
 		this,
@@ -78,6 +81,22 @@ void AFlyingCabPlayerController::BeginPlay()
 void AFlyingCabPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	GetWorldTimerManager().ClearTimer(InterfaceRefreshTimerHandle);
+	if (UGameInstance* GameInstance = GetGameInstance())
+	{
+		if (UFlyingCabQuestSubsystem* Quests =
+			GameInstance->GetSubsystem<UFlyingCabQuestSubsystem>())
+		{
+			Quests->OnQuestUpdated.RemoveDynamic(
+				this,
+				&AFlyingCabPlayerController::HandleQuestUpdated);
+		}
+	}
+	if (QuestJournalWidget)
+	{
+		QuestJournalWidget->RemoveFromParent();
+		QuestJournalWidget = nullptr;
+	}
+	bQuestJournalOpen = false;
 	if (InterfaceWidget)
 	{
 		InterfaceWidget->ReleaseAllInputs();
@@ -118,6 +137,10 @@ void AFlyingCabPlayerController::StartRunMode(EFlyingCabRunMode Mode)
 	if (Mode == EFlyingCabRunMode::None)
 	{
 		return;
+	}
+	if (bQuestJournalOpen)
+	{
+		CloseQuestJournal();
 	}
 
 	AFlyingCabGameMode* GameMode = GetWorld()->GetAuthGameMode<AFlyingCabGameMode>();
@@ -164,6 +187,10 @@ void AFlyingCabPlayerController::ShowTimeAttackResults(
 	const FFlyingCabTimeAttackResult& Result,
 	const TArray<float>& BestTimes)
 {
+	if (bQuestJournalOpen)
+	{
+		CloseQuestJournal();
+	}
 	if (!GameFlowWidget)
 	{
 		GameFlowWidget = CreateWidget<UFlyingCabGameFlowWidget>(this);
@@ -177,8 +204,8 @@ void AFlyingCabPlayerController::ShowTimeAttackResults(
 		return;
 	}
 
-	FlushPressedKeys();
 	bGameFlowScreenOpen = true;
+	FlushPressedKeys();
 	GameFlowWidget->ShowTimeAttackResults(Result, BestTimes);
 	SetPause(true);
 	EnterMenuInputMode();
@@ -271,6 +298,11 @@ void AFlyingCabPlayerController::SetupInputComponent()
 			ETriggerEvent::Started,
 			this,
 			&AFlyingCabPlayerController::RequestContextInteraction);
+		EnhancedInput->BindAction(
+			InputAssets.QuestJournal,
+			ETriggerEvent::Started,
+			this,
+			&AFlyingCabPlayerController::ToggleQuestJournal);
 		return;
 	}
 	UE_LOG(
@@ -337,6 +369,21 @@ bool AFlyingCabPlayerController::EnsureEnhancedInputContext()
 		InputSubsystem->AddMappingContext(InputAssets.MappingContext, 0);
 	}
 	return true;
+}
+
+void AFlyingCabPlayerController::RemoveEnhancedInputContext()
+{
+	const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
+	ULocalPlayer* LocalPlayer = GetLocalPlayer();
+	if (!InputAssets.MappingContext || !LocalPlayer)
+	{
+		return;
+	}
+	if (UEnhancedInputLocalPlayerSubsystem* InputSubsystem =
+		LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+	{
+		InputSubsystem->RemoveMappingContext(InputAssets.MappingContext);
+	}
 }
 
 void AFlyingCabPlayerController::RequestContextInteraction()
@@ -725,6 +772,191 @@ void AFlyingCabPlayerController::ShowEventMessage(
 	if (UFlyingCabTouchControls* Widget = GetInterfaceWidget())
 	{
 		Widget->ShowEventMessage(Message, Color, DurationSeconds);
+	}
+}
+
+void AFlyingCabPlayerController::ShowMajorAnnouncement(
+	const FText& Title,
+	const FText& Detail,
+	const FLinearColor& Color,
+	float DurationSeconds,
+	int32 InPriority) const
+{
+	if (UFlyingCabTouchControls* Widget = GetInterfaceWidget())
+	{
+		Widget->ShowMajorAnnouncement(
+			Title,
+			Detail,
+			Color,
+			DurationSeconds,
+			InPriority);
+	}
+}
+
+void AFlyingCabPlayerController::ToggleQuestJournal()
+{
+	if (bQuestJournalOpen)
+	{
+		CloseQuestJournal();
+	}
+	else
+	{
+		OpenQuestJournal();
+	}
+}
+
+void AFlyingCabPlayerController::OpenQuestJournal()
+{
+	if (bGameFlowScreenOpen || bQuestJournalOpen)
+	{
+		return;
+	}
+	UFlyingCabQuestSubsystem* Quests = GetGameInstance()
+		? GetGameInstance()->GetSubsystem<UFlyingCabQuestSubsystem>()
+		: nullptr;
+	if (!Quests || !Quests->AreGameplayEventsEnabled())
+	{
+		ShowEventMessage(
+			FText::FromString(TEXT("SHIFT LOG UNAVAILABLE IN THIS MODE")),
+			FLinearColor(0.75f, 0.78f, 0.82f),
+			1.5f);
+		return;
+	}
+
+	if (!QuestJournalWidget)
+	{
+		QuestJournalWidget = CreateWidget<UFlyingCabQuestJournalWidget>(this);
+		if (QuestJournalWidget)
+		{
+			QuestJournalWidget->AddToViewport(450);
+		}
+	}
+	if (!QuestJournalWidget)
+	{
+		return;
+	}
+
+	bQuestJournalOpen = true;
+	RemoveEnhancedInputContext();
+	FlushPressedKeys();
+	QuestJournalWidget->ShowJournal();
+	SetPause(true);
+	bShowMouseCursor = true;
+	FInputModeUIOnly InputMode;
+	InputMode.SetWidgetToFocus(QuestJournalWidget->TakeWidget());
+	SetInputMode(InputMode);
+}
+
+void AFlyingCabPlayerController::CloseQuestJournal()
+{
+	if (!bQuestJournalOpen)
+	{
+		return;
+	}
+	if (QuestJournalWidget)
+	{
+		QuestJournalWidget->HideJournal();
+	}
+	bQuestJournalOpen = false;
+	SetPause(false);
+	FlushPressedKeys();
+	EnsureEnhancedInputContext();
+	RestoreGameplayInputMode();
+	ApplyTouchControlsVisibility();
+}
+
+void AFlyingCabPlayerController::BindQuestPresentation()
+{
+	UGameInstance* GameInstance = GetGameInstance();
+	UFlyingCabQuestSubsystem* Quests = GameInstance
+		? GameInstance->GetSubsystem<UFlyingCabQuestSubsystem>()
+		: nullptr;
+	if (!Quests)
+	{
+		return;
+	}
+	Quests->OnQuestUpdated.RemoveDynamic(
+		this,
+		&AFlyingCabPlayerController::HandleQuestUpdated);
+	Quests->OnQuestUpdated.AddDynamic(
+		this,
+		&AFlyingCabPlayerController::HandleQuestUpdated);
+}
+
+void AFlyingCabPlayerController::HandleQuestUpdated(FFlyingCabQuestUpdate Update)
+{
+	if (Update.ChangeType == EFlyingCabQuestChangeType::Reset)
+	{
+		return;
+	}
+	UGameInstance* GameInstance = GetGameInstance();
+	const UFlyingCabQuestSubsystem* Quests = GameInstance
+		? GameInstance->GetSubsystem<UFlyingCabQuestSubsystem>()
+		: nullptr;
+	const UFlyingCabQuestDefinition* Definition = Quests
+		? Quests->GetQuestDefinition(Update.QuestId)
+		: nullptr;
+	if (!Definition)
+	{
+		return;
+	}
+
+	switch (Update.ChangeType)
+	{
+	case EFlyingCabQuestChangeType::Started:
+		ShowMajorAnnouncement(
+			FText::FromString(TEXT("NEW ASSIGNMENT")),
+			Definition->Title,
+			FLinearColor(1.0f, 0.68f, 0.08f),
+			2.6f,
+			20);
+		break;
+	case EFlyingCabQuestChangeType::ObjectiveCompleted:
+		ShowMajorAnnouncement(
+			FText::FromString(TEXT("OBJECTIVE COMPLETE")),
+			Definition->Objectives.IsValidIndex(Update.ObjectiveIndex)
+				? Definition->Objectives[Update.ObjectiveIndex].Description
+				: Definition->Title,
+			FLinearColor(0.10f, 0.93f, 1.0f),
+			2.1f,
+			10);
+		break;
+	case EFlyingCabQuestChangeType::ReadyToTurnIn:
+		ShowMajorAnnouncement(
+			FText::FromString(TEXT("OBJECTIVES COMPLETE")),
+			FText::Format(
+				NSLOCTEXT(
+					"FlyingCab",
+					"QuestReturnAnnouncement",
+					"{0}  //  RETURN TO QUEST GIVER"),
+				Definition->Title),
+			FLinearColor(0.20f, 1.0f, 0.58f),
+			2.7f,
+			30);
+		break;
+	case EFlyingCabQuestChangeType::Completed:
+	{
+		const FText Detail = Definition->Reward.Credits > 0
+			? FText::Format(
+				NSLOCTEXT(
+					"FlyingCab",
+					"QuestCompleteRewardAnnouncement",
+					"{0}  //  +{1} CR"),
+				Definition->Title,
+				FText::AsNumber(Definition->Reward.Credits))
+			: Definition->Title;
+		ShowMajorAnnouncement(
+			FText::FromString(TEXT("JOB COMPLETE")),
+			Detail,
+			FLinearColor(0.20f, 1.0f, 0.58f),
+			3.0f,
+			40);
+		break;
+	}
+	case EFlyingCabQuestChangeType::Progressed:
+	case EFlyingCabQuestChangeType::Reset:
+	default:
+		break;
 	}
 }
 

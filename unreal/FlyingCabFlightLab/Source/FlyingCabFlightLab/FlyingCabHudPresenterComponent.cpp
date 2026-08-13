@@ -173,18 +173,26 @@ void UFlyingCabHudPresenterComponent::ShowVehicleRecoveryStarted(
 	int32 TowFee,
 	float RecoveryDelay) const
 {
-	const FText Message = bAffectsActiveRun
-		? FText::FromString(FString::Printf(
-			TEXT("CAB DESTROYED // TOW CHARGE: %d CR // RECOVERY INBOUND"),
-			TowFee))
-		: FText::FromString(FString::Printf(
-			TEXT("%s DAMAGED // REMOTE RECOVERY INBOUND"),
-			*VehicleName));
+	if (bAffectsActiveRun)
+	{
+		if (AFlyingCabPlayerController* PlayerController = GetPlayerController())
+		{
+			PlayerController->ShowMajorAnnouncement(
+				FText::FromString(TEXT("CAB WRECKED")),
+				FText::FromString(FString::Printf(
+					TEXT("TOW CHARGE  %d CR  //  RECOVERY INBOUND"),
+					TowFee)),
+				FLinearColor::FromSRGBColor(FColor(255, 40, 20)),
+				FMath::Max(2.4f, RecoveryDelay),
+				100);
+		}
+		return;
+	}
 	ShowEventMessage(
-		Message,
-		bAffectsActiveRun
-			? FLinearColor::FromSRGBColor(FColor(255, 40, 20))
-			: FLinearColor::FromSRGBColor(FColor(255, 140, 35)),
+		FText::FromString(FString::Printf(
+			TEXT("%s DAMAGED // REMOTE RECOVERY INBOUND"),
+			*VehicleName)),
+		FLinearColor::FromSRGBColor(FColor(255, 140, 35)),
 		RecoveryDelay);
 }
 

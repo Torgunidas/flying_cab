@@ -262,11 +262,26 @@ void AFlyingCabCharacter::SetKeyboardThrustInput(float Value)
 
 void AFlyingCabCharacter::HandleEnhancedHorizontal(const FInputActionValue& Value)
 {
+	if (const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController());
+		PlayerController && PlayerController->IsGameplayInputSuppressed())
+	{
+		SetKeyboardHorizontalInput(0.0f);
+		return;
+	}
 	SetKeyboardHorizontalInput(Value.Get<float>());
 }
 
 void AFlyingCabCharacter::HandleEnhancedThrust(const FInputActionValue& Value)
 {
+	if (const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController());
+		PlayerController && PlayerController->IsGameplayInputSuppressed())
+	{
+		SetKeyboardThrustInput(0.0f);
+		StopJumping();
+		return;
+	}
 	SetKeyboardThrustInput(Value.Get<bool>() ? 1.0f : 0.0f);
 }
 

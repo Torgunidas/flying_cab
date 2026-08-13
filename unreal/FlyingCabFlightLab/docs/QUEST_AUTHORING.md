@@ -69,6 +69,15 @@ Nowych typów celów nie dodajemy przez rozbudowę `switch`. Nowa mechanika emit
 - `Quest.NightshiftContract` oferuje questgiver w biurze Nightshift: ukończ dwa kursy, wróć do zleceniodawcy, odbierz 200 kredytów.
 - Są to definicje zastępcze do testowania fundamentu. Docelową treść tworzymy jako Data Assets bez zmian w C++.
 
+## Dziennik i komunikacja z graczem
+
+- `J` otwiera modalny `SHIFT LOG`; `J`, `Esc` albo przycisk `CLOSE` zamyka ekran.
+- Zakładka `ACTIVE` zawiera zadania przyjęte i gotowe do oddania. Zakładka `COMPLETED` jest historią wykonanych zadań.
+- Wybranie wpisu pokazuje opis, bieżący cel, licznik postępu i nagrodę. `TRACK` wybiera zadanie dla małego trackera HUD, a `STOP TRACKING` ukrywa go bez porzucania zadania.
+- Przyjęcie zadania, ukończenie celu, gotowość do oddania, ukończenie zadania i zniszczenie aktywnej taksówki emitują duże kolejkowane plansze. Drobne informacje używają oddzielnej kolejki komunikatów HUD.
+- UI konsumuje `FFlyingCabQuestJournalEntry` i `FFlyingCabQuestUpdate`. Nie czyta prywatnych map subsystemu i nie modyfikuje stanu runtime.
+- Native widget jest działającym widokiem bazowym. Docelową oprawę można zastąpić klasą potomną Widget Blueprint bez przenoszenia logiki zadań do UMG.
+
 ## Test ręczny pierwszej wersji
 
 1. Uruchom `FlightLab` i wybierz `FREE ROAM`.
@@ -80,3 +89,5 @@ Nowych typów celów nie dodajemy przez rozbudowę `switch`. Nowa mechanika emit
 7. Tracker powinien pokazać kolejno `0/2`, `1/2`, a następnie prośbę o powrót do questgiversa.
 8. Wróć do dispatchera. Jego marker powinien zmienić się na `?`; interakcja kończy zadanie i przyznaje `200 CR` dokładnie raz.
 9. Uruchom `TIME ATTACK`. Tracker zadań nie może być widoczny, a kursy nie mogą zmieniać ich postępu ani przyznawać nagród questowych.
+10. W `FREE ROAM` naciśnij `J`. Sprawdź przełączanie `ACTIVE`/`COMPLETED`, wybór zadania oraz `TRACK`/`STOP TRACKING`.
+11. Otwórz dziennik podczas trzymania `W` albo `A`, puść klawisz i zamknij dziennik. Sterowanie nie może pozostać zablokowane.

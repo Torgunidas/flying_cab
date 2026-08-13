@@ -47,7 +47,7 @@ void UFlyingCabQuestSubsystem::SetGameplayEventsEnabled(bool bEnabled)
 	bGameplayEventsEnabled = bEnabled;
 	if (!bGameplayEventsEnabled)
 	{
-		TrackedQuestId = NAME_None;
+		SetTrackedQuestInternal(NAME_None);
 	}
 	else
 	{
@@ -87,8 +87,10 @@ bool UFlyingCabQuestSubsystem::StartQuest(FName QuestId)
 	State.Status = EFlyingCabQuestStatus::Active;
 	State.ActiveObjectiveIndex = 0;
 	State.ObjectiveProgress.Init(0, Definition->Objectives.Num());
-	TrackedQuestId = QuestId;
-	BroadcastState(QuestId);
+	State.ActivationOrder = NextActivationOrder++;
+	State.CompletionOrder = 0;
+	SetTrackedQuestInternal(QuestId);
+	BroadcastUpdate(QuestId, EFlyingCabQuestChangeType::Started);
 	UE_LOG(LogFlyingCabQuests, Display, TEXT("Quest started: %s"), *QuestId.ToString());
 	return true;
 }
@@ -137,8 +139,9 @@ int32 UFlyingCabQuestSubsystem::RecordEvent(FName EventId, FName TargetId, int32
 			0,
 			Objective.RequiredCount);
 		++AdvancedQuestCount;
+		const int32 CurrentProgress = State->ObjectiveProgress[ObjectiveIndex];
 
-		if (State->ObjectiveProgress[ObjectiveIndex] >= Objective.RequiredCount)
+		if (CurrentProgress >= Objective.RequiredCount)
 		{
 			++State->ActiveObjectiveIndex;
 			if (State->ActiveObjectiveIndex >= Definition->Objectives.Num())
@@ -146,7 +149,12 @@ int32 UFlyingCabQuestSubsystem::RecordEvent(FName EventId, FName TargetId, int32
 				if (Definition->bRequiresTurnIn)
 				{
 					State->Status = EFlyingCabQuestStatus::ReadyToTurnIn;
-					BroadcastState(QuestId);
+					BroadcastUpdate(
+						QuestId,
+						EFlyingCabQuestChangeType::ReadyToTurnIn,
+						ObjectiveIndex,
+						CurrentProgress,
+						Objective.RequiredCount);
 				}
 				else
 				{
@@ -154,8 +162,20 @@ int32 UFlyingCabQuestSubsystem::RecordEvent(FName EventId, FName TargetId, int32
 				}
 				continue;
 			}
+			BroadcastUpdate(
+				QuestId,
+				EFlyingCabQuestChangeType::ObjectiveCompleted,
+				ObjectiveIndex,
+				CurrentProgress,
+				Objective.RequiredCount);
+			continue;
 		}
-		BroadcastState(QuestId);
+		BroadcastUpdate(
+			QuestId,
+			EFlyingCabQuestChangeType::Progressed,
+			ObjectiveIndex,
+			CurrentProgress,
+			Objective.RequiredCount);
 	}
 	return AdvancedQuestCount;
 }
@@ -176,15 +196,30 @@ bool UFlyingCabQuestSubsystem::SetTrackedQuest(FName QuestId)
 	{
 		return false;
 	}
-	TrackedQuestId = QuestId;
+	SetTrackedQuestInternal(QuestId);
+	return true;
+}
+
+bool UFlyingCabQuestSubsystem::ClearTrackedQuest()
+{
+	if (TrackedQuestId.IsNone())
+	{
+		return false;
+	}
+	SetTrackedQuestInternal(NAME_None);
 	return true;
 }
 
 void UFlyingCabQuestSubsystem::ResetAllQuests()
 {
 	States.Reset();
-	TrackedQuestId = NAME_None;
+	NextActivationOrder = 1;
+	NextCompletionOrder = 1;
+	SetTrackedQuestInternal(NAME_None);
 	OnQuestStateChanged.Broadcast(NAME_None, EFlyingCabQuestStatus::Inactive);
+	FFlyingCabQuestUpdate Update;
+	Update.ChangeType = EFlyingCabQuestChangeType::Reset;
+	OnQuestUpdated.Broadcast(Update);
 }
 
 EFlyingCabQuestStatus UFlyingCabQuestSubsystem::GetQuestStatus(FName QuestId) const
@@ -241,6 +276,68 @@ FText UFlyingCabQuestSubsystem::GetTrackerText() const
 		ProgressText);
 }
 
+TArray<FFlyingCabQuestJournalEntry> UFlyingCabQuestSubsystem::GetJournalEntries() const
+{
+	TArray<FFlyingCabQuestJournalEntry> Entries;
+	Entries.Reserve(States.Num());
+	for (const TPair<FName, FFlyingCabQuestRuntimeState>& Pair : States)
+	{
+		const FFlyingCabQuestRuntimeState& State = Pair.Value;
+		const UFlyingCabQuestDefinition* Definition = GetQuestDefinition(Pair.Key);
+		if (!Definition || State.Status == EFlyingCabQuestStatus::Inactive)
+		{
+			continue;
+		}
+
+		FFlyingCabQuestJournalEntry& Entry = Entries.AddDefaulted_GetRef();
+		Entry.QuestId = Pair.Key;
+		Entry.Title = Definition->Title;
+		Entry.Description = Definition->Description;
+		Entry.Status = State.Status;
+		Entry.RewardCredits = Definition->Reward.Credits;
+		Entry.RewardAccessIds = Definition->Reward.GrantedAccessIds;
+		Entry.bTracked = Pair.Key == TrackedQuestId;
+		Entry.ActivationOrder = State.ActivationOrder;
+		Entry.CompletionOrder = State.CompletionOrder;
+		if (State.Status == EFlyingCabQuestStatus::ReadyToTurnIn)
+		{
+			Entry.CurrentObjective = NSLOCTEXT(
+				"FlyingCab",
+				"QuestJournalReturn",
+				"Return to the quest giver");
+		}
+		else if (State.Status == EFlyingCabQuestStatus::Active
+			&& Definition->Objectives.IsValidIndex(State.ActiveObjectiveIndex))
+		{
+			const FFlyingCabQuestObjectiveDefinition& Objective =
+				Definition->Objectives[State.ActiveObjectiveIndex];
+			Entry.CurrentObjective = Objective.Description;
+			Entry.CurrentProgress = State.ObjectiveProgress.IsValidIndex(State.ActiveObjectiveIndex)
+				? State.ObjectiveProgress[State.ActiveObjectiveIndex]
+				: 0;
+			Entry.RequiredProgress = Objective.RequiredCount;
+		}
+	}
+
+	Entries.Sort([](
+		const FFlyingCabQuestJournalEntry& A,
+		const FFlyingCabQuestJournalEntry& B)
+	{
+		if (A.Status == EFlyingCabQuestStatus::Completed
+			&& B.Status == EFlyingCabQuestStatus::Completed
+			&& A.CompletionOrder != B.CompletionOrder)
+		{
+			return A.CompletionOrder > B.CompletionOrder;
+		}
+		if (A.ActivationOrder != B.ActivationOrder)
+		{
+			return A.ActivationOrder < B.ActivationOrder;
+		}
+		return A.QuestId.LexicalLess(B.QuestId);
+	});
+	return Entries;
+}
+
 const FFlyingCabQuestRuntimeState* UFlyingCabQuestSubsystem::FindState(FName QuestId) const
 {
 	return States.Find(QuestId);
@@ -255,7 +352,8 @@ bool UFlyingCabQuestSubsystem::CompleteQuest(FName QuestId)
 		return false;
 	}
 	State->Status = EFlyingCabQuestStatus::Completed;
-	BroadcastState(QuestId);
+	State->CompletionOrder = NextCompletionOrder++;
+	BroadcastUpdate(QuestId, EFlyingCabQuestChangeType::Completed);
 	OnQuestCompleted.Broadcast(Definition);
 	UE_LOG(LogFlyingCabQuests, Display, TEXT("Quest completed: %s"), *QuestId.ToString());
 
@@ -277,23 +375,63 @@ bool UFlyingCabQuestSubsystem::CompleteQuest(FName QuestId)
 
 void UFlyingCabQuestSubsystem::SelectNextTrackedQuest()
 {
-	TrackedQuestId = NAME_None;
 	if (!bGameplayEventsEnabled)
 	{
+		SetTrackedQuestInternal(NAME_None);
 		return;
 	}
+
+	FName NextQuestId = NAME_None;
+	int32 LowestActivationOrder = MAX_int32;
 	for (const TPair<FName, FFlyingCabQuestRuntimeState>& Entry : States)
 	{
 		if (Entry.Value.Status == EFlyingCabQuestStatus::Active
 			|| Entry.Value.Status == EFlyingCabQuestStatus::ReadyToTurnIn)
 		{
-			TrackedQuestId = Entry.Key;
-			return;
+			const int32 Order = Entry.Value.ActivationOrder > 0
+				? Entry.Value.ActivationOrder
+				: MAX_int32 - 1;
+			if (Order < LowestActivationOrder
+				|| (Order == LowestActivationOrder
+					&& (NextQuestId.IsNone() || Entry.Key.LexicalLess(NextQuestId))))
+			{
+				LowestActivationOrder = Order;
+				NextQuestId = Entry.Key;
+			}
 		}
 	}
+	SetTrackedQuestInternal(NextQuestId);
 }
 
 void UFlyingCabQuestSubsystem::BroadcastState(FName QuestId)
 {
 	OnQuestStateChanged.Broadcast(QuestId, GetQuestStatus(QuestId));
+}
+
+void UFlyingCabQuestSubsystem::BroadcastUpdate(
+	FName QuestId,
+	EFlyingCabQuestChangeType ChangeType,
+	int32 ObjectiveIndex,
+	int32 CurrentProgress,
+	int32 RequiredProgress)
+{
+	BroadcastState(QuestId);
+	FFlyingCabQuestUpdate Update;
+	Update.QuestId = QuestId;
+	Update.Status = GetQuestStatus(QuestId);
+	Update.ChangeType = ChangeType;
+	Update.ObjectiveIndex = ObjectiveIndex;
+	Update.CurrentProgress = CurrentProgress;
+	Update.RequiredProgress = RequiredProgress;
+	OnQuestUpdated.Broadcast(Update);
+}
+
+void UFlyingCabQuestSubsystem::SetTrackedQuestInternal(FName QuestId)
+{
+	if (TrackedQuestId == QuestId)
+	{
+		return;
+	}
+	TrackedQuestId = QuestId;
+	OnTrackedQuestChanged.Broadcast(TrackedQuestId);
 }

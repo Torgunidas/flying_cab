@@ -589,14 +589,4 @@ void AFlyingCabGameMode::HandleQuestCompleted(UFlyingCabQuestDefinition* Quest)
 			}
 		}
 	}
-	if (HudPresenter)
-	{
-		HudPresenter->ShowEventMessage(
-			FText::Format(
-				NSLOCTEXT("FlyingCab", "QuestRewardMessage", "QUEST COMPLETE // {0} // +{1} CR"),
-				Quest->Title,
-				FText::AsNumber(RewardCredits)),
-			FLinearColor::FromSRGBColor(FColor(80, 255, 155)),
-			3.0f);
-	}
 }

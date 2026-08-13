@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FlyingCabQuestTypes.h"
 #include "FlyingCabRunTypes.h"
 #include "GameFramework/PlayerController.h"
 #include "FlyingCabPlayerController.generated.h"
@@ -11,6 +12,7 @@ class AFlyingCabCharacter;
 class AFlyingCabCameraRig;
 class AFlyingCabPawn;
 class UFlyingCabGameFlowWidget;
+class UFlyingCabQuestJournalWidget;
 class UFlyingCabTouchControls;
 
 enum class EFlyingCabPlayerMode : uint8
@@ -41,6 +43,13 @@ public:
 		const FText& Message,
 		const FLinearColor& Color,
 		float DurationSeconds = 2.5f) const;
+	void ShowMajorAnnouncement(
+		const FText& Title,
+		const FText& Detail,
+		const FLinearColor& Color,
+		float DurationSeconds = 2.8f,
+		int32 InPriority = 0) const;
+	void CloseQuestJournal();
 	void SetQuestStatus(const FText& Status);
 	void SetObjectiveStatus(const FText& Status);
 	void SetMinimapState(
@@ -66,6 +75,11 @@ public:
 		const FFlyingCabTimeAttackResult& Result,
 		const TArray<float>& BestTimes);
 	bool IsGameFlowScreenOpen() const { return bGameFlowScreenOpen; }
+	bool IsQuestJournalOpen() const { return bQuestJournalOpen; }
+	bool IsGameplayInputSuppressed() const
+	{
+		return bGameFlowScreenOpen || bQuestJournalOpen;
+	}
 	EFlyingCabPlayerMode GetPlayerMode() const { return PlayerMode; }
 
 protected:
@@ -86,11 +100,18 @@ private:
 	void RefreshInterface();
 	void ApplyTouchControlsVisibility();
 	void ShowInitialModeSelection();
+	void ToggleQuestJournal();
+	void OpenQuestJournal();
+	void BindQuestPresentation();
 	void EnterMenuInputMode();
 	void RestoreGameplayInputMode();
 	bool EnsureEnhancedInputContext();
+	void RemoveEnhancedInputContext();
 	static EFlyingCabRunMode ParseRunMode(const FString& Value);
 	static FString GetRunModeOption(EFlyingCabRunMode Mode);
+
+	UFUNCTION()
+	void HandleQuestUpdated(FFlyingCabQuestUpdate Update);
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot", meta = (ClampMin = "0.0"))
 	float ExitGroundReach = 120.0f;
@@ -134,6 +155,9 @@ private:
 	TObjectPtr<UFlyingCabGameFlowWidget> GameFlowWidget;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UFlyingCabQuestJournalWidget> QuestJournalWidget;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UFlyingCabTouchControls> InterfaceWidget;
 
 	TArray<TWeakObjectPtr<AActor>> CachedInteractables;
@@ -148,4 +172,5 @@ private:
 	FTimerHandle InterfaceRefreshTimerHandle;
 
 	bool bGameFlowScreenOpen = false;
+	bool bQuestJournalOpen = false;
 };

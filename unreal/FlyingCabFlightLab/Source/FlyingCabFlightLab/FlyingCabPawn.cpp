@@ -488,16 +488,37 @@ void AFlyingCabPawn::SetKeyboardServiceInput(float Value)
 
 void AFlyingCabPawn::HandleEnhancedHorizontal(const FInputActionValue& Value)
 {
+	if (const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController());
+		PlayerController && PlayerController->IsGameplayInputSuppressed())
+	{
+		SetKeyboardHorizontalInput(0.0f);
+		return;
+	}
 	SetKeyboardHorizontalInput(Value.Get<float>());
 }
 
 void AFlyingCabPawn::HandleEnhancedThrust(const FInputActionValue& Value)
 {
+	if (const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController());
+		PlayerController && PlayerController->IsGameplayInputSuppressed())
+	{
+		SetKeyboardThrustInput(0.0f);
+		return;
+	}
 	SetKeyboardThrustInput(Value.Get<bool>() ? 1.0f : 0.0f);
 }
 
 void AFlyingCabPawn::HandleEnhancedService(const FInputActionValue& Value)
 {
+	if (const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController());
+		PlayerController && PlayerController->IsGameplayInputSuppressed())
+	{
+		SetKeyboardServiceInput(0.0f);
+		return;
+	}
 	SetKeyboardServiceInput(Value.Get<bool>() ? 1.0f : 0.0f);
 }
 

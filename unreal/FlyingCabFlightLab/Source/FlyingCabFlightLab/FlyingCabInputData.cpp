@@ -40,6 +40,8 @@ const FFlyingCabInputAssets& FlyingCabInputData::GetAssets()
 			TEXT("/Game/Input/IA_FlyingCabTelemetry.IA_FlyingCabTelemetry"));
 		Loaded.Interact = LoadInputAsset<UInputAction>(
 			TEXT("/Game/Input/IA_FlyingCabInteract.IA_FlyingCabInteract"));
+		Loaded.QuestJournal = LoadInputAsset<UInputAction>(
+			TEXT("/Game/Input/IA_FlyingCabQuestJournal.IA_FlyingCabQuestJournal"));
 		if (!Loaded.IsValid())
 		{
 			UE_LOG(

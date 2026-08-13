@@ -13,6 +13,22 @@ class UButton;
 class UCanvasPanel;
 class UTextBlock;
 
+struct FFlyingCabQueuedHudMessage
+{
+	FText Text;
+	FLinearColor Color = FLinearColor::White;
+	float DurationSeconds = 2.5f;
+};
+
+struct FFlyingCabQueuedAnnouncement
+{
+	FText Title;
+	FText Detail;
+	FLinearColor Color = FLinearColor::White;
+	float DurationSeconds = 2.8f;
+	int32 Priority = 0;
+};
+
 /** Minimal portrait touch overlay used to validate the mobile control scheme. */
 UCLASS()
 class FLYINGCABFLIGHTLAB_API UFlyingCabTouchControls : public UUserWidget
@@ -28,6 +44,12 @@ public:
 		const FText& Text,
 		const FLinearColor& Color,
 		float DurationSeconds = 2.5f);
+	void ShowMajorAnnouncement(
+		const FText& Title,
+		const FText& Detail,
+		const FLinearColor& Color,
+		float DurationSeconds = 2.8f,
+		int32 InPriority = 0);
 	void SetTrafficAlert(const FText& Text, const FLinearColor& Color);
 	void SetMinimapState(
 		const FVector2D& CabWorldPosition,
@@ -57,6 +79,7 @@ public:
 protected:
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 	virtual void NativeDestruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeOnFocusLost(const FFocusEvent& InFocusEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 
@@ -76,6 +99,8 @@ private:
 	void UpdateHorizontalInput();
 	void RefreshControlMode();
 	void ClearEventMessage();
+	void ShowNextEventMessage();
+	void ShowNextMajorAnnouncement();
 	FVector2D WorldToMinimap(const FVector2D& WorldPosition) const;
 	void UpdateMinimapMarkers();
 	UBorder* AddMinimapPoint(
@@ -155,6 +180,15 @@ private:
 	TObjectPtr<UTextBlock> EventMessageText;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UBorder> MajorAnnouncementPanel;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> MajorAnnouncementTitle;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> MajorAnnouncementDetail;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> TrafficAlertText;
 
 	UPROPERTY(Transient)
@@ -210,4 +244,10 @@ private:
 	bool bThrustPressed = false;
 	bool bRefuelPressed = false;
 	FTimerHandle EventMessageTimerHandle;
+	TArray<FFlyingCabQueuedHudMessage> EventMessageQueue;
+	TArray<FFlyingCabQueuedAnnouncement> MajorAnnouncementQueue;
+	FFlyingCabQueuedAnnouncement ActiveMajorAnnouncement;
+	float MajorAnnouncementElapsed = 0.0f;
+	bool bEventMessageVisible = false;
+	bool bMajorAnnouncementVisible = false;
 };

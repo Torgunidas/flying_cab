@@ -296,6 +296,17 @@ bool FFlyingCabQuestLifecycleTest::RunTest(const FString& Parameters)
 		EFlyingCabQuestStatus::Active);
 	TestTrue(TEXT("A manual quest starts once"), Quests->StartQuest(Contract->QuestId));
 	TestFalse(TEXT("An active quest cannot be started twice"), Quests->StartQuest(Contract->QuestId));
+	TArray<FFlyingCabQuestJournalEntry> JournalEntries = Quests->GetJournalEntries();
+	TestEqual(TEXT("Journal contains both accepted quests"), JournalEntries.Num(), 2);
+	const FFlyingCabQuestJournalEntry* ContractEntry = JournalEntries.FindByPredicate(
+		[Contract](const FFlyingCabQuestJournalEntry& Entry)
+		{
+			return Entry.QuestId == Contract->QuestId;
+		});
+	TestTrue(TEXT("The newest manual quest is tracked"), ContractEntry && ContractEntry->bTracked);
+	TestTrue(TEXT("Tracked quest can be explicitly hidden"), Quests->ClearTrackedQuest());
+	TestTrue(TEXT("Clearing tracking hides the HUD tracker"), Quests->GetTrackerText().IsEmpty());
+	TestTrue(TEXT("An active quest can be tracked again"), Quests->SetTrackedQuest(Contract->QuestId));
 
 	TestEqual(
 		TEXT("Wrong target does not advance a filtered objective"),
@@ -326,6 +337,19 @@ bool FFlyingCabQuestLifecycleTest::RunTest(const FString& Parameters)
 		Quests->GetQuestStatus(Contract->QuestId),
 		EFlyingCabQuestStatus::Completed);
 	TestFalse(TEXT("Completed quest cannot be turned in twice"), Quests->TurnInQuest(Contract->QuestId));
+	JournalEntries = Quests->GetJournalEntries();
+	ContractEntry = JournalEntries.FindByPredicate(
+		[Contract](const FFlyingCabQuestJournalEntry& Entry)
+		{
+			return Entry.QuestId == Contract->QuestId;
+		});
+	TestTrue(
+		TEXT("Completed quest remains visible in the journal"),
+		ContractEntry && ContractEntry->Status == EFlyingCabQuestStatus::Completed);
+	TestEqual(
+		TEXT("Tracking falls back to the remaining active quest"),
+		Quests->GetTrackedQuestId(),
+		AutoQuest->QuestId);
 
 	Quests->SetGameplayEventsEnabled(false);
 	Quests->ResetAllQuests();
@@ -619,7 +643,7 @@ bool FFlyingCabEnhancedInputAssetsTest::RunTest(const FString& Parameters)
 	TestEqual(
 		TEXT("The shared gameplay context contains every keyboard mapping"),
 		Assets.MappingContext->GetMappings().Num(),
-		11);
+		12);
 
 	auto HasMapping = [&Assets](
 		const UInputAction* Action,
@@ -651,6 +675,7 @@ bool FFlyingCabEnhancedInputAssetsTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("R maps to vehicle reset"), HasMapping(Assets.Restart, EKeys::R, false));
 	TestTrue(TEXT("F3 maps to flight telemetry"), HasMapping(Assets.Telemetry, EKeys::F3, false));
 	TestTrue(TEXT("Q maps to contextual interaction"), HasMapping(Assets.Interact, EKeys::Q, false));
+	TestTrue(TEXT("J opens the quest journal"), HasMapping(Assets.QuestJournal, EKeys::J, false));
 	return true;
 }
 

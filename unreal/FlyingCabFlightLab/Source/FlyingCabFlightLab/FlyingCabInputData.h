@@ -17,11 +17,12 @@ struct FFlyingCabInputAssets
 	UInputAction* Restart = nullptr;
 	UInputAction* Telemetry = nullptr;
 	UInputAction* Interact = nullptr;
+	UInputAction* QuestJournal = nullptr;
 
 	bool IsValid() const
 	{
 		return MappingContext && Horizontal && Thrust && Service
-			&& Restart && Telemetry && Interact;
+			&& Restart && Telemetry && Interact && QuestJournal;
 	}
 };
 

@@ -115,9 +115,7 @@ bool AFlyingCabQuestGiver::Interact(AFlyingCabCharacter* Character, FText& OutMe
 			OutMessage = FText::FromString(TEXT("ASSIGNMENT UNAVAILABLE"));
 			return false;
 		}
-		OutMessage = FText::Format(
-			NSLOCTEXT("FlyingCab", "QuestAccepted", "ASSIGNMENT ACCEPTED // {0}"),
-			QuestDefinition->Title);
+		OutMessage = FText::GetEmpty();
 		RefreshAppearance();
 		return true;
 	}
@@ -127,9 +125,7 @@ bool AFlyingCabQuestGiver::Interact(AFlyingCabCharacter* Character, FText& OutMe
 	{
 		const bool bCompleted = Quests->TurnInQuest(QuestDefinition->QuestId);
 		OutMessage = bCompleted
-			? FText::Format(
-				NSLOCTEXT("FlyingCab", "QuestTurnedIn", "ASSIGNMENT COMPLETE // {0}"),
-				QuestDefinition->Title)
+			? FText::GetEmpty()
 			: FText::FromString(TEXT("ASSIGNMENT TURN-IN FAILED"));
 		RefreshAppearance();
 		return bCompleted;

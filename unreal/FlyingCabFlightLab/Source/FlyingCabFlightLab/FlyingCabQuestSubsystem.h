@@ -20,6 +20,14 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 	FFlyingCabQuestCompleted,
 	UFlyingCabQuestDefinition*,
 	Quest);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+	FFlyingCabQuestUpdated,
+	FFlyingCabQuestUpdate,
+	Update);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+	FFlyingCabTrackedQuestChanged,
+	FName,
+	QuestId);
 
 /** Persistent runtime owner of quest state. Gameplay reports events; it never edits quest data. */
 UCLASS()
@@ -51,6 +59,9 @@ public:
 	bool SetTrackedQuest(FName QuestId);
 
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Quests")
+	bool ClearTrackedQuest();
+
+	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Quests")
 	void ResetAllQuests();
 
 	UFUNCTION(BlueprintPure, Category = "Flying Cab|Quests")
@@ -65,6 +76,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Flying Cab|Quests")
 	FText GetTrackerText() const;
 
+	UFUNCTION(BlueprintPure, Category = "Flying Cab|Quests")
+	TArray<FFlyingCabQuestJournalEntry> GetJournalEntries() const;
+
+	UFUNCTION(BlueprintPure, Category = "Flying Cab|Quests")
+	bool AreGameplayEventsEnabled() const { return bGameplayEventsEnabled; }
+
 	const FFlyingCabQuestRuntimeState* FindState(FName QuestId) const;
 
 	UPROPERTY(BlueprintAssignable, Category = "Flying Cab|Quests")
@@ -73,10 +90,23 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Flying Cab|Quests")
 	FFlyingCabQuestCompleted OnQuestCompleted;
 
+	UPROPERTY(BlueprintAssignable, Category = "Flying Cab|Quests")
+	FFlyingCabQuestUpdated OnQuestUpdated;
+
+	UPROPERTY(BlueprintAssignable, Category = "Flying Cab|Quests")
+	FFlyingCabTrackedQuestChanged OnTrackedQuestChanged;
+
 private:
 	bool CompleteQuest(FName QuestId);
 	void SelectNextTrackedQuest();
 	void BroadcastState(FName QuestId);
+	void BroadcastUpdate(
+		FName QuestId,
+		EFlyingCabQuestChangeType ChangeType,
+		int32 ObjectiveIndex = INDEX_NONE,
+		int32 CurrentProgress = 0,
+		int32 RequiredProgress = 0);
+	void SetTrackedQuestInternal(FName QuestId);
 
 	UPROPERTY(Transient)
 	TObjectPtr<UFlyingCabQuestCatalog> Catalog;
@@ -89,6 +119,9 @@ private:
 
 	UPROPERTY(Transient)
 	FName TrackedQuestId = NAME_None;
+
+	int32 NextActivationOrder = 1;
+	int32 NextCompletionOrder = 1;
 
 	/** Explicitly enabled by Free Roam after mode selection; pre-run possession cannot advance quests. */
 	bool bGameplayEventsEnabled = false;
