@@ -17,7 +17,7 @@ GameMode jedynie łączy ukończenie zadania z istniejącymi właścicielami nag
 
 ## Tworzenie zadania w edytorze
 
-1. W Content Browser wybierz `Add` → `Miscellaneous` → `Data Asset` → `FlyingCabQuestDefinition`.
+1. W Content Browser wybierz `Add` → `Data` → `Data Asset`, a następnie klasę `FlyingCabQuestDefinition`.
 2. Ustaw unikalne `QuestId`, tytuł i opis.
 3. Dodaj cele w kolejności wykonania. Każdy cel potrzebuje:
    - unikalnego `ObjectiveId` w obrębie zadania,
