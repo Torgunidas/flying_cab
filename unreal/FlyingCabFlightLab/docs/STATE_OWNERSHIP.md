@@ -15,6 +15,8 @@ Ten dokument wskazuje źródła prawdy. Widgety oraz teksty HUD są odbiorcami s
 | Aktualny tryb gracza: pojazd, pieszo lub nieznany | `AFlyingCabPlayerController::PlayerMode` | każde `OnPossess` | bieżący kontroler/poziom |
 | Zdrowie postaci pieszej | `AFlyingCabCharacter` | utworzenie nowej postaci | pojedyncze wyjście z pojazdu |
 | Dostęp do pojazdów | `UFlyingCabProgressionSubsystem` | `GrantAccess`/`RevokeAccess` dla pojedynczego prawa; jawne `ResetAccess` na początku Time Attack | instancja aplikacji; przeżywa przeładowanie mapy |
+| Definicje zadań | `Content/Data/Quests/DA_FlyingCabQuestCatalog` i wskazane `UFlyingCabQuestDefinition` | edycja assetów; walidacja przy ładowaniu | konfiguracja projektu; tekst nie jest identyfikatorem logiki |
+| Statusy, etapy, liczniki i śledzone zadanie | `UFlyingCabQuestSubsystem` | jawne API zadań; Time Attack wyłącza zdarzenia i tracker, ale nie przyznaje nagród | instancja aplikacji; struktura stanu jest gotowa do późniejszego `SaveGame` |
 | Najlepsze czasy Time Attack | `UFlyingCabScoreSaveGame` | brak automatycznego resetu | dysk; format oznaczony `SaveVersion` |
 | Topologia dzielnic, stacji, tras ruchu i granice minimapy | `Content/Data/DA_FlyingCabCityLayout` (`UFlyingCabCityLayoutAsset`), odczytywany przez `FlyingCabCityData` | edycja assetu; walidacja podczas `PostLoad` | konfiguracja projektu; jeden asset zasila dispatch, geometrię, minimapę i bootstrap świata, z fallbackiem C++ |
 | Aktorzy infrastruktury tworzonej w runtime: rozszerzenie miasta, stacje, biuro, portale, terminal, pojazd serwisowy i ruch | `AFlyingCabWorldBootstrap` utworzony przez `AFlyingCabGameMode` | przeładowanie poziomu | bieżący poziom; bootstrap odświeża także stan infrastruktury dostępu |
@@ -27,6 +29,7 @@ Ten dokument wskazuje źródła prawdy. Widgety oraz teksty HUD są odbiorcami s
 - `R` resetuje pozycję, prędkość, paliwo, kadłub i wejścia pojazdu. Nie resetuje kredytów ani aktywnego kursu.
 - Zniszczenie aktywnego pojazdu przerywa kurs, nalicza holowanie i uruchamia recovery. Zaparkowany pojazd odzyskuje sprawność bez opłaty i bez przerwania bieżącego kursu.
 - Time Attack zawsze resetuje dostęp przy starcie, aby wynik był porównywalny. Free Roam zachowuje dostęp przy przeładowaniu mapy w ramach tej samej sesji aplikacji.
+- Zadania są częścią Free Roam. Time Attack nie przyjmuje zdarzeń questowych, nie pokazuje trackera i nie może przyznać nagrody z zadania.
 - Śmierć pieszo przeładowuje poziom: stan poziomu znika, dostęp z `GameInstance` pozostaje, a tryb biegu jest przekazywany do nowej mapy.
 - `UFlyingCabFleetComponent::ActiveVehicle` wskazuje bieżący albo ostatni aktywny pojazd także podczas chodzenia pieszo. Jawny `PlayerMode` określa sposób sterowania i nie zależy od kolejności metod w `Tick`.
 

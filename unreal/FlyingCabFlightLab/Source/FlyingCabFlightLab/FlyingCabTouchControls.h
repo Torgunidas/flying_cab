@@ -22,6 +22,7 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabTouchControls : public UUserWidget
 public:
 	void SetControlsVisible(bool bVisible);
 	void SetOnFootMode(bool bOnFoot);
+	void SetQuestText(const FText& Text);
 	void SetObjectiveText(const FText& Text);
 	void ShowEventMessage(
 		const FText& Text,
@@ -142,6 +143,9 @@ private:
 	TObjectPtr<UTextBlock> ServiceButtonText;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> QuestText;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> ObjectiveText;
 
 	UPROPERTY(Transient)
@@ -174,6 +178,7 @@ private:
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UBorder>> PassengerOfferMarkers;
 
+	FText PendingQuestText;
 	FText PendingObjectiveText = FText::FromString(TEXT("FLIGHT LAB"));
 	FText PendingEventMessageText;
 	FLinearColor PendingEventMessageColor = FLinearColor::White;

@@ -9,10 +9,16 @@
 #include "FlyingCabHudPresenterComponent.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
+#include "FlyingCabProgressionSubsystem.h"
+#include "FlyingCabQuestCatalog.h"
+#include "FlyingCabQuestDefinition.h"
+#include "FlyingCabQuestSubsystem.h"
+#include "FlyingCabQuestTypes.h"
 #include "FlyingCabRunComponent.h"
 #include "FlyingCabTrafficAwarenessComponent.h"
 #include "FlyingCabTrafficVehicle.h"
 #include "FlyingCabWorldBootstrap.h"
+#include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -44,6 +50,7 @@ void AFlyingCabGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	EconomyConfig = UFlyingCabEconomyAsset::LoadDefaultAsset();
+	InitializeQuests();
 	if (Economy)
 	{
 		Economy->Configure(EconomyConfig);
@@ -133,6 +140,10 @@ void AFlyingCabGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		Economy->OnServicePurchase.RemoveAll(this);
 	}
+	if (QuestSystem)
+	{
+		QuestSystem->OnQuestCompleted.RemoveDynamic(this, &AFlyingCabGameMode::HandleQuestCompleted);
+	}
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -150,6 +161,15 @@ void AFlyingCabGameMode::StartRun(EFlyingCabRunMode Mode)
 	if (Dispatch)
 	{
 		Dispatch->StartPassengerMarket(Mode == EFlyingCabRunMode::TimeAttack);
+	}
+	if (QuestSystem)
+	{
+		const bool bQuestGameplayEnabled = Mode == EFlyingCabRunMode::Freeroam;
+		QuestSystem->SetGameplayEventsEnabled(bQuestGameplayEnabled);
+		if (bQuestGameplayEnabled)
+		{
+			QuestSystem->StartAutoQuests();
+		}
 	}
 
 	if (Mode == EFlyingCabRunMode::TimeAttack)
@@ -202,6 +222,21 @@ int32 AFlyingCabGameMode::GetCredits() const
 AFlyingCabPawn* AFlyingCabGameMode::GetActiveVehicle() const
 {
 	return Fleet ? Fleet->GetActiveVehicle() : nullptr;
+}
+
+void AFlyingCabGameMode::InitializeQuests()
+{
+	QuestCatalog = UFlyingCabQuestCatalog::LoadDefaultAsset();
+	UGameInstance* GameInstance = GetGameInstance();
+	QuestSystem = GameInstance
+		? GameInstance->GetSubsystem<UFlyingCabQuestSubsystem>()
+		: nullptr;
+	if (!QuestSystem || !QuestSystem->ConfigureCatalog(QuestCatalog))
+	{
+		UE_LOG(LogFlyingCabDelivery, Error, TEXT("Could not initialize the quest catalog."));
+		return;
+	}
+	QuestSystem->OnQuestCompleted.AddDynamic(this, &AFlyingCabGameMode::HandleQuestCompleted);
 }
 
 void AFlyingCabGameMode::InitializeWorldBootstrap()
@@ -300,6 +335,12 @@ bool AFlyingCabGameMode::CanPlayerExitVehicle(FText& OutFailureReason) const
 
 void AFlyingCabGameMode::HandlePassengerPickedUp(const FString& DestinationName)
 {
+	if (QuestSystem)
+	{
+		QuestSystem->RecordEvent(
+			FlyingCabQuestEvents::PassengerPickedUp,
+			FName(*DestinationName));
+	}
 	if (HudPresenter)
 	{
 		HudPresenter->ShowPassengerPickedUp();
@@ -324,6 +365,10 @@ void AFlyingCabGameMode::HandleFareCompleted(
 	if (HudPresenter)
 	{
 		HudPresenter->ShowFareCompleted(AwardedFare, GetCredits(), TotalDeliveries);
+	}
+	if (QuestSystem)
+	{
+		QuestSystem->RecordEvent(FlyingCabQuestEvents::PassengerDelivered);
 	}
 	UE_LOG(
 		LogFlyingCabDelivery,
@@ -373,6 +418,15 @@ int32 AFlyingCabGameMode::TryPurchaseRepair(
 void AFlyingCabGameMode::HandleServicePurchase(
 	const FFlyingCabServicePurchaseResult& Result)
 {
+	if (QuestSystem && Result.UnitsPurchased > 0)
+	{
+		QuestSystem->RecordEvent(
+			Result.bRepairService
+				? FlyingCabQuestEvents::RepairPurchased
+				: FlyingCabQuestEvents::FuelPurchased,
+			NAME_None,
+			Result.UnitsPurchased);
+	}
 	if (Result.bInsufficientCredits && HudPresenter)
 	{
 		HudPresenter->ShowInsufficientServiceCredits(Result.bRepairService);
@@ -470,6 +524,10 @@ void AFlyingCabGameMode::HandleTrafficNearMiss(
 	{
 		Run->RecordNearMiss(AwardedCredits);
 	}
+	if (QuestSystem)
+	{
+		QuestSystem->RecordEvent(FlyingCabQuestEvents::NearMiss);
+	}
 	if (TrafficAwareness)
 	{
 		TrafficAwareness->ShowNearMissReward(AwardedCredits);
@@ -510,5 +568,35 @@ void AFlyingCabGameMode::HandleTimeAttackCompleted(
 		UGameplayStatics::GetPlayerController(this, 0)))
 	{
 		Controller->ShowTimeAttackResults(Result, GetBestTimeAttackTimes());
+	}
+}
+
+void AFlyingCabGameMode::HandleQuestCompleted(UFlyingCabQuestDefinition* Quest)
+{
+	if (!Quest)
+	{
+		return;
+	}
+	const int32 RewardCredits = Economy ? Economy->AddCredits(Quest->Reward.Credits) : 0;
+	if (UGameInstance* GameInstance = GetGameInstance())
+	{
+		if (UFlyingCabProgressionSubsystem* Progression =
+			GameInstance->GetSubsystem<UFlyingCabProgressionSubsystem>())
+		{
+			for (const FName AccessId : Quest->Reward.GrantedAccessIds)
+			{
+				Progression->GrantAccess(AccessId);
+			}
+		}
+	}
+	if (HudPresenter)
+	{
+		HudPresenter->ShowEventMessage(
+			FText::Format(
+				NSLOCTEXT("FlyingCab", "QuestRewardMessage", "QUEST COMPLETE // {0} // +{1} CR"),
+				Quest->Title,
+				FText::AsNumber(RewardCredits)),
+			FLinearColor::FromSRGBColor(FColor(80, 255, 155)),
+			3.0f);
 	}
 }

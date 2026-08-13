@@ -6,6 +6,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "EngineUtils.h"
 #include "FlyingCabAccessTerminal.h"
+#include "FlyingCabQuestGiver.h"
 #include "FlyingCabCityExpansion.h"
 #include "FlyingCabDeliveryZone.h"
 #include "FlyingCabDispatchComponent.h"
@@ -167,6 +168,7 @@ namespace
 			Test->TestEqual(TEXT("One city expansion actor is present"), CountActors<AFlyingCabCityExpansion>(State.World), 1);
 			Test->TestEqual(TEXT("Two on-foot portals are present"), CountActors<AFlyingCabOnFootPortal>(State.World), 2);
 			Test->TestEqual(TEXT("One access terminal is present"), CountActors<AFlyingCabAccessTerminal>(State.World), 1);
+			Test->TestEqual(TEXT("One quest giver is present"), CountActors<AFlyingCabQuestGiver>(State.World), 1);
 			Test->TestEqual(TEXT("One nightshift office is present"), CountActors<AFlyingCabNightshiftOffice>(State.World), 1);
 			Test->TestTrue(
 				TEXT("The player cab and parked service cab both exist"),

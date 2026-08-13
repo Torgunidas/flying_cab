@@ -6,8 +6,10 @@
 #include "FlyingCabDeliveryZone.h"
 #include "FlyingCabDispatchComponent.h"
 #include "FlyingCabEconomyComponent.h"
+#include "Engine/GameInstance.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
+#include "FlyingCabQuestSubsystem.h"
 #include "FlyingCabRunComponent.h"
 #include "FlyingCabTrafficAwarenessComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -88,6 +90,7 @@ void UFlyingCabHudPresenterComponent::Refresh(
 	HudRefreshElapsed = bForce
 		? 0.0f
 		: FMath::Fmod(HudRefreshElapsed, EffectiveHudRefreshInterval);
+	UpdateQuestStatus();
 	UpdateObjectiveStatus(Pawn, Credits);
 	UpdateRunModeStatus(Credits);
 }
@@ -213,6 +216,19 @@ bool UFlyingCabHudPresenterComponent::IsPlayerOnFoot() const
 	const AFlyingCabPlayerController* PlayerController = GetPlayerController();
 	return PlayerController
 		&& PlayerController->GetPlayerMode() == EFlyingCabPlayerMode::OnFoot;
+}
+
+void UFlyingCabHudPresenterComponent::UpdateQuestStatus() const
+{
+	AFlyingCabPlayerController* PlayerController = GetPlayerController();
+	UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr;
+	const UFlyingCabQuestSubsystem* Quests = GameInstance
+		? GameInstance->GetSubsystem<UFlyingCabQuestSubsystem>()
+		: nullptr;
+	if (PlayerController)
+	{
+		PlayerController->SetQuestStatus(Quests ? Quests->GetTrackerText() : FText::GetEmpty());
+	}
 }
 
 void UFlyingCabHudPresenterComponent::UpdateProximityGuidance(AFlyingCabPawn* Pawn) const

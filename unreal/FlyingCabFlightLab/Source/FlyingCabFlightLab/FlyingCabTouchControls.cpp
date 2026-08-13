@@ -82,6 +82,15 @@ void UFlyingCabTouchControls::SetObjectiveText(const FText& Text)
 	}
 }
 
+void UFlyingCabTouchControls::SetQuestText(const FText& Text)
+{
+	PendingQuestText = Text;
+	if (QuestText && !QuestText->GetText().EqualTo(PendingQuestText))
+	{
+		QuestText->SetText(PendingQuestText);
+	}
+}
+
 void UFlyingCabTouchControls::ShowEventMessage(
 	const FText& Text,
 	const FLinearColor& Color,
@@ -446,6 +455,26 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		PendingTargetWorldPosition,
 		FVector2D(15.0f, 15.0f),
 		FLinearColor(0.0f, 0.9f, 1.0f));
+
+	QuestText = WidgetTree->ConstructWidget<UTextBlock>(
+		UTextBlock::StaticClass(),
+		TEXT("QuestText"));
+	QuestText->SetText(PendingQuestText);
+	QuestText->SetJustification(ETextJustify::Right);
+	QuestText->SetAutoWrapText(true);
+	QuestText->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 0.70f, 0.12f)));
+	QuestText->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.9f));
+	QuestText->SetShadowOffset(FVector2D(1.0f, 1.0f));
+	FSlateFontInfo QuestFont = QuestText->GetFont();
+	QuestFont.Size = 15;
+	QuestText->SetFont(QuestFont);
+
+	UCanvasPanelSlot* QuestSlot = RootCanvas->AddChildToCanvas(QuestText);
+	QuestSlot->SetAnchors(FAnchors(1.0f, 0.0f));
+	QuestSlot->SetAlignment(FVector2D(1.0f, 0.0f));
+	QuestSlot->SetPosition(FVector2D(-12.0f, 12.0f));
+	QuestSlot->SetSize(FVector2D(245.0f, 68.0f));
+	QuestSlot->SetZOrder(20);
 
 	ObjectiveText = WidgetTree->ConstructWidget<UTextBlock>(
 		UTextBlock::StaticClass(),

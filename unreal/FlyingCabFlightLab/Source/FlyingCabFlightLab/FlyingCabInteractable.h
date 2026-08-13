@@ -22,4 +22,7 @@ class FLYINGCABFLIGHTLAB_API IFlyingCabInteractable
 public:
 	virtual bool Interact(AFlyingCabCharacter* Character, FText& OutMessage) = 0;
 	virtual FText GetInteractionPrompt(const AFlyingCabCharacter* Character) const = 0;
+
+	/** Optional stable context used by generic quest objectives and future dialogue conditions. */
+	virtual FName GetQuestTargetId() const { return NAME_None; }
 };

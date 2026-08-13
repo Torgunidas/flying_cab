@@ -49,6 +49,7 @@ private:
 	void HandleTrafficAlertChanged(const FText& Alert, const FLinearColor& Color);
 	bool IsPlayerOnFoot() const;
 	void UpdateProximityGuidance(class AFlyingCabPawn* Pawn) const;
+	void UpdateQuestStatus() const;
 	void UpdateObjectiveStatus(class AFlyingCabPawn* Pawn, int32 Credits) const;
 
 	/** Exact in-world pointer appears only inside this range. */

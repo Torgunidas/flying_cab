@@ -14,6 +14,7 @@ class AFlyingCabNightshiftOffice;
 class AFlyingCabOnFootPortal;
 class AFlyingCabPawn;
 class AFlyingCabRepairStation;
+class AFlyingCabQuestGiver;
 class AFlyingCabTrafficVehicle;
 class UFlyingCabEconomyAsset;
 
@@ -37,6 +38,7 @@ public:
 	}
 	int32 GetFuelStationCount() const { return FuelStations.Num(); }
 	int32 GetRepairStationCount() const { return RepairStations.Num(); }
+	AFlyingCabQuestGiver* GetNightshiftQuestGiver() const { return NightshiftQuestGiver; }
 	static TConstArrayView<FFlyingCabTrafficRouteDefinition> GetTrafficRoutes();
 	static int32 GetExpectedTrafficVehicleCount();
 
@@ -81,6 +83,9 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<AFlyingCabAccessTerminal> ServiceAccessTerminal;
+
+	UPROPERTY(Transient)
+	TObjectPtr<AFlyingCabQuestGiver> NightshiftQuestGiver;
 
 	UPROPERTY(Transient)
 	TObjectPtr<AFlyingCabPawn> ServiceVehicle;

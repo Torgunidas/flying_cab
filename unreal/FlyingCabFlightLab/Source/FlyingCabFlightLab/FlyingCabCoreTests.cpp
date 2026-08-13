@@ -11,6 +11,10 @@
 #include "FlyingCabInputData.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
+#include "FlyingCabQuestCatalog.h"
+#include "FlyingCabQuestDefinition.h"
+#include "FlyingCabQuestSubsystem.h"
+#include "FlyingCabQuestTypes.h"
 #include "FlyingCabRunComponent.h"
 #include "FlyingCabTrafficAwarenessComponent.h"
 #include "FlyingCabVehicleVitalsComponent.h"
@@ -233,6 +237,102 @@ bool FFlyingCabProgressionAccessTest::RunTest(const FString& Parameters)
 
 	Progression->ResetAccess();
 	TestFalse(TEXT("Competitive-run reset removes session access"), Progression->HasAccess(ServiceAccess));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabQuestLifecycleTest,
+	"FlyingCab.Core.Quests.EventDrivenLifecycle",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabQuestLifecycleTest::RunTest(const FString& Parameters)
+{
+	UGameInstance* GameInstance = NewObject<UGameInstance>();
+	UFlyingCabQuestCatalog* Catalog = NewObject<UFlyingCabQuestCatalog>(GameInstance);
+	UFlyingCabQuestDefinition* Contract = NewObject<UFlyingCabQuestDefinition>(Catalog);
+	Contract->QuestId = TEXT("Quest.TestContract");
+	Contract->Title = FText::FromString(TEXT("TEST CONTRACT"));
+	Contract->Description = FText::FromString(TEXT("Test sequential quest behavior."));
+	Contract->bRequiresTurnIn = true;
+
+	FFlyingCabQuestObjectiveDefinition InteractionObjective;
+	InteractionObjective.ObjectiveId = TEXT("UseNode");
+	InteractionObjective.Description = FText::FromString(TEXT("Use the correct node"));
+	InteractionObjective.EventId = FlyingCabQuestEvents::InteractionCompleted;
+	InteractionObjective.TargetId = TEXT("Node.Correct");
+	InteractionObjective.RequiredCount = 1;
+	FFlyingCabQuestObjectiveDefinition DeliveryObjective;
+	DeliveryObjective.ObjectiveId = TEXT("DeliverTwice");
+	DeliveryObjective.Description = FText::FromString(TEXT("Complete deliveries"));
+	DeliveryObjective.EventId = FlyingCabQuestEvents::PassengerDelivered;
+	DeliveryObjective.RequiredCount = 2;
+	Contract->Objectives = {InteractionObjective, DeliveryObjective};
+
+	UFlyingCabQuestDefinition* AutoQuest = NewObject<UFlyingCabQuestDefinition>(Catalog);
+	AutoQuest->QuestId = TEXT("Quest.AutoTest");
+	AutoQuest->Title = FText::FromString(TEXT("AUTO TEST"));
+	AutoQuest->Description = FText::FromString(TEXT("Test automatic activation."));
+	AutoQuest->bAutoStartInFreeroam = true;
+	FFlyingCabQuestObjectiveDefinition AutoObjective;
+	AutoObjective.ObjectiveId = TEXT("NearMiss");
+	AutoObjective.Description = FText::FromString(TEXT("Perform a near miss"));
+	AutoObjective.EventId = FlyingCabQuestEvents::NearMiss;
+	AutoQuest->Objectives = {AutoObjective};
+	Catalog->Quests = {Contract, AutoQuest};
+
+	UFlyingCabQuestSubsystem* Quests = NewObject<UFlyingCabQuestSubsystem>(GameInstance);
+	TestNotNull(TEXT("Quest subsystem can be created for an isolated test"), Quests);
+	if (!Quests)
+	{
+		return false;
+	}
+	TestTrue(TEXT("A valid catalog is accepted"), Quests->ConfigureCatalog(Catalog));
+	Quests->SetGameplayEventsEnabled(true);
+	Quests->StartAutoQuests();
+	TestEqual(
+		TEXT("Free Roam auto quest starts"),
+		Quests->GetQuestStatus(AutoQuest->QuestId),
+		EFlyingCabQuestStatus::Active);
+	TestTrue(TEXT("A manual quest starts once"), Quests->StartQuest(Contract->QuestId));
+	TestFalse(TEXT("An active quest cannot be started twice"), Quests->StartQuest(Contract->QuestId));
+
+	TestEqual(
+		TEXT("Wrong target does not advance a filtered objective"),
+		Quests->RecordEvent(FlyingCabQuestEvents::InteractionCompleted, TEXT("Node.Wrong")),
+		0);
+	TestEqual(
+		TEXT("Correct target advances the first objective"),
+		Quests->RecordEvent(FlyingCabQuestEvents::InteractionCompleted, TEXT("Node.Correct")),
+		1);
+	const FFlyingCabQuestRuntimeState* State = Quests->FindState(Contract->QuestId);
+	TestTrue(TEXT("The second sequential objective becomes active"), State && State->ActiveObjectiveIndex == 1);
+
+	TestEqual(
+		TEXT("A counter objective accepts incremental progress"),
+		Quests->RecordEvent(FlyingCabQuestEvents::PassengerDelivered),
+		1);
+	TestTrue(
+		TEXT("Tracker exposes numeric progress for author feedback"),
+		Quests->GetTrackerText().ToString().Contains(TEXT("1/2")));
+	Quests->RecordEvent(FlyingCabQuestEvents::PassengerDelivered);
+	TestEqual(
+		TEXT("Finished objectives wait for explicit turn-in"),
+		Quests->GetQuestStatus(Contract->QuestId),
+		EFlyingCabQuestStatus::ReadyToTurnIn);
+	TestTrue(TEXT("Ready quest can be turned in"), Quests->TurnInQuest(Contract->QuestId));
+	TestEqual(
+		TEXT("Turned-in quest is completed"),
+		Quests->GetQuestStatus(Contract->QuestId),
+		EFlyingCabQuestStatus::Completed);
+	TestFalse(TEXT("Completed quest cannot be turned in twice"), Quests->TurnInQuest(Contract->QuestId));
+
+	Quests->SetGameplayEventsEnabled(false);
+	Quests->ResetAllQuests();
+	TestFalse(TEXT("Competitive mode blocks quest activation"), Quests->StartQuest(Contract->QuestId));
+	TestTrue(
+		TEXT("Competitive mode hides the quest tracker"),
+		Quests->GetTrackerText().IsEmpty());
 	return true;
 }
 
@@ -473,6 +573,23 @@ bool FFlyingCabDataAssetValidationTest::RunTest(const FString& Parameters)
 	TestFalse(
 		TEXT("Out-of-range economy tuning is rejected"),
 		InvalidEconomy->IsConfigurationValid(ValidationError));
+
+	UFlyingCabQuestCatalog* QuestCatalog = LoadObject<UFlyingCabQuestCatalog>(
+		nullptr,
+		UFlyingCabQuestCatalog::GetDefaultAssetPath());
+	TestNotNull(TEXT("The editable quest catalog can be loaded"), QuestCatalog);
+	if (QuestCatalog)
+	{
+		FString Error;
+		TestTrue(TEXT("The quest catalog passes structural validation"), QuestCatalog->IsConfigurationValid(Error));
+		TestEqual(TEXT("The initial catalog contains two authored quests"), QuestCatalog->Quests.Num(), 2);
+		const UFlyingCabQuestDefinition* FirstShift = QuestCatalog->FindQuest(TEXT("Quest.FirstShift"));
+		TestNotNull(TEXT("First Shift is available by stable ID"), FirstShift);
+		TestTrue(TEXT("First Shift auto-starts in Free Roam"), FirstShift && FirstShift->bAutoStartInFreeroam);
+		const UFlyingCabQuestDefinition* Nightshift = QuestCatalog->FindQuest(TEXT("Quest.NightshiftContract"));
+		TestNotNull(TEXT("Nightshift Contract is available by stable ID"), Nightshift);
+		TestTrue(TEXT("Nightshift Contract requires turn-in"), Nightshift && Nightshift->bRequiresTurnIn);
+	}
 	return true;
 }
 

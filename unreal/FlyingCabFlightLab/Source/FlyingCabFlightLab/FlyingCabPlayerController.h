@@ -41,6 +41,7 @@ public:
 		const FText& Message,
 		const FLinearColor& Color,
 		float DurationSeconds = 2.5f) const;
+	void SetQuestStatus(const FText& Status);
 	void SetObjectiveStatus(const FText& Status);
 	void SetMinimapState(
 		const FVector2D& CabWorldPosition,

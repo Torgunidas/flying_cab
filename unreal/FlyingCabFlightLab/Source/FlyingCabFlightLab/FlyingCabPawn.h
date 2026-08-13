@@ -66,6 +66,7 @@ public:
 	bool CanPlayerEnter(FText& OutFailureReason) const;
 	FText GetEntryPrompt() const;
 	const FString& GetVehicleDisplayName() const { return VehicleDisplayName; }
+	FName GetVehicleId() const { return VehicleId; }
 	bool IsRefuelRequested() const;
 	bool IsRepairRequested() const;
 	bool IsDestroyed() const { return Vitals && Vitals->IsDestroyed(); }

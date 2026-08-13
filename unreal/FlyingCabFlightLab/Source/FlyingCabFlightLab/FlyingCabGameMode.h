@@ -36,6 +36,7 @@ public:
 	bool CanPlayerExitVehicle(FText& OutFailureReason) const;
 
 private:
+	void InitializeQuests();
 	void InitializeWorldBootstrap();
 	void InitializeDispatch();
 	void EnsurePawnBinding();
@@ -50,6 +51,9 @@ private:
 		bool bRecoveredActiveVehicle);
 	void HandleServicePurchase(const struct FFlyingCabServicePurchaseResult& Result);
 	void HandleTimeAttackCompleted(const FFlyingCabTimeAttackResult& Result);
+
+	UFUNCTION()
+	void HandleQuestCompleted(class UFlyingCabQuestDefinition* Quest);
 	void HandleTrafficNearMiss(
 		class AFlyingCabTrafficVehicle* Vehicle,
 		class AFlyingCabPawn* Pawn);
@@ -59,6 +63,12 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<class UFlyingCabEconomyAsset> EconomyConfig;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UFlyingCabQuestCatalog> QuestCatalog;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class UFlyingCabQuestSubsystem> QuestSystem;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Economy")
 	TObjectPtr<class UFlyingCabEconomyComponent> Economy;

@@ -6,6 +6,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/PrimitiveComponent.h"
+#include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "FlyingCabCameraRig.h"
 #include "FlyingCabCharacter.h"
@@ -13,6 +14,9 @@
 #include "FlyingCabInteractable.h"
 #include "FlyingCabInputData.h"
 #include "FlyingCabPawn.h"
+#include "FlyingCabQuestSubsystem.h"
+#include "FlyingCabQuestEventComponent.h"
+#include "FlyingCabQuestTypes.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EngineUtils.h"
 #include "FlyingCabGameFlowWidget.h"
@@ -285,6 +289,14 @@ void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
 	if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(InPawn))
 	{
 		PlayerMode = EFlyingCabPlayerMode::Vehicle;
+		if (UGameInstance* GameInstance = GetGameInstance())
+		{
+			if (UFlyingCabQuestSubsystem* Quests =
+				GameInstance->GetSubsystem<UFlyingCabQuestSubsystem>())
+			{
+				Quests->RecordEvent(FlyingCabQuestEvents::VehicleEntered, Vehicle->GetVehicleId());
+			}
+		}
 	}
 	else if (Cast<AFlyingCabCharacter>(InPawn))
 	{
@@ -424,6 +436,14 @@ void AFlyingCabPlayerController::TryExitVehicle(AFlyingCabPawn* Vehicle)
 	}
 
 	Possess(OnFootPawn);
+	if (UGameInstance* GameInstance = GetGameInstance())
+	{
+		if (UFlyingCabQuestSubsystem* Quests =
+			GameInstance->GetSubsystem<UFlyingCabQuestSubsystem>())
+		{
+			Quests->RecordEvent(FlyingCabQuestEvents::VehicleExited, Vehicle->GetVehicleId());
+		}
+	}
 	ShowInteractionMessage(
 		TEXT("ON FOOT // A-D MOVE // SPACE JUMP // Q ENTER CAB"),
 		FColor(60, 235, 255));
@@ -490,6 +510,23 @@ bool AFlyingCabPlayerController::TryInteractWithNearbyActor(AFlyingCabCharacter*
 
 	FText InteractionMessage;
 	const bool bSucceeded = Interactable->Interact(OnFootPawn, InteractionMessage);
+	if (bSucceeded && !InteractableActor->FindComponentByClass<UFlyingCabQuestEventComponent>())
+	{
+		const FName QuestTargetId = Interactable->GetQuestTargetId();
+		if (!QuestTargetId.IsNone())
+		{
+			if (UGameInstance* GameInstance = GetGameInstance())
+			{
+				if (UFlyingCabQuestSubsystem* Quests =
+					GameInstance->GetSubsystem<UFlyingCabQuestSubsystem>())
+				{
+					Quests->RecordEvent(
+						FlyingCabQuestEvents::InteractionCompleted,
+						QuestTargetId);
+				}
+			}
+		}
+	}
 	if (!InteractionMessage.IsEmpty())
 	{
 		ShowInteractionMessage(
@@ -696,6 +733,14 @@ void AFlyingCabPlayerController::SetObjectiveStatus(const FText& Status)
 	if (InterfaceWidget)
 	{
 		InterfaceWidget->SetObjectiveText(Status);
+	}
+}
+
+void AFlyingCabPlayerController::SetQuestStatus(const FText& Status)
+{
+	if (InterfaceWidget)
+	{
+		InterfaceWidget->SetQuestText(Status);
 	}
 }
 

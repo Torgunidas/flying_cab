@@ -10,6 +10,9 @@
 #include "FlyingCabFuelStation.h"
 #include "FlyingCabNightshiftOffice.h"
 #include "FlyingCabOnFootPortal.h"
+#include "FlyingCabQuestCatalog.h"
+#include "FlyingCabQuestDefinition.h"
+#include "FlyingCabQuestGiver.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabRepairStation.h"
@@ -183,6 +186,24 @@ bool AFlyingCabWorldBootstrap::SpawnOnFootSlice()
 		UE_LOG(LogFlyingCabWorldBootstrap, Error, TEXT("Could not complete Nightshift Office interactables."));
 		return false;
 	}
+	NightshiftQuestGiver = GetWorld()->SpawnActor<AFlyingCabQuestGiver>(
+		AFlyingCabQuestGiver::StaticClass(),
+		NightshiftOffice->GetTerminalLocation() + FVector(-260.0f, 0.0f, 0.0f),
+		FRotator::ZeroRotator,
+		SpawnParameters);
+	UFlyingCabQuestCatalog* QuestCatalog = UFlyingCabQuestCatalog::LoadDefaultAsset();
+	UFlyingCabQuestDefinition* NightshiftQuest = QuestCatalog
+		? QuestCatalog->FindQuest(TEXT("Quest.NightshiftContract"))
+		: nullptr;
+	if (!NightshiftQuestGiver || !NightshiftQuest)
+	{
+		UE_LOG(LogFlyingCabWorldBootstrap, Error, TEXT("Could not create the Nightshift quest giver."));
+		return false;
+	}
+	NightshiftQuestGiver->Configure(
+		TEXT("QuestGiver.NightshiftDispatcher"),
+		FText::FromString(TEXT("NIGHTSHIFT DISPATCHER")),
+		NightshiftQuest);
 
 	NightshiftEntrance->Configure(
 		TEXT("NIGHTSHIFT OFFICE"),
