@@ -34,6 +34,7 @@ int32 UFlyingCabEconomyComponent::AddCredits(int32 RequestedCredits)
 	if (AwardedCredits > 0)
 	{
 		OnCreditsChanged.Broadcast(Credits);
+		OnCreditsEarned.Broadcast(AwardedCredits);
 	}
 	return AwardedCredits;
 }

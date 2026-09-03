@@ -14,6 +14,11 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabQuestDefinition : public UPrimaryDataAsse
 
 public:
 	virtual void PostLoad() override;
+
+#if WITH_EDITOR
+	virtual EDataValidationResult IsDataValid(FDataValidationContext& Context) const override;
+#endif
+
 	bool IsConfigurationValid(FString& OutError) const;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Identity")
@@ -24,6 +29,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Presentation", meta = (MultiLine = "true"))
 	FText Description;
+
+	/** Main and side quests share lifecycle rules but appear on separate journal tabs. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Presentation")
+	EFlyingCabQuestCategory Category = EFlyingCabQuestCategory::Main;
 
 	/** Objectives advance in array order. Events cannot skip an earlier objective. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Flow")

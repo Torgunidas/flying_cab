@@ -53,11 +53,17 @@ bool UFlyingCabCityLayoutAsset::IsConfigurationValid(FString& OutError) const
 		return false;
 	}
 
+	TSet<FName> DistrictIds;
 	TSet<FString> Names;
 	TSet<FString> Codes;
 	TSet<FString> ServiceNames;
 	for (const FFlyingCabDistrictDefinition& District : Districts)
 	{
+		if (District.DistrictId.IsNone() || DistrictIds.Contains(District.DistrictId))
+		{
+			OutError = TEXT("Every district needs a unique, non-empty DistrictId.");
+			return false;
+		}
 		if (District.DisplayName.IsEmpty() || District.MinimapCode.Len() != 2)
 		{
 			OutError = TEXT("Every district needs a name and a two-character minimap code.");
@@ -85,6 +91,7 @@ bool UFlyingCabCityLayoutAsset::IsConfigurationValid(FString& OutError) const
 				*District.DisplayName);
 			return false;
 		}
+		DistrictIds.Add(District.DistrictId);
 		Names.Add(District.DisplayName);
 		Codes.Add(District.MinimapCode);
 		for (const FString* ServiceName : {&District.FuelStationName, &District.RepairStationName})

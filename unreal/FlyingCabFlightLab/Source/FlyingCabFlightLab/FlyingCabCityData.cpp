@@ -9,16 +9,16 @@ DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabCityData, Log, All);
 namespace
 {
 	const TArray<FFlyingCabDistrictDefinition> Districts = {
-		{TEXT("YELLOW PROJECTS"), TEXT("YP"), FVector(-900.0f, 0.0f, 1150.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT(""), TEXT("")},
-		{TEXT("MIDTOWN EXCHANGE"), TEXT("ME"), FVector(850.0f, 0.0f, 2050.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT("MIDTOWN FUEL"), TEXT("")},
-		{TEXT("SKYLINE TERRACES"), TEXT("ST"), FVector(-750.0f, 0.0f, 3150.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT(""), TEXT("")},
-		{TEXT("ASHLINE MARKET"), TEXT("AM"), FVector(-3800.0f, 0.0f, 2500.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT("ASHLINE CHARGE"), TEXT("")},
-		{TEXT("NEON DOCKS"), TEXT("ND"), FVector(3650.0f, 0.0f, 1150.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT(""), TEXT("")},
-		{TEXT("ZENITH SPIRE"), TEXT("ZS"), FVector(3350.0f, 0.0f, 5200.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT(""), TEXT("")},
-		{TEXT("GLASSWARD TRANSIT"), TEXT("GT"), FVector(6500.0f, 0.0f, 1150.0f), TEXT("Glassward"), 15.0f, FLinearColor(0.02f, 0.62f, 0.82f), TEXT(""), TEXT("")},
-		{TEXT("RAINLINE BAZAAR"), TEXT("RB"), FVector(8650.0f, 0.0f, 2700.0f), TEXT("Rainline"), 16.0f, FLinearColor(0.92f, 0.32f, 0.04f), TEXT("RAINLINE ENERGY"), TEXT("")},
-		{TEXT("COBALT HEIGHTS"), TEXT("CH"), FVector(11150.0f, 0.0f, 3950.0f), TEXT("Cobalt"), 16.0f, FLinearColor(0.72f, 0.06f, 0.70f), TEXT(""), TEXT("")},
-		{TEXT("ORBITAL GARDENS"), TEXT("OG"), FVector(13250.0f, 0.0f, 5450.0f), TEXT("Orbital"), 17.0f, FLinearColor(0.08f, 0.62f, 0.32f), TEXT(""), TEXT("ORBITAL BODYWORKS")}};
+		{TEXT("District.YellowProjects"), TEXT("YELLOW PROJECTS"), TEXT("YP"), FVector(-900.0f, 0.0f, 1150.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT(""), TEXT("")},
+		{TEXT("District.MidtownExchange"), TEXT("MIDTOWN EXCHANGE"), TEXT("ME"), FVector(850.0f, 0.0f, 2050.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT("MIDTOWN FUEL"), TEXT("")},
+		{TEXT("District.SkylineTerraces"), TEXT("SKYLINE TERRACES"), TEXT("ST"), FVector(-750.0f, 0.0f, 3150.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT(""), TEXT("")},
+		{TEXT("District.AshlineMarket"), TEXT("ASHLINE MARKET"), TEXT("AM"), FVector(-3800.0f, 0.0f, 2500.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT("ASHLINE CHARGE"), TEXT("")},
+		{TEXT("District.NeonDocks"), TEXT("NEON DOCKS"), TEXT("ND"), FVector(3650.0f, 0.0f, 1150.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT(""), TEXT("")},
+		{TEXT("District.ZenithSpire"), TEXT("ZENITH SPIRE"), TEXT("ZS"), FVector(3350.0f, 0.0f, 5200.0f), TEXT(""), 0.0f, FLinearColor::Transparent, TEXT(""), TEXT("")},
+		{TEXT("District.GlasswardTransit"), TEXT("GLASSWARD TRANSIT"), TEXT("GT"), FVector(6500.0f, 0.0f, 1150.0f), TEXT("Glassward"), 15.0f, FLinearColor(0.02f, 0.62f, 0.82f), TEXT(""), TEXT("")},
+		{TEXT("District.RainlineBazaar"), TEXT("RAINLINE BAZAAR"), TEXT("RB"), FVector(8650.0f, 0.0f, 2700.0f), TEXT("Rainline"), 16.0f, FLinearColor(0.92f, 0.32f, 0.04f), TEXT("RAINLINE ENERGY"), TEXT("")},
+		{TEXT("District.CobaltHeights"), TEXT("COBALT HEIGHTS"), TEXT("CH"), FVector(11150.0f, 0.0f, 3950.0f), TEXT("Cobalt"), 16.0f, FLinearColor(0.72f, 0.06f, 0.70f), TEXT(""), TEXT("")},
+		{TEXT("District.OrbitalGardens"), TEXT("ORBITAL GARDENS"), TEXT("OG"), FVector(13250.0f, 0.0f, 5450.0f), TEXT("Orbital"), 17.0f, FLinearColor(0.08f, 0.62f, 0.32f), TEXT(""), TEXT("ORBITAL BODYWORKS")}};
 
 	const TArray<FFlyingCabServiceDefinition> StandaloneRepairStations = {
 		{TEXT("NIGHTSHIFT REPAIR"), FVector(0.0f, 0.0f, 4200.0f)}};

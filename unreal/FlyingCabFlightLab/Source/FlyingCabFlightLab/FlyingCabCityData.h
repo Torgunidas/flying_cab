@@ -12,6 +12,10 @@ struct FFlyingCabDistrictDefinition
 {
 	GENERATED_BODY()
 
+	/** Stable gameplay key used by quests, saves and future dialogue conditions. */
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|City")
+	FName DistrictId = NAME_None;
+
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|City")
 	FString DisplayName;
 

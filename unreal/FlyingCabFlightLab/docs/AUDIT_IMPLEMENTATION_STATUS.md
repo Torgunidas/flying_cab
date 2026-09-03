@@ -16,7 +16,7 @@ Dokument towarzyszy raportowi `AUDYT_UNREAL_FLYINGCABFLIGHTLAB_2026-08-10.md`. R
 | F-08 | zakończone | HUD jest próbkowany timerem 10 Hz, a widgety porównują nowe wartości przed `SetText`/zmianą widoczności. |
 | F-09 | oczekuje pomiaru | Nie zmieniono stylistyki świateł bez danych. Potrzebny jest profil GPU na fizycznym urządzeniu mobilnym i test A/B lokalnych świateł zgodnie z raportem. |
 | F-10 | zakończone | PlayerController tworzy i posiada jeden trwały HUD niezależny od aktualnie posiadanego pojazdu lub postaci. |
-| F-11 | zakończone | Pakiet Automation obejmuje logikę domenową i przepływy PIE; po migracji wejścia zawiera 16 zielonych testów. |
+| F-11 | zakończone | Pakiet Automation obejmuje logikę domenową i przepływy PIE; zawiera 19 testów (13 Core + 6 Functional PIE). |
 | F-12 | zakończone | `UFlyingCabScoreSaveGame` zawiera jawne `SaveVersion`. |
 | F-13 | zakończone | `FLIGHT_FEEL_TEST.md` opisuje aktualne miasto, tryby, flotę, HUD, Enhanced Input i zatwierdzony kadr kamery. |
 | F-14 | zakończone | Menu otrzymuje skonfigurowany próg Time Attack; wartość pochodzi z assetu ekonomii. |

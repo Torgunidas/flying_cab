@@ -10,6 +10,7 @@
 class AFlyingCabAccessTerminal;
 class AFlyingCabCityExpansion;
 class AFlyingCabFuelStation;
+class AFlyingCabLivingWorldManager;
 class AFlyingCabNightshiftOffice;
 class AFlyingCabOnFootPortal;
 class AFlyingCabPawn;
@@ -38,8 +39,17 @@ public:
 	}
 	int32 GetFuelStationCount() const { return FuelStations.Num(); }
 	int32 GetRepairStationCount() const { return RepairStations.Num(); }
-	AFlyingCabQuestGiver* GetNightshiftQuestGiver() const { return NightshiftQuestGiver; }
+	AFlyingCabQuestGiver* GetNightshiftQuestGiver() const
+	{
+		return QuestGivers.IsEmpty() ? nullptr : QuestGivers[0];
+	}
+	int32 GetQuestGiverCount() const { return QuestGivers.Num(); }
+	int32 GetLivingPedestrianCount() const;
+	AFlyingCabLivingWorldManager* GetLivingWorldManager() const { return LivingWorldManager; }
+	bool IsLegacyTrafficEnabled() const { return bSpawnLegacyTraffic; }
 	static TConstArrayView<FFlyingCabTrafficRouteDefinition> GetTrafficRoutes();
+	int32 GetConfiguredTrafficVehicleCount() const { return TrafficVehicles.Num(); }
+	/** Expected count for the built-in fallback profile used by automated tests. */
 	static int32 GetExpectedTrafficVehicleCount();
 
 private:
@@ -48,6 +58,7 @@ private:
 	bool SpawnOnFootSlice();
 	bool SpawnServiceVehicle(UClass* ServiceVehicleClass);
 	bool SpawnTraffic();
+	bool SpawnLivingWorld();
 	FActorSpawnParameters MakeSpawnParameters(
 		ESpawnActorCollisionHandlingMethod CollisionHandling);
 
@@ -62,6 +73,10 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot")
 	FVector ServiceVehicleLocation = FVector(-600.0f, 0.0f, 4040.0f);
+
+	/** Kept only as a rollback switch while the route-driven living world is evaluated. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Traffic")
+	bool bSpawnLegacyTraffic = false;
 
 	UPROPERTY(Transient)
 	TObjectPtr<AFlyingCabCityExpansion> CityExpansion;
@@ -85,13 +100,16 @@ private:
 	TObjectPtr<AFlyingCabAccessTerminal> ServiceAccessTerminal;
 
 	UPROPERTY(Transient)
-	TObjectPtr<AFlyingCabQuestGiver> NightshiftQuestGiver;
+	TArray<TObjectPtr<AFlyingCabQuestGiver>> QuestGivers;
 
 	UPROPERTY(Transient)
 	TObjectPtr<AFlyingCabPawn> ServiceVehicle;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<AFlyingCabTrafficVehicle>> TrafficVehicles;
+
+	UPROPERTY(Transient)
+	TObjectPtr<AFlyingCabLivingWorldManager> LivingWorldManager;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UFlyingCabEconomyAsset> EconomyConfig;

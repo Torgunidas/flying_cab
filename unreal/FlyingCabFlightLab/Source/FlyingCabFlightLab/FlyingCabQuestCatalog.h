@@ -15,7 +15,13 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabQuestCatalog : public UPrimaryDataAsset
 
 public:
 	virtual void PostLoad() override;
+
+#if WITH_EDITOR
+	virtual EDataValidationResult IsDataValid(FDataValidationContext& Context) const override;
+#endif
+
 	bool IsConfigurationValid(FString& OutError) const;
+	bool IsQuestEntryValid(const UFlyingCabQuestDefinition* Quest, FString& OutError) const;
 	UFlyingCabQuestDefinition* FindQuest(FName QuestId) const;
 
 	static UFlyingCabQuestCatalog* LoadDefaultAsset();
@@ -23,4 +29,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flying Cab|Quests")
 	TArray<TObjectPtr<UFlyingCabQuestDefinition>> Quests;
+
+	/** Blueprint-authored event IDs accepted in addition to the native event list. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flying Cab|Quests")
+	TArray<FName> AllowedCustomEventIds;
 };

@@ -15,6 +15,7 @@
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabPlayerController.h"
 #include "GameFramework/PlayerController.h"
+#include "InputCoreTypes.h"
 #include "Materials/MaterialInterface.h"
 #include "PhysicsEngine/BodyInstance.h"
 #include "UObject/ConstructorHelpers.h"
@@ -55,6 +56,8 @@ AFlyingCabPawn::AFlyingCabPawn()
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ConeMesh(TEXT("/Engine/BasicShapes/Cone.Cone"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(
+		TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> BasicMaterial(
 		TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
 	if (CubeMesh.Succeeded())
@@ -85,6 +88,32 @@ AFlyingCabPawn::AFlyingCabPawn()
 	AccessLight->SetIntensity(0.0f);
 	AccessLight->SetAttenuationRadius(420.0f);
 	AccessLight->SetCastShadows(false);
+
+	PlayerFocusHalo = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PlayerFocusHalo"));
+	PlayerFocusHalo->SetupAttachment(CollisionBody);
+	PlayerFocusHalo->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	PlayerFocusHalo->SetRelativeLocation(FVector(0.0f, -52.0f, 0.0f));
+	PlayerFocusHalo->SetRelativeRotation(FRotator(0.0f, 0.0f, 90.0f));
+	PlayerFocusHalo->SetRelativeScale3D(FVector(3.0f, 1.35f, 0.03f));
+	PlayerFocusHalo->SetCastShadow(false);
+	PlayerFocusHalo->SetReceivesDecals(false);
+	PlayerFocusHalo->SetVisibility(false, true);
+	if (CylinderMesh.Succeeded())
+	{
+		PlayerFocusHalo->SetStaticMesh(CylinderMesh.Object);
+	}
+	if (BasicMaterial.Succeeded())
+	{
+		PlayerFocusHalo->SetMaterial(0, BasicMaterial.Object);
+	}
+
+	PlayerFocusLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("PlayerFocusLight"));
+	PlayerFocusLight->SetupAttachment(CollisionBody);
+	PlayerFocusLight->SetRelativeLocation(FVector(0.0f, 75.0f, 0.0f));
+	PlayerFocusLight->SetLightColor(PlayerFocusColor);
+	PlayerFocusLight->SetIntensity(0.0f);
+	PlayerFocusLight->SetAttenuationRadius(460.0f);
+	PlayerFocusLight->SetCastShadows(false);
 
 	GuidanceArrowRoot = CreateDefaultSubobject<USceneComponent>(TEXT("GuidanceArrowRoot"));
 	GuidanceArrowRoot->SetupAttachment(CollisionBody);
@@ -145,6 +174,7 @@ void AFlyingCabPawn::BeginPlay()
 		Vitals->InitializeVitals(Config);
 	}
 	CollisionBody->WakeAllRigidBodies();
+	RefreshPlayerFocusAppearance();
 
 	UE_LOG(
 		LogFlyingCabFlight,
@@ -161,6 +191,8 @@ void AFlyingCabPawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	RefreshVehicleIdentityAppearance();
+	RefreshPlayerFocusAppearance();
+	RefreshKeyboardInputState();
 
 	if (!CollisionBody || !CollisionBody->IsSimulatingPhysics())
 	{
@@ -225,24 +257,6 @@ void AFlyingCabPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 		EnhancedInput && InputAssets.IsValid())
 	{
-		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Triggered,
-			this, &AFlyingCabPawn::HandleEnhancedHorizontal);
-		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Completed,
-			this, &AFlyingCabPawn::ReleaseEnhancedHorizontal);
-		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Canceled,
-			this, &AFlyingCabPawn::ReleaseEnhancedHorizontal);
-		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Triggered,
-			this, &AFlyingCabPawn::HandleEnhancedThrust);
-		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Completed,
-			this, &AFlyingCabPawn::ReleaseEnhancedThrust);
-		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Canceled,
-			this, &AFlyingCabPawn::ReleaseEnhancedThrust);
-		EnhancedInput->BindAction(InputAssets.Service, ETriggerEvent::Triggered,
-			this, &AFlyingCabPawn::HandleEnhancedService);
-		EnhancedInput->BindAction(InputAssets.Service, ETriggerEvent::Completed,
-			this, &AFlyingCabPawn::ReleaseEnhancedService);
-		EnhancedInput->BindAction(InputAssets.Service, ETriggerEvent::Canceled,
-			this, &AFlyingCabPawn::ReleaseEnhancedService);
 		EnhancedInput->BindAction(InputAssets.Restart, ETriggerEvent::Started,
 			this, &AFlyingCabPawn::ResetVehicle);
 		EnhancedInput->BindAction(InputAssets.Telemetry, ETriggerEvent::Started,
@@ -272,6 +286,13 @@ void AFlyingCabPawn::ReleaseKeyboardInputState()
 	KeyboardThrustInput = 0.0f;
 	bKeyboardRefuelPressed = false;
 }
+
+#if WITH_DEV_AUTOMATION_TESTS
+bool AFlyingCabPawn::IsTestPlayerFocusVisible() const
+{
+	return PlayerFocusHalo && PlayerFocusHalo->IsVisible();
+}
+#endif
 
 void AFlyingCabPawn::SetTouchHorizontalInput(float Value)
 {
@@ -486,55 +507,37 @@ void AFlyingCabPawn::SetKeyboardServiceInput(float Value)
 	bKeyboardRefuelPressed = Value > 0.5f;
 }
 
-void AFlyingCabPawn::HandleEnhancedHorizontal(const FInputActionValue& Value)
+void AFlyingCabPawn::RefreshKeyboardInputState()
 {
-	if (const AFlyingCabPlayerController* PlayerController =
+	const AFlyingCabPlayerController* PlayerController =
 		Cast<AFlyingCabPlayerController>(GetController());
-		PlayerController && PlayerController->IsGameplayInputSuppressed())
+	if (!PlayerController || PlayerController->IsGameplayInputSuppressed()
+		|| !PlayerController->PlayerInput)
 	{
-		SetKeyboardHorizontalInput(0.0f);
+		ReleaseKeyboardInputState();
 		return;
 	}
-	SetKeyboardHorizontalInput(Value.Get<float>());
-}
 
-void AFlyingCabPawn::HandleEnhancedThrust(const FInputActionValue& Value)
-{
-	if (const AFlyingCabPlayerController* PlayerController =
-		Cast<AFlyingCabPlayerController>(GetController());
-		PlayerController && PlayerController->IsGameplayInputSuppressed())
-	{
-		SetKeyboardThrustInput(0.0f);
-		return;
-	}
-	SetKeyboardThrustInput(Value.Get<bool>() ? 1.0f : 0.0f);
-}
+	// Continuous controls are sampled from the current key state every frame. Keeping
+	// them independent from cached action-value bindings prevents a skipped action
+	// update from leaving a thruster latched for the rest of a play session.
+	const float PositiveHorizontal =
+		(PlayerController->IsInputKeyDown(EKeys::D)
+			|| PlayerController->IsInputKeyDown(EKeys::Right))
+			? 1.0f
+			: 0.0f;
+	const float NegativeHorizontal =
+		(PlayerController->IsInputKeyDown(EKeys::A)
+			|| PlayerController->IsInputKeyDown(EKeys::Left))
+			? 1.0f
+			: 0.0f;
+	const bool bThrustPressed = PlayerController->IsInputKeyDown(EKeys::W)
+		|| PlayerController->IsInputKeyDown(EKeys::Up)
+		|| PlayerController->IsInputKeyDown(EKeys::SpaceBar);
 
-void AFlyingCabPawn::HandleEnhancedService(const FInputActionValue& Value)
-{
-	if (const AFlyingCabPlayerController* PlayerController =
-		Cast<AFlyingCabPlayerController>(GetController());
-		PlayerController && PlayerController->IsGameplayInputSuppressed())
-	{
-		SetKeyboardServiceInput(0.0f);
-		return;
-	}
-	SetKeyboardServiceInput(Value.Get<bool>() ? 1.0f : 0.0f);
-}
-
-void AFlyingCabPawn::ReleaseEnhancedHorizontal()
-{
-	SetKeyboardHorizontalInput(0.0f);
-}
-
-void AFlyingCabPawn::ReleaseEnhancedThrust()
-{
-	SetKeyboardThrustInput(0.0f);
-}
-
-void AFlyingCabPawn::ReleaseEnhancedService()
-{
-	SetKeyboardServiceInput(0.0f);
+	SetKeyboardHorizontalInput(PositiveHorizontal - NegativeHorizontal);
+	SetKeyboardThrustInput(bThrustPressed ? 1.0f : 0.0f);
+	SetKeyboardServiceInput(PlayerController->IsInputKeyDown(EKeys::E) ? 1.0f : 0.0f);
 }
 
 void AFlyingCabPawn::ClearAllInputState(const TCHAR* Reason, bool bFlushPressedKeys)
@@ -662,8 +665,37 @@ void AFlyingCabPawn::RefreshVehicleIdentityAppearance(bool bForce)
 	}
 }
 
+void AFlyingCabPawn::RefreshPlayerFocusAppearance()
+{
+	const bool bShouldShowFocus = IsPlayerControlled() && !IsDestroyed();
+	if (PlayerFocusHalo)
+	{
+		PlayerFocusHalo->SetVisibility(bShouldShowFocus, true);
+		if (bShouldShowFocus)
+		{
+			PlayerFocusHalo->SetVectorParameterValueOnMaterials(
+				TEXT("Color"),
+				FVector(PlayerFocusColor.R, PlayerFocusColor.G, PlayerFocusColor.B));
+		}
+	}
+	if (PlayerFocusLight)
+	{
+		PlayerFocusLight->SetLightColor(PlayerFocusColor);
+		PlayerFocusLight->SetIntensity(
+			bShouldShowFocus ? PlayerFocusLightIntensity : 0.0f);
+	}
+}
+
 void AFlyingCabPawn::ShowFuelEmptyWarning() const
 {
+	UE_LOG(
+		LogFlyingCabFlight,
+		Warning,
+		TEXT("Fuel exhausted; thrusters disabled at %s while requested input was X %.2f, thrust %.2f."),
+		*GetActorLocation().ToCompactString(),
+		GetHorizontalInput(),
+		GetThrustInput());
+
 	if (!IsLocallyControlled())
 	{
 		return;
@@ -777,7 +809,7 @@ void AFlyingCabPawn::DrawFlightTelemetry(float HorizontalInput, float ThrustInpu
 		TEXT("Position    X:%+7.1f  Z:%+7.1f cm\n")
 		TEXT("Presentation accel X:%+7.1f  pitch:%+5.1f deg  camera X:%+6.1f  Z:%+6.1f cm\n")
 		TEXT("Resources   fuel:%5.1f/%5.1f  hull:%5.1f/%5.1f  destroyed:%s\n")
-		TEXT("Input source  Enhanced Input + synchronous focus/reset flush  |  forced clears:%u"),
+		TEXT("Thrusters  %s  |  input source: direct keyboard state + touch  |  forced clears:%u"),
 		PhysicsState,
 		KeyboardHorizontalInput,
 		TouchHorizontalInput,
@@ -801,6 +833,7 @@ void AFlyingCabPawn::DrawFlightTelemetry(float HorizontalInput, float ThrustInpu
 		Vitals ? Vitals->GetHull() : 0.0f,
 		Vitals ? Vitals->GetMaxHull() : MaxHull,
 		IsDestroyed() ? TEXT("YES") : TEXT("NO"),
+		Vitals && Vitals->CanUseThrusters() ? TEXT("ENABLED") : TEXT("DISABLED"),
 		ForcedInputResetCount);
 
 	GEngine->AddOnScreenDebugMessage(

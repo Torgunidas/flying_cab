@@ -40,8 +40,8 @@ private:
 	void InitializeWorldBootstrap();
 	void InitializeDispatch();
 	void EnsurePawnBinding();
-	void HandlePassengerPickedUp(const FString& DestinationName);
-	void HandleFareCompleted(int32 FarePayout, int32 TotalDeliveries);
+	void HandlePassengerPickedUp(const FString& DestinationName, FName DestinationId);
+	void HandleFareCompleted(int32 FarePayout, int32 TotalDeliveries, FName DestinationId);
 	void HandleVehicleRecoveryStarted(
 		class AFlyingCabPawn* Pawn,
 		bool bAffectsActiveRun,
@@ -50,6 +50,7 @@ private:
 		class AFlyingCabPawn* Pawn,
 		bool bRecoveredActiveVehicle);
 	void HandleServicePurchase(const struct FFlyingCabServicePurchaseResult& Result);
+	void HandleCreditsEarned(int32 AwardedCredits);
 	void HandleTimeAttackCompleted(const FFlyingCabTimeAttackResult& Result);
 
 	UFUNCTION()

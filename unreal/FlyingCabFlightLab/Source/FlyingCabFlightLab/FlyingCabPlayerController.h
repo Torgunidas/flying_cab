@@ -14,6 +14,7 @@ class AFlyingCabPawn;
 class UFlyingCabGameFlowWidget;
 class UFlyingCabQuestJournalWidget;
 class UFlyingCabTouchControls;
+class UPrimitiveComponent;
 
 enum class EFlyingCabPlayerMode : uint8
 {
@@ -33,6 +34,8 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void PlayerTick(float DeltaTime) override;
+	virtual bool InputKey(const FInputKeyEventArgs& Params) override;
 	virtual void FlushPressedKeys() override;
 	virtual bool ShouldFlushKeysWhenViewportFocusChanges() const override { return true; }
 
@@ -76,10 +79,14 @@ public:
 		const TArray<float>& BestTimes);
 	bool IsGameFlowScreenOpen() const { return bGameFlowScreenOpen; }
 	bool IsQuestJournalOpen() const { return bQuestJournalOpen; }
+	UFlyingCabQuestJournalWidget* GetQuestJournalWidget() const { return QuestJournalWidget; }
 	bool IsGameplayInputSuppressed() const
 	{
-		return bGameFlowScreenOpen || bQuestJournalOpen;
+		return bGameFlowScreenOpen || bQuestJournalOpen || bDeveloperObserverMode;
 	}
+	bool IsDeveloperObserverMode() const { return bDeveloperObserverMode; }
+	AFlyingCabCameraRig* GetCameraRig() const { return CameraRig; }
+	void ToggleDeveloperObserverMode();
 	EFlyingCabPlayerMode GetPlayerMode() const { return PlayerMode; }
 
 protected:
@@ -103,6 +110,13 @@ private:
 	void ToggleQuestJournal();
 	void OpenQuestJournal();
 	void BindQuestPresentation();
+	void SetDeveloperObserverMode(bool bEnabled);
+	void RecenterDeveloperObserver();
+	void ZoomDeveloperObserverIn();
+	void ZoomDeveloperObserverOut();
+	void RefreshDeveloperObserverHud();
+	void FreezeControlledVehicleForObserver();
+	void RestoreControlledVehicleAfterObserver();
 	void EnterMenuInputMode();
 	void RestoreGameplayInputMode();
 	bool EnsureEnhancedInputContext();
@@ -163,7 +177,10 @@ private:
 	TArray<TWeakObjectPtr<AActor>> CachedInteractables;
 	TArray<TWeakObjectPtr<AFlyingCabPawn>> CachedVehicles;
 	TWeakObjectPtr<AFlyingCabCharacter> CachedContextPromptPawn;
+	TWeakObjectPtr<UPrimitiveComponent> DeveloperObserverFrozenBody;
 	FText CachedContextPrompt;
+	FVector DeveloperObserverSavedLinearVelocity = FVector::ZeroVector;
+	FVector DeveloperObserverSavedAngularVelocity = FVector::ZeroVector;
 	double LastInteractionCacheRefreshTime = -1.0;
 	double LastContextPromptRefreshTime = -1.0;
 	EFlyingCabPlayerMode PlayerMode = EFlyingCabPlayerMode::Unknown;
@@ -173,4 +190,5 @@ private:
 
 	bool bGameFlowScreenOpen = false;
 	bool bQuestJournalOpen = false;
+	bool bDeveloperObserverMode = false;
 };

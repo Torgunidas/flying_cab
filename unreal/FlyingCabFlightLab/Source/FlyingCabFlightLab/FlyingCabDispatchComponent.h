@@ -24,13 +24,15 @@ struct FFlyingCabPassengerOfferState
 	float RemainingSeconds = 0.0f;
 };
 
-DECLARE_MULTICAST_DELEGATE_OneParam(
-	FOnFlyingCabPassengerPickedUp,
-	const FString&);
 DECLARE_MULTICAST_DELEGATE_TwoParams(
+	FOnFlyingCabPassengerPickedUp,
+	const FString&,
+	FName);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(
 	FOnFlyingCabFareCompleted,
 	int32,
-	int32);
+	int32,
+	FName);
 
 /** Owns passenger offers, the active ride and distance-based fare calculation. */
 UCLASS(ClassGroup = "Flying Cab", meta = (BlueprintSpawnableComponent))
@@ -64,6 +66,7 @@ public:
 	int32 GetOfferCount() const { return PassengerOffers.Num(); }
 	int32 GetStopCount() const { return DeliveryStops.Num(); }
 	FString GetStopName(int32 StopIndex) const;
+	FName GetStopId(int32 StopIndex) const;
 	AFlyingCabDeliveryZone* GetDropoffZone() const { return DropoffZone; }
 	const TArray<FFlyingCabPassengerOfferState>& GetPassengerOffers() const
 	{
@@ -104,6 +107,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery")
 	TArray<FString> DeliveryStopNames;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery")
+	TArray<FName> DeliveryStopIds;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery", meta = (ClampMin = "0.0"))
 	float ArrivalMaxPlanarSpeed = 180.0f;

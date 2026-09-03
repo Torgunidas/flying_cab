@@ -130,18 +130,8 @@ void AFlyingCabCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 		EnhancedInput && InputAssets.IsValid())
 	{
-		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Triggered,
-			this, &AFlyingCabCharacter::HandleEnhancedHorizontal);
-		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Completed,
-			this, &AFlyingCabCharacter::ReleaseEnhancedHorizontal);
-		EnhancedInput->BindAction(InputAssets.Horizontal, ETriggerEvent::Canceled,
-			this, &AFlyingCabCharacter::ReleaseEnhancedHorizontal);
-		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Triggered,
-			this, &AFlyingCabCharacter::HandleEnhancedThrust);
-		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Completed,
-			this, &AFlyingCabCharacter::ReleaseEnhancedThrust);
-		EnhancedInput->BindAction(InputAssets.Thrust, ETriggerEvent::Canceled,
-			this, &AFlyingCabCharacter::ReleaseEnhancedThrust);
+		EnhancedInput->BindActionValue(InputAssets.Horizontal);
+		EnhancedInput->BindActionValue(InputAssets.Thrust);
 		return;
 	}
 	UE_LOG(LogFlyingCabCharacter, Error, TEXT("On-foot input could not bind the Enhanced Input assets."));
@@ -150,6 +140,7 @@ void AFlyingCabCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 void AFlyingCabCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	RefreshKeyboardInputState();
 	DamageCooldownRemaining = FMath::Max(0.0f, DamageCooldownRemaining - DeltaSeconds);
 	DamageFlashRemaining = FMath::Max(0.0f, DamageFlashRemaining - DeltaSeconds);
 	if (GetCharacterMovement()->IsFalling())
@@ -260,39 +251,24 @@ void AFlyingCabCharacter::SetKeyboardThrustInput(float Value)
 	KeyboardThrustInput = FMath::Clamp(Value, 0.0f, 1.0f);
 }
 
-void AFlyingCabCharacter::HandleEnhancedHorizontal(const FInputActionValue& Value)
+void AFlyingCabCharacter::RefreshKeyboardInputState()
 {
-	if (const AFlyingCabPlayerController* PlayerController =
+	const AFlyingCabPlayerController* PlayerController =
 		Cast<AFlyingCabPlayerController>(GetController());
-		PlayerController && PlayerController->IsGameplayInputSuppressed())
+	const UEnhancedInputComponent* EnhancedInput =
+		Cast<UEnhancedInputComponent>(InputComponent);
+	const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
+	if (!PlayerController || PlayerController->IsGameplayInputSuppressed()
+		|| !EnhancedInput || !InputAssets.IsValid())
 	{
-		SetKeyboardHorizontalInput(0.0f);
+		ReleaseKeyboardInputState();
 		return;
 	}
-	SetKeyboardHorizontalInput(Value.Get<float>());
-}
 
-void AFlyingCabCharacter::HandleEnhancedThrust(const FInputActionValue& Value)
-{
-	if (const AFlyingCabPlayerController* PlayerController =
-		Cast<AFlyingCabPlayerController>(GetController());
-		PlayerController && PlayerController->IsGameplayInputSuppressed())
-	{
-		SetKeyboardThrustInput(0.0f);
-		StopJumping();
-		return;
-	}
-	SetKeyboardThrustInput(Value.Get<bool>() ? 1.0f : 0.0f);
-}
-
-void AFlyingCabCharacter::ReleaseEnhancedHorizontal()
-{
-	SetKeyboardHorizontalInput(0.0f);
-}
-
-void AFlyingCabCharacter::ReleaseEnhancedThrust()
-{
-	SetKeyboardThrustInput(0.0f);
+	SetKeyboardHorizontalInput(
+		EnhancedInput->GetBoundActionValue(InputAssets.Horizontal).Get<float>());
+	SetKeyboardThrustInput(
+		EnhancedInput->GetBoundActionValue(InputAssets.Thrust).Get<bool>() ? 1.0f : 0.0f);
 }
 
 void AFlyingCabCharacter::UnPossessed()

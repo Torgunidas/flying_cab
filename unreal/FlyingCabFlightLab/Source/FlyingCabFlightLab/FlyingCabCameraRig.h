@@ -24,6 +24,12 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 	void SetFollowTarget(AActor* NewTarget, bool bSnapToTarget);
+	void SetDeveloperObserverEnabled(bool bEnabled);
+	void MoveDeveloperObserver(const FVector2D& PanInput, bool bFast, float DeltaSeconds);
+	void AdjustDeveloperObserverZoom(float ZoomInput, float DeltaSeconds);
+	void RecenterDeveloperObserver();
+	bool IsDeveloperObserverEnabled() const { return bDeveloperObserverEnabled; }
+	float GetCurrentArmLength() const;
 
 private:
 	FVector GetDesiredRigLocation() const;
@@ -42,7 +48,7 @@ private:
 	float FollowSpeed = 5.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera", meta = (ClampMin = "0.0"))
-	float VehicleArmLength = 2660.0f;
+	float VehicleArmLength = 3200.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera", meta = (ClampMin = "0.0"))
 	float OnFootArmLength = 1050.0f;
@@ -54,6 +60,26 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera", meta = (ClampMin = "0.0"))
 	float TeleportSnapDistance = 2000.0f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera|Developer", meta = (ClampMin = "0.0"))
+	float DeveloperObserverPanSpeed = 3200.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera|Developer", meta = (ClampMin = "1.0"))
+	float DeveloperObserverFastMultiplier = 3.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera|Developer", meta = (ClampMin = "0.0"))
+	float DeveloperObserverZoomSpeed = 6000.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera|Developer", meta = (ClampMin = "100.0"))
+	float DeveloperObserverInitialArmLength = 6200.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera|Developer", meta = (ClampMin = "100.0"))
+	float DeveloperObserverMinArmLength = 900.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera|Developer", meta = (ClampMin = "100.0"))
+	float DeveloperObserverMaxArmLength = 18000.0f;
+
 	UPROPERTY(Transient)
 	TObjectPtr<AActor> FollowTarget;
+
+	bool bDeveloperObserverEnabled = false;
 };

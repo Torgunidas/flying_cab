@@ -5,6 +5,14 @@
 #include "CoreMinimal.h"
 #include "FlyingCabQuestTypes.generated.h"
 
+/** Player-facing journal category. Lifecycle state is tracked independently. */
+UENUM(BlueprintType)
+enum class EFlyingCabQuestCategory : uint8
+{
+	Main,
+	Side
+};
+
 /** Stable lifecycle used by gameplay, UI, save data and future dialogue conditions. */
 UENUM(BlueprintType)
 enum class EFlyingCabQuestStatus : uint8
@@ -107,6 +115,9 @@ struct FLYINGCABFLIGHTLAB_API FFlyingCabQuestJournalEntry
 	FText Description;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Quest")
+	EFlyingCabQuestCategory Category = EFlyingCabQuestCategory::Main;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Quest")
 	EFlyingCabQuestStatus Status = EFlyingCabQuestStatus::Inactive;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Quest")
@@ -167,10 +178,14 @@ namespace FlyingCabQuestEvents
 	FLYINGCABFLIGHTLAB_API extern const FName VehicleExited;
 	FLYINGCABFLIGHTLAB_API extern const FName PassengerPickedUp;
 	FLYINGCABFLIGHTLAB_API extern const FName PassengerDelivered;
+	FLYINGCABFLIGHTLAB_API extern const FName CreditsEarned;
 	FLYINGCABFLIGHTLAB_API extern const FName FuelPurchased;
 	FLYINGCABFLIGHTLAB_API extern const FName RepairPurchased;
 	FLYINGCABFLIGHTLAB_API extern const FName NearMiss;
 	FLYINGCABFLIGHTLAB_API extern const FName InteractionCompleted;
 	FLYINGCABFLIGHTLAB_API extern const FName QuestGiverInteracted;
 	FLYINGCABFLIGHTLAB_API extern const FName AccessGranted;
+
+	/** True for events emitted by native Flying Cab gameplay systems. */
+	FLYINGCABFLIGHTLAB_API bool IsKnownEvent(FName EventId);
 }

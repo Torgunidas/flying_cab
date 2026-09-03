@@ -43,6 +43,13 @@ void UFlyingCabTrafficAwarenessComponent::SetTrackedPawn(AFlyingCabPawn* Pawn)
 	}
 
 	TrackedPawn = Pawn;
+	for (AFlyingCabTrafficVehicle* Vehicle : TrafficVehicles)
+	{
+		if (IsValid(Vehicle))
+		{
+			Vehicle->SetTrackedPawn(Pawn);
+		}
+	}
 	NearMissMessageRemaining = 0.0f;
 	NearMissRewardCredits = 0;
 }
@@ -54,6 +61,7 @@ void UFlyingCabTrafficAwarenessComponent::ResetTrafficVehicles()
 		if (Vehicle)
 		{
 			Vehicle->OnNearMiss.RemoveAll(this);
+			Vehicle->SetTrackedPawn(nullptr);
 		}
 	}
 	TrafficVehicles.Reset();
@@ -65,6 +73,7 @@ void UFlyingCabTrafficAwarenessComponent::RegisterTrafficVehicle(
 	if (IsValid(Vehicle) && !TrafficVehicles.Contains(Vehicle))
 	{
 		TrafficVehicles.Add(Vehicle);
+		Vehicle->SetTrackedPawn(TrackedPawn);
 		Vehicle->OnNearMiss.AddUObject(
 			this,
 			&UFlyingCabTrafficAwarenessComponent::HandleNearMiss);

@@ -24,6 +24,7 @@
 #include "FlyingCabGameFlowWidget.h"
 #include "FlyingCabTouchControls.h"
 #include "Kismet/GameplayStatics.h"
+#include "InputCoreTypes.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "TimerManager.h"
@@ -103,19 +104,64 @@ void AFlyingCabPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReaso
 		InterfaceWidget->RemoveFromParent();
 		InterfaceWidget = nullptr;
 	}
-	const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
-	if (InputAssets.MappingContext)
+	RemoveEnhancedInputContext();
+	Super::EndPlay(EndPlayReason);
+}
+
+void AFlyingCabPlayerController::PlayerTick(float DeltaTime)
+{
+	Super::PlayerTick(DeltaTime);
+	if (!bDeveloperObserverMode || !CameraRig)
 	{
-		if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
+		return;
+	}
+
+	const float Horizontal =
+		(IsInputKeyDown(EKeys::D) || IsInputKeyDown(EKeys::Right) ? 1.0f : 0.0f)
+		- (IsInputKeyDown(EKeys::A) || IsInputKeyDown(EKeys::Left) ? 1.0f : 0.0f);
+	const float Vertical =
+		(IsInputKeyDown(EKeys::W) || IsInputKeyDown(EKeys::Up) ? 1.0f : 0.0f)
+		- (IsInputKeyDown(EKeys::S) || IsInputKeyDown(EKeys::Down) ? 1.0f : 0.0f);
+	const bool bFast = IsInputKeyDown(EKeys::LeftShift)
+		|| IsInputKeyDown(EKeys::RightShift);
+	CameraRig->MoveDeveloperObserver(FVector2D(Horizontal, Vertical), bFast, DeltaTime);
+
+	const float ZoomInput =
+		(IsInputKeyDown(EKeys::PageDown) || IsInputKeyDown(EKeys::Subtract) ? 1.0f : 0.0f)
+		- (IsInputKeyDown(EKeys::PageUp) || IsInputKeyDown(EKeys::Add) ? 1.0f : 0.0f);
+	CameraRig->AdjustDeveloperObserverZoom(ZoomInput, DeltaTime);
+	if (!FMath::IsNearlyZero(ZoomInput))
+	{
+		RefreshDeveloperObserverHud();
+	}
+}
+
+bool AFlyingCabPlayerController::InputKey(const FInputKeyEventArgs& Params)
+{
+	if (Params.Event == IE_Pressed && Params.Key == EKeys::O)
+	{
+		ToggleDeveloperObserverMode();
+		return true;
+	}
+	if (bDeveloperObserverMode && Params.Event == IE_Pressed)
+	{
+		if (Params.Key == EKeys::Home)
 		{
-			if (UEnhancedInputLocalPlayerSubsystem* InputSubsystem =
-				LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
-			{
-				InputSubsystem->RemoveMappingContext(InputAssets.MappingContext);
-			}
+			RecenterDeveloperObserver();
+			return true;
+		}
+		if (Params.Key == EKeys::MouseScrollUp)
+		{
+			ZoomDeveloperObserverIn();
+			return true;
+		}
+		if (Params.Key == EKeys::MouseScrollDown)
+		{
+			ZoomDeveloperObserverOut();
+			return true;
 		}
 	}
-	Super::EndPlay(EndPlayReason);
+	return Super::InputKey(Params);
 }
 
 void AFlyingCabPlayerController::FlushPressedKeys()
@@ -150,7 +196,6 @@ void AFlyingCabPlayerController::StartRunMode(EFlyingCabRunMode Mode)
 	}
 
 	GameMode->StartRun(Mode);
-	bGameFlowScreenOpen = false;
 	if (GameFlowWidget)
 	{
 		GameFlowWidget->HideFlowScreen();
@@ -158,6 +203,7 @@ void AFlyingCabPlayerController::StartRunMode(EFlyingCabRunMode Mode)
 	SetPause(false);
 	FlushPressedKeys();
 	RestoreGameplayInputMode();
+	bGameFlowScreenOpen = false;
 	ApplyTouchControlsVisibility();
 }
 
@@ -314,7 +360,10 @@ void AFlyingCabPlayerController::SetupInputComponent()
 void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	EnsureEnhancedInputContext();
+	if (!bDeveloperObserverMode)
+	{
+		EnsureEnhancedInputContext();
+	}
 	CachedContextPrompt = FText::GetEmpty();
 	CachedContextPromptPawn.Reset();
 	LastContextPromptRefreshTime = -1.0;
@@ -343,10 +392,134 @@ void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
 		InterfaceWidget->SetOnFootMode(PlayerMode == EFlyingCabPlayerMode::OnFoot);
 		RefreshInterface();
 	}
-	if (CameraRig && InPawn)
+	if (CameraRig && InPawn && !bDeveloperObserverMode)
 	{
 		CameraRig->SetFollowTarget(InPawn, false);
 	}
+}
+
+void AFlyingCabPlayerController::ToggleDeveloperObserverMode()
+{
+	if (bGameFlowScreenOpen || bQuestJournalOpen)
+	{
+		return;
+	}
+	SetDeveloperObserverMode(!bDeveloperObserverMode);
+}
+
+void AFlyingCabPlayerController::SetDeveloperObserverMode(bool bEnabled)
+{
+	if (bDeveloperObserverMode == bEnabled || !CameraRig)
+	{
+		return;
+	}
+
+	if (bEnabled)
+	{
+		bDeveloperObserverMode = true;
+		FlushPressedKeys();
+		CameraRig->SetDeveloperObserverEnabled(true);
+		FreezeControlledVehicleForObserver();
+		RestoreGameplayInputMode();
+		RefreshDeveloperObserverHud();
+		UE_LOG(
+			LogFlyingCabInteraction,
+			Display,
+			TEXT("Developer observer enabled; gameplay actions are suppressed without rebuilding the input context."));
+	}
+	else
+	{
+		// Keep suppression active until the vehicle, camera and input mode are all restored.
+		FlushPressedKeys();
+		RestoreControlledVehicleAfterObserver();
+		CameraRig->SetDeveloperObserverEnabled(false);
+		CameraRig->SetFollowTarget(GetPawn(), true);
+		EnsureEnhancedInputContext();
+		RestoreGameplayInputMode();
+		bDeveloperObserverMode = false;
+		ApplyTouchControlsVisibility();
+		if (InterfaceWidget)
+		{
+			InterfaceWidget->SetDeveloperObserverState(false, 0.0f);
+		}
+		UE_LOG(
+			LogFlyingCabInteraction,
+			Display,
+			TEXT("Developer observer disabled; persistent gameplay input restored."));
+	}
+}
+
+void AFlyingCabPlayerController::RecenterDeveloperObserver()
+{
+	if (bDeveloperObserverMode && CameraRig)
+	{
+		CameraRig->RecenterDeveloperObserver();
+	}
+}
+
+void AFlyingCabPlayerController::ZoomDeveloperObserverIn()
+{
+	if (bDeveloperObserverMode && CameraRig)
+	{
+		CameraRig->AdjustDeveloperObserverZoom(-1.0f, 0.12f);
+		RefreshDeveloperObserverHud();
+	}
+}
+
+void AFlyingCabPlayerController::ZoomDeveloperObserverOut()
+{
+	if (bDeveloperObserverMode && CameraRig)
+	{
+		CameraRig->AdjustDeveloperObserverZoom(1.0f, 0.12f);
+		RefreshDeveloperObserverHud();
+	}
+}
+
+void AFlyingCabPlayerController::RefreshDeveloperObserverHud()
+{
+	if (InterfaceWidget && CameraRig)
+	{
+		InterfaceWidget->SetDeveloperObserverState(
+			bDeveloperObserverMode,
+			CameraRig->GetCurrentArmLength() / 100.0f);
+	}
+}
+
+void AFlyingCabPlayerController::FreezeControlledVehicleForObserver()
+{
+	DeveloperObserverFrozenBody.Reset();
+	DeveloperObserverSavedLinearVelocity = FVector::ZeroVector;
+	DeveloperObserverSavedAngularVelocity = FVector::ZeroVector;
+	AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(GetPawn());
+	UPrimitiveComponent* Body = Vehicle
+		? Cast<UPrimitiveComponent>(Vehicle->GetRootComponent())
+		: nullptr;
+	if (!Body || !Body->IsSimulatingPhysics())
+	{
+		return;
+	}
+
+	DeveloperObserverSavedLinearVelocity = Body->GetPhysicsLinearVelocity();
+	DeveloperObserverSavedAngularVelocity = Body->GetPhysicsAngularVelocityInDegrees();
+	Body->SetPhysicsLinearVelocity(FVector::ZeroVector);
+	Body->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+	Body->SetSimulatePhysics(false);
+	DeveloperObserverFrozenBody = Body;
+}
+
+void AFlyingCabPlayerController::RestoreControlledVehicleAfterObserver()
+{
+	UPrimitiveComponent* Body = DeveloperObserverFrozenBody.Get();
+	if (Body)
+	{
+		Body->SetSimulatePhysics(true);
+		Body->SetPhysicsLinearVelocity(DeveloperObserverSavedLinearVelocity);
+		Body->SetPhysicsAngularVelocityInDegrees(DeveloperObserverSavedAngularVelocity);
+		Body->WakeAllRigidBodies();
+	}
+	DeveloperObserverFrozenBody.Reset();
+	DeveloperObserverSavedLinearVelocity = FVector::ZeroVector;
+	DeveloperObserverSavedAngularVelocity = FVector::ZeroVector;
 }
 
 bool AFlyingCabPlayerController::EnsureEnhancedInputContext()
@@ -837,7 +1010,6 @@ void AFlyingCabPlayerController::OpenQuestJournal()
 	}
 
 	bQuestJournalOpen = true;
-	RemoveEnhancedInputContext();
 	FlushPressedKeys();
 	QuestJournalWidget->ShowJournal();
 	SetPause(true);
@@ -857,11 +1029,12 @@ void AFlyingCabPlayerController::CloseQuestJournal()
 	{
 		QuestJournalWidget->HideJournal();
 	}
-	bQuestJournalOpen = false;
 	SetPause(false);
+	// The journal still suppresses gameplay while raw/action state is neutralized.
 	FlushPressedKeys();
-	EnsureEnhancedInputContext();
 	RestoreGameplayInputMode();
+	EnsureEnhancedInputContext();
+	bQuestJournalOpen = false;
 	ApplyTouchControlsVisibility();
 }
 

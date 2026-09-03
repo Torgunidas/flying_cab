@@ -6,6 +6,7 @@
 #include "Components/Button.h"
 #include "CoreMinimal.h"
 #include "FlyingCabQuestTypes.h"
+#include "InputCoreTypes.h"
 #include "FlyingCabQuestJournalWidget.generated.h"
 
 class UBorder;
@@ -42,6 +43,11 @@ public:
 	void HideJournal();
 	void RefreshJournal();
 	void SelectQuest(FName QuestId);
+	void SelectCategory(EFlyingCabQuestCategory Category);
+	void NavigateSelection(int32 Direction);
+	bool HandleNavigationKey(const FKey& Key);
+	FName GetSelectedQuestId() const { return SelectedQuestId; }
+	EFlyingCabQuestCategory GetSelectedCategory() const { return SelectedCategory; }
 
 protected:
 	virtual TSharedRef<SWidget> RebuildWidget() override;
@@ -59,10 +65,16 @@ private:
 	void SetButtonLabel(UButton* Button, const FText& Label) const;
 
 	UFUNCTION()
-	void HandleActiveTabClicked();
+	void HandleMainTabClicked();
 
 	UFUNCTION()
-	void HandleCompletedTabClicked();
+	void HandleSideTabClicked();
+
+	UFUNCTION()
+	void HandlePreviousClicked();
+
+	UFUNCTION()
+	void HandleNextClicked();
 
 	UFUNCTION()
 	void HandleTrackClicked();
@@ -77,10 +89,16 @@ private:
 	void HandleTrackedQuestChanged(FName QuestId);
 
 	UPROPERTY(Transient)
-	TObjectPtr<UButton> ActiveTabButton;
+	TObjectPtr<UButton> MainTabButton;
 
 	UPROPERTY(Transient)
-	TObjectPtr<UButton> CompletedTabButton;
+	TObjectPtr<UButton> SideTabButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> PreviousButton;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UButton> NextButton;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UScrollBox> QuestList;
@@ -104,5 +122,5 @@ private:
 	TObjectPtr<UButton> TrackButton;
 
 	FName SelectedQuestId = NAME_None;
-	bool bShowingCompleted = false;
+	EFlyingCabQuestCategory SelectedCategory = EFlyingCabQuestCategory::Main;
 };

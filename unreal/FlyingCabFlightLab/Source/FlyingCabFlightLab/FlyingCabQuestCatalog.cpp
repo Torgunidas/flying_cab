@@ -2,7 +2,9 @@
 
 #include "FlyingCabQuestCatalog.h"
 
+#include "FlyingCabCityData.h"
 #include "FlyingCabQuestDefinition.h"
+#include "Misc/DataValidation.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabQuestCatalog, Log, All);
 
@@ -38,6 +40,7 @@ namespace
 		FirstShift->Title = FText::FromString(TEXT("FIRST SHIFT"));
 		FirstShift->Description = FText::FromString(
 			TEXT("Complete a passenger run and learn the city dispatch loop."));
+		FirstShift->Category = EFlyingCabQuestCategory::Main;
 		FirstShift->bAutoStartInFreeroam = true;
 		FirstShift->Objectives = {
 			MakeObjective(
@@ -57,6 +60,7 @@ namespace
 		NightshiftContract->Title = FText::FromString(TEXT("NIGHTSHIFT CONTRACT"));
 		NightshiftContract->Description = FText::FromString(
 			TEXT("Prove that you can handle two city fares, then report back."));
+		NightshiftContract->Category = EFlyingCabQuestCategory::Main;
 		NightshiftContract->bRequiresTurnIn = true;
 		NightshiftContract->Objectives = {
 			MakeObjective(
@@ -66,8 +70,23 @@ namespace
 				2)};
 		NightshiftContract->Reward.Credits = 200;
 
-		Catalog->Quests = {FirstShift, NightshiftContract};
-		Catalog->AddToRoot();
+		UFlyingCabQuestDefinition* Money = NewObject<UFlyingCabQuestDefinition>(
+			Catalog,
+			TEXT("Quest_Money"));
+		Money->QuestId = TEXT("Get_Money");
+		Money->Title = FText::FromString(TEXT("GET MONEY"));
+		Money->Description = FText::FromString(
+			TEXT("Run fares and earn 1000 credits across the city."));
+		Money->Category = EFlyingCabQuestCategory::Side;
+		Money->Objectives = {
+			MakeObjective(
+				TEXT("EarnCredits"),
+				TEXT("Earn credits from fares"),
+				FlyingCabQuestEvents::CreditsEarned,
+				1000)};
+		Money->Reward.Credits = 250;
+
+		Catalog->Quests = {FirstShift, NightshiftContract, Money};
 		return Catalog;
 	}
 }
@@ -87,6 +106,21 @@ void UFlyingCabQuestCatalog::PostLoad()
 	}
 }
 
+#if WITH_EDITOR
+EDataValidationResult UFlyingCabQuestCatalog::IsDataValid(
+	FDataValidationContext& Context) const
+{
+	const EDataValidationResult ParentResult = Super::IsDataValid(Context);
+	FString ValidationError;
+	if (!IsConfigurationValid(ValidationError))
+	{
+		Context.AddError(FText::FromString(ValidationError));
+		return EDataValidationResult::Invalid;
+	}
+	return ParentResult;
+}
+#endif
+
 bool UFlyingCabQuestCatalog::IsConfigurationValid(FString& OutError) const
 {
 	if (Quests.IsEmpty())
@@ -95,11 +129,23 @@ bool UFlyingCabQuestCatalog::IsConfigurationValid(FString& OutError) const
 		return false;
 	}
 
+	TSet<FName> CustomEventIds;
+	for (const FName EventId : AllowedCustomEventIds)
+	{
+		if (EventId.IsNone() || FlyingCabQuestEvents::IsKnownEvent(EventId)
+			|| CustomEventIds.Contains(EventId))
+		{
+			OutError = TEXT("Custom event IDs must be non-empty, unique and distinct from native events.");
+			return false;
+		}
+		CustomEventIds.Add(EventId);
+	}
+
 	TSet<FName> QuestIds;
 	for (const UFlyingCabQuestDefinition* Quest : Quests)
 	{
 		FString QuestError;
-		if (!Quest || !Quest->IsConfigurationValid(QuestError))
+		if (!IsQuestEntryValid(Quest, QuestError))
 		{
 			OutError = Quest
 				? FString::Printf(TEXT("Quest %s is invalid: %s"), *Quest->GetName(), *QuestError)
@@ -120,38 +166,89 @@ bool UFlyingCabQuestCatalog::IsConfigurationValid(FString& OutError) const
 	return true;
 }
 
+bool UFlyingCabQuestCatalog::IsQuestEntryValid(
+	const UFlyingCabQuestDefinition* Quest,
+	FString& OutError) const
+{
+	if (!Quest)
+	{
+		OutError = TEXT("The catalog contains an empty quest reference.");
+		return false;
+	}
+	if (!Quest->IsConfigurationValid(OutError))
+	{
+		return false;
+	}
+	for (const FFlyingCabQuestObjectiveDefinition& Objective : Quest->Objectives)
+	{
+		if (!FlyingCabQuestEvents::IsKnownEvent(Objective.EventId)
+			&& !AllowedCustomEventIds.Contains(Objective.EventId))
+		{
+			OutError = FString::Printf(
+				TEXT("Objective %s uses unknown event ID %s. Add intentional Blueprint events to AllowedCustomEventIds."),
+				*Objective.ObjectiveId.ToString(),
+				*Objective.EventId.ToString());
+			return false;
+		}
+		const bool bPassengerDistrictEvent =
+			Objective.EventId == FlyingCabQuestEvents::PassengerPickedUp
+			|| Objective.EventId == FlyingCabQuestEvents::PassengerDelivered;
+		if (bPassengerDistrictEvent && !Objective.TargetId.IsNone())
+		{
+			const bool bKnownDistrict = FlyingCabCityData::GetDistricts().ContainsByPredicate(
+				[&Objective](const FFlyingCabDistrictDefinition& District)
+				{
+					return District.DistrictId == Objective.TargetId;
+				});
+			if (!bKnownDistrict)
+			{
+				OutError = FString::Printf(
+					TEXT("Objective %s uses unknown passenger district TargetId %s."),
+					*Objective.ObjectiveId.ToString(),
+					*Objective.TargetId.ToString());
+				return false;
+			}
+		}
+	}
+	OutError.Reset();
+	return true;
+}
+
 UFlyingCabQuestDefinition* UFlyingCabQuestCatalog::FindQuest(FName QuestId) const
 {
 	const TObjectPtr<UFlyingCabQuestDefinition>* Found = Quests.FindByPredicate(
-		[QuestId](const UFlyingCabQuestDefinition* Quest)
+		[this, QuestId](const UFlyingCabQuestDefinition* Quest)
 		{
-			return Quest && Quest->QuestId == QuestId;
+			FString ValidationError;
+			return Quest && Quest->QuestId == QuestId
+				&& IsQuestEntryValid(Quest, ValidationError);
 		});
 	return Found ? Found->Get() : nullptr;
 }
 
 UFlyingCabQuestCatalog* UFlyingCabQuestCatalog::LoadDefaultAsset()
 {
-	static UFlyingCabQuestCatalog* Catalog = []()
+	UFlyingCabQuestCatalog* Loaded = LoadObject<UFlyingCabQuestCatalog>(
+		nullptr,
+		QuestCatalogPath);
+	if (Loaded)
 	{
-		UFlyingCabQuestCatalog* Loaded = LoadObject<UFlyingCabQuestCatalog>(
-			nullptr,
-			QuestCatalogPath);
-		FString ValidationError;
-		if (Loaded && Loaded->IsConfigurationValid(ValidationError))
+		for (const UFlyingCabQuestDefinition* Quest : Loaded->Quests)
 		{
-			Loaded->AddToRoot();
-			return Loaded;
+			FString ValidationError;
+			if (Loaded->IsQuestEntryValid(Quest, ValidationError))
+			{
+				return Loaded;
+			}
 		}
+	}
 
-		UE_LOG(
-			LogFlyingCabQuestCatalog,
-			Warning,
-			TEXT("Using built-in quest definitions because %s is missing or invalid."),
-			QuestCatalogPath);
-		return CreateFallbackCatalog();
-	}();
-	return Catalog;
+	UE_LOG(
+		LogFlyingCabQuestCatalog,
+		Warning,
+		TEXT("Using built-in quest definitions because %s has no usable quests."),
+		QuestCatalogPath);
+	return CreateFallbackCatalog();
 }
 
 const TCHAR* UFlyingCabQuestCatalog::GetDefaultAssetPath()

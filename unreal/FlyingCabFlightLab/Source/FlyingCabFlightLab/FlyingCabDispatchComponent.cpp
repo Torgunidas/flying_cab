@@ -18,6 +18,7 @@ UFlyingCabDispatchComponent::UFlyingCabDispatchComponent()
 	{
 		DeliveryStops.Add(District.StopLocation);
 		DeliveryStopNames.Emplace(District.DisplayName);
+		DeliveryStopIds.Add(District.DistrictId);
 	}
 }
 
@@ -65,10 +66,25 @@ void UFlyingCabDispatchComponent::TickComponent(
 
 bool UFlyingCabDispatchComponent::InitializeNetwork()
 {
-	if (DeliveryStops.Num() < 2)
+	if (DeliveryStops.Num() < 2
+		|| DeliveryStopNames.Num() != DeliveryStops.Num()
+		|| DeliveryStopIds.Num() != DeliveryStops.Num())
 	{
-		UE_LOG(LogFlyingCabDispatch, Error, TEXT("At least two delivery stops are required."));
+		UE_LOG(
+			LogFlyingCabDispatch,
+			Error,
+			TEXT("Delivery stops, display names and stable IDs must contain the same two or more entries."));
 		return false;
+	}
+	TSet<FName> StopIds;
+	for (const FName StopId : DeliveryStopIds)
+	{
+		if (StopId.IsNone() || StopIds.Contains(StopId))
+		{
+			UE_LOG(LogFlyingCabDispatch, Error, TEXT("Delivery stop IDs must be non-empty and unique."));
+			return false;
+		}
+		StopIds.Add(StopId);
 	}
 	if (DropoffZone)
 	{
@@ -212,6 +228,13 @@ FString UFlyingCabDispatchComponent::GetStopName(int32 StopIndex) const
 	return DeliveryStopNames.IsValidIndex(StopIndex)
 		? DeliveryStopNames[StopIndex]
 		: FString::Printf(TEXT("STOP %d"), StopIndex + 1);
+}
+
+FName UFlyingCabDispatchComponent::GetStopId(int32 StopIndex) const
+{
+	return DeliveryStopIds.IsValidIndex(StopIndex)
+		? DeliveryStopIds[StopIndex]
+		: NAME_None;
 }
 
 const FFlyingCabPassengerOfferState* UFlyingCabDispatchComponent::FindNearestOffer(
@@ -520,18 +543,20 @@ void UFlyingCabDispatchComponent::HandleZoneReady(AFlyingCabDeliveryZone* Zone)
 		RefreshOfferAcceptance();
 		DropoffZone->SetZoneActive(true);
 		const FString DestinationName = GetStopName(CurrentDropoffIndex);
+		const FName DestinationId = GetStopId(CurrentDropoffIndex);
 		UE_LOG(
 			LogFlyingCabDispatch,
 			Display,
 			TEXT("Passenger picked up for %s; one-seat capacity is now occupied."),
 			*DestinationName);
-		OnPassengerPickedUp.Broadcast(DestinationName);
+		OnPassengerPickedUp.Broadcast(DestinationName, DestinationId);
 		return;
 	}
 
 	if (Zone->GetZoneType() == EFlyingCabDeliveryZoneType::Dropoff && bPassengerOnBoard)
 	{
 		const int32 FarePayout = GetActiveFareCredits();
+		const FName DestinationId = GetStopId(CurrentDropoffIndex);
 		bPassengerOnBoard = false;
 		++CompletedDeliveries;
 		ActiveFare = 0.0f;
@@ -540,6 +565,6 @@ void UFlyingCabDispatchComponent::HandleZoneReady(AFlyingCabDeliveryZone* Zone)
 		CurrentDropoffIndex = INDEX_NONE;
 		DropoffZone->SetZoneActive(false);
 		RefreshOfferAcceptance();
-		OnFareCompleted.Broadcast(FarePayout, CompletedDeliveries);
+		OnFareCompleted.Broadcast(FarePayout, CompletedDeliveries, DestinationId);
 	}
 }

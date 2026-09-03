@@ -2,6 +2,8 @@
 
 #include "FlyingCabQuestDefinition.h"
 
+#include "Misc/DataValidation.h"
+
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabQuestDefinition, Log, All);
 
 void UFlyingCabQuestDefinition::PostLoad()
@@ -18,6 +20,21 @@ void UFlyingCabQuestDefinition::PostLoad()
 			*ValidationError);
 	}
 }
+
+#if WITH_EDITOR
+EDataValidationResult UFlyingCabQuestDefinition::IsDataValid(
+	FDataValidationContext& Context) const
+{
+	const EDataValidationResult ParentResult = Super::IsDataValid(Context);
+	FString ValidationError;
+	if (!IsConfigurationValid(ValidationError))
+	{
+		Context.AddError(FText::FromString(ValidationError));
+		return EDataValidationResult::Invalid;
+	}
+	return ParentResult;
+}
+#endif
 
 bool UFlyingCabQuestDefinition::IsConfigurationValid(FString& OutError) const
 {

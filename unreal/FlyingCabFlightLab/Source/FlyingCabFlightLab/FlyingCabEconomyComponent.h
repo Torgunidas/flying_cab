@@ -21,6 +21,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(
 	FOnFlyingCabServicePurchase,
 	const FFlyingCabServicePurchaseResult&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnFlyingCabCreditsChanged, int32);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnFlyingCabCreditsEarned, int32);
 
 /** Owns the current balance and the arithmetic of rewards, fees and vehicle service. */
 UCLASS(ClassGroup = "Flying Cab", meta = (BlueprintSpawnableComponent))
@@ -55,6 +56,7 @@ public:
 
 	FOnFlyingCabServicePurchase OnServicePurchase;
 	FOnFlyingCabCreditsChanged OnCreditsChanged;
+	FOnFlyingCabCreditsEarned OnCreditsEarned;
 
 private:
 	FFlyingCabServicePurchaseResult TryPurchaseService(

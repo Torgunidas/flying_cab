@@ -11,7 +11,6 @@ class UPointLightComponent;
 class UPrimitiveComponent;
 class UStaticMeshComponent;
 class USpringArmComponent;
-struct FInputActionValue;
 
 /**
  * Lightweight 2.5D on-foot prototype. Cab and driver share the same Enhanced Input
@@ -50,10 +49,7 @@ protected:
 private:
 	void SetKeyboardHorizontalInput(float Value);
 	void SetKeyboardThrustInput(float Value);
-	void HandleEnhancedHorizontal(const FInputActionValue& Value);
-	void HandleEnhancedThrust(const FInputActionValue& Value);
-	void ReleaseEnhancedHorizontal();
-	void ReleaseEnhancedThrust();
+	void RefreshKeyboardInputState();
 	void ClearInputState();
 	void ApplyCharacterDamage(float DamageAmount, const TCHAR* DamageSource);
 	void EnterDeathState();

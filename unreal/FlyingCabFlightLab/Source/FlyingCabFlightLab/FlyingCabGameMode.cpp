@@ -96,6 +96,9 @@ void AFlyingCabGameMode::BeginPlay()
 		Economy->OnServicePurchase.AddUObject(
 			this,
 			&AFlyingCabGameMode::HandleServicePurchase);
+		Economy->OnCreditsEarned.AddUObject(
+			this,
+			&AFlyingCabGameMode::HandleCreditsEarned);
 	}
 	if (Run)
 	{
@@ -139,6 +142,7 @@ void AFlyingCabGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (Economy)
 	{
 		Economy->OnServicePurchase.RemoveAll(this);
+		Economy->OnCreditsEarned.RemoveAll(this);
 	}
 	if (QuestSystem)
 	{
@@ -272,7 +276,7 @@ void AFlyingCabGameMode::InitializeWorldBootstrap()
 		Display,
 		TEXT("Traffic initialized with %d/%d vehicles; clean near misses award %d credits."),
 		WorldBootstrap->GetTrafficVehicles().Num(),
-		AFlyingCabWorldBootstrap::GetExpectedTrafficVehicleCount(),
+		WorldBootstrap->GetConfiguredTrafficVehicleCount(),
 		Economy ? Economy->GetNearMissRewardCredits() : 0);
 }
 
@@ -333,13 +337,15 @@ bool AFlyingCabGameMode::CanPlayerExitVehicle(FText& OutFailureReason) const
 	return !Dispatch || Dispatch->CanPlayerExitVehicle(OutFailureReason);
 }
 
-void AFlyingCabGameMode::HandlePassengerPickedUp(const FString& DestinationName)
+void AFlyingCabGameMode::HandlePassengerPickedUp(
+	const FString& DestinationName,
+	FName DestinationId)
 {
 	if (QuestSystem)
 	{
 		QuestSystem->RecordEvent(
 			FlyingCabQuestEvents::PassengerPickedUp,
-			FName(*DestinationName));
+			DestinationId);
 	}
 	if (HudPresenter)
 	{
@@ -354,7 +360,8 @@ void AFlyingCabGameMode::HandlePassengerPickedUp(const FString& DestinationName)
 
 void AFlyingCabGameMode::HandleFareCompleted(
 	int32 FarePayout,
-	int32 TotalDeliveries)
+	int32 TotalDeliveries,
+	FName DestinationId)
 {
 	const int32 AwardedFare = Economy ? Economy->AddCredits(FarePayout) : 0;
 	if (Run)
@@ -368,7 +375,9 @@ void AFlyingCabGameMode::HandleFareCompleted(
 	}
 	if (QuestSystem)
 	{
-		QuestSystem->RecordEvent(FlyingCabQuestEvents::PassengerDelivered);
+		QuestSystem->RecordEvent(
+			FlyingCabQuestEvents::PassengerDelivered,
+			DestinationId);
 	}
 	UE_LOG(
 		LogFlyingCabDelivery,
@@ -436,6 +445,17 @@ void AFlyingCabGameMode::HandleServicePurchase(
 		Result.bRepairService
 			? Run->RecordRepairPurchase(Result.CreditsSpent)
 			: Run->RecordFuelPurchase(Result.CreditsSpent);
+	}
+}
+
+void AFlyingCabGameMode::HandleCreditsEarned(int32 AwardedCredits)
+{
+	if (QuestSystem && AwardedCredits > 0)
+	{
+		QuestSystem->RecordEvent(
+			FlyingCabQuestEvents::CreditsEarned,
+			NAME_None,
+			AwardedCredits);
 	}
 }
 
@@ -573,8 +593,13 @@ void AFlyingCabGameMode::HandleTimeAttackCompleted(
 
 void AFlyingCabGameMode::HandleQuestCompleted(UFlyingCabQuestDefinition* Quest)
 {
-	if (!Quest)
+	if (!Quest || !QuestSystem || !QuestSystem->AreGameplayEventsEnabled()
+		|| GetCurrentRunMode() != EFlyingCabRunMode::Freeroam)
 	{
+		UE_LOG(
+			LogFlyingCabDelivery,
+			Warning,
+			TEXT("Quest reward ignored outside active Free Roam quest gameplay."));
 		return;
 	}
 	const int32 RewardCredits = Economy ? Economy->AddCredits(Quest->Reward.Credits) : 0;

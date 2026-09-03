@@ -7,6 +7,8 @@
 #include "Components/Button.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/Overlay.h"
+#include "Components/OverlaySlot.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
@@ -15,6 +17,7 @@
 #include "FlyingCabCityData.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
+#include "FlyingCabQuestHubData.h"
 #include "TimerManager.h"
 
 namespace
@@ -132,6 +135,25 @@ void UFlyingCabTouchControls::SetQuestText(const FText& Text)
 	{
 		QuestText->SetText(PendingQuestText);
 	}
+}
+
+void UFlyingCabTouchControls::SetDeveloperObserverState(bool bActive, float ZoomMeters)
+{
+	if (bActive)
+	{
+		ReleaseAllInputs();
+	}
+	bDeveloperObserverMode = bActive;
+	PendingDeveloperObserverZoomMeters = FMath::Max(0.0f, ZoomMeters);
+	RefreshDeveloperObserverText();
+	if (DeveloperObserverPanel)
+	{
+		DeveloperObserverPanel->SetVisibility(
+			bDeveloperObserverMode
+				? ESlateVisibility::HitTestInvisible
+				: ESlateVisibility::Collapsed);
+	}
+	RefreshControlMode();
 }
 
 void UFlyingCabTouchControls::ShowEventMessage(
@@ -391,12 +413,19 @@ void UFlyingCabTouchControls::SetResourceState(
 				: (bPendingRefuelAvailable
 					? FString::Printf(TEXT("FUEL SERVICE  %d CR/U  // HOLD E"), PendingRefuelPricePerUnit)
 					: FString()));
+		const FString FuelCutoffText = !bOnFootMode
+			&& !bPendingVehicleDestroyed
+			&& PendingFuelPercent <= UE_SMALL_NUMBER
+			? FString(TEXT("FUEL EMPTY // THRUST OFF"))
+			: FString();
 		const FText DisplayText = FText::FromString(FString::Printf(
-			TEXT("CREDITS  %d\nFUEL %3.0f%%  |  HULL %3.0f%%\n%s%s%s"),
+			TEXT("CREDITS  %d\nFUEL %3.0f%%  |  HULL %3.0f%%\n%s%s%s%s%s"),
 			PendingCredits,
 			PendingFuelPercent * 100.0f,
 			PendingHullPercent * 100.0f,
 			*FareText,
+			FuelCutoffText.IsEmpty() ? TEXT("") : TEXT("\n"),
+			*FuelCutoffText,
 			ServiceText.IsEmpty() ? TEXT("") : TEXT("\n"),
 			*ServiceText));
 		if (!ResourceText->GetText().EqualTo(DisplayText))
@@ -482,6 +511,54 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	UCanvasPanelSlot* MapTitleSlot = MinimapCanvas->AddChildToCanvas(MapTitle);
 	MapTitleSlot->SetPosition(FVector2D(8.0f, 3.0f));
 	MapTitleSlot->SetSize(FVector2D(210.0f, 18.0f));
+
+	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs())
+	{
+		UOverlay* HubMarker = WidgetTree->ConstructWidget<UOverlay>(
+			UOverlay::StaticClass(),
+			FName(*FString::Printf(TEXT("QuestHub_%s"), *Hub.DisplayName)));
+		HubMarker->SetVisibility(ESlateVisibility::HitTestInvisible);
+
+		UTextBlock* Outline = WidgetTree->ConstructWidget<UTextBlock>();
+		Outline->SetText(FText::FromString(TEXT("●")));
+		Outline->SetJustification(ETextJustify::Center);
+		Outline->SetColorAndOpacity(FSlateColor(FLinearColor(0.88f, 0.92f, 0.95f, 1.0f)));
+		FSlateFontInfo OutlineFont = Outline->GetFont();
+		OutlineFont.Size = 28;
+		Outline->SetFont(OutlineFont);
+		UOverlaySlot* OutlineSlot = HubMarker->AddChildToOverlay(Outline);
+		OutlineSlot->SetHorizontalAlignment(HAlign_Center);
+		OutlineSlot->SetVerticalAlignment(VAlign_Center);
+
+		UTextBlock* Circle = WidgetTree->ConstructWidget<UTextBlock>();
+		Circle->SetText(FText::FromString(TEXT("●")));
+		Circle->SetJustification(ETextJustify::Center);
+		Circle->SetColorAndOpacity(FSlateColor(FLinearColor::Black));
+		FSlateFontInfo CircleFont = Circle->GetFont();
+		CircleFont.Size = 25;
+		Circle->SetFont(CircleFont);
+		UOverlaySlot* CircleSlot = HubMarker->AddChildToOverlay(Circle);
+		CircleSlot->SetHorizontalAlignment(HAlign_Center);
+		CircleSlot->SetVerticalAlignment(VAlign_Center);
+
+		UTextBlock* Initial = WidgetTree->ConstructWidget<UTextBlock>();
+		Initial->SetText(FText::FromString(Hub.MinimapInitial));
+		Initial->SetJustification(ETextJustify::Center);
+		Initial->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+		Initial->SetShadowColorAndOpacity(FLinearColor::Black);
+		FSlateFontInfo InitialFont = Initial->GetFont();
+		InitialFont.Size = 14;
+		Initial->SetFont(InitialFont);
+		UOverlaySlot* InitialSlot = HubMarker->AddChildToOverlay(Initial);
+		InitialSlot->SetHorizontalAlignment(HAlign_Center);
+		InitialSlot->SetVerticalAlignment(VAlign_Center);
+
+		UCanvasPanelSlot* HubSlot = MinimapCanvas->AddChildToCanvas(HubMarker);
+		HubSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+		HubSlot->SetPosition(WorldToMinimap(Hub.MinimapWorldPosition));
+		HubSlot->SetSize(FVector2D(30.0f, 30.0f));
+		HubSlot->SetZOrder(8);
+	}
 
 	const TConstArrayView<FFlyingCabDistrictDefinition> Districts =
 		FlyingCabCityData::GetDistricts();
@@ -718,6 +795,36 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	TrafficAlertSlot->SetPosition(FVector2D(0.0f, 18.0f));
 	TrafficAlertSlot->SetSize(FVector2D(280.0f, 54.0f));
 	TrafficAlertSlot->SetZOrder(30);
+
+	DeveloperObserverPanel = WidgetTree->ConstructWidget<UBorder>(
+		UBorder::StaticClass(),
+		TEXT("DeveloperObserverPanel"));
+	DeveloperObserverPanel->SetBrushColor(FLinearColor(0.005f, 0.02f, 0.035f, 0.95f));
+	DeveloperObserverPanel->SetPadding(FMargin(18.0f, 10.0f));
+	DeveloperObserverText = WidgetTree->ConstructWidget<UTextBlock>(
+		UTextBlock::StaticClass(),
+		TEXT("DeveloperObserverText"));
+	DeveloperObserverText->SetJustification(ETextJustify::Center);
+	DeveloperObserverText->SetColorAndOpacity(
+		FSlateColor(FLinearColor(0.10f, 0.95f, 1.0f)));
+	DeveloperObserverText->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f));
+	DeveloperObserverText->SetShadowOffset(FVector2D(2.0f, 2.0f));
+	FSlateFontInfo DeveloperObserverFont = DeveloperObserverText->GetFont();
+	DeveloperObserverFont.Size = 18;
+	DeveloperObserverText->SetFont(DeveloperObserverFont);
+	DeveloperObserverPanel->AddChild(DeveloperObserverText);
+	DeveloperObserverPanel->SetVisibility(
+		bDeveloperObserverMode
+			? ESlateVisibility::HitTestInvisible
+			: ESlateVisibility::Collapsed);
+	UCanvasPanelSlot* DeveloperObserverSlot =
+		RootCanvas->AddChildToCanvas(DeveloperObserverPanel);
+	DeveloperObserverSlot->SetAnchors(FAnchors(0.5f, 0.0f));
+	DeveloperObserverSlot->SetAlignment(FVector2D(0.5f, 0.0f));
+	DeveloperObserverSlot->SetPosition(FVector2D(0.0f, 16.0f));
+	DeveloperObserverSlot->SetSize(FVector2D(760.0f, 82.0f));
+	DeveloperObserverSlot->SetZOrder(100);
+	RefreshDeveloperObserverText();
 
 	TimeAttackPanel = WidgetTree->ConstructWidget<UBorder>(
 		UBorder::StaticClass(),
@@ -982,6 +1089,25 @@ AFlyingCabCharacter* UFlyingCabTouchControls::GetFlyingCabCharacter() const
 
 void UFlyingCabTouchControls::RefreshControlMode()
 {
+	const ESlateVisibility PrimaryControlVisibility = bDeveloperObserverMode
+		? ESlateVisibility::Collapsed
+		: ESlateVisibility::Visible;
+	if (LeftButton)
+	{
+		LeftButton->SetVisibility(PrimaryControlVisibility);
+	}
+	if (RightButton)
+	{
+		RightButton->SetVisibility(PrimaryControlVisibility);
+	}
+	if (ThrustButton)
+	{
+		ThrustButton->SetVisibility(PrimaryControlVisibility);
+	}
+	if (InteractButton)
+	{
+		InteractButton->SetVisibility(PrimaryControlVisibility);
+	}
 	if (ThrustButtonText)
 	{
 		ThrustButtonText->SetText(FText::FromString(bOnFootMode ? TEXT("JUMP") : TEXT("THRUST")));
@@ -989,12 +1115,15 @@ void UFlyingCabTouchControls::RefreshControlMode()
 	if (ResetButton)
 	{
 		ResetButton->SetVisibility(
-			bOnFootMode ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+			bDeveloperObserverMode || bOnFootMode
+				? ESlateVisibility::Collapsed
+				: ESlateVisibility::Visible);
 	}
 	if (RefuelButton)
 	{
 		RefuelButton->SetVisibility(
-			!bOnFootMode && (bPendingRefuelAvailable || bPendingRepairAvailable)
+			!bDeveloperObserverMode && !bOnFootMode
+				&& (bPendingRefuelAvailable || bPendingRepairAvailable)
 				? ESlateVisibility::Visible
 				: ESlateVisibility::Collapsed);
 	}
@@ -1009,8 +1138,24 @@ void UFlyingCabTouchControls::RefreshControlMode()
 	}
 }
 
+void UFlyingCabTouchControls::RefreshDeveloperObserverText()
+{
+	if (!DeveloperObserverText)
+	{
+		return;
+	}
+	DeveloperObserverText->SetText(FText::FromString(FString::Printf(
+		TEXT("DEV OBSERVER  //  O RETURN  //  WASD / ARROWS PAN  //  PGUP-PGDN ZOOM  //  HOME RECENTER  //  SHIFT FAST\nZOOM %.0f M"),
+		PendingDeveloperObserverZoomMeters)));
+}
+
 void UFlyingCabTouchControls::UpdateHorizontalInput()
 {
+	if (bDeveloperObserverMode)
+	{
+		bLeftPressed = false;
+		bRightPressed = false;
+	}
 	if (AFlyingCabPawn* Pawn = GetFlyingCabPawn())
 	{
 		const float HorizontalInput = static_cast<float>(bRightPressed) - static_cast<float>(bLeftPressed);
@@ -1025,6 +1170,10 @@ void UFlyingCabTouchControls::UpdateHorizontalInput()
 
 void UFlyingCabTouchControls::HandleLeftPressed()
 {
+	if (bDeveloperObserverMode)
+	{
+		return;
+	}
 	bLeftPressed = true;
 	UpdateHorizontalInput();
 }
@@ -1037,6 +1186,10 @@ void UFlyingCabTouchControls::HandleLeftReleased()
 
 void UFlyingCabTouchControls::HandleRightPressed()
 {
+	if (bDeveloperObserverMode)
+	{
+		return;
+	}
 	bRightPressed = true;
 	UpdateHorizontalInput();
 }
@@ -1049,6 +1202,10 @@ void UFlyingCabTouchControls::HandleRightReleased()
 
 void UFlyingCabTouchControls::HandleThrustPressed()
 {
+	if (bDeveloperObserverMode)
+	{
+		return;
+	}
 	bThrustPressed = true;
 	if (AFlyingCabPawn* Pawn = GetFlyingCabPawn())
 	{
@@ -1075,6 +1232,10 @@ void UFlyingCabTouchControls::HandleThrustReleased()
 
 void UFlyingCabTouchControls::HandleResetPressed()
 {
+	if (bDeveloperObserverMode)
+	{
+		return;
+	}
 	if (AFlyingCabPawn* Pawn = GetFlyingCabPawn())
 	{
 		Pawn->ResetVehicle();
@@ -1083,6 +1244,10 @@ void UFlyingCabTouchControls::HandleResetPressed()
 
 void UFlyingCabTouchControls::HandleInteractPressed()
 {
+	if (bDeveloperObserverMode)
+	{
+		return;
+	}
 	if (AFlyingCabPlayerController* PlayerController =
 		Cast<AFlyingCabPlayerController>(GetOwningPlayer()))
 	{
@@ -1092,6 +1257,10 @@ void UFlyingCabTouchControls::HandleInteractPressed()
 
 void UFlyingCabTouchControls::HandleRefuelPressed()
 {
+	if (bDeveloperObserverMode)
+	{
+		return;
+	}
 	bRefuelPressed = true;
 	if (AFlyingCabPawn* Pawn = GetFlyingCabPawn())
 	{

@@ -90,6 +90,7 @@ public:
 #if WITH_DEV_AUTOMATION_TESTS
 	float GetTestKeyboardHorizontalInput() const { return KeyboardHorizontalInput; }
 	float GetTestKeyboardThrustInput() const { return KeyboardThrustInput; }
+	bool IsTestPlayerFocusVisible() const;
 #endif
 
 protected:
@@ -99,16 +100,12 @@ private:
 	void SetKeyboardHorizontalInput(float Value);
 	void SetKeyboardThrustInput(float Value);
 	void SetKeyboardServiceInput(float Value);
-	void HandleEnhancedHorizontal(const FInputActionValue& Value);
-	void HandleEnhancedThrust(const FInputActionValue& Value);
-	void HandleEnhancedService(const FInputActionValue& Value);
-	void ReleaseEnhancedHorizontal();
-	void ReleaseEnhancedThrust();
-	void ReleaseEnhancedService();
+	void RefreshKeyboardInputState();
 	void ClearAllInputState(const TCHAR* Reason, bool bFlushPressedKeys);
 	void ToggleFlightTelemetry();
 	void DrawFlightTelemetry(float HorizontalInput, float ThrustInput, const FVector& Velocity) const;
 	void UpdateVisualResponse(float DeltaSeconds, const FVector& Velocity);
+	void RefreshPlayerFocusAppearance();
 	void RefreshVehicleIdentityAppearance(bool bForce = false);
 	bool HasRequiredVehicleAccess() const;
 	void ShowFuelEmptyWarning() const;
@@ -143,6 +140,13 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
 	TObjectPtr<UPointLightComponent> AccessLight;
+
+	/** Stable screen-space landmark behind the locally controlled cab. */
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
+	TObjectPtr<UStaticMeshComponent> PlayerFocusHalo;
+
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
+	TObjectPtr<UPointLightComponent> PlayerFocusLight;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
 	TObjectPtr<USceneComponent> GuidanceArrowRoot;
@@ -203,6 +207,13 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation", meta = (ClampMin = "0.0"))
 	float CameraLookAheadInterpSpeed = 3.5f;
+
+	/** Calm cyan locator used to keep the controlled cab readable against bright city scenery. */
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation")
+	FLinearColor PlayerFocusColor = FLinearColor(0.03f, 0.85f, 1.0f);
+
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation", meta = (ClampMin = "0.0"))
+	float PlayerFocusLightIntensity = 1200.0f;
 
 	/** Runtime readout used while tuning the FlightLab prototype. Toggle with F3. */
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Debug")

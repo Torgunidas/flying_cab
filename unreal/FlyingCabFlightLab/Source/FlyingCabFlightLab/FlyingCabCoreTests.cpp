@@ -9,10 +9,12 @@
 #include "FlyingCabEconomyAsset.h"
 #include "FlyingCabEconomyComponent.h"
 #include "FlyingCabInputData.h"
+#include "FlyingCabLivingWorldProfile.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabQuestCatalog.h"
 #include "FlyingCabQuestDefinition.h"
+#include "FlyingCabQuestHubData.h"
 #include "FlyingCabQuestSubsystem.h"
 #include "FlyingCabQuestTypes.h"
 #include "FlyingCabRunComponent.h"
@@ -185,6 +187,55 @@ bool FFlyingCabWorldBootstrapConfigurationTest::RunTest(const FString& Parameter
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabLivingWorldProfileTest,
+	"FlyingCab.Core.LivingWorld.PrototypeProfile",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabLivingWorldProfileTest::RunTest(const FString& Parameters)
+{
+	const TArray<FFlyingCabLivingRouteDefinition> Routes =
+		UFlyingCabLivingWorldProfile::BuildPrototypeRoutes();
+	UFlyingCabLivingWorldProfile* Profile = NewObject<UFlyingCabLivingWorldProfile>();
+	Profile->Routes = Routes;
+	FString ValidationError;
+	const bool bProfileValid = Profile->IsConfigurationValid(ValidationError);
+	TestTrue(
+		*FString::Printf(TEXT("The prototype living-world profile is valid: %s"), *ValidationError),
+		bProfileValid);
+	TestEqual(TEXT("The prototype defines three routes"), Routes.Num(), 3);
+	TestEqual(
+		TEXT("The prototype creates three route-driven vehicles"),
+		UFlyingCabLivingWorldProfile::CountAgents(Routes, EFlyingCabLivingAgentKind::Vehicle),
+		3);
+	TestEqual(
+		TEXT("The prototype creates two route-driven pedestrians"),
+		UFlyingCabLivingWorldProfile::CountAgents(Routes, EFlyingCabLivingAgentKind::Pedestrian),
+		2);
+
+	int32 LandingStops = 0;
+	int32 BoardingNodes = 0;
+	int32 SmoothedVehicleRoutes = 0;
+	for (const FFlyingCabLivingRouteDefinition& Route : Routes)
+	{
+		SmoothedVehicleRoutes += Route.AgentKind == EFlyingCabLivingAgentKind::Vehicle
+			&& Route.bSmoothVehicleCorners
+			&& Route.VehicleCornerSmoothingDistance > 0.0f ? 1 : 0;
+		for (const FFlyingCabLivingRouteNode& Node : Route.Nodes)
+		{
+			LandingStops += Node.Action == EFlyingCabLivingRouteAction::Land
+				&& !Node.StopId.IsNone() ? 1 : 0;
+			BoardingNodes += Node.Action == EFlyingCabLivingRouteAction::BoardVehicle
+				&& !Node.StopId.IsNone() ? 1 : 0;
+		}
+	}
+	TestEqual(TEXT("The shuttle has two semantic landing stops"), LandingStops, 2);
+	TestEqual(TEXT("Pedestrians can board in both districts"), BoardingNodes, 2);
+	TestEqual(TEXT("Both prototype vehicle routes smooth authored corners"), SmoothedVehicleRoutes, 2);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FFlyingCabInputFocusLossTest,
 	"FlyingCab.Core.Input.FocusLossFlushPolicy",
 	EAutomationTestFlags_ApplicationContextMask
@@ -266,6 +317,7 @@ bool FFlyingCabQuestLifecycleTest::RunTest(const FString& Parameters)
 	DeliveryObjective.ObjectiveId = TEXT("DeliverTwice");
 	DeliveryObjective.Description = FText::FromString(TEXT("Complete deliveries"));
 	DeliveryObjective.EventId = FlyingCabQuestEvents::PassengerDelivered;
+	DeliveryObjective.TargetId = TEXT("District.YellowProjects");
 	DeliveryObjective.RequiredCount = 2;
 	Contract->Objectives = {InteractionObjective, DeliveryObjective};
 
@@ -320,17 +372,36 @@ bool FFlyingCabQuestLifecycleTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("The second sequential objective becomes active"), State && State->ActiveObjectiveIndex == 1);
 
 	TestEqual(
-		TEXT("A counter objective accepts incremental progress"),
-		Quests->RecordEvent(FlyingCabQuestEvents::PassengerDelivered),
+		TEXT("A delivery to another district does not advance a filtered objective"),
+		Quests->RecordEvent(
+			FlyingCabQuestEvents::PassengerDelivered,
+			TEXT("District.NeonDocks")),
+		0);
+	TestEqual(
+		TEXT("A delivery to the configured district accepts incremental progress"),
+		Quests->RecordEvent(
+			FlyingCabQuestEvents::PassengerDelivered,
+			TEXT("District.YellowProjects")),
 		1);
 	TestTrue(
 		TEXT("Tracker exposes numeric progress for author feedback"),
 		Quests->GetTrackerText().ToString().Contains(TEXT("1/2")));
-	Quests->RecordEvent(FlyingCabQuestEvents::PassengerDelivered);
+	Quests->RecordEvent(
+		FlyingCabQuestEvents::PassengerDelivered,
+		TEXT("District.YellowProjects"));
 	TestEqual(
 		TEXT("Finished objectives wait for explicit turn-in"),
 		Quests->GetQuestStatus(Contract->QuestId),
 		EFlyingCabQuestStatus::ReadyToTurnIn);
+	Quests->SetGameplayEventsEnabled(false);
+	TestFalse(
+		TEXT("Competitive mode blocks turning in a persisted ready quest"),
+		Quests->TurnInQuest(Contract->QuestId));
+	TestEqual(
+		TEXT("A blocked turn-in preserves the ready quest for Free Roam"),
+		Quests->GetQuestStatus(Contract->QuestId),
+		EFlyingCabQuestStatus::ReadyToTurnIn);
+	Quests->SetGameplayEventsEnabled(true);
 	TestTrue(TEXT("Ready quest can be turned in"), Quests->TurnInQuest(Contract->QuestId));
 	TestEqual(
 		TEXT("Turned-in quest is completed"),
@@ -357,6 +428,137 @@ bool FFlyingCabQuestLifecycleTest::RunTest(const FString& Parameters)
 	TestTrue(
 		TEXT("Competitive mode hides the quest tracker"),
 		Quests->GetTrackerText().IsEmpty());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabQuestCatalogResilienceTest,
+	"FlyingCab.Core.Quests.CatalogResilienceAndCredits",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabQuestCatalogResilienceTest::RunTest(const FString& Parameters)
+{
+	UGameInstance* GameInstance = NewObject<UGameInstance>();
+	UFlyingCabQuestCatalog* Catalog = NewObject<UFlyingCabQuestCatalog>(GameInstance);
+	Catalog->AllowedCustomEventIds = {TEXT("World.CustomSwitch")};
+
+	auto MakeQuest = [Catalog](
+		const TCHAR* QuestId,
+		const TCHAR* ObjectiveId,
+		FName EventId,
+		int32 RequiredCount = 1)
+	{
+		UFlyingCabQuestDefinition* Quest = NewObject<UFlyingCabQuestDefinition>(Catalog);
+		Quest->QuestId = FName(QuestId);
+		Quest->Title = FText::FromString(QuestId);
+		Quest->Description = FText::FromString(TEXT("Automation test quest."));
+		FFlyingCabQuestObjectiveDefinition Objective;
+		Objective.ObjectiveId = FName(ObjectiveId);
+		Objective.Description = FText::FromString(TEXT("Complete the test objective"));
+		Objective.EventId = EventId;
+		Objective.RequiredCount = RequiredCount;
+		Quest->Objectives = {Objective};
+		return Quest;
+	};
+
+	UFlyingCabQuestDefinition* EarnQuest = MakeQuest(
+		TEXT("Quest.EarnCredits"),
+		TEXT("EarnCredits"),
+		FlyingCabQuestEvents::CreditsEarned,
+		100);
+	UFlyingCabQuestDefinition* CustomQuest = MakeQuest(
+		TEXT("Quest.CustomEvent"),
+		TEXT("UseSwitch"),
+		TEXT("World.CustomSwitch"));
+	UFlyingCabQuestDefinition* InvalidQuest = NewObject<UFlyingCabQuestDefinition>(Catalog);
+	InvalidQuest->QuestId = TEXT("Quest.Incomplete");
+	InvalidQuest->Title = FText::FromString(TEXT("INCOMPLETE"));
+	UFlyingCabQuestDefinition* TypoQuest = MakeQuest(
+		TEXT("Quest.Typo"),
+		TEXT("NeverAdvances"),
+		TEXT("Economy.CreditEarned"));
+	UFlyingCabQuestDefinition* UnknownDistrictQuest = MakeQuest(
+		TEXT("Quest.UnknownDistrict"),
+		TEXT("WrongDistrict"),
+		FlyingCabQuestEvents::PassengerDelivered);
+	UnknownDistrictQuest->Objectives[0].TargetId = TEXT("District.YelowProjects");
+	Catalog->Quests = {
+		EarnQuest,
+		InvalidQuest,
+		TypoQuest,
+		UnknownDistrictQuest,
+		CustomQuest};
+
+	FString ValidationError;
+	TestFalse(
+		TEXT("Editor-facing validation rejects a catalog containing invalid entries"),
+		Catalog->IsConfigurationValid(ValidationError));
+	TestFalse(
+		TEXT("An undeclared event typo is rejected"),
+		Catalog->IsQuestEntryValid(TypoQuest, ValidationError));
+	TestFalse(
+		TEXT("An unknown passenger district target is rejected"),
+		Catalog->IsQuestEntryValid(UnknownDistrictQuest, ValidationError));
+	TestTrue(
+		TEXT("A declared Blueprint event remains authorable without native code"),
+		Catalog->IsQuestEntryValid(CustomQuest, ValidationError));
+
+	UFlyingCabQuestSubsystem* Quests = NewObject<UFlyingCabQuestSubsystem>(GameInstance);
+	TestTrue(
+		TEXT("Runtime accepts a catalog with at least one usable quest"),
+		Quests->ConfigureCatalog(Catalog));
+	TestNotNull(
+		TEXT("Runtime retains a valid native-event quest"),
+		Quests->GetQuestDefinition(EarnQuest->QuestId));
+	TestNotNull(
+		TEXT("Runtime retains a declared custom-event quest"),
+		Quests->GetQuestDefinition(CustomQuest->QuestId));
+	TestNull(
+		TEXT("Runtime omits an incomplete quest without discarding valid content"),
+		Quests->GetQuestDefinition(InvalidQuest->QuestId));
+	TestNull(
+		TEXT("Runtime omits a quest containing an event typo"),
+		Quests->GetQuestDefinition(TypoQuest->QuestId));
+	TestNull(
+		TEXT("Runtime omits a quest containing an unknown passenger district"),
+		Quests->GetQuestDefinition(UnknownDistrictQuest->QuestId));
+
+	Quests->SetGameplayEventsEnabled(true);
+	TestTrue(TEXT("The cumulative earnings quest starts"), Quests->StartQuest(EarnQuest->QuestId));
+	UFlyingCabEconomyComponent* Economy = NewObject<UFlyingCabEconomyComponent>(GameInstance);
+	Economy->OnCreditsEarned.AddLambda([Quests](int32 AwardedCredits)
+	{
+		Quests->RecordEvent(
+			FlyingCabQuestEvents::CreditsEarned,
+			NAME_None,
+			AwardedCredits);
+	});
+	TestEqual(TEXT("Economy awards the first income delta"), Economy->AddCredits(40), 40);
+	const FFlyingCabQuestRuntimeState* EarnState = Quests->FindState(EarnQuest->QuestId);
+	TestTrue(
+		TEXT("Income delta advances cumulative quest progress"),
+		EarnState && EarnState->ObjectiveProgress[0] == 40);
+	Economy->ChargeTowFee();
+	EarnState = Quests->FindState(EarnQuest->QuestId);
+	TestTrue(
+		TEXT("Spending credits does not reduce cumulative earnings progress"),
+		EarnState && EarnState->ObjectiveProgress[0] == 40);
+	TestEqual(TEXT("Economy awards the remaining income delta"), Economy->AddCredits(60), 60);
+	TestEqual(
+		TEXT("One hundred earned credits complete the cumulative objective"),
+		Quests->GetQuestStatus(EarnQuest->QuestId),
+		EFlyingCabQuestStatus::Completed);
+
+	UFlyingCabQuestCatalog* EmptyRuntimeCatalog = NewObject<UFlyingCabQuestCatalog>(GameInstance);
+	EmptyRuntimeCatalog->Quests = {InvalidQuest};
+	AddExpectedError(
+		TEXT("Quest catalog rejected: it has no usable quests."),
+		EAutomationExpectedErrorFlags::Contains,
+		1);
+	TestFalse(
+		TEXT("Runtime rejects a catalog with no usable quests"),
+		Quests->ConfigureCatalog(EmptyRuntimeCatalog));
 	return true;
 }
 
@@ -513,16 +715,26 @@ bool FFlyingCabCityDataConsistencyTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Minimap X bounds are ordered"), WorldMin.X < WorldMax.X);
 	TestTrue(TEXT("Minimap Z bounds are ordered"), WorldMin.Y < WorldMax.Y);
 
+	TSet<FName> DistrictIds;
 	TSet<FString> DistrictNames;
 	TSet<FString> DistrictCodes;
 	int32 RuntimeDistrictCount = 0;
 	for (const FFlyingCabDistrictDefinition& District : Districts)
 	{
+		const FName DistrictId = District.DistrictId;
 		const FString Name(District.DisplayName);
 		const FString Code(District.MinimapCode);
+		TestFalse(*FString::Printf(TEXT("District '%s' has a stable ID"), *Name), DistrictId.IsNone());
+		TestTrue(
+			*FString::Printf(TEXT("District ID '%s' is unique"), *DistrictId.ToString()),
+			!DistrictIds.Contains(DistrictId));
+		TestTrue(
+			*FString::Printf(TEXT("District ID '%s' uses the District namespace"), *DistrictId.ToString()),
+			DistrictId.ToString().StartsWith(TEXT("District.")));
 		TestTrue(*FString::Printf(TEXT("District name '%s' is unique"), *Name), !DistrictNames.Contains(Name));
 		TestTrue(*FString::Printf(TEXT("District code '%s' is unique"), *Code), !DistrictCodes.Contains(Code));
 		TestEqual(*FString::Printf(TEXT("District code '%s' has two characters"), *Code), Code.Len(), 2);
+		DistrictIds.Add(DistrictId);
 		DistrictNames.Add(Name);
 		DistrictCodes.Add(Code);
 
@@ -550,6 +762,21 @@ bool FFlyingCabCityDataConsistencyTest::RunTest(const FString& Parameters)
 	};
 	TestServiceLocations(FuelStations, TEXT("Fuel station"));
 	TestServiceLocations(RepairStations, TEXT("Repair station"));
+
+	const TConstArrayView<FFlyingCabQuestHubDefinition> QuestHubs =
+		FlyingCabQuestHubData::GetQuestHubs();
+	TestEqual(TEXT("The city exposes Mike and Jack quest hubs"), QuestHubs.Num(), 2);
+	for (const FFlyingCabQuestHubDefinition& Hub : QuestHubs)
+	{
+		TestFalse(TEXT("Quest hub has a stable ID"), Hub.HubId.IsNone());
+		TestFalse(TEXT("Quest hub has a minimap initial"), Hub.MinimapInitial.IsEmpty());
+		TestTrue(
+			*FString::Printf(TEXT("Quest hub '%s' is inside minimap bounds"), *Hub.DisplayName),
+			Hub.MinimapWorldPosition.X >= WorldMin.X
+				&& Hub.MinimapWorldPosition.X <= WorldMax.X
+				&& Hub.MinimapWorldPosition.Y >= WorldMin.Y
+				&& Hub.MinimapWorldPosition.Y <= WorldMax.Y);
+	}
 	return true;
 }
 
@@ -578,6 +805,12 @@ bool FFlyingCabDataAssetValidationTest::RunTest(const FString& Parameters)
 	TestFalse(
 		TEXT("Mismatched runtime geometry tuning is rejected"),
 		InvalidCity->IsConfigurationValid(CityValidationError));
+	UFlyingCabCityLayoutAsset* DuplicateDistrictIdCity = NewObject<UFlyingCabCityLayoutAsset>();
+	DuplicateDistrictIdCity->Districts[1].DistrictId =
+		DuplicateDistrictIdCity->Districts[0].DistrictId;
+	TestFalse(
+		TEXT("Duplicate district IDs are rejected"),
+		DuplicateDistrictIdCity->IsConfigurationValid(CityValidationError));
 
 	UFlyingCabEconomyAsset* EconomyAsset = LoadObject<UFlyingCabEconomyAsset>(
 		nullptr,
@@ -606,13 +839,24 @@ bool FFlyingCabDataAssetValidationTest::RunTest(const FString& Parameters)
 	{
 		FString Error;
 		TestTrue(TEXT("The quest catalog passes structural validation"), QuestCatalog->IsConfigurationValid(Error));
-		TestEqual(TEXT("The initial catalog contains two authored quests"), QuestCatalog->Quests.Num(), 2);
+		TestTrue(TEXT("The catalog contains the two foundation quests"), QuestCatalog->Quests.Num() >= 2);
 		const UFlyingCabQuestDefinition* FirstShift = QuestCatalog->FindQuest(TEXT("Quest.FirstShift"));
 		TestNotNull(TEXT("First Shift is available by stable ID"), FirstShift);
 		TestTrue(TEXT("First Shift auto-starts in Free Roam"), FirstShift && FirstShift->bAutoStartInFreeroam);
+		TestTrue(
+			TEXT("First Shift is a main quest"),
+			FirstShift && FirstShift->Category == EFlyingCabQuestCategory::Main);
 		const UFlyingCabQuestDefinition* Nightshift = QuestCatalog->FindQuest(TEXT("Quest.NightshiftContract"));
 		TestNotNull(TEXT("Nightshift Contract is available by stable ID"), Nightshift);
 		TestTrue(TEXT("Nightshift Contract requires turn-in"), Nightshift && Nightshift->bRequiresTurnIn);
+		TestTrue(
+			TEXT("Nightshift Contract is a main quest"),
+			Nightshift && Nightshift->Category == EFlyingCabQuestCategory::Main);
+		const UFlyingCabQuestDefinition* Money = QuestCatalog->FindQuest(TEXT("Get_Money"));
+		TestNotNull(TEXT("Get Money is available for Jack"), Money);
+		TestTrue(
+			TEXT("Get Money is a side quest"),
+			Money && Money->Category == EFlyingCabQuestCategory::Side);
 	}
 	return true;
 }

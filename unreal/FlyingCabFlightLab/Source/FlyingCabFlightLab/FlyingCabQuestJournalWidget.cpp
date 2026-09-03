@@ -53,6 +53,9 @@ namespace
 			UButton::StaticClass(),
 			FName(Name));
 		Button->SetBackgroundColor(Color);
+		PRAGMA_DISABLE_DEPRECATION_WARNINGS
+		Button->IsFocusable = false;
+		PRAGMA_ENABLE_DEPRECATION_WARNINGS
 		UTextBlock* Text = CreateJournalText(
 			WidgetTree,
 			*FString::Printf(TEXT("%sLabel"), Name),
@@ -64,7 +67,7 @@ namespace
 		return Button;
 	}
 
-	bool IsActiveJournalStatus(EFlyingCabQuestStatus Status)
+	bool IsTrackableJournalStatus(EFlyingCabQuestStatus Status)
 	{
 		return Status == EFlyingCabQuestStatus::Active
 			|| Status == EFlyingCabQuestStatus::ReadyToTurnIn;
@@ -139,6 +142,13 @@ FReply UFlyingCabQuestJournalWidget::NativeOnKeyDown(
 	const FKeyEvent& InKeyEvent)
 {
 	const FKey Key = InKeyEvent.GetKey();
+	return HandleNavigationKey(Key)
+		? FReply::Handled()
+		: Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+}
+
+bool UFlyingCabQuestJournalWidget::HandleNavigationKey(const FKey& Key)
+{
 	if (Key == EKeys::Escape || Key == EKeys::J)
 	{
 		if (AFlyingCabPlayerController* Controller =
@@ -146,9 +156,43 @@ FReply UFlyingCabQuestJournalWidget::NativeOnKeyDown(
 		{
 			Controller->CloseQuestJournal();
 		}
-		return FReply::Handled();
+		return true;
 	}
-	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+	if (Key == EKeys::Left || Key == EKeys::A || Key == EKeys::Gamepad_DPad_Left)
+	{
+		SelectCategory(EFlyingCabQuestCategory::Main);
+		return true;
+	}
+	if (Key == EKeys::Right || Key == EKeys::D || Key == EKeys::Gamepad_DPad_Right)
+	{
+		SelectCategory(EFlyingCabQuestCategory::Side);
+		return true;
+	}
+	if (Key == EKeys::Up || Key == EKeys::W || Key == EKeys::Gamepad_DPad_Up)
+	{
+		NavigateSelection(-1);
+		return true;
+	}
+	if (Key == EKeys::Down || Key == EKeys::S || Key == EKeys::Gamepad_DPad_Down)
+	{
+		NavigateSelection(1);
+		return true;
+	}
+	if (Key == EKeys::Tab)
+	{
+		SelectCategory(
+			SelectedCategory == EFlyingCabQuestCategory::Main
+				? EFlyingCabQuestCategory::Side
+				: EFlyingCabQuestCategory::Main);
+		return true;
+	}
+	if (Key == EKeys::Enter || Key == EKeys::SpaceBar
+		|| Key == EKeys::Gamepad_FaceButton_Bottom)
+	{
+		HandleTrackClicked();
+		return true;
+	}
+	return false;
 }
 
 void UFlyingCabQuestJournalWidget::ShowJournal()
@@ -177,6 +221,60 @@ void UFlyingCabQuestJournalWidget::SelectQuest(FName QuestId)
 {
 	SelectedQuestId = QuestId;
 	RefreshJournal();
+	SetKeyboardFocus();
+}
+
+void UFlyingCabQuestJournalWidget::SelectCategory(EFlyingCabQuestCategory Category)
+{
+	if (SelectedCategory != Category)
+	{
+		SelectedCategory = Category;
+		SelectedQuestId = NAME_None;
+	}
+	MainTabButton->SetBackgroundColor(
+		SelectedCategory == EFlyingCabQuestCategory::Main
+			? FLinearColor(0.02f, 0.48f, 0.72f, 1.0f)
+			: FLinearColor(0.10f, 0.14f, 0.19f, 1.0f));
+	SideTabButton->SetBackgroundColor(
+		SelectedCategory == EFlyingCabQuestCategory::Side
+			? FLinearColor(0.62f, 0.16f, 0.70f, 1.0f)
+			: FLinearColor(0.10f, 0.14f, 0.19f, 1.0f));
+	RefreshJournal();
+	SetKeyboardFocus();
+}
+
+void UFlyingCabQuestJournalWidget::NavigateSelection(int32 Direction)
+{
+	const UFlyingCabQuestSubsystem* Quests = GetQuestSubsystem();
+	if (!Quests || Direction == 0)
+	{
+		return;
+	}
+	TArray<FName> VisibleQuestIds;
+	for (const FFlyingCabQuestJournalEntry& Entry : Quests->GetJournalEntries())
+	{
+		if (Entry.Category == SelectedCategory)
+		{
+			VisibleQuestIds.Add(Entry.QuestId);
+		}
+	}
+	if (VisibleQuestIds.IsEmpty())
+	{
+		return;
+	}
+	int32 Index = VisibleQuestIds.IndexOfByKey(SelectedQuestId);
+	if (Index == INDEX_NONE)
+	{
+		Index = Direction > 0 ? 0 : VisibleQuestIds.Num() - 1;
+	}
+	else
+	{
+		Index = (Index + (Direction > 0 ? 1 : -1) + VisibleQuestIds.Num())
+			% VisibleQuestIds.Num();
+	}
+	SelectedQuestId = VisibleQuestIds[Index];
+	RefreshJournal();
+	SetKeyboardFocus();
 }
 
 void UFlyingCabQuestJournalWidget::BuildWidgetTree()
@@ -243,23 +341,23 @@ void UFlyingCabQuestJournalWidget::BuildWidgetTree()
 	UVerticalBoxSlot* TabsSlot = MainColumn->AddChildToVerticalBox(Tabs);
 	TabsSlot->SetPadding(FMargin(0.0f, 0.0f, 0.0f, 14.0f));
 
-	ActiveTabButton = CreateJournalButton(
+	MainTabButton = CreateJournalButton(
 		WidgetTree,
-		TEXT("ActiveQuestTab"),
-		FText::FromString(TEXT("ACTIVE")),
+		TEXT("MainQuestTab"),
+		FText::FromString(TEXT("MAIN QUEST")),
 		FLinearColor(0.02f, 0.48f, 0.72f, 1.0f));
-	CompletedTabButton = CreateJournalButton(
+	SideTabButton = CreateJournalButton(
 		WidgetTree,
-		TEXT("CompletedQuestTab"),
-		FText::FromString(TEXT("COMPLETED")),
+		TEXT("SideQuestTab"),
+		FText::FromString(TEXT("SIDE QUEST")),
 		FLinearColor(0.10f, 0.14f, 0.19f, 1.0f));
-	ActiveTabButton->OnClicked.AddDynamic(
+	MainTabButton->OnClicked.AddDynamic(
 		this,
-		&UFlyingCabQuestJournalWidget::HandleActiveTabClicked);
-	CompletedTabButton->OnClicked.AddDynamic(
+		&UFlyingCabQuestJournalWidget::HandleMainTabClicked);
+	SideTabButton->OnClicked.AddDynamic(
 		this,
-		&UFlyingCabQuestJournalWidget::HandleCompletedTabClicked);
-	for (UButton* Tab : {ActiveTabButton.Get(), CompletedTabButton.Get()})
+		&UFlyingCabQuestJournalWidget::HandleSideTabClicked);
+	for (UButton* Tab : {MainTabButton.Get(), SideTabButton.Get()})
 	{
 		UHorizontalBoxSlot* TabSlot = Tabs->AddChildToHorizontalBox(Tab);
 		TabSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
@@ -277,10 +375,41 @@ void UFlyingCabQuestJournalWidget::BuildWidgetTree()
 		TEXT("QuestListPanel"));
 	ListPanel->SetBrushColor(FLinearColor(0.006f, 0.016f, 0.031f, 0.98f));
 	ListPanel->SetPadding(FMargin(10.0f));
+	UVerticalBox* ListColumn = WidgetTree->ConstructWidget<UVerticalBox>(
+		UVerticalBox::StaticClass(),
+		TEXT("QuestListColumn"));
+	ListPanel->AddChild(ListColumn);
 	QuestList = WidgetTree->ConstructWidget<UScrollBox>(
 		UScrollBox::StaticClass(),
 		TEXT("QuestList"));
-	ListPanel->AddChild(QuestList);
+	UVerticalBoxSlot* QuestListSlot = ListColumn->AddChildToVerticalBox(QuestList);
+	QuestListSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+
+	UHorizontalBox* ListNavigation = WidgetTree->ConstructWidget<UHorizontalBox>(
+		UHorizontalBox::StaticClass(),
+		TEXT("QuestListNavigation"));
+	UVerticalBoxSlot* ListNavigationSlot = ListColumn->AddChildToVerticalBox(ListNavigation);
+	ListNavigationSlot->SetPadding(FMargin(0.0f, 10.0f, 0.0f, 0.0f));
+	PreviousButton = CreateJournalButton(
+		WidgetTree,
+		TEXT("PreviousQuestButton"),
+		FText::FromString(TEXT("▲  PREV")),
+		FLinearColor(0.10f, 0.18f, 0.25f, 1.0f),
+		15);
+	NextButton = CreateJournalButton(
+		WidgetTree,
+		TEXT("NextQuestButton"),
+		FText::FromString(TEXT("▼  NEXT")),
+		FLinearColor(0.10f, 0.18f, 0.25f, 1.0f),
+		15);
+	PreviousButton->OnClicked.AddDynamic(this, &UFlyingCabQuestJournalWidget::HandlePreviousClicked);
+	NextButton->OnClicked.AddDynamic(this, &UFlyingCabQuestJournalWidget::HandleNextClicked);
+	for (UButton* NavigationButton : {PreviousButton.Get(), NextButton.Get()})
+	{
+		UHorizontalBoxSlot* NavigationSlot = ListNavigation->AddChildToHorizontalBox(NavigationButton);
+		NavigationSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+		NavigationSlot->SetPadding(FMargin(3.0f, 0.0f));
+	}
 	UHorizontalBoxSlot* ListSlot = Body->AddChildToHorizontalBox(ListPanel);
 	ListSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 	ListSlot->SetPadding(FMargin(0.0f, 0.0f, 8.0f, 0.0f));
@@ -343,12 +472,23 @@ void UFlyingCabQuestJournalWidget::BuildWidgetTree()
 	TrackButton = CreateJournalButton(
 		WidgetTree,
 		TEXT("TrackQuestButton"),
-		FText::FromString(TEXT("TRACK")),
+		FText::FromString(TEXT("TRACK  [ENTER / SPACE]")),
 		FLinearColor(0.90f, 0.18f, 0.025f, 0.95f),
 		19);
 	TrackButton->OnClicked.AddDynamic(this, &UFlyingCabQuestJournalWidget::HandleTrackClicked);
 	UVerticalBoxSlot* TrackSlot = Details->AddChildToVerticalBox(TrackButton);
 	TrackSlot->SetPadding(FMargin(28.0f, 10.0f, 28.0f, 2.0f));
+
+	UTextBlock* NavigationHint = CreateJournalText(
+		WidgetTree,
+		TEXT("QuestJournalNavigationHint"),
+		13,
+		FLinearColor(0.48f, 0.62f, 0.68f),
+		ETextJustify::Center);
+	NavigationHint->SetText(FText::FromString(
+		TEXT("TOUCH: TAP TABS, QUESTS AND ACTIONS   //   KEYS: A/D TABS · W/S SELECT · ENTER TRACK · J CLOSE")));
+	UVerticalBoxSlot* HintSlot = MainColumn->AddChildToVerticalBox(NavigationHint);
+	HintSlot->SetPadding(FMargin(0.0f, 12.0f, 0.0f, 0.0f));
 }
 
 void UFlyingCabQuestJournalWidget::RefreshQuestList(
@@ -362,9 +502,7 @@ void UFlyingCabQuestJournalWidget::RefreshQuestList(
 
 	const auto IsVisibleInTab = [this](const FFlyingCabQuestJournalEntry& Entry)
 	{
-		return bShowingCompleted
-			? Entry.Status == EFlyingCabQuestStatus::Completed
-			: IsActiveJournalStatus(Entry.Status);
+		return Entry.Category == SelectedCategory;
 	};
 
 	const bool bSelectionStillVisible = Entries.ContainsByPredicate(
@@ -377,7 +515,7 @@ void UFlyingCabQuestJournalWidget::RefreshQuestList(
 		SelectedQuestId = NAME_None;
 		for (const FFlyingCabQuestJournalEntry& Entry : Entries)
 		{
-			if (IsVisibleInTab(Entry) && (!bShowingCompleted && Entry.bTracked))
+			if (IsVisibleInTab(Entry) && Entry.bTracked)
 			{
 				SelectedQuestId = Entry.QuestId;
 				break;
@@ -409,6 +547,9 @@ void UFlyingCabQuestJournalWidget::RefreshQuestList(
 				UFlyingCabQuestJournalEntryButton::StaticClass(),
 				FName(*FString::Printf(TEXT("QuestEntry_%s"), *Entry.QuestId.ToString())));
 		Button->InitializeEntry(this, Entry.QuestId);
+		PRAGMA_DISABLE_DEPRECATION_WARNINGS
+		Button->IsFocusable = false;
+		PRAGMA_ENABLE_DEPRECATION_WARNINGS
 		const bool bSelected = Entry.QuestId == SelectedQuestId;
 		Button->SetBackgroundColor(
 			bSelected
@@ -417,8 +558,23 @@ void UFlyingCabQuestJournalWidget::RefreshQuestList(
 					? FLinearColor(0.04f, 0.30f, 0.20f, 0.92f)
 					: FLinearColor(0.04f, 0.10f, 0.17f, 0.95f)));
 
-		FString RowText = Entry.bTracked ? TEXT("[TRACKED]  ") : FString();
-		RowText += Entry.Title.ToString();
+		FString StateLabel;
+		if (Entry.Status == EFlyingCabQuestStatus::Completed)
+		{
+			StateLabel = TEXT("DONE");
+		}
+		else if (Entry.Status == EFlyingCabQuestStatus::ReadyToTurnIn)
+		{
+			StateLabel = Entry.bTracked ? TEXT("READY · TRACKED") : TEXT("READY");
+		}
+		else
+		{
+			StateLabel = Entry.bTracked ? TEXT("TRACKED") : TEXT("TAKEN");
+		}
+		FString RowText = FString::Printf(
+			TEXT("[%s]  %s"),
+			*StateLabel,
+			*Entry.Title.ToString());
 		if (Entry.Status == EFlyingCabQuestStatus::ReadyToTurnIn)
 		{
 			RowText += TEXT("\nRETURN TO QUEST GIVER");
@@ -447,7 +603,7 @@ void UFlyingCabQuestJournalWidget::RefreshQuestList(
 		Button->AddChild(Label);
 
 		USizeBox* RowSize = WidgetTree->ConstructWidget<USizeBox>();
-		RowSize->SetMinDesiredHeight(78.0f);
+		RowSize->SetMinDesiredHeight(86.0f);
 		RowSize->AddChild(Button);
 		QuestList->AddChild(RowSize);
 	}
@@ -461,9 +617,9 @@ void UFlyingCabQuestJournalWidget::RefreshQuestList(
 			FLinearColor(0.55f, 0.65f, 0.70f),
 			ETextJustify::Center);
 		EmptyText->SetText(FText::FromString(
-			bShowingCompleted
-				? TEXT("NO COMPLETED ASSIGNMENTS")
-				: TEXT("NO ACTIVE ASSIGNMENTS")));
+			SelectedCategory == EFlyingCabQuestCategory::Main
+				? TEXT("NO MAIN QUESTS TAKEN")
+				: TEXT("NO SIDE QUESTS TAKEN")));
 		QuestList->AddChild(EmptyText);
 	}
 }
@@ -492,7 +648,7 @@ void UFlyingCabQuestJournalWidget::RefreshQuestDetails(
 	switch (Selected->Status)
 	{
 	case EFlyingCabQuestStatus::Active:
-		StatusText = Selected->bTracked ? TEXT("ACTIVE // TRACKED") : TEXT("ACTIVE");
+		StatusText = Selected->bTracked ? TEXT("ACTIVE // TRACKED") : TEXT("TAKEN // NOT TRACKED");
 		break;
 	case EFlyingCabQuestStatus::ReadyToTurnIn:
 		StatusText = Selected->bTracked
@@ -500,7 +656,7 @@ void UFlyingCabQuestJournalWidget::RefreshQuestDetails(
 			: TEXT("READY TO TURN IN");
 		break;
 	case EFlyingCabQuestStatus::Completed:
-		StatusText = TEXT("COMPLETED");
+		StatusText = TEXT("DONE");
 		break;
 	default:
 		break;
@@ -536,13 +692,16 @@ void UFlyingCabQuestJournalWidget::RefreshQuestDetails(
 	}
 	DetailReward->SetText(FText::FromString(RewardText));
 
-	const bool bCanTrack = IsActiveJournalStatus(Selected->Status);
+	const bool bCanTrack = IsTrackableJournalStatus(Selected->Status);
 	TrackButton->SetVisibility(bCanTrack ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	if (bCanTrack)
 	{
 		SetButtonLabel(
 			TrackButton,
-			FText::FromString(Selected->bTracked ? TEXT("STOP TRACKING") : TEXT("TRACK")));
+			FText::FromString(
+				Selected->bTracked
+					? TEXT("STOP TRACKING  [ENTER / SPACE]")
+					: TEXT("TRACK  [ENTER / SPACE]")));
 		TrackButton->SetBackgroundColor(
 			Selected->bTracked
 				? FLinearColor(0.16f, 0.19f, 0.24f, 1.0f)
@@ -567,22 +726,24 @@ void UFlyingCabQuestJournalWidget::SetButtonLabel(UButton* Button, const FText& 
 	}
 }
 
-void UFlyingCabQuestJournalWidget::HandleActiveTabClicked()
+void UFlyingCabQuestJournalWidget::HandleMainTabClicked()
 {
-	bShowingCompleted = false;
-	SelectedQuestId = NAME_None;
-	ActiveTabButton->SetBackgroundColor(FLinearColor(0.02f, 0.48f, 0.72f, 1.0f));
-	CompletedTabButton->SetBackgroundColor(FLinearColor(0.10f, 0.14f, 0.19f, 1.0f));
-	RefreshJournal();
+	SelectCategory(EFlyingCabQuestCategory::Main);
 }
 
-void UFlyingCabQuestJournalWidget::HandleCompletedTabClicked()
+void UFlyingCabQuestJournalWidget::HandleSideTabClicked()
 {
-	bShowingCompleted = true;
-	SelectedQuestId = NAME_None;
-	ActiveTabButton->SetBackgroundColor(FLinearColor(0.10f, 0.14f, 0.19f, 1.0f));
-	CompletedTabButton->SetBackgroundColor(FLinearColor(0.04f, 0.42f, 0.25f, 1.0f));
-	RefreshJournal();
+	SelectCategory(EFlyingCabQuestCategory::Side);
+}
+
+void UFlyingCabQuestJournalWidget::HandlePreviousClicked()
+{
+	NavigateSelection(-1);
+}
+
+void UFlyingCabQuestJournalWidget::HandleNextClicked()
+{
+	NavigateSelection(1);
 }
 
 void UFlyingCabQuestJournalWidget::HandleTrackClicked()

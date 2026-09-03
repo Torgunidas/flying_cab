@@ -8,11 +8,14 @@
 #include "FlyingCabCityExpansion.h"
 #include "FlyingCabEconomyAsset.h"
 #include "FlyingCabFuelStation.h"
+#include "FlyingCabLivingWorldManager.h"
+#include "FlyingCabLivingWorldProfile.h"
 #include "FlyingCabNightshiftOffice.h"
 #include "FlyingCabOnFootPortal.h"
 #include "FlyingCabQuestCatalog.h"
 #include "FlyingCabQuestDefinition.h"
 #include "FlyingCabQuestGiver.h"
+#include "FlyingCabQuestHubData.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabRepairStation.h"
@@ -41,24 +44,33 @@ bool AFlyingCabWorldBootstrap::Bootstrap(
 	const bool bOnFootReady = SpawnOnFootSlice();
 	const bool bServiceVehicleReady = SpawnServiceVehicle(ServiceVehicleClass);
 	const bool bTrafficReady = SpawnTraffic();
+	const bool bLivingWorldReady = SpawnLivingWorld();
 	bBootstrapSucceeded = bCityReady && bStationsReady && bOnFootReady
-		&& bServiceVehicleReady && bTrafficReady;
+		&& bServiceVehicleReady && bTrafficReady && bLivingWorldReady;
 
 	UE_LOG(
 		LogFlyingCabWorldBootstrap,
 		Display,
-		TEXT("World bootstrap %s: %d fuel stations, %d repair shops and %d/%d traffic vehicles."),
+		TEXT("World bootstrap %s: %d fuel stations, %d repair shops, %d/%d traffic vehicles and %d living pedestrians."),
 		bBootstrapSucceeded ? TEXT("completed") : TEXT("completed with missing actors"),
 		FuelStations.Num(),
 		RepairStations.Num(),
 		TrafficVehicles.Num(),
-		GetExpectedTrafficVehicleCount());
+		GetConfiguredTrafficVehicleCount(),
+		GetLivingPedestrianCount());
 	return bBootstrapSucceeded;
 }
 
 int32 AFlyingCabWorldBootstrap::GetExpectedTrafficVehicleCount()
 {
-	return GetTrafficRoutes().Num();
+	return AFlyingCabLivingWorldManager::GetPrototypeVehicleCount();
+}
+
+int32 AFlyingCabWorldBootstrap::GetLivingPedestrianCount() const
+{
+	return LivingWorldManager
+		? LivingWorldManager->GetPedestrians().Num()
+		: 0;
 }
 
 TConstArrayView<FFlyingCabTrafficRouteDefinition>
@@ -186,24 +198,36 @@ bool AFlyingCabWorldBootstrap::SpawnOnFootSlice()
 		UE_LOG(LogFlyingCabWorldBootstrap, Error, TEXT("Could not complete Nightshift Office interactables."));
 		return false;
 	}
-	NightshiftQuestGiver = GetWorld()->SpawnActor<AFlyingCabQuestGiver>(
-		AFlyingCabQuestGiver::StaticClass(),
-		NightshiftOffice->GetTerminalLocation() + FVector(-260.0f, 0.0f, 0.0f),
-		FRotator::ZeroRotator,
-		SpawnParameters);
 	UFlyingCabQuestCatalog* QuestCatalog = UFlyingCabQuestCatalog::LoadDefaultAsset();
-	UFlyingCabQuestDefinition* NightshiftQuest = QuestCatalog
-		? QuestCatalog->FindQuest(TEXT("Quest.NightshiftContract"))
-		: nullptr;
-	if (!NightshiftQuestGiver || !NightshiftQuest)
+	QuestGivers.Reset();
+	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs())
 	{
-		UE_LOG(LogFlyingCabWorldBootstrap, Error, TEXT("Could not create the Nightshift quest giver."));
-		return false;
+		UFlyingCabQuestDefinition* Quest = QuestCatalog
+			? QuestCatalog->FindQuest(Hub.QuestId)
+			: nullptr;
+		AFlyingCabQuestGiver* QuestGiver = Quest
+			? GetWorld()->SpawnActor<AFlyingCabQuestGiver>(
+				AFlyingCabQuestGiver::StaticClass(),
+				Hub.WorldLocation,
+				FRotator::ZeroRotator,
+				SpawnParameters)
+			: nullptr;
+		if (!QuestGiver)
+		{
+			UE_LOG(
+				LogFlyingCabWorldBootstrap,
+				Error,
+				TEXT("Could not create quest hub %s for %s."),
+				*Hub.DisplayName,
+				*Hub.QuestId.ToString());
+			return false;
+		}
+		QuestGiver->Configure(
+			Hub.HubId,
+			FText::FromString(Hub.DisplayName),
+			Quest);
+		QuestGivers.Add(QuestGiver);
 	}
-	NightshiftQuestGiver->Configure(
-		TEXT("QuestGiver.NightshiftDispatcher"),
-		FText::FromString(TEXT("NIGHTSHIFT DISPATCHER")),
-		NightshiftQuest);
 
 	NightshiftEntrance->Configure(
 		TEXT("NIGHTSHIFT OFFICE"),
@@ -220,9 +244,10 @@ bool AFlyingCabWorldBootstrap::SpawnOnFootSlice()
 	UE_LOG(
 		LogFlyingCabWorldBootstrap,
 		Display,
-		TEXT("Nightshift Office initialized at %s with foot-only entrance at %s."),
+		TEXT("Nightshift Office initialized at %s with foot-only entrance at %s and %d quest hubs."),
 		*NightshiftOfficeLocation.ToCompactString(),
-		*NightshiftEntranceLocation.ToCompactString());
+		*NightshiftEntranceLocation.ToCompactString(),
+		QuestGivers.Num());
 	return true;
 }
 
@@ -279,6 +304,15 @@ bool AFlyingCabWorldBootstrap::SpawnServiceVehicle(
 bool AFlyingCabWorldBootstrap::SpawnTraffic()
 {
 	TrafficVehicles.Reset();
+	if (!bSpawnLegacyTraffic)
+	{
+		UE_LOG(
+			LogFlyingCabWorldBootstrap,
+			Display,
+			TEXT("Legacy point-to-point traffic is disabled; only Living World traffic will spawn."));
+		return true;
+	}
+
 	const FActorSpawnParameters SpawnParameters =
 		MakeSpawnParameters(ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	for (const FFlyingCabTrafficRouteDefinition& Spec : GetTrafficRoutes())
@@ -295,10 +329,33 @@ bool AFlyingCabWorldBootstrap::SpawnTraffic()
 		}
 	}
 
-	if (TrafficVehicles.Num() != GetExpectedTrafficVehicleCount())
+	if (TrafficVehicles.Num() != GetTrafficRoutes().Num())
 	{
 		UE_LOG(LogFlyingCabWorldBootstrap, Warning, TEXT("One or more traffic vehicles failed to spawn."));
 		return false;
+	}
+	return true;
+}
+
+bool AFlyingCabWorldBootstrap::SpawnLivingWorld()
+{
+	LivingWorldManager = GetWorld()->SpawnActor<AFlyingCabLivingWorldManager>(
+		AFlyingCabLivingWorldManager::StaticClass(),
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		MakeSpawnParameters(ESpawnActorCollisionHandlingMethod::AlwaysSpawn));
+	if (!LivingWorldManager || !LivingWorldManager->Initialize(
+		UFlyingCabLivingWorldProfile::LoadDefaultAsset()))
+	{
+		UE_LOG(LogFlyingCabWorldBootstrap, Error, TEXT("Could not initialize the living-world prototype."));
+		return false;
+	}
+	for (AFlyingCabTrafficVehicle* Vehicle : LivingWorldManager->GetTrafficVehicles())
+	{
+		if (IsValid(Vehicle))
+		{
+			TrafficVehicles.Add(Vehicle);
+		}
 	}
 	return true;
 }

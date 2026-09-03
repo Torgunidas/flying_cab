@@ -9,19 +9,46 @@ DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabQuests, Log, All);
 
 bool UFlyingCabQuestSubsystem::ConfigureCatalog(UFlyingCabQuestCatalog* InCatalog)
 {
-	FString ValidationError;
-	if (!InCatalog || !InCatalog->IsConfigurationValid(ValidationError))
+	if (!InCatalog)
 	{
-		UE_LOG(LogFlyingCabQuests, Error, TEXT("Quest catalog rejected: %s"), *ValidationError);
+		UE_LOG(LogFlyingCabQuests, Error, TEXT("Quest catalog rejected: no catalog was supplied."));
+		return false;
+	}
+
+	TMap<FName, TObjectPtr<UFlyingCabQuestDefinition>> ValidDefinitions;
+	for (UFlyingCabQuestDefinition* Quest : InCatalog->Quests)
+	{
+		FString ValidationError;
+		if (!InCatalog->IsQuestEntryValid(Quest, ValidationError))
+		{
+			UE_LOG(
+				LogFlyingCabQuests,
+				Warning,
+				TEXT("Skipping invalid quest entry %s: %s"),
+				Quest ? *Quest->GetPathName() : TEXT("<empty>"),
+				*ValidationError);
+			continue;
+		}
+		if (ValidDefinitions.Contains(Quest->QuestId))
+		{
+			UE_LOG(
+				LogFlyingCabQuests,
+				Warning,
+				TEXT("Skipping duplicate quest ID %s from %s."),
+				*Quest->QuestId.ToString(),
+				*Quest->GetPathName());
+			continue;
+		}
+		ValidDefinitions.Add(Quest->QuestId, Quest);
+	}
+	if (ValidDefinitions.IsEmpty())
+	{
+		UE_LOG(LogFlyingCabQuests, Error, TEXT("Quest catalog rejected: it has no usable quests."));
 		return false;
 	}
 
 	Catalog = InCatalog;
-	Definitions.Reset();
-	for (UFlyingCabQuestDefinition* Quest : Catalog->Quests)
-	{
-		Definitions.Add(Quest->QuestId, Quest);
-	}
+	Definitions = MoveTemp(ValidDefinitions);
 
 	TArray<FName> UnknownStateIds;
 	for (const TPair<FName, FFlyingCabQuestRuntimeState>& Entry : States)
@@ -182,6 +209,10 @@ int32 UFlyingCabQuestSubsystem::RecordEvent(FName EventId, FName TargetId, int32
 
 bool UFlyingCabQuestSubsystem::TurnInQuest(FName QuestId)
 {
+	if (!bGameplayEventsEnabled)
+	{
+		return false;
+	}
 	const FFlyingCabQuestRuntimeState* State = States.Find(QuestId);
 	return State && State->Status == EFlyingCabQuestStatus::ReadyToTurnIn
 		&& CompleteQuest(QuestId);
@@ -293,6 +324,7 @@ TArray<FFlyingCabQuestJournalEntry> UFlyingCabQuestSubsystem::GetJournalEntries(
 		Entry.QuestId = Pair.Key;
 		Entry.Title = Definition->Title;
 		Entry.Description = Definition->Description;
+		Entry.Category = Definition->Category;
 		Entry.Status = State.Status;
 		Entry.RewardCredits = Definition->Reward.Credits;
 		Entry.RewardAccessIds = Definition->Reward.GrantedAccessIds;
