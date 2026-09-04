@@ -13,6 +13,22 @@ class UButton;
 class UCanvasPanel;
 class UTextBlock;
 
+struct FFlyingCabQueuedHudMessage
+{
+	FText Text;
+	FLinearColor Color = FLinearColor::White;
+	float DurationSeconds = 2.5f;
+};
+
+struct FFlyingCabQueuedAnnouncement
+{
+	FText Title;
+	FText Detail;
+	FLinearColor Color = FLinearColor::White;
+	float DurationSeconds = 2.8f;
+	int32 Priority = 0;
+};
+
 /** Minimal portrait touch overlay used to validate the mobile control scheme. */
 UCLASS()
 class FLYINGCABFLIGHTLAB_API UFlyingCabTouchControls : public UUserWidget
@@ -22,8 +38,20 @@ class FLYINGCABFLIGHTLAB_API UFlyingCabTouchControls : public UUserWidget
 public:
 	void SetControlsVisible(bool bVisible);
 	void SetOnFootMode(bool bOnFoot);
+	void SetQuestText(const FText& Text);
 	void SetObjectiveText(const FText& Text);
+	void ShowEventMessage(
+		const FText& Text,
+		const FLinearColor& Color,
+		float DurationSeconds = 2.5f);
+	void ShowMajorAnnouncement(
+		const FText& Title,
+		const FText& Detail,
+		const FLinearColor& Color,
+		float DurationSeconds = 2.8f,
+		int32 InPriority = 0);
 	void SetTrafficAlert(const FText& Text, const FLinearColor& Color);
+	void SetDeveloperObserverState(bool bActive, float ZoomMeters);
 	void SetMinimapState(
 		const FVector2D& CabWorldPosition,
 		const FVector2D& TargetWorldPosition,
@@ -52,6 +80,7 @@ public:
 protected:
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 	virtual void NativeDestruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual void NativeOnFocusLost(const FFocusEvent& InFocusEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 
@@ -70,6 +99,10 @@ private:
 	AFlyingCabCharacter* GetFlyingCabCharacter() const;
 	void UpdateHorizontalInput();
 	void RefreshControlMode();
+	void RefreshDeveloperObserverText();
+	void ClearEventMessage();
+	void ShowNextEventMessage();
+	void ShowNextMajorAnnouncement();
 	FVector2D WorldToMinimap(const FVector2D& WorldPosition) const;
 	void UpdateMinimapMarkers();
 	UBorder* AddMinimapPoint(
@@ -137,10 +170,34 @@ private:
 	TObjectPtr<UTextBlock> ServiceButtonText;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> QuestText;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> ObjectiveText;
 
 	UPROPERTY(Transient)
+	TObjectPtr<UBorder> EventMessagePanel;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> EventMessageText;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UBorder> MajorAnnouncementPanel;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> MajorAnnouncementTitle;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> MajorAnnouncementDetail;
+
+	UPROPERTY(Transient)
 	TObjectPtr<UTextBlock> TrafficAlertText;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UBorder> DeveloperObserverPanel;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextBlock> DeveloperObserverText;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UBorder> TimeAttackPanel;
@@ -163,9 +220,13 @@ private:
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UBorder>> PassengerOfferMarkers;
 
+	FText PendingQuestText;
 	FText PendingObjectiveText = FText::FromString(TEXT("FLIGHT LAB"));
+	FText PendingEventMessageText;
+	FLinearColor PendingEventMessageColor = FLinearColor::White;
 	FText PendingTrafficAlertText;
 	FLinearColor PendingTrafficAlertColor = FLinearColor::Transparent;
+	float PendingDeveloperObserverZoomMeters = 0.0f;
 	FVector2D PendingCabWorldPosition = FVector2D::ZeroVector;
 	FVector2D PendingTargetWorldPosition = FVector2D::ZeroVector;
 	TArray<FVector2D> PendingPassengerOfferWorldPositions;
@@ -186,9 +247,17 @@ private:
 	bool bPendingRepairAvailable = false;
 	bool bPendingVehicleDestroyed = false;
 	bool bOnFootMode = false;
+	bool bDeveloperObserverMode = false;
 
 	bool bLeftPressed = false;
 	bool bRightPressed = false;
 	bool bThrustPressed = false;
 	bool bRefuelPressed = false;
+	FTimerHandle EventMessageTimerHandle;
+	TArray<FFlyingCabQueuedHudMessage> EventMessageQueue;
+	TArray<FFlyingCabQueuedAnnouncement> MajorAnnouncementQueue;
+	FFlyingCabQueuedAnnouncement ActiveMajorAnnouncement;
+	float MajorAnnouncementElapsed = 0.0f;
+	bool bEventMessageVisible = false;
+	bool bMajorAnnouncementVisible = false;
 };

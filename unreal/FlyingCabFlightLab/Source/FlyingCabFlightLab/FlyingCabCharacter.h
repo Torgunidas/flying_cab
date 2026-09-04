@@ -13,8 +13,8 @@ class UStaticMeshComponent;
 class USpringArmComponent;
 
 /**
- * Lightweight 2.5D on-foot prototype. Cab and driver share the same engine-owned
- * input axes, so possession changes do not create a second keyboard state.
+ * Lightweight 2.5D on-foot prototype. Cab and driver share the same Enhanced Input
+ * actions and mapping context, so possession changes do not create a second keyboard state.
  */
 UCLASS()
 class FLYINGCABFLIGHTLAB_API AFlyingCabCharacter : public ACharacter
@@ -34,17 +34,27 @@ public:
 
 	void SetTouchHorizontalInput(float Value);
 	void SetTouchJumpPressed(bool bPressed);
+
+	/** Immediately clears stored keyboard values when the controller flushes pressed keys. */
+	void ReleaseKeyboardInputState();
 	float GetHealthPercent() const;
 	bool IsDead() const { return bDead; }
 
+#if WITH_DEV_AUTOMATION_TESTS
+	float GetTestKeyboardHorizontalInput() const { return KeyboardHorizontalInput; }
+	float GetTestKeyboardThrustInput() const { return KeyboardThrustInput; }
+#endif
+
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Landed(const FHitResult& Hit) override;
 	virtual void UnPossessed() override;
 
 private:
 	void SetKeyboardHorizontalInput(float Value);
 	void SetKeyboardThrustInput(float Value);
+	void RefreshKeyboardInputState();
 	void ClearInputState();
 	void ApplyCharacterDamage(float DamageAmount, const TCHAR* DamageSource);
 	void EnterDeathState();

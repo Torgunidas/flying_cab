@@ -13,6 +13,7 @@
 - Po zmianie wartości kliknij **Compile** i uruchom Play ponownie, aby zachować i sprawdzić ustawienie.
 - Do tymczasowego strojenia podczas Play użyj `Shift+F1`, zaznacz uruchomionego `BP_FlyingCabPawn` w **World Outliner** i zmieniaj wartości w panelu **Details**. Takie zmiany działają od razu, ale po zakończeniu Play zostaną cofnięte.
 - Za płynność powrotu do poziomu odpowiada `Visual Pitch Return Speed`: mniejsza wartość oznacza wolniejsze wyrównanie. Szybkość wejścia w przechylenie kontroluje osobno `Visual Pitch Response Speed`.
+- Aktualny zatwierdzony kadr pojazdu używa odległości kamery `1900 cm`, wyprzedzenia `380 cm` w poziomie i `160 cm` w pionie oraz szybkości interpolacji `3,5`. Odległość należy do `FlyingCabCameraRig`, a wyprzedzenie do parametrów `Flying Cab | Presentation` pojazdu.
 
 ## Testy bazowe
 
@@ -47,22 +48,24 @@
 - Zmień kierunek lotu z `D` na `A`; przechylenie powinno czytelnie zaakcentować hamowanie i ponowne rozpędzanie.
 - Rozpędź pojazd poziomo, a następnie rozpocznij wznoszenie i opadanie.
 - Kamera powinna łagodnie przesuwać kadr w kierunku ruchu, bez szarpnięcia przy zmianie kierunku.
+- Przy maksymalnej prędkości przed pojazdem powinno pozostać wystarczająco dużo widocznej przestrzeni na zauważenie przeszkody i rozpoczęcie hamowania.
 - W HUD sprawdź wartości `Presentation accel X`, `pitch` oraz `camera X/Z`; przy stałej prędkości `accel X` i `pitch` powinny dążyć do zera. Po naciśnięciu `R` powinny wrócić do zera natychmiast.
 
 ### 6. Regresja utraty wejścia
 
 - Przytrzymaj `D`, użyj `Shift+F1` albo `Alt+Tab`, puść `D` poza viewportem i wróć do gry.
-- `Horizontal effective` powinno wrócić do `0.00` najpóźniej po jednej klatce.
-- Włącz telemetrię `F3`. Wiersz `Keys` pokazuje teraz osobno `A`, `D`, `LEFT`, `RIGHT`, `W`, `UP`, `SPACE` i `E`; po puszczeniu każdy klawisz musi natychmiast wrócić do `0`.
+- `Horizontal keyboard` oraz `Horizontal effective` powinny natychmiast wrócić do `0.00`.
+- Powtórz próbę z `W`. `Thrust keyboard` oraz `Thrust effective` muszą wrócić do `0.00`; dodatnia `Velocity Z` może jeszcze krótko zanikać z powodu zamierzonej bezwładności, ale `Command Z` musi wynosić `0.0`.
+- Telemetria `F3` pokazuje osobno wartości `keyboard`, `touch` i `effective` dla kierunku oraz ciągu. Po utracie fokusu żadna wartość klawiatury nie może pozostać na `1.00`.
 - Przytrzymaj `D`, kliknij jeden z przycisków ekranowych i puść `D`, gdy kursor znajduje się nad HUD-em. Przycisk ekranowy nie może przejąć fokusu klawiatury, a `D` musi wrócić do `0`.
 - Wciśnij jednocześnie `A` i `D`, potem puszczaj je pojedynczo w różnej kolejności. Kierunek powinien być neutralny przy obu wciśniętych, a po puszczeniu jednego odpowiadać drugiemu bez pozostawania aktywnym po puszczeniu obu.
 - Przytrzymaj `W`, `Spację`, `A` albo `D` i w tym samym czasie wykonaj reset klawiszem `R`. Po resecie sterowanie musi pozostać neutralne, dopóki nie puścisz wszystkich klawiszy danej osi. Ponowne sterowanie powinno zadziałać dopiero po puszczeniu i kolejnym naciśnięciu.
 - Powtórz próbę przez zniszczenie auta przy aktywnym ciągu. Po holowaniu thrust i kierunek muszą pozostać wyłączone nawet wtedy, gdy Unreal nie zarejestrował wcześniejszego puszczenia klawisza.
-- Włącz telemetrię `F3`. Po resecie pola `Input reset guard` mogą krótko pokazać `WAITING`, a po wykryciu neutralnych osi powinny wrócić do `READY`.
+- Włącz telemetrię `F3`. Pole `forced resets` powinno zwiększyć licznik po wymuszonym czyszczeniu wejścia; wszystkie wartości `effective`, `keyboard` i `touch` muszą pozostać neutralne aż do ponownego naciśnięcia.
 
 ### 7. Sterowanie dotykowe
 
-- Po uruchomieniu Play powinny być widoczne przyciski `LEFT`, `RIGHT`, `THRUST` i `RESET`; `F4` przełącza cały interfejs.
+- Po uruchomieniu Play powinny być stale widoczne przyciski `LEFT`, `RIGHT`, `THRUST` i `RESET`. Interfejs nie ma skrótu wyłączającego HUD, ponieważ zawiera również informacje i oświetlenie potrzebne podczas gry.
 - Przytrzymaj myszą `LEFT` lub `RIGHT`. W HUD wartość `touch` powinna wynosić odpowiednio `-1.00` albo `+1.00`, a po puszczeniu natychmiast wrócić do `0.00`.
 - Przytrzymaj `THRUST`; wiersz ciągu powinien pokazać `touch:+1.00`, a po puszczeniu `touch:+0.00`.
 - Przeciągnij kursor poza trzymany przycisk, a następnie puść mysz. `touch` musi wrócić do zera również wtedy, gdy puszczenie nie nastąpiło dokładnie nad przyciskiem.
@@ -72,7 +75,7 @@
 
 ### 8. Pierwsza pętla kursu taxi
 
-- Po starcie odszukaj turkusową bramkę `PICKUP` w jednej z sześciu dzielnic; górny komunikat pokazuje nazwę punktu i dystans.
+- Po starcie wybierz jedną z widocznych bursztynowych ofert pasażerów i odszukaj jej turkusową bramkę `PICKUP` w jednej z dziesięciu dzielnic; górny komunikat pokazuje nazwę punktu, cel podróży, szacowaną opłatę, czas ważności i dystans.
 - Wleć do bramki z prędkością większą niż `180 cm/s`. Zadanie nie powinno zostać zaliczone, a komunikat powinien zmienić się na `SLOW DOWN`.
 - Zwolnij pozostając w bramce. Po zakończeniu linku turkusowa strefa powinna zniknąć, a w innej dzielnicy aktywować się pomarańczowa bramka `DROPOFF`.
 - Zatrzymaj pojazd w bramce `DROPOFF`. Licznik `DELIVERIES` powinien wzrosnąć, a po krótkiej pracy dispatchera pojawić się nowe, losowane zlecenie.
@@ -82,7 +85,7 @@
 
 - Telemetria jest domyślnie ukryta; `F3` nadal pozwala ją włączyć na czas diagnostyki.
 - Na stałej minimapie `CITY GRID` biały punkt powinien śledzić pozycję auta bez obracania całej mapy.
-- Szare punkty `YP`, `ME`, `ST`, `AM`, `ND` i `ZS` oznaczają odpowiednio `Yellow Projects`, `Midtown Exchange`, `Skyline Terraces`, `Ashline Market`, `Neon Docks` i `Zenith Spire`.
+- Szare punkty `YP`, `ME`, `ST`, `AM`, `ND`, `ZS`, `GT`, `RB`, `CH` i `OG` oznaczają odpowiednio `Yellow Projects`, `Midtown Exchange`, `Skyline Terraces`, `Ashline Market`, `Neon Docks`, `Zenith Spire`, `Glassward Transit`, `Rainline Bazaar`, `Cobalt Heights` i `Orbital Gardens`.
 - Aktywny cel powinien być turkusowy podczas odbioru i pomarańczowy podczas dowozu.
 - Sprawdź, czy nazwa w zleceniu odpowiada punktowi na minimapie oraz czy sam dystans wystarcza do odnalezienia celu bez strzałki kierunkowej.
 
@@ -127,18 +130,19 @@
 
 ### 15. Dynamiczny dispatcher
 
-- Po ukończeniu wysiadania aktywny znacznik celu powinien zniknąć z minimapy, a HUD przez około `1 s` pokazywać `DISPATCH // SCANNING CURBSIDE CALLS`.
-- Następnie powinien pojawić się komunikat `NEW CURBSIDE CALL` oraz nowy turkusowy punkt odbioru.
-- Nowy odbiór nie powinien pojawić się dokładnie w miejscu właśnie ukończonego dowozu, jeśli dostępne są pozostałe dzielnice.
-- Zapisz sześć kolejnych par odbiór–dowóz. Żadna para nie powinna zostać powtórzona bezpośrednio po sobie, a odbiór i dowóz jednego kursu zawsze muszą być różnymi punktami.
-- Zniszcz taksówkę w trakcie kursu. Po holowaniu dispatcher powinien wystawić nowe zlecenie zamiast przywracać pasażera z przerwanego kursu.
+- Bez pasażera system powinien utrzymywać od jednej do czterech równoległych ofert. Każda oferta ma własny bursztynowy znacznik minimapy i odliczany czas ważności.
+- Gdy oferta wygaśnie poza trwającym `CURBSIDE LINK`, jej strefa i znacznik powinny zniknąć, a po losowym opóźnieniu powinna pojawić się kolejna oferta.
+- Rozpocznij `CURBSIDE LINK`. Czas wybranej oferty powinien przestać maleć w trakcie potwierdzania; przerwanie linku wznawia odliczanie.
+- Po odebraniu pasażera wszystkie pozostałe oferty powinny przestać przyjmować taksówkę, ale mogą pozostać widoczne do końca kursu.
+- Zapisz sześć kolejnych par odbiór–dowóz. Odbiór i dowóz jednego kursu zawsze muszą być różnymi punktami. `TIME ATTACK` z seedem `1977` powinien dawać tę samą sekwencję po restarcie; `FREE ROAM` powinien rozpoczynać się od nowej losowej sekwencji.
+- Zniszcz taksówkę w trakcie kursu. Kurs ma zostać anulowany, oferty zablokowane na czas holowania, a po odzyskaniu pojazdu rynek ofert ponownie aktywny.
 
 ### 16. Rozbudowane miasto, paliwo i nowa krzywa obrażeń
 
-- Minimapa powinna pokazywać sześć dzielnic: `YP`, `ME`, `ST`, `AM`, `ND` i `ZS`, a zielone punkty `F` powinny znajdować się przy Midtown Exchange oraz Ashline Market.
+- Minimapa powinna pokazywać dziesięć dzielnic: `YP`, `ME`, `ST`, `AM`, `ND`, `ZS`, `GT`, `RB`, `CH` i `OG`. Zielone punkty `F` powinny znajdować się przy Midtown Exchange, Ashline Market i Rainline Bazaar.
 - Wykonaj co najmniej trzy kursy obejmujące nowe dzielnice. Na długiej trasie pojazd powinien mieć czas dojść do prędkości maksymalnej, a hamowanie przed bramką powinno wymagać wyczucia.
 - Początkowy poziom paliwa wynosi `65%`. Zanotuj paliwo na początku i końcu każdego kursu; celem jest zauważalny koszt długiej trasy i potrzeba tankowania po kilku kursach, a nie po każdym zleceniu.
-- Sprawdź obie stacje: `MIDTOWN FUEL` i `ASHLINE CHARGE`. Zatrzymanie i koszt tankowania powinny działać identycznie.
+- Sprawdź trzy stacje: `MIDTOWN FUEL`, `ASHLINE CHARGE` i `RAINLINE ENERGY`. Zatrzymanie i koszt tankowania powinny działać identycznie.
 - Wyląduj zwyczajnie obok pasażera kilka razy. Kontakty do około `700 cm/s` zmiany prędkości normalnej nie powinny uszkadzać kadłuba.
 - Następnie wykonaj jedno średnie i jedno mocne uderzenie. Obrażenia powinny rosnąć łagodnie powyżej bezpiecznego progu, ale wyraźnie przy poważnym zderzeniu.
 - Oceń, czy niższe przyspieszenie i limity prędkości uspokoiły pojazd bez utraty dotychczasowego dryfu i płynności kamery.
@@ -153,7 +157,7 @@
 
 ### 18. Prosty ruch uliczny
 
-- Na trzech poziomach miasta powinny poruszać się łącznie cztery kolorowe auta. Dwa korzystają z dolnego pasa, po jednym ze środkowego i górnego.
+- Na trasach miasta powinno poruszać się łącznie osiem kolorowych aut. Ich ruch, teleport na końcu pasa i fazy początkowe powinny być powtarzalne po restarcie.
 - Obserwuj jeden pojazd do końca pasa. Powinien pojawić się ponownie po przeciwnej stronie bez przejazdu przez całą mapę podczas teleportu.
 - Auta nie powinny zatrzymywać się na platformach ani zderzać ze sobą. Powinny jednak blokować taksówkę gracza i zatrzymać się chwilowo, jeżeli gracz zajmie ich tor.
 - Przeleć przez każdy pas kilka razy. Oceń, czy prędkości są czytelne i dają czas na reakcję, ale wymagają obserwowania ruchu przed przecięciem korytarza.
@@ -167,6 +171,40 @@
 - Powtórz przejazd ze zbyt dużym odstępem. Nie powinno być nagrody.
 - Doprowadź do kontaktu z autem ruchu. Kolizja może uszkodzić kadłub, ale nie może jednocześnie naliczyć nagrody za near miss.
 - Sprawdź ostrzeżenie i nagrodę zarówno podczas lotu poziomego, jak i podczas pionowego przecinania pasa.
+
+### 20. Tryby rozgrywki i Time Attack
+
+- Po uruchomieniu poziomu gra powinna być wstrzymana, a ekran wyboru pozwalać rozpocząć `FREE ROAM` albo `TIME ATTACK`.
+- Wybierz `FREE ROAM`. Ekran ma zniknąć, wejścia zostać wyzerowane, a rozgrywka wznowiona z saldem `100 CR`.
+- Uruchom ponownie poziom i wybierz `TIME ATTACK`. Opis trybu i HUD powinny pokazywać ten sam skonfigurowany cel salda (`1000 CR` w ustawieniach domyślnych).
+- Zdobywaj kredyty przez kursy i near miss, a wydawaj je na paliwo, naprawy i holowanie. Wynik powinien uwzględniać wszystkie te operacje.
+- Po osiągnięciu `1000 CR` gra ma się zatrzymać i pokazać wynik wraz z maksymalnie pięcioma najlepszymi czasami.
+- `RETRY` powinno ponownie uruchomić Time Attack bez powrotu do wyboru trybu; `FREE ROAM` powinno otworzyć ten tryb bezpośrednio.
+- Zamknij i ponownie uruchom grę. Leaderboard ma pozostać zapisany, natomiast saldo bieżącej sesji i licencje nie muszą przetrwać restartu aplikacji.
+
+### 21. Tryb pieszy, portale i dostęp do pojazdu serwisowego
+
+- Bez pasażera i bez trwającego `CURBSIDE LINK` naciśnij `Q` albo `EXIT`. Postać powinna pojawić się po bezpiecznej stronie auta, przejąć kamerę i zachować prędkość pojazdu przy wyjściu w powietrzu.
+- Podczas kursu lub aktywnego linku próba wyjścia ma zostać odrzucona z czytelnym komunikatem w HUD.
+- W trybie pieszym `A/D` sterują ruchem, `SPACE`/`JUMP` skokiem, a `Q`/`ENTER` najbliższą interakcją. HUD powinien pokazywać zdrowie, odległość od ostatniego auta i aktualny kontekst interakcji.
+- Wejdź portalem do Nightshift Office i wróć do miasta. Kamera powinna przeskoczyć do postaci bez długiego przelotu przez pustą przestrzeń.
+- Podejdź do terminala dostępu i aktywuj go. Po przyznaniu `Vehicle.Service` wejście do `NIGHTSHIFT SERVICE CAB` powinno być możliwe; przed przyznaniem licencji wejście ma być odrzucone.
+- Po wejściu do dowolnego auta postać piesza powinna zniknąć, kamera przejąć nowy pojazd, a ten sam HUD przełączyć przyciski z `JUMP/ENTER` na `THRUST/EXIT`.
+- Doprowadź zdrowie postaci do zera. Po około `1,4 s` poziom powinien przeładować się w tym samym trybie runu.
+
+### 22. Wiele pojazdów i odzyskiwanie wraków
+
+- Po uzyskaniu licencji przełączaj się pomiędzy podstawową taksówką i pojazdem serwisowym. Ekonomia, dispatcher i kamera powinny zawsze śledzić aktualnie prowadzony pojazd.
+- Zniszcz aktualnie prowadzony pojazd. Kurs ma zostać anulowany, opłata za holowanie pobrana, a pojazd odzyskany po około `2,5 s`.
+- Zniszcz pojazd zaparkowany, gdy gracz kontroluje drugi. Zaparkowany pojazd również musi zostać odzyskany po czasie, ale nie powinien anulować bieżącego kursu ani naliczać graczowi opłaty za holowanie.
+- Po odzyskaniu jednego pojazdu drugi nie może utracić obsługi własnego zniszczenia. Powtórz próbę w odwrotnej kolejności.
+- Sprawdź, czy wejście do wraku jest blokowane do chwili zakończenia odzyskiwania.
+
+### 23. Komunikaty w buildzie docelowym
+
+- Uruchom build `Development` lub `Shipping` na urządzeniu albo poza edytorem.
+- Potwierdź, że odmowa wyjścia, brak dostępu, `PASSENGER SECURED`, wypłata, brak kredytów, `IMPACT`, pusty bak, śmierć postaci i holowanie pojawiają się w panelu komunikatów HUD, a nie wyłącznie jako debug overlay silnika.
+- Kolejny komunikat powinien zastąpić poprzedni, pozostać czytelny na jasnym i ciemnym tle oraz zniknąć po swoim czasie życia.
 
 ## Co zapisać po teście
 

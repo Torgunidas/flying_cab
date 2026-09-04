@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FlyingCabControlInputComponent.h"
+#include "FlyingCabQuestTypes.h"
 #include "FlyingCabRunTypes.h"
 #include "GameFramework/PlayerController.h"
 #include "FlyingCabPlayerController.generated.h"
@@ -11,6 +13,16 @@ class AFlyingCabCharacter;
 class AFlyingCabCameraRig;
 class AFlyingCabPawn;
 class UFlyingCabGameFlowWidget;
+class UFlyingCabQuestJournalWidget;
+class UFlyingCabTouchControls;
+class UPrimitiveComponent;
+
+enum class EFlyingCabPlayerMode : uint8
+{
+	Unknown,
+	Vehicle,
+	OnFoot
+};
 
 /** Owns transitions between the persistent cab and the temporary on-foot pawn. */
 UCLASS()
@@ -22,10 +34,46 @@ public:
 	AFlyingCabPlayerController();
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void PlayerTick(float DeltaTime) override;
+	virtual bool InputKey(const FInputKeyEventArgs& Params) override;
+	virtual void FlushPressedKeys() override;
+	virtual bool ShouldFlushKeysWhenViewportFocusChanges() const override { return true; }
 
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Interaction")
 	void RequestContextInteraction();
-	FText GetContextPrompt() const;
+	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Flight")
+	void RequestVehicleReset();
+	FText GetContextPrompt();
+	void ShowEventMessage(
+		const FText& Message,
+		const FLinearColor& Color,
+		float DurationSeconds = 2.5f) const;
+	void ShowMajorAnnouncement(
+		const FText& Title,
+		const FText& Detail,
+		const FLinearColor& Color,
+		float DurationSeconds = 2.8f,
+		int32 InPriority = 0) const;
+	void CloseQuestJournal();
+	void SetQuestStatus(const FText& Status);
+	void SetObjectiveStatus(const FText& Status);
+	void SetMinimapState(
+		const FVector2D& CabWorldPosition,
+		const FVector2D& TargetWorldPosition,
+		bool bTargetIsDropoff);
+	void SetPassengerOfferMarkers(
+		const FVector2D& CabWorldPosition,
+		const TArray<FVector2D>& OfferWorldPositions);
+	void ClearMinimapTarget();
+	void SetTimeAttackStatus(
+		bool bActive,
+		float ElapsedSeconds,
+		int32 Credits,
+		int32 TargetCredits);
+	void SetEconomyStatus(int32 Credits, int32 ActiveFare);
+	void SetTrafficAlert(const FText& Alert, const FLinearColor& Color);
+	void ReleaseInterfaceInputs();
 	void StartRunMode(EFlyingCabRunMode Mode);
 	void RestartWithRunMode(EFlyingCabRunMode Mode);
 	void ReturnToModeSelection();
@@ -33,24 +81,62 @@ public:
 		const FFlyingCabTimeAttackResult& Result,
 		const TArray<float>& BestTimes);
 	bool IsGameFlowScreenOpen() const { return bGameFlowScreenOpen; }
+	bool IsQuestJournalOpen() const { return bQuestJournalOpen; }
+	UFlyingCabQuestJournalWidget* GetQuestJournalWidget() const { return QuestJournalWidget; }
+	bool IsControlFrameEnabled() const;
+	const FFlyingCabControlFrame& GetControlFrame() const;
+	EFlyingCabInputBlock GetControlInputBlock() const;
+	void TraceVehicleInput(const AFlyingCabPawn* Vehicle, const FVector2D& Keyboard,
+		const FVector2D& Touch, const FVector& AppliedForce, const TCHAR* Reason = nullptr);
+	bool IsGameplayInputSuppressed() const
+	{
+		return GetControlInputBlock() != EFlyingCabInputBlock::None;
+	}
+	bool IsDeveloperObserverMode() const { return bDeveloperObserverMode; }
+	AFlyingCabCameraRig* GetCameraRig() const { return CameraRig; }
+	void ToggleDeveloperObserverMode();
+	EFlyingCabPlayerMode GetPlayerMode() const { return PlayerMode; }
 
 protected:
 	virtual void SetupInputComponent() override;
 	virtual void OnPossess(APawn* InPawn) override;
 
 private:
+	void ProcessDeferredInputCommands();
+	void ExecuteContextInteraction();
+	void RequestQuestJournalToggle();
 	void TryExitVehicle(AFlyingCabPawn* Vehicle);
 	void TryEnterVehicle(AFlyingCabCharacter* OnFootPawn, AFlyingCabPawn* Vehicle);
 	bool TryInteractWithNearbyActor(AFlyingCabCharacter* OnFootPawn);
+	void RefreshInteractionCacheIfNeeded(bool bForce = false);
 	AActor* FindNearestInteractable(const AFlyingCabCharacter* OnFootPawn) const;
 	AFlyingCabPawn* FindNearestVehicle(const AFlyingCabCharacter* OnFootPawn) const;
 	AFlyingCabCharacter* SpawnCharacterBesideVehicle(AFlyingCabPawn* Vehicle);
 	void ShowInteractionMessage(const FString& Message, const FColor& Color) const;
+	UFlyingCabTouchControls* GetInterfaceWidget() const { return InterfaceWidget; }
+	void CreateInterfaceWidget();
+	void RefreshInterface();
+	void ApplyTouchControlsVisibility();
 	void ShowInitialModeSelection();
+	void ToggleQuestJournal();
+	void OpenQuestJournal();
+	void BindQuestPresentation();
+	void SetDeveloperObserverMode(bool bEnabled);
+	void RecenterDeveloperObserver();
+	void ZoomDeveloperObserverIn();
+	void ZoomDeveloperObserverOut();
+	void RefreshDeveloperObserverHud();
+	void FreezeControlledVehicleForObserver();
+	void RestoreControlledVehicleAfterObserver();
 	void EnterMenuInputMode();
 	void RestoreGameplayInputMode();
+	bool EnsureEnhancedInputContext();
+	void RemoveEnhancedInputContext();
 	static EFlyingCabRunMode ParseRunMode(const FString& Value);
 	static FString GetRunModeOption(EFlyingCabRunMode Mode);
+
+	UFUNCTION()
+	void HandleQuestUpdated(FFlyingCabQuestUpdate Update);
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot", meta = (ClampMin = "0.0"))
 	float ExitGroundReach = 120.0f;
@@ -71,8 +157,21 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot", meta = (ClampMin = "0.0"))
 	float WorldInteractionDistance = 250.0f;
 
-	UPROPERTY(Transient)
-	TObjectPtr<AFlyingCabPawn> ActiveVehicle;
+	/** Full world discovery is rare; normal prompt queries use the small weak-reference cache. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot", meta = (ClampMin = "0.1"))
+	float InteractionCacheRefreshInterval = 1.0f;
+
+	/** Context text includes rounded values and does not need a per-frame world query. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot", meta = (ClampMin = "0.05"))
+	float ContextPromptRefreshInterval = 0.2f;
+
+	/** Dynamic vehicle resources are sampled at 10 Hz instead of invalidating Slate every frame. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Interface", meta = (ClampMin = "0.05"))
+	float InterfaceRefreshInterval = 0.1f;
+
+	/** Shows a cursor and uses Game+UI input mode for mouse testing in the editor. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Interface")
+	bool bEnableMouseTouchTestingInEditor = true;
 
 	UPROPERTY(Transient)
 	TObjectPtr<AFlyingCabCameraRig> CameraRig;
@@ -80,5 +179,34 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UFlyingCabGameFlowWidget> GameFlowWidget;
 
+	UPROPERTY(Transient)
+	TObjectPtr<UFlyingCabQuestJournalWidget> QuestJournalWidget;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UFlyingCabTouchControls> InterfaceWidget;
+
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Input")
+	TObjectPtr<UFlyingCabControlInputComponent> ControlInput;
+
+	TArray<TWeakObjectPtr<AActor>> CachedInteractables;
+	TArray<TWeakObjectPtr<AFlyingCabPawn>> CachedVehicles;
+	TWeakObjectPtr<AFlyingCabCharacter> CachedContextPromptPawn;
+	TWeakObjectPtr<UPrimitiveComponent> DeveloperObserverFrozenBody;
+	FText CachedContextPrompt;
+	FVector DeveloperObserverSavedLinearVelocity = FVector::ZeroVector;
+	FVector DeveloperObserverSavedAngularVelocity = FVector::ZeroVector;
+	double LastInteractionCacheRefreshTime = -1.0;
+	double LastContextPromptRefreshTime = -1.0;
+	EFlyingCabPlayerMode PlayerMode = EFlyingCabPlayerMode::Unknown;
+	int32 DisplayCredits = 0;
+	int32 DisplayActiveFare = 0;
+	FTimerHandle InterfaceRefreshTimerHandle;
+
 	bool bGameFlowScreenOpen = false;
+	bool bQuestJournalOpen = false;
+	bool bDeveloperObserverMode = false;
+	bool bContextInteractionRequested = false;
+	bool bVehicleResetRequested = false;
+	bool bQuestJournalToggleRequested = false;
+	bool bDeferredInputTransitionGuard = false;
 };

@@ -9,6 +9,7 @@
 class AFlyingCabPawn;
 class UBoxComponent;
 class UPointLightComponent;
+class UPrimitiveComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 
@@ -21,12 +22,32 @@ class FLYINGCABFLIGHTLAB_API AFlyingCabRepairStation : public AActor
 public:
 	AFlyingCabRepairStation();
 
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	void Configure(const FString& InServiceName);
+	void Configure(const FString& InServiceName, int32 InPricePerUnit = 1);
+	int32 GetRepairPricePerHullUnit() const { return RepairPricePerHullUnit; }
 
 private:
 	void ClearContextPawn();
+	void ResetServiceState();
+	void RefreshTickState();
+
+	UFUNCTION()
+	void HandleServiceZoneBeginOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComponent,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void HandleServiceZoneEndOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComponent,
+		int32 OtherBodyIndex);
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Repair Station")
 	TObjectPtr<UBoxComponent> ServiceZone;
@@ -55,6 +76,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Repair Station")
 	FString ServiceName = TEXT("NIGHTSHIFT REPAIR");
 
+	TSet<TWeakObjectPtr<AFlyingCabPawn>> OverlappingPawns;
 	TWeakObjectPtr<AFlyingCabPawn> ContextPawn;
 	float RepairUnitAccumulator = 0.0f;
 };

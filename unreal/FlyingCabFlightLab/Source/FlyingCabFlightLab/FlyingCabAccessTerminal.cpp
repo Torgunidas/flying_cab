@@ -9,6 +9,8 @@
 #include "Engine/GameInstance.h"
 #include "FlyingCabCharacter.h"
 #include "FlyingCabProgressionSubsystem.h"
+#include "FlyingCabQuestSubsystem.h"
+#include "FlyingCabQuestTypes.h"
 #include "Materials/MaterialInterface.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -98,6 +100,11 @@ bool AFlyingCabAccessTerminal::Interact(AFlyingCabCharacter* Character, FText& O
 	}
 
 	const bool bNewAccess = Progression->GrantAccess(AccessId);
+	if (UFlyingCabQuestSubsystem* Quests =
+		GameInstance->GetSubsystem<UFlyingCabQuestSubsystem>())
+	{
+		Quests->RecordEvent(FlyingCabQuestEvents::AccessGranted, AccessId);
+	}
 	OutMessage = FText::FromString(bNewAccess
 		? FString::Printf(TEXT("ACCESS GRANTED // %s"), *AccessDisplayName)
 		: FString::Printf(TEXT("ACCESS ALREADY ACTIVE // %s"), *AccessDisplayName));

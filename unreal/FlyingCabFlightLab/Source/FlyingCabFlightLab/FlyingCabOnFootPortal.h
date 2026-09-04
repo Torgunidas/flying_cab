@@ -31,6 +31,7 @@ public:
 
 	virtual bool Interact(class AFlyingCabCharacter* Character, FText& OutMessage) override;
 	virtual FText GetInteractionPrompt(const AFlyingCabCharacter* Character) const override;
+	virtual FName GetQuestTargetId() const override { return FName(*PortalName); }
 
 private:
 	void ApplyAppearance();

@@ -2,14 +2,15 @@
 
 #include "FlyingCabCharacter.h"
 
+#include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Engine/Engine.h"
 #include "FlyingCabGameMode.h"
 #include "FlyingCabPlayerController.h"
+#include "FlyingCabInputData.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -18,11 +19,6 @@
 #include "UObject/ConstructorHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabCharacter, Log, All);
-
-namespace
-{
-	constexpr uint64 CharacterStatusMessageKey = 0xFCAB0006ULL;
-}
 
 AFlyingCabCharacter::AFlyingCabCharacter()
 {
@@ -99,7 +95,7 @@ AFlyingCabCharacter::AFlyingCabCharacter()
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetCapsuleComponent());
-	CameraBoom->TargetArmLength = 1050.0f;
+	CameraBoom->TargetArmLength = 1900.0f;
 	CameraBoom->SetRelativeRotation(FRotator(-5.0f, -90.0f, 0.0f));
 	CameraBoom->TargetOffset = FVector(0.0f, 0.0f, 80.0f);
 	CameraBoom->bDoCollisionTest = false;
@@ -120,23 +116,31 @@ void AFlyingCabCharacter::BeginPlay()
 	UpdateDamageAppearance();
 }
 
+void AFlyingCabCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorldTimerManager().ClearTimer(RestartLevelTimerHandle);
+	Super::EndPlay(EndPlayReason);
+}
+
 void AFlyingCabCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	check(PlayerInputComponent);
-	PlayerInputComponent->BindAxis(
-		TEXT("HorizontalInput"),
-		this,
-		&AFlyingCabCharacter::SetKeyboardHorizontalInput);
-	PlayerInputComponent->BindAxis(
-		TEXT("PrimaryThrustInput"),
-		this,
-		&AFlyingCabCharacter::SetKeyboardThrustInput);
+	const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
+	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+		EnhancedInput && InputAssets.IsValid())
+	{
+		EnhancedInput->BindActionValue(InputAssets.Horizontal);
+		EnhancedInput->BindActionValue(InputAssets.Thrust);
+		return;
+	}
+	UE_LOG(LogFlyingCabCharacter, Error, TEXT("On-foot input could not bind the Enhanced Input assets."));
 }
 
 void AFlyingCabCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	RefreshKeyboardInputState();
 	DamageCooldownRemaining = FMath::Max(0.0f, DamageCooldownRemaining - DeltaSeconds);
 	DamageFlashRemaining = FMath::Max(0.0f, DamageFlashRemaining - DeltaSeconds);
 	if (GetCharacterMovement()->IsFalling())
@@ -229,6 +233,14 @@ void AFlyingCabCharacter::SetTouchJumpPressed(bool bPressed)
 	bTouchJumpPressed = bPressed;
 }
 
+void AFlyingCabCharacter::ReleaseKeyboardInputState()
+{
+	KeyboardHorizontalInput = 0.0f;
+	KeyboardThrustInput = 0.0f;
+	bPreviousJumpPressed = false;
+	StopJumping();
+}
+
 void AFlyingCabCharacter::SetKeyboardHorizontalInput(float Value)
 {
 	KeyboardHorizontalInput = FMath::Clamp(Value, -1.0f, 1.0f);
@@ -239,6 +251,26 @@ void AFlyingCabCharacter::SetKeyboardThrustInput(float Value)
 	KeyboardThrustInput = FMath::Clamp(Value, 0.0f, 1.0f);
 }
 
+void AFlyingCabCharacter::RefreshKeyboardInputState()
+{
+	const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController());
+	const UEnhancedInputComponent* EnhancedInput =
+		Cast<UEnhancedInputComponent>(InputComponent);
+	const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
+	if (!PlayerController || PlayerController->IsGameplayInputSuppressed()
+		|| !EnhancedInput || !InputAssets.IsValid())
+	{
+		ReleaseKeyboardInputState();
+		return;
+	}
+
+	SetKeyboardHorizontalInput(
+		EnhancedInput->GetBoundActionValue(InputAssets.Horizontal).Get<float>());
+	SetKeyboardThrustInput(
+		EnhancedInput->GetBoundActionValue(InputAssets.Thrust).Get<bool>() ? 1.0f : 0.0f);
+}
+
 void AFlyingCabCharacter::UnPossessed()
 {
 	ClearInputState();
@@ -247,12 +279,9 @@ void AFlyingCabCharacter::UnPossessed()
 
 void AFlyingCabCharacter::ClearInputState()
 {
-	KeyboardHorizontalInput = 0.0f;
-	KeyboardThrustInput = 0.0f;
+	ReleaseKeyboardInputState();
 	TouchHorizontalInput = 0.0f;
 	bTouchJumpPressed = false;
-	bPreviousJumpPressed = false;
-	StopJumping();
 }
 
 void AFlyingCabCharacter::HandleCapsuleHit(
@@ -305,16 +334,16 @@ void AFlyingCabCharacter::ApplyCharacterDamage(float DamageAmount, const TCHAR* 
 
 	CurrentHealth = FMath::Max(0.0f, CurrentHealth - DamageAmount);
 	DamageFlashRemaining = 0.18f;
-	if (GEngine)
+	if (const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController()))
 	{
-		GEngine->AddOnScreenDebugMessage(
-			CharacterStatusMessageKey,
-			1.5f,
-			FColor(255, 80, 30),
-			FString::Printf(
+		PlayerController->ShowEventMessage(
+			FText::FromString(FString::Printf(
 				TEXT("%s // HEALTH %.0f%%"),
 				DamageSource ? DamageSource : TEXT("DAMAGE"),
-				GetHealthPercent() * 100.0f));
+				GetHealthPercent() * 100.0f)),
+			FLinearColor::FromSRGBColor(FColor(255, 80, 30)),
+			1.5f);
 	}
 
 	if (CurrentHealth <= UE_SMALL_NUMBER)
@@ -334,13 +363,13 @@ void AFlyingCabCharacter::EnterDeathState()
 	ClearInputState();
 	GetCharacterMovement()->DisableMovement();
 	UpdateDamageAppearance();
-	if (GEngine)
+	if (const AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetController()))
 	{
-		GEngine->AddOnScreenDebugMessage(
-			CharacterStatusMessageKey,
-			DeathRestartDelay,
-			FColor(255, 35, 20),
-			TEXT("DRIVER DOWN // RELOADING LEVEL"));
+		PlayerController->ShowEventMessage(
+			FText::FromString(TEXT("DRIVER DOWN // RELOADING LEVEL")),
+			FLinearColor::FromSRGBColor(FColor(255, 35, 20)),
+			DeathRestartDelay);
 	}
 	UE_LOG(LogFlyingCabCharacter, Warning, TEXT("On-foot character died; reloading current level."));
 

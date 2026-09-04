@@ -27,6 +27,7 @@ public:
 
 	virtual bool Interact(class AFlyingCabCharacter* Character, FText& OutMessage) override;
 	virtual FText GetInteractionPrompt(const AFlyingCabCharacter* Character) const override;
+	virtual FName GetQuestTargetId() const override { return AccessId; }
 
 private:
 	bool IsAccessGranted() const;

@@ -21,6 +21,17 @@ bool UFlyingCabProgressionSubsystem::GrantAccess(FName AccessId)
 	return true;
 }
 
+bool UFlyingCabProgressionSubsystem::RevokeAccess(FName AccessId)
+{
+	if (AccessId.IsNone() || GrantedAccess.Remove(AccessId) == 0)
+	{
+		return false;
+	}
+
+	UE_LOG(LogFlyingCabProgression, Display, TEXT("Access revoked: %s."), *AccessId.ToString());
+	return true;
+}
+
 void UFlyingCabProgressionSubsystem::ResetAccess()
 {
 	GrantedAccess.Reset();

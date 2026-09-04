@@ -7,10 +7,16 @@
 #include "Components/TextRenderComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
+#include "FlyingCabCityData.h"
 #include "Materials/MaterialInterface.h"
 #include "UObject/ConstructorHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabCityExpansion, Log, All);
+
+namespace
+{
+	const FName EastBoundaryTag(TEXT("EastBoundary"));
+}
 
 AFlyingCabCityExpansion::AFlyingCabCityExpansion()
 {
@@ -48,16 +54,28 @@ void AFlyingCabCityExpansion::OpenExistingEasternBoundary()
 		FVector BoundsOrigin = FVector::ZeroVector;
 		FVector BoundsExtent = FVector::ZeroVector;
 		MeshActor->GetActorBounds(false, BoundsOrigin, BoundsExtent);
-		bool bIsEasternBoundary = FMath::Abs(BoundsOrigin.X - 4950.0f) <= 350.0f
+		const bool bHasBoundaryTag = MeshActor->ActorHasTag(EastBoundaryTag);
+		bool bMatchesLegacyFallback = !bHasBoundaryTag
+			&& FMath::Abs(BoundsOrigin.X - 4950.0f) <= 350.0f
 			&& BoundsExtent.X <= 350.0f
 			&& BoundsExtent.Z >= 2200.0f;
 #if WITH_EDITOR
-		bIsEasternBoundary = bIsEasternBoundary
-			|| MeshActor->GetActorLabel().Equals(TEXT("Arena_RightBoundary"));
+		bMatchesLegacyFallback = bMatchesLegacyFallback
+			|| (!bHasBoundaryTag
+				&& MeshActor->GetActorLabel().Equals(TEXT("Arena_RightBoundary")));
 #endif
-		if (!bIsEasternBoundary)
+		if (!bHasBoundaryTag && !bMatchesLegacyFallback)
 		{
 			continue;
+		}
+		if (bMatchesLegacyFallback)
+		{
+			UE_LOG(
+				LogFlyingCabCityExpansion,
+				Warning,
+				TEXT("Opening %s through the legacy boundary heuristic; add Actor Tag '%s' to the map actor."),
+				*MeshActor->GetName(),
+				*EastBoundaryTag.ToString());
 		}
 
 		if (UStaticMeshComponent* Mesh = MeshActor->GetStaticMeshComponent())
@@ -82,6 +100,10 @@ void AFlyingCabCityExpansion::OpenExistingEasternBoundary()
 			LogFlyingCabCityExpansion,
 			Warning,
 			TEXT("Existing eastern arena boundary was not found."));
+		ensureMsgf(
+			false,
+			TEXT("FlightLab requires a static mesh actor tagged '%s' for the east boundary."),
+			*EastBoundaryTag.ToString());
 	}
 }
 
@@ -108,21 +130,40 @@ void AFlyingCabCityExpansion::BuildExpansionGeometry()
 	AddBlock(TEXT("CobaltCanopy"), FVector(10850.0f, 0.0f, 6050.0f), FVector(13.0f, 5.2f, 10.0f), Magenta);
 	AddBlock(TEXT("OrbitalCanopy"), FVector(13750.0f, 0.0f, 6250.0f), FVector(9.0f, 5.2f, 6.0f), Green);
 
-	// Curbside platforms for the four new passenger districts.
-	AddBlock(TEXT("PlatformGlassward"), FVector(6500.0f, 0.0f, 960.0f), FVector(15.0f, 4.8f, 0.8f), Cyan);
-	AddBlock(TEXT("PlatformRainline"), FVector(8650.0f, 0.0f, 2510.0f), FVector(16.0f, 4.8f, 0.8f), Amber);
-	AddBlock(TEXT("PlatformCobalt"), FVector(11150.0f, 0.0f, 3760.0f), FVector(16.0f, 4.8f, 0.8f), Magenta);
-	AddBlock(TEXT("PlatformOrbital"), FVector(13250.0f, 0.0f, 5260.0f), FVector(17.0f, 4.8f, 0.8f), Green);
+	// Every district gets one long curbside apron. Pickup and dropoff use opposite
+	// ends, leaving a neutral service strip in the middle.
+	for (const FFlyingCabDistrictDefinition& District : FlyingCabCityData::GetDistricts())
+	{
+		const FLinearColor PlatformColor = District.BuildsRuntimeGeometry()
+			? District.AccentColor
+			: Roadbed;
+		AddBlock(
+			FString::Printf(TEXT("CurbsidePlatform%s"), *District.MinimapCode),
+			District.StopLocation - FVector(0.0f, 0.0f, 190.0f),
+			FVector(
+				FMath::Max(
+					District.RuntimePlatformHalfWidth,
+					FlyingCabCityData::GetCurbsidePlatformScaleX()),
+				4.8f,
+				0.8f),
+			PlatformColor);
+	}
 
 	// A few narrow bridges make the extension a navigable space rather than an empty box.
 	AddBlock(TEXT("RainlineBridge"), FVector(7450.0f, 0.0f, 3450.0f), FVector(7.0f, 4.6f, 0.65f), Roadbed);
 	AddBlock(TEXT("CobaltBridge"), FVector(10150.0f, 0.0f, 4850.0f), FVector(7.5f, 4.6f, 0.65f), Roadbed);
 	AddBlock(TEXT("OrbitalBridge"), FVector(12450.0f, 0.0f, 2100.0f), FVector(7.0f, 4.6f, 0.65f), Roadbed);
 
-	AddDistrictLabel(TEXT("GLASSWARD TRANSIT"), FVector(6500.0f, 80.0f, 1320.0f), Cyan);
-	AddDistrictLabel(TEXT("RAINLINE BAZAAR"), FVector(8650.0f, 80.0f, 2870.0f), Amber);
-	AddDistrictLabel(TEXT("COBALT HEIGHTS"), FVector(11150.0f, 80.0f, 4120.0f), Magenta);
-	AddDistrictLabel(TEXT("ORBITAL GARDENS"), FVector(13250.0f, 80.0f, 5620.0f), Green);
+	for (const FFlyingCabDistrictDefinition& District : FlyingCabCityData::GetDistricts())
+	{
+		if (District.BuildsRuntimeGeometry())
+		{
+			AddDistrictLabel(
+				District.DisplayName,
+				District.StopLocation + FVector(0.0f, 80.0f, 170.0f),
+				District.AccentColor);
+		}
+	}
 
 	UE_LOG(
 		LogFlyingCabCityExpansion,

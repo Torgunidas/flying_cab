@@ -46,16 +46,19 @@ TSharedRef<SWidget> UFlyingCabGameFlowWidget::RebuildWidget()
 	return Super::RebuildWidget();
 }
 
-void UFlyingCabGameFlowWidget::ShowModeSelection(const TArray<float>& BestTimes)
+void UFlyingCabGameFlowWidget::ShowModeSelection(
+	const TArray<float>& BestTimes,
+	int32 TargetCredits)
 {
 	bShowingResults = false;
 	SetVisibility(ESlateVisibility::Visible);
 	TitleText->SetText(FText::FromString(TEXT("FLYING CAB")));
-	BodyText->SetText(FText::FromString(
+	BodyText->SetText(FText::FromString(FString::Printf(
 		TEXT("CHOOSE YOUR SHIFT\n\n")
-		TEXT("TIME ATTACK\nReach a balance of 1000 CR as fast as possible.\n")
+		TEXT("TIME ATTACK\nReach a balance of %d CR as fast as possible.\n")
 		TEXT("Fares and clean near misses earn credits. Fuel, repairs and towing cost time.\n\n")
-		TEXT("FREE ROAM\nThe current open-ended city prototype.")));
+		TEXT("FREE ROAM\nThe current open-ended city prototype."),
+		FMath::Max(1, TargetCredits))));
 	LeaderboardText->SetText(FText::FromString(BuildLeaderboardText(BestTimes)));
 	SetButtonLabel(PrimaryButton, TEXT("TIME ATTACK"));
 	SetButtonLabel(SecondaryButton, TEXT("FREE ROAM"));

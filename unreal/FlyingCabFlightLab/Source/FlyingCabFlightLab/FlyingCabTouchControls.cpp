@@ -7,10 +7,18 @@
 #include "Components/Button.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/Overlay.h"
+#include "Components/OverlaySlot.h"
 #include "Components/TextBlock.h"
+#include "Components/VerticalBox.h"
+#include "Components/VerticalBoxSlot.h"
+#include "Engine/World.h"
 #include "FlyingCabCharacter.h"
+#include "FlyingCabCityData.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
+#include "FlyingCabQuestHubData.h"
+#include "TimerManager.h"
 
 namespace
 {
@@ -19,8 +27,6 @@ namespace
 	constexpr float MinimapTop = 24.0f;
 	constexpr float MinimapBottom = 168.0f;
 	constexpr int32 MaxPassengerMinimapMarkers = 6;
-	const FVector2D MinimapWorldMin(-5000.0f, 0.0f);
-	const FVector2D MinimapWorldMax(15000.0f, 6500.0f);
 }
 
 TSharedRef<SWidget> UFlyingCabTouchControls::RebuildWidget()
@@ -36,7 +42,52 @@ TSharedRef<SWidget> UFlyingCabTouchControls::RebuildWidget()
 void UFlyingCabTouchControls::NativeDestruct()
 {
 	ReleaseAllInputs();
+	EventMessageQueue.Reset();
+	MajorAnnouncementQueue.Reset();
+	bEventMessageVisible = false;
+	bMajorAnnouncementVisible = false;
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(EventMessageTimerHandle);
+	}
 	Super::NativeDestruct();
+}
+
+void UFlyingCabTouchControls::NativeTick(
+	const FGeometry& MyGeometry,
+	float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+	if (!bMajorAnnouncementVisible || !MajorAnnouncementPanel)
+	{
+		return;
+	}
+
+	MajorAnnouncementElapsed += FMath::Max(0.0f, InDeltaTime);
+	const float Duration = FMath::Max(0.6f, ActiveMajorAnnouncement.DurationSeconds);
+	const float FadeInDuration = FMath::Min(0.18f, Duration * 0.2f);
+	const float FadeOutDuration = FMath::Min(0.28f, Duration * 0.25f);
+	float Opacity = 1.0f;
+	if (MajorAnnouncementElapsed < FadeInDuration)
+	{
+		Opacity = MajorAnnouncementElapsed / FMath::Max(KINDA_SMALL_NUMBER, FadeInDuration);
+	}
+	else if (MajorAnnouncementElapsed > Duration - FadeOutDuration)
+	{
+		Opacity = (Duration - MajorAnnouncementElapsed)
+			/ FMath::Max(KINDA_SMALL_NUMBER, FadeOutDuration);
+	}
+	Opacity = FMath::Clamp(Opacity, 0.0f, 1.0f);
+	MajorAnnouncementPanel->SetRenderOpacity(Opacity);
+	const float Scale = FMath::Lerp(0.96f, 1.0f, FMath::Min(1.0f, Opacity * 1.4f));
+	MajorAnnouncementPanel->SetRenderScale(FVector2D(Scale));
+
+	if (MajorAnnouncementElapsed >= Duration)
+	{
+		bMajorAnnouncementVisible = false;
+		MajorAnnouncementPanel->SetVisibility(ESlateVisibility::Collapsed);
+		ShowNextMajorAnnouncement();
+	}
 }
 
 void UFlyingCabTouchControls::NativeOnFocusLost(const FFocusEvent& InFocusEvent)
@@ -71,9 +122,166 @@ void UFlyingCabTouchControls::SetOnFootMode(bool bOnFoot)
 void UFlyingCabTouchControls::SetObjectiveText(const FText& Text)
 {
 	PendingObjectiveText = Text;
-	if (ObjectiveText)
+	if (ObjectiveText && !ObjectiveText->GetText().EqualTo(PendingObjectiveText))
 	{
 		ObjectiveText->SetText(PendingObjectiveText);
+	}
+}
+
+void UFlyingCabTouchControls::SetQuestText(const FText& Text)
+{
+	PendingQuestText = Text;
+	if (QuestText && !QuestText->GetText().EqualTo(PendingQuestText))
+	{
+		QuestText->SetText(PendingQuestText);
+	}
+}
+
+void UFlyingCabTouchControls::SetDeveloperObserverState(bool bActive, float ZoomMeters)
+{
+	if (bActive)
+	{
+		ReleaseAllInputs();
+	}
+	bDeveloperObserverMode = bActive;
+	PendingDeveloperObserverZoomMeters = FMath::Max(0.0f, ZoomMeters);
+	RefreshDeveloperObserverText();
+	if (DeveloperObserverPanel)
+	{
+		DeveloperObserverPanel->SetVisibility(
+			bDeveloperObserverMode
+				? ESlateVisibility::HitTestInvisible
+				: ESlateVisibility::Collapsed);
+	}
+	RefreshControlMode();
+}
+
+void UFlyingCabTouchControls::ShowEventMessage(
+	const FText& Text,
+	const FLinearColor& Color,
+	float DurationSeconds)
+{
+	if (Text.IsEmpty())
+	{
+		return;
+	}
+	FFlyingCabQueuedHudMessage& Message = EventMessageQueue.AddDefaulted_GetRef();
+	Message.Text = Text;
+	Message.Color = Color;
+	Message.DurationSeconds = FMath::Max(0.25f, DurationSeconds);
+	if (!bEventMessageVisible)
+	{
+		ShowNextEventMessage();
+	}
+}
+
+void UFlyingCabTouchControls::ShowMajorAnnouncement(
+	const FText& Title,
+	const FText& Detail,
+	const FLinearColor& Color,
+	float DurationSeconds,
+	int32 InPriority)
+{
+	if (Title.IsEmpty())
+	{
+		return;
+	}
+	FFlyingCabQueuedAnnouncement& Announcement = MajorAnnouncementQueue.AddDefaulted_GetRef();
+	Announcement.Title = Title;
+	Announcement.Detail = Detail;
+	Announcement.Color = Color;
+	Announcement.DurationSeconds = FMath::Max(0.6f, DurationSeconds);
+	Announcement.Priority = InPriority;
+	MajorAnnouncementQueue.StableSort([](
+		const FFlyingCabQueuedAnnouncement& A,
+		const FFlyingCabQueuedAnnouncement& B)
+	{
+		return A.Priority > B.Priority;
+	});
+	if (!bMajorAnnouncementVisible)
+	{
+		ShowNextMajorAnnouncement();
+	}
+}
+
+void UFlyingCabTouchControls::ClearEventMessage()
+{
+	bEventMessageVisible = false;
+	PendingEventMessageText = FText::GetEmpty();
+	if (EventMessageText)
+	{
+		EventMessageText->SetText(PendingEventMessageText);
+	}
+	if (EventMessagePanel)
+	{
+		EventMessagePanel->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	ShowNextEventMessage();
+}
+
+void UFlyingCabTouchControls::ShowNextEventMessage()
+{
+	if (EventMessageQueue.IsEmpty())
+	{
+		bEventMessageVisible = false;
+		return;
+	}
+	const FFlyingCabQueuedHudMessage Message = EventMessageQueue[0];
+	EventMessageQueue.RemoveAt(0);
+	bEventMessageVisible = true;
+	PendingEventMessageText = Message.Text;
+	PendingEventMessageColor = Message.Color;
+	if (EventMessageText)
+	{
+		EventMessageText->SetText(PendingEventMessageText);
+		EventMessageText->SetColorAndOpacity(FSlateColor(PendingEventMessageColor));
+	}
+	if (EventMessagePanel)
+	{
+		EventMessagePanel->SetVisibility(ESlateVisibility::HitTestInvisible);
+	}
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(EventMessageTimerHandle);
+		World->GetTimerManager().SetTimer(
+			EventMessageTimerHandle,
+			this,
+			&UFlyingCabTouchControls::ClearEventMessage,
+			Message.DurationSeconds,
+			false);
+	}
+}
+
+void UFlyingCabTouchControls::ShowNextMajorAnnouncement()
+{
+	if (MajorAnnouncementQueue.IsEmpty())
+	{
+		bMajorAnnouncementVisible = false;
+		if (MajorAnnouncementPanel)
+		{
+			MajorAnnouncementPanel->SetVisibility(ESlateVisibility::Collapsed);
+		}
+		return;
+	}
+	ActiveMajorAnnouncement = MajorAnnouncementQueue[0];
+	MajorAnnouncementQueue.RemoveAt(0);
+	MajorAnnouncementElapsed = 0.0f;
+	bMajorAnnouncementVisible = true;
+	if (MajorAnnouncementTitle)
+	{
+		MajorAnnouncementTitle->SetText(ActiveMajorAnnouncement.Title);
+		MajorAnnouncementTitle->SetColorAndOpacity(
+			FSlateColor(ActiveMajorAnnouncement.Color));
+	}
+	if (MajorAnnouncementDetail)
+	{
+		MajorAnnouncementDetail->SetText(ActiveMajorAnnouncement.Detail);
+	}
+	if (MajorAnnouncementPanel)
+	{
+		MajorAnnouncementPanel->SetRenderOpacity(0.0f);
+		MajorAnnouncementPanel->SetRenderScale(FVector2D(0.96f));
+		MajorAnnouncementPanel->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 }
 
@@ -83,12 +291,19 @@ void UFlyingCabTouchControls::SetTrafficAlert(const FText& Text, const FLinearCo
 	PendingTrafficAlertColor = Color;
 	if (TrafficAlertText)
 	{
-		TrafficAlertText->SetText(PendingTrafficAlertText);
+		if (!TrafficAlertText->GetText().EqualTo(PendingTrafficAlertText))
+		{
+			TrafficAlertText->SetText(PendingTrafficAlertText);
+		}
 		TrafficAlertText->SetColorAndOpacity(FSlateColor(PendingTrafficAlertColor));
-		TrafficAlertText->SetVisibility(
+		const ESlateVisibility DesiredVisibility =
 			PendingTrafficAlertText.IsEmpty()
 				? ESlateVisibility::Collapsed
-				: ESlateVisibility::HitTestInvisible);
+				: ESlateVisibility::HitTestInvisible;
+		if (TrafficAlertText->GetVisibility() != DesiredVisibility)
+		{
+			TrafficAlertText->SetVisibility(DesiredVisibility);
+		}
 	}
 }
 
@@ -133,21 +348,29 @@ void UFlyingCabTouchControls::SetTimeAttackState(
 	PendingTimeAttackTargetCredits = FMath::Max(1, TargetCredits);
 	if (TimeAttackPanel)
 	{
-		TimeAttackPanel->SetVisibility(
+		const ESlateVisibility DesiredVisibility =
 			bPendingTimeAttackActive
 				? ESlateVisibility::HitTestInvisible
-				: ESlateVisibility::Collapsed);
+				: ESlateVisibility::Collapsed;
+		if (TimeAttackPanel->GetVisibility() != DesiredVisibility)
+		{
+			TimeAttackPanel->SetVisibility(DesiredVisibility);
+		}
 	}
 	if (TimeAttackText)
 	{
 		const int32 Minutes = FMath::FloorToInt(PendingTimeAttackSeconds / 60.0f);
 		const float Seconds = PendingTimeAttackSeconds - Minutes * 60.0f;
-		TimeAttackText->SetText(FText::FromString(FString::Printf(
+		const FText DisplayText = FText::FromString(FString::Printf(
 			TEXT("TIME ATTACK  %02d:%04.1f\nBALANCE  %d / %d CR"),
 			Minutes,
 			Seconds,
 			PendingTimeAttackCredits,
-			PendingTimeAttackTargetCredits)));
+			PendingTimeAttackTargetCredits));
+		if (!TimeAttackText->GetText().EqualTo(DisplayText))
+		{
+			TimeAttackText->SetText(DisplayText);
+		}
 		const float Progress = static_cast<float>(PendingTimeAttackCredits)
 			/ static_cast<float>(PendingTimeAttackTargetCredits);
 		TimeAttackText->SetColorAndOpacity(FSlateColor(
@@ -190,22 +413,35 @@ void UFlyingCabTouchControls::SetResourceState(
 				: (bPendingRefuelAvailable
 					? FString::Printf(TEXT("FUEL SERVICE  %d CR/U  // HOLD E"), PendingRefuelPricePerUnit)
 					: FString()));
-		ResourceText->SetText(FText::FromString(FString::Printf(
-			TEXT("CREDITS  %d\nFUEL %3.0f%%  |  HULL %3.0f%%\n%s%s%s"),
+		const FString FuelCutoffText = !bOnFootMode
+			&& !bPendingVehicleDestroyed
+			&& PendingFuelPercent <= UE_SMALL_NUMBER
+			? FString(TEXT("FUEL EMPTY // THRUST OFF"))
+			: FString();
+		const FText DisplayText = FText::FromString(FString::Printf(
+			TEXT("CREDITS  %d\nFUEL %3.0f%%  |  HULL %3.0f%%\n%s%s%s%s%s"),
 			PendingCredits,
 			PendingFuelPercent * 100.0f,
 			PendingHullPercent * 100.0f,
 			*FareText,
+			FuelCutoffText.IsEmpty() ? TEXT("") : TEXT("\n"),
+			*FuelCutoffText,
 			ServiceText.IsEmpty() ? TEXT("") : TEXT("\n"),
-			*ServiceText)));
+			*ServiceText));
+		if (!ResourceText->GetText().EqualTo(DisplayText))
+		{
+			ResourceText->SetText(DisplayText);
+		}
 
-		const bool bCritical = bPendingVehicleDestroyed
-			|| PendingFuelPercent <= 0.15f
-			|| PendingHullPercent <= 0.25f;
+		const bool bCriticalHull = bPendingVehicleDestroyed
+			|| PendingHullPercent <= 0.20f;
+		const bool bCriticalFuel = PendingFuelPercent <= 0.20f;
 		ResourceText->SetColorAndOpacity(FSlateColor(
-			bCritical
+			bCriticalHull
 				? FLinearColor(1.0f, 0.18f, 0.04f)
-				: FLinearColor(0.20f, 0.92f, 0.72f)));
+				: (bCriticalFuel
+					? FLinearColor(0.22f, 0.62f, 1.0f)
+					: FLinearColor(0.20f, 0.92f, 0.72f))));
 	}
 
 	if (RefuelButton)
@@ -278,35 +514,70 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	MapTitleSlot->SetPosition(FVector2D(8.0f, 3.0f));
 	MapTitleSlot->SetSize(FVector2D(210.0f, 18.0f));
 
-	struct FStopPin
+	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs())
 	{
-		FVector2D WorldPosition;
-		const TCHAR* Code;
-	};
-	const FStopPin StopPins[] = {
-		{FVector2D(-900.0f, 1150.0f), TEXT("YP")},
-		{FVector2D(850.0f, 2050.0f), TEXT("ME")},
-		{FVector2D(-750.0f, 3150.0f), TEXT("ST")},
-		{FVector2D(-3800.0f, 2500.0f), TEXT("AM")},
-		{FVector2D(3650.0f, 1150.0f), TEXT("ND")},
-		{FVector2D(3350.0f, 5200.0f), TEXT("ZS")},
-		{FVector2D(6500.0f, 1150.0f), TEXT("GT")},
-		{FVector2D(8650.0f, 2700.0f), TEXT("RB")},
-		{FVector2D(11150.0f, 3950.0f), TEXT("CH")},
-		{FVector2D(13250.0f, 5450.0f), TEXT("OG")}};
+		UOverlay* HubMarker = WidgetTree->ConstructWidget<UOverlay>(
+			UOverlay::StaticClass(),
+			FName(*FString::Printf(TEXT("QuestHub_%s"), *Hub.DisplayName)));
+		HubMarker->SetVisibility(ESlateVisibility::HitTestInvisible);
 
-	for (int32 Index = 0; Index < UE_ARRAY_COUNT(StopPins); ++Index)
+		UTextBlock* Outline = WidgetTree->ConstructWidget<UTextBlock>();
+		Outline->SetText(FText::FromString(TEXT("●")));
+		Outline->SetJustification(ETextJustify::Center);
+		Outline->SetColorAndOpacity(FSlateColor(FLinearColor(0.88f, 0.92f, 0.95f, 1.0f)));
+		FSlateFontInfo OutlineFont = Outline->GetFont();
+		OutlineFont.Size = 28;
+		Outline->SetFont(OutlineFont);
+		UOverlaySlot* OutlineSlot = HubMarker->AddChildToOverlay(Outline);
+		OutlineSlot->SetHorizontalAlignment(HAlign_Center);
+		OutlineSlot->SetVerticalAlignment(VAlign_Center);
+
+		UTextBlock* Circle = WidgetTree->ConstructWidget<UTextBlock>();
+		Circle->SetText(FText::FromString(TEXT("●")));
+		Circle->SetJustification(ETextJustify::Center);
+		Circle->SetColorAndOpacity(FSlateColor(FLinearColor::Black));
+		FSlateFontInfo CircleFont = Circle->GetFont();
+		CircleFont.Size = 25;
+		Circle->SetFont(CircleFont);
+		UOverlaySlot* CircleSlot = HubMarker->AddChildToOverlay(Circle);
+		CircleSlot->SetHorizontalAlignment(HAlign_Center);
+		CircleSlot->SetVerticalAlignment(VAlign_Center);
+
+		UTextBlock* Initial = WidgetTree->ConstructWidget<UTextBlock>();
+		Initial->SetText(FText::FromString(Hub.MinimapInitial));
+		Initial->SetJustification(ETextJustify::Center);
+		Initial->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+		Initial->SetShadowColorAndOpacity(FLinearColor::Black);
+		FSlateFontInfo InitialFont = Initial->GetFont();
+		InitialFont.Size = 14;
+		Initial->SetFont(InitialFont);
+		UOverlaySlot* InitialSlot = HubMarker->AddChildToOverlay(Initial);
+		InitialSlot->SetHorizontalAlignment(HAlign_Center);
+		InitialSlot->SetVerticalAlignment(VAlign_Center);
+
+		UCanvasPanelSlot* HubSlot = MinimapCanvas->AddChildToCanvas(HubMarker);
+		HubSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+		HubSlot->SetPosition(WorldToMinimap(Hub.MinimapWorldPosition));
+		HubSlot->SetSize(FVector2D(30.0f, 30.0f));
+		HubSlot->SetZOrder(8);
+	}
+
+	const TConstArrayView<FFlyingCabDistrictDefinition> Districts =
+		FlyingCabCityData::GetDistricts();
+	for (int32 Index = 0; Index < Districts.Num(); ++Index)
 	{
-		const FVector2D PinPosition = WorldToMinimap(StopPins[Index].WorldPosition);
+		const FFlyingCabDistrictDefinition& District = Districts[Index];
+		const FVector2D WorldPosition = District.GetMapPosition();
+		const FVector2D PinPosition = WorldToMinimap(WorldPosition);
 		AddMinimapPoint(
 			MinimapCanvas,
 			FName(*FString::Printf(TEXT("StopPin%d"), Index)),
-			StopPins[Index].WorldPosition,
+			WorldPosition,
 			FVector2D(7.0f, 7.0f),
 			FLinearColor(0.25f, 0.32f, 0.38f, 0.9f));
 
 		UTextBlock* StopCode = WidgetTree->ConstructWidget<UTextBlock>();
-		StopCode->SetText(FText::FromString(FString(StopPins[Index].Code)));
+		StopCode->SetText(FText::FromString(FString(District.MinimapCode)));
 		StopCode->SetColorAndOpacity(FSlateColor(FLinearColor(0.42f, 0.55f, 0.62f)));
 		FSlateFontInfo StopFont = StopCode->GetFont();
 		StopFont.Size = 9;
@@ -316,17 +587,16 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		StopCodeSlot->SetSize(FVector2D(30.0f, 16.0f));
 	}
 
-	const FVector2D FuelStationWorldPositions[] = {
-		FVector2D(850.0f, 2050.0f),
-		FVector2D(-3800.0f, 2500.0f),
-		FVector2D(8650.0f, 2700.0f)};
-	for (int32 Index = 0; Index < UE_ARRAY_COUNT(FuelStationWorldPositions); ++Index)
+	const TArray<FFlyingCabServiceDefinition> FuelStations =
+		FlyingCabCityData::GetFuelStations();
+	for (int32 Index = 0; Index < FuelStations.Num(); ++Index)
 	{
-		const FVector2D FuelStationMapPosition = WorldToMinimap(FuelStationWorldPositions[Index]);
+		const FVector2D WorldPosition = FuelStations[Index].GetMapPosition();
+		const FVector2D FuelStationMapPosition = WorldToMinimap(WorldPosition);
 		AddMinimapPoint(
 			MinimapCanvas,
 			FName(*FString::Printf(TEXT("FuelStationPin%d"), Index)),
-			FuelStationWorldPositions[Index],
+			WorldPosition,
 			FVector2D(9.0f, 9.0f),
 			FLinearColor(0.15f, 1.0f, 0.45f, 0.95f));
 		UTextBlock* FuelCode = WidgetTree->ConstructWidget<UTextBlock>();
@@ -340,16 +610,16 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		FuelCodeSlot->SetSize(FVector2D(18.0f, 16.0f));
 	}
 
-	const FVector2D RepairStationWorldPositions[] = {
-		FVector2D(0.0f, 4200.0f),
-		FVector2D(13250.0f, 5450.0f)};
-	for (int32 Index = 0; Index < UE_ARRAY_COUNT(RepairStationWorldPositions); ++Index)
+	const TArray<FFlyingCabServiceDefinition> RepairStations =
+		FlyingCabCityData::GetRepairStations();
+	for (int32 Index = 0; Index < RepairStations.Num(); ++Index)
 	{
-		const FVector2D RepairStationMapPosition = WorldToMinimap(RepairStationWorldPositions[Index]);
+		const FVector2D WorldPosition = RepairStations[Index].GetMapPosition();
+		const FVector2D RepairStationMapPosition = WorldToMinimap(WorldPosition);
 		AddMinimapPoint(
 			MinimapCanvas,
 			FName(*FString::Printf(TEXT("RepairStationPin%d"), Index)),
-			RepairStationWorldPositions[Index],
+			WorldPosition,
 			FVector2D(10.0f, 10.0f),
 			FLinearColor(0.78f, 0.12f, 1.0f, 0.95f));
 		UTextBlock* RepairCode = WidgetTree->ConstructWidget<UTextBlock>();
@@ -389,6 +659,26 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		FVector2D(15.0f, 15.0f),
 		FLinearColor(0.0f, 0.9f, 1.0f));
 
+	QuestText = WidgetTree->ConstructWidget<UTextBlock>(
+		UTextBlock::StaticClass(),
+		TEXT("QuestText"));
+	QuestText->SetText(PendingQuestText);
+	QuestText->SetJustification(ETextJustify::Right);
+	QuestText->SetAutoWrapText(true);
+	QuestText->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 0.70f, 0.12f)));
+	QuestText->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.9f));
+	QuestText->SetShadowOffset(FVector2D(1.0f, 1.0f));
+	FSlateFontInfo QuestFont = QuestText->GetFont();
+	QuestFont.Size = 15;
+	QuestText->SetFont(QuestFont);
+
+	UCanvasPanelSlot* QuestSlot = RootCanvas->AddChildToCanvas(QuestText);
+	QuestSlot->SetAnchors(FAnchors(1.0f, 0.0f));
+	QuestSlot->SetAlignment(FVector2D(1.0f, 0.0f));
+	QuestSlot->SetPosition(FVector2D(-12.0f, 12.0f));
+	QuestSlot->SetSize(FVector2D(245.0f, 68.0f));
+	QuestSlot->SetZOrder(20);
+
 	ObjectiveText = WidgetTree->ConstructWidget<UTextBlock>(
 		UTextBlock::StaticClass(),
 		TEXT("ObjectiveText"));
@@ -408,6 +698,83 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	ObjectiveSlot->SetPosition(FVector2D(-12.0f, 88.0f));
 	ObjectiveSlot->SetSize(FVector2D(195.0f, 112.0f));
 	ObjectiveSlot->SetZOrder(20);
+
+	EventMessagePanel = WidgetTree->ConstructWidget<UBorder>(
+		UBorder::StaticClass(),
+		TEXT("EventMessagePanel"));
+	EventMessagePanel->SetBrushColor(FLinearColor(0.005f, 0.012f, 0.025f, 0.94f));
+	EventMessagePanel->SetPadding(FMargin(16.0f, 10.0f));
+	EventMessageText = WidgetTree->ConstructWidget<UTextBlock>(
+		UTextBlock::StaticClass(),
+		TEXT("EventMessageText"));
+	EventMessageText->SetText(PendingEventMessageText);
+	EventMessageText->SetJustification(ETextJustify::Center);
+	EventMessageText->SetAutoWrapText(true);
+	EventMessageText->SetColorAndOpacity(FSlateColor(PendingEventMessageColor));
+	EventMessageText->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f));
+	EventMessageText->SetShadowOffset(FVector2D(2.0f, 2.0f));
+	FSlateFontInfo EventMessageFont = EventMessageText->GetFont();
+	EventMessageFont.Size = 20;
+	EventMessageText->SetFont(EventMessageFont);
+	EventMessagePanel->AddChild(EventMessageText);
+	EventMessagePanel->SetVisibility(
+		PendingEventMessageText.IsEmpty()
+			? ESlateVisibility::Collapsed
+			: ESlateVisibility::HitTestInvisible);
+	UCanvasPanelSlot* EventMessageSlot = RootCanvas->AddChildToCanvas(EventMessagePanel);
+	EventMessageSlot->SetAnchors(FAnchors(0.5f, 0.0f));
+	EventMessageSlot->SetAlignment(FVector2D(0.5f, 0.0f));
+	EventMessageSlot->SetPosition(FVector2D(0.0f, 154.0f));
+	EventMessageSlot->SetSize(FVector2D(520.0f, 72.0f));
+	EventMessageSlot->SetZOrder(40);
+
+	MajorAnnouncementPanel = WidgetTree->ConstructWidget<UBorder>(
+		UBorder::StaticClass(),
+		TEXT("MajorAnnouncementPanel"));
+	MajorAnnouncementPanel->SetBrushColor(FLinearColor(0.002f, 0.006f, 0.015f, 0.94f));
+	MajorAnnouncementPanel->SetPadding(FMargin(28.0f, 18.0f));
+	UVerticalBox* AnnouncementContent = WidgetTree->ConstructWidget<UVerticalBox>(
+		UVerticalBox::StaticClass(),
+		TEXT("MajorAnnouncementContent"));
+	MajorAnnouncementPanel->AddChild(AnnouncementContent);
+	MajorAnnouncementTitle = WidgetTree->ConstructWidget<UTextBlock>(
+		UTextBlock::StaticClass(),
+		TEXT("MajorAnnouncementTitle"));
+	MajorAnnouncementTitle->SetJustification(ETextJustify::Center);
+	MajorAnnouncementTitle->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+	MajorAnnouncementTitle->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f));
+	MajorAnnouncementTitle->SetShadowOffset(FVector2D(3.0f, 3.0f));
+	FSlateFontInfo AnnouncementTitleFont = MajorAnnouncementTitle->GetFont();
+	AnnouncementTitleFont.Size = 50;
+	MajorAnnouncementTitle->SetFont(AnnouncementTitleFont);
+	UVerticalBoxSlot* AnnouncementTitleSlot =
+		AnnouncementContent->AddChildToVerticalBox(MajorAnnouncementTitle);
+	AnnouncementTitleSlot->SetPadding(FMargin(4.0f, 0.0f, 4.0f, 8.0f));
+	AnnouncementTitleSlot->SetHorizontalAlignment(HAlign_Fill);
+
+	MajorAnnouncementDetail = WidgetTree->ConstructWidget<UTextBlock>(
+		UTextBlock::StaticClass(),
+		TEXT("MajorAnnouncementDetail"));
+	MajorAnnouncementDetail->SetJustification(ETextJustify::Center);
+	MajorAnnouncementDetail->SetAutoWrapText(true);
+	MajorAnnouncementDetail->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+	MajorAnnouncementDetail->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f));
+	MajorAnnouncementDetail->SetShadowOffset(FVector2D(2.0f, 2.0f));
+	FSlateFontInfo AnnouncementDetailFont = MajorAnnouncementDetail->GetFont();
+	AnnouncementDetailFont.Size = 23;
+	MajorAnnouncementDetail->SetFont(AnnouncementDetailFont);
+	UVerticalBoxSlot* AnnouncementDetailSlot =
+		AnnouncementContent->AddChildToVerticalBox(MajorAnnouncementDetail);
+	AnnouncementDetailSlot->SetHorizontalAlignment(HAlign_Fill);
+
+	MajorAnnouncementPanel->SetVisibility(ESlateVisibility::Collapsed);
+	UCanvasPanelSlot* MajorAnnouncementSlot =
+		RootCanvas->AddChildToCanvas(MajorAnnouncementPanel);
+	MajorAnnouncementSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+	MajorAnnouncementSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+	MajorAnnouncementSlot->SetPosition(FVector2D(0.0f, -20.0f));
+	MajorAnnouncementSlot->SetSize(FVector2D(940.0f, 178.0f));
+	MajorAnnouncementSlot->SetZOrder(80);
 
 	TrafficAlertText = WidgetTree->ConstructWidget<UTextBlock>(
 		UTextBlock::StaticClass(),
@@ -430,6 +797,36 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	TrafficAlertSlot->SetPosition(FVector2D(0.0f, 18.0f));
 	TrafficAlertSlot->SetSize(FVector2D(280.0f, 54.0f));
 	TrafficAlertSlot->SetZOrder(30);
+
+	DeveloperObserverPanel = WidgetTree->ConstructWidget<UBorder>(
+		UBorder::StaticClass(),
+		TEXT("DeveloperObserverPanel"));
+	DeveloperObserverPanel->SetBrushColor(FLinearColor(0.005f, 0.02f, 0.035f, 0.95f));
+	DeveloperObserverPanel->SetPadding(FMargin(18.0f, 10.0f));
+	DeveloperObserverText = WidgetTree->ConstructWidget<UTextBlock>(
+		UTextBlock::StaticClass(),
+		TEXT("DeveloperObserverText"));
+	DeveloperObserverText->SetJustification(ETextJustify::Center);
+	DeveloperObserverText->SetColorAndOpacity(
+		FSlateColor(FLinearColor(0.10f, 0.95f, 1.0f)));
+	DeveloperObserverText->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 1.0f));
+	DeveloperObserverText->SetShadowOffset(FVector2D(2.0f, 2.0f));
+	FSlateFontInfo DeveloperObserverFont = DeveloperObserverText->GetFont();
+	DeveloperObserverFont.Size = 18;
+	DeveloperObserverText->SetFont(DeveloperObserverFont);
+	DeveloperObserverPanel->AddChild(DeveloperObserverText);
+	DeveloperObserverPanel->SetVisibility(
+		bDeveloperObserverMode
+			? ESlateVisibility::HitTestInvisible
+			: ESlateVisibility::Collapsed);
+	UCanvasPanelSlot* DeveloperObserverSlot =
+		RootCanvas->AddChildToCanvas(DeveloperObserverPanel);
+	DeveloperObserverSlot->SetAnchors(FAnchors(0.5f, 0.0f));
+	DeveloperObserverSlot->SetAlignment(FVector2D(0.5f, 0.0f));
+	DeveloperObserverSlot->SetPosition(FVector2D(0.0f, 16.0f));
+	DeveloperObserverSlot->SetSize(FVector2D(760.0f, 82.0f));
+	DeveloperObserverSlot->SetZOrder(100);
+	RefreshDeveloperObserverText();
 
 	TimeAttackPanel = WidgetTree->ConstructWidget<UBorder>(
 		UBorder::StaticClass(),
@@ -567,6 +964,8 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 
 FVector2D UFlyingCabTouchControls::WorldToMinimap(const FVector2D& WorldPosition) const
 {
+	const FVector2D MinimapWorldMin = FlyingCabCityData::GetMinimapWorldMin();
+	const FVector2D MinimapWorldMax = FlyingCabCityData::GetMinimapWorldMax();
 	const float NormalizedX = FMath::GetMappedRangeValueClamped(
 		FVector2D(MinimapWorldMin.X, MinimapWorldMax.X),
 		FVector2D(0.0f, 1.0f),
@@ -692,6 +1091,25 @@ AFlyingCabCharacter* UFlyingCabTouchControls::GetFlyingCabCharacter() const
 
 void UFlyingCabTouchControls::RefreshControlMode()
 {
+	const ESlateVisibility PrimaryControlVisibility = bDeveloperObserverMode
+		? ESlateVisibility::Collapsed
+		: ESlateVisibility::Visible;
+	if (LeftButton)
+	{
+		LeftButton->SetVisibility(PrimaryControlVisibility);
+	}
+	if (RightButton)
+	{
+		RightButton->SetVisibility(PrimaryControlVisibility);
+	}
+	if (ThrustButton)
+	{
+		ThrustButton->SetVisibility(PrimaryControlVisibility);
+	}
+	if (InteractButton)
+	{
+		InteractButton->SetVisibility(PrimaryControlVisibility);
+	}
 	if (ThrustButtonText)
 	{
 		ThrustButtonText->SetText(FText::FromString(bOnFootMode ? TEXT("JUMP") : TEXT("THRUST")));
@@ -699,12 +1117,15 @@ void UFlyingCabTouchControls::RefreshControlMode()
 	if (ResetButton)
 	{
 		ResetButton->SetVisibility(
-			bOnFootMode ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+			bDeveloperObserverMode || bOnFootMode
+				? ESlateVisibility::Collapsed
+				: ESlateVisibility::Visible);
 	}
 	if (RefuelButton)
 	{
 		RefuelButton->SetVisibility(
-			!bOnFootMode && (bPendingRefuelAvailable || bPendingRepairAvailable)
+			!bDeveloperObserverMode && !bOnFootMode
+				&& (bPendingRefuelAvailable || bPendingRepairAvailable)
 				? ESlateVisibility::Visible
 				: ESlateVisibility::Collapsed);
 	}
@@ -719,8 +1140,24 @@ void UFlyingCabTouchControls::RefreshControlMode()
 	}
 }
 
+void UFlyingCabTouchControls::RefreshDeveloperObserverText()
+{
+	if (!DeveloperObserverText)
+	{
+		return;
+	}
+	DeveloperObserverText->SetText(FText::FromString(FString::Printf(
+		TEXT("DEV OBSERVER  //  O RETURN  //  WASD / ARROWS PAN  //  PGUP-PGDN ZOOM  //  HOME RECENTER  //  SHIFT FAST\nZOOM %.0f M"),
+		PendingDeveloperObserverZoomMeters)));
+}
+
 void UFlyingCabTouchControls::UpdateHorizontalInput()
 {
+	if (bDeveloperObserverMode)
+	{
+		bLeftPressed = false;
+		bRightPressed = false;
+	}
 	if (AFlyingCabPawn* Pawn = GetFlyingCabPawn())
 	{
 		const float HorizontalInput = static_cast<float>(bRightPressed) - static_cast<float>(bLeftPressed);
@@ -735,6 +1172,10 @@ void UFlyingCabTouchControls::UpdateHorizontalInput()
 
 void UFlyingCabTouchControls::HandleLeftPressed()
 {
+	if (bDeveloperObserverMode)
+	{
+		return;
+	}
 	bLeftPressed = true;
 	UpdateHorizontalInput();
 }
@@ -747,6 +1188,10 @@ void UFlyingCabTouchControls::HandleLeftReleased()
 
 void UFlyingCabTouchControls::HandleRightPressed()
 {
+	if (bDeveloperObserverMode)
+	{
+		return;
+	}
 	bRightPressed = true;
 	UpdateHorizontalInput();
 }
@@ -759,6 +1204,10 @@ void UFlyingCabTouchControls::HandleRightReleased()
 
 void UFlyingCabTouchControls::HandleThrustPressed()
 {
+	if (bDeveloperObserverMode)
+	{
+		return;
+	}
 	bThrustPressed = true;
 	if (AFlyingCabPawn* Pawn = GetFlyingCabPawn())
 	{
@@ -785,14 +1234,23 @@ void UFlyingCabTouchControls::HandleThrustReleased()
 
 void UFlyingCabTouchControls::HandleResetPressed()
 {
-	if (AFlyingCabPawn* Pawn = GetFlyingCabPawn())
+	if (bDeveloperObserverMode)
 	{
-		Pawn->ResetVehicle();
+		return;
+	}
+	if (AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetOwningPlayer()))
+	{
+		PlayerController->RequestVehicleReset();
 	}
 }
 
 void UFlyingCabTouchControls::HandleInteractPressed()
 {
+	if (bDeveloperObserverMode)
+	{
+		return;
+	}
 	if (AFlyingCabPlayerController* PlayerController =
 		Cast<AFlyingCabPlayerController>(GetOwningPlayer()))
 	{
@@ -802,6 +1260,10 @@ void UFlyingCabTouchControls::HandleInteractPressed()
 
 void UFlyingCabTouchControls::HandleRefuelPressed()
 {
+	if (bDeveloperObserverMode)
+	{
+		return;
+	}
 	bRefuelPressed = true;
 	if (AFlyingCabPawn* Pawn = GetFlyingCabPawn())
 	{

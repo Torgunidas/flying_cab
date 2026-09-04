@@ -33,7 +33,7 @@ AFlyingCabCameraRig::AFlyingCabCameraRig()
 void AFlyingCabCameraRig::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (!FollowTarget)
+	if (bDeveloperObserverEnabled || !FollowTarget)
 	{
 		return;
 	}
@@ -60,6 +60,72 @@ void AFlyingCabCameraRig::SetFollowTarget(AActor* NewTarget, bool bSnapToTarget)
 	{
 		SetActorLocation(GetDesiredRigLocation());
 	}
+}
+
+void AFlyingCabCameraRig::SetDeveloperObserverEnabled(bool bEnabled)
+{
+	if (bDeveloperObserverEnabled == bEnabled)
+	{
+		return;
+	}
+
+	bDeveloperObserverEnabled = bEnabled;
+	if (bDeveloperObserverEnabled)
+	{
+		CameraBoom->TargetArmLength = FMath::Clamp(
+			FMath::Max(CameraBoom->TargetArmLength, DeveloperObserverInitialArmLength),
+			DeveloperObserverMinArmLength,
+			DeveloperObserverMaxArmLength);
+	}
+	else
+	{
+		ApplyTargetFraming();
+	}
+}
+
+void AFlyingCabCameraRig::MoveDeveloperObserver(
+	const FVector2D& PanInput,
+	bool bFast,
+	float DeltaSeconds)
+{
+	if (!bDeveloperObserverEnabled || PanInput.IsNearlyZero())
+	{
+		return;
+	}
+
+	const FVector2D Direction = PanInput.GetClampedToMaxSize(1.0f);
+	const float Speed = DeveloperObserverPanSpeed
+		* (bFast ? DeveloperObserverFastMultiplier : 1.0f);
+	AddActorWorldOffset(
+		FVector(Direction.X, 0.0f, Direction.Y) * Speed * FMath::Max(0.0f, DeltaSeconds));
+}
+
+void AFlyingCabCameraRig::AdjustDeveloperObserverZoom(float ZoomInput, float DeltaSeconds)
+{
+	if (!bDeveloperObserverEnabled || FMath::IsNearlyZero(ZoomInput))
+	{
+		return;
+	}
+
+	CameraBoom->TargetArmLength = FMath::Clamp(
+		CameraBoom->TargetArmLength
+			+ ZoomInput * DeveloperObserverZoomSpeed * FMath::Max(0.0f, DeltaSeconds),
+		DeveloperObserverMinArmLength,
+		DeveloperObserverMaxArmLength);
+}
+
+void AFlyingCabCameraRig::RecenterDeveloperObserver()
+{
+	if (!bDeveloperObserverEnabled)
+	{
+		return;
+	}
+	SetActorLocation(GetDesiredRigLocation());
+}
+
+float AFlyingCabCameraRig::GetCurrentArmLength() const
+{
+	return CameraBoom ? CameraBoom->TargetArmLength : 0.0f;
 }
 
 FVector AFlyingCabCameraRig::GetDesiredRigLocation() const

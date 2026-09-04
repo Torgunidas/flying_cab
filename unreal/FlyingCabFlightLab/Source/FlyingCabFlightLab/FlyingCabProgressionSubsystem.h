@@ -20,6 +20,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Progression")
 	bool GrantAccess(FName AccessId);
 
+	/** Returns true only when an existing permission was removed. */
+	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Progression")
+	bool RevokeAccess(FName AccessId);
+
 	/** Used to give every competitive run the same starting permissions. */
 	void ResetAccess();
 
