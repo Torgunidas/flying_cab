@@ -2,11 +2,13 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
+#include "EnhancedPlayerInput.h"
 #include "EnhancedInputSubsystems.h"
 #include "Components/PrimitiveComponent.h"
 #include "EngineUtils.h"
 #include "FlyingCabAccessTerminal.h"
 #include "FlyingCabCameraRig.h"
+#include "FlyingCabCharacter.h"
 #include "FlyingCabQuestGiver.h"
 #include "FlyingCabQuestJournalWidget.h"
 #include "FlyingCabCityExpansion.h"
@@ -67,6 +69,14 @@ namespace
 			: nullptr;
 		return OutState.GameMode && OutState.PlayerController
 			&& OutState.Pawn && OutState.Dispatch;
+	}
+
+	UEnhancedPlayerInput* GetEnhancedPlayerInput(
+		const AFlyingCabPlayerController* PlayerController)
+	{
+		return PlayerController
+			? Cast<UEnhancedPlayerInput>(PlayerController->PlayerInput)
+			: nullptr;
 	}
 
 	template <typename TActor>
@@ -553,9 +563,15 @@ namespace
 				}
 
 				InitialCredits = State.GameMode->GetCredits();
-				const FFlyingCabImpactResult Impact = Vitals->ApplyImpact(1000000.0f);
-				Test->TestTrue(TEXT("The forced impact destroys the active cab"), Impact.bDestroyedNow);
-				State.Pawn->OnVehicleDestroyed.Broadcast(State.Pawn);
+				UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(State.Pawn->GetRootComponent());
+				if (!Body)
+				{
+					Test->AddError(TEXT("The active cab has no collision body."));
+					return true;
+				}
+				Body->OnComponentHit.Broadcast(Body, nullptr, nullptr,
+					FVector(0.0f, 0.0f, Body->GetMass() * 1000000.0f), FHitResult());
+				Test->TestTrue(TEXT("The collision path destroys the active cab"), State.Pawn->IsDestroyed());
 
 				CreditsAfterTow = State.GameMode->GetCredits();
 				Test->TestEqual(
@@ -876,6 +892,162 @@ namespace
 		int32 Phase = 0;
 	};
 
+	class FFlyingCabVerifyRecoveryInputCommand final : public IAutomationLatentCommand
+	{
+	public:
+		explicit FFlyingCabVerifyRecoveryInputCommand(FAutomationTestBase* InTest)
+			: Test(InTest), Deadline(FPlatformTime::Seconds() + 30.0) {}
+
+		virtual bool Update() override
+		{
+			FFlyingCabPIEState State;
+			if (FPlatformTime::Seconds() > Deadline)
+			{
+				Test->AddError(FString::Printf(TEXT("Recovery input timeout: cycle=%d phase=%d"), Cycle, Phase));
+				return true;
+			}
+			if (!ResolvePIEState(State))
+			{
+				return false;
+			}
+			UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(State.Pawn->GetRootComponent());
+			UEnhancedPlayerInput* EnhancedInput = GetEnhancedPlayerInput(State.PlayerController);
+			if (!Body || !EnhancedInput)
+			{
+				Test->AddError(TEXT("Recovery input test has no physics or Enhanced Input."));
+				return true;
+			}
+			// Keep the real pawn ticking, but exclude incidental city collisions from
+			// this input test. Destruction still goes through the actual hit delegate.
+			Body->SetEnableGravity(false);
+			Body->SetCollisionResponseToAllChannels(ECR_Ignore);
+			HoldPawnAt(State.Pawn, FVector(-30000.0f, 0.0f, 20000.0f));
+			const FKey ThrustKeys[] = {EKeys::W, EKeys::SpaceBar, EKeys::Up};
+			const FKey DirectionKeys[] = {EKeys::A, EKeys::D, EKeys::Left};
+			const FKey ThrustKey = ThrustKeys[Cycle];
+			const FKey DirectionKey = DirectionKeys[Cycle];
+			const float Direction = Cycle == 1 ? 1.0f : -1.0f;
+			auto SendKeys = [&](EInputEvent Event)
+			{
+				const float Amount = Event == IE_Released ? 0.0f : 1.0f;
+				State.PlayerController->InputKey(FInputKeyEventArgs::CreateSimulated(ThrustKey, Event, Amount));
+				State.PlayerController->InputKey(FInputKeyEventArgs::CreateSimulated(DirectionKey, Event, Amount));
+			};
+			const FFlyingCabInputAssets& Assets = FlyingCabInputData::GetAssets();
+			auto CheckNeutral = [&]()
+			{
+				const bool bNeutral = !State.PlayerController->IsInputKeyDown(ThrustKey)
+					&& !State.PlayerController->IsInputKeyDown(DirectionKey)
+					&& !EnhancedInput->GetActionValue(Assets.Thrust).Get<bool>()
+					&& FMath::IsNearlyZero(EnhancedInput->GetActionValue(Assets.Horizontal).Get<float>())
+					&& FMath::IsNearlyZero(State.PlayerController->GetControlFrame().Thrust)
+					&& FMath::IsNearlyZero(State.PlayerController->GetControlFrame().Horizontal)
+					&& FMath::IsNearlyZero(State.Pawn->GetTestKeyboardThrustInput())
+					&& FMath::IsNearlyZero(State.Pawn->GetTestKeyboardHorizontalInput());
+				if (!bNeutral)
+				{
+					Test->AddError(FString::Printf(
+						TEXT("Recovery latch cycle=%d phase=%d rawT=%d rawH=%d actT=%d actH=%.2f frameT=%.2f pawnT=%.2f fuel=%.2f"),
+						Cycle, Phase, State.PlayerController->IsInputKeyDown(ThrustKey),
+						State.PlayerController->IsInputKeyDown(DirectionKey),
+						EnhancedInput->GetActionValue(Assets.Thrust).Get<bool>(),
+						EnhancedInput->GetActionValue(Assets.Horizontal).Get<float>(),
+						State.PlayerController->GetControlFrame().Thrust,
+						State.Pawn->GetTestKeyboardThrustInput(), State.Pawn->GetFuel()));
+				}
+				return bNeutral;
+			};
+
+			switch (Phase)
+			{
+			case 0:
+				State.PlayerController->StartRunMode(EFlyingCabRunMode::Freeroam);
+				Phase = 1;
+				return false;
+			case 1:
+				SendKeys(IE_Pressed);
+				Phase = 2;
+				return false;
+			case 2:
+				if (State.Pawn->GetTestKeyboardThrustInput() < 0.5f
+					|| !FMath::IsNearlyEqual(State.Pawn->GetTestKeyboardHorizontalInput(), Direction))
+				{
+					return false;
+				}
+				Body->OnComponentHit.Broadcast(Body, nullptr, nullptr,
+					FVector(0.0f, 0.0f, Body->GetMass() * 1000000.0f), FHitResult());
+				Test->TestTrue(TEXT("A real collision callback destroys the cab with held inputs"), State.Pawn->IsDestroyed());
+				if (Cycle == 0)
+				{
+					SendKeys(IE_Released);
+				}
+				Frames = 0;
+				Phase = 3;
+				return false;
+			case 3:
+				if (State.Pawn->IsDestroyed())
+				{
+					if (Cycle > 0 && ++Frames % 2 == 0)
+					{
+						SendKeys(IE_Repeat);
+					}
+					return false;
+				}
+				Test->TestTrue(TEXT("Real timer recovery restores fuel and physics"),
+					State.Pawn->GetFuel() > 0.0f && Body->IsSimulatingPhysics());
+				if (Cycle > 0)
+				{
+					SendKeys(IE_Repeat);
+				}
+				Frames = 0;
+				Phase = 4;
+				return false;
+			case 4:
+				if (++Frames < 2)
+				{
+					return false;
+				}
+				SendKeys(IE_Released);
+				Frames = 0;
+				Phase = 5;
+				return false;
+			case 5:
+				if (++Frames < 3)
+				{
+					return false;
+				}
+				if (!CheckNeutral()) { return true; }
+				if (Frames < 13) { return false; }
+				SendKeys(IE_Pressed);
+				Phase = 6;
+				return false;
+			case 6:
+				if (State.Pawn->GetTestKeyboardThrustInput() < 0.5f
+					|| !FMath::IsNearlyEqual(State.Pawn->GetTestKeyboardHorizontalInput(), Direction))
+				{
+					return false;
+				}
+				SendKeys(IE_Released);
+				Frames = 0;
+				Phase = 7;
+				return false;
+			default:
+				if (++Frames < 3) { return false; }
+				if (!CheckNeutral()) { return true; }
+				if (++Cycle == 3) { return true; }
+				Phase = 1;
+				return false;
+			}
+		}
+
+	private:
+		FAutomationTestBase* Test;
+		double Deadline;
+		int32 Phase = 0;
+		int32 Cycle = 0;
+		int32 Frames = 0;
+	};
+
 	class FFlyingCabVerifyInputTransitionChainCommand final : public IAutomationLatentCommand
 	{
 	public:
@@ -970,6 +1142,10 @@ namespace
 				Test->TestTrue(
 					TEXT("Journal clears the held left command"),
 					FMath::IsNearlyZero(State.Pawn->GetTestKeyboardHorizontalInput()));
+				if (++JournalOpenFrames < 5)
+				{
+					return false;
+				}
 				UFlyingCabQuestJournalWidget* Journal =
 					State.PlayerController->GetQuestJournalWidget();
 				if (!Journal)
@@ -989,7 +1165,11 @@ namespace
 
 			case 5:
 				if (State.PlayerController->IsQuestJournalOpen()
-					|| !FMath::IsNearlyZero(State.Pawn->GetTestKeyboardHorizontalInput()))
+					|| !FMath::IsNearlyZero(State.Pawn->GetTestKeyboardHorizontalInput())
+					|| !GetEnhancedPlayerInput(State.PlayerController)
+					|| !FMath::IsNearlyZero(
+						GetEnhancedPlayerInput(State.PlayerController)->GetActionValue(
+							InputAssets.Horizontal).Get<float>()))
 				{
 					return WaitOrFail(TEXT("Journal close did not return to neutral gameplay input."));
 				}
@@ -1036,6 +1216,223 @@ namespace
 		FAutomationTestBase* Test = nullptr;
 		double Deadline = 0.0;
 		int32 Phase = 0;
+		int32 JournalOpenFrames = 0;
+	};
+
+	class FFlyingCabVerifyDeferredInputTransitionsCommand final : public IAutomationLatentCommand
+	{
+	public:
+		explicit FFlyingCabVerifyDeferredInputTransitionsCommand(FAutomationTestBase* InTest)
+			: Test(InTest)
+			, Deadline(FPlatformTime::Seconds() + 20.0)
+		{
+		}
+
+		virtual bool Update() override
+		{
+			UWorld* World = AutomationCommon::GetAnyGameWorld();
+			AFlyingCabPlayerController* PlayerController = World
+				? Cast<AFlyingCabPlayerController>(World->GetFirstPlayerController())
+				: nullptr;
+			UEnhancedPlayerInput* EnhancedInput = GetEnhancedPlayerInput(PlayerController);
+			const FFlyingCabInputAssets& InputAssets = FlyingCabInputData::GetAssets();
+			if (!World || !PlayerController || !EnhancedInput || !InputAssets.IsValid())
+			{
+				return WaitOrFail(TEXT("Deferred input-transition test could not resolve Enhanced Input."));
+			}
+
+			AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(PlayerController->GetPawn());
+			switch (Phase)
+			{
+			case 0:
+				PlayerController->StartRunMode(EFlyingCabRunMode::Freeroam);
+				Test->TestTrue(
+					TEXT("D reaches the controller before the journal transition"),
+					PlayerController->InputKey(
+						FInputKeyEventArgs::CreateSimulated(EKeys::D, IE_Pressed, 1.0f)));
+				Phase = 1;
+				return false;
+
+			case 1:
+				if (!Vehicle
+					|| !FMath::IsNearlyEqual(Vehicle->GetTestKeyboardHorizontalInput(), 1.0f)
+					|| !FMath::IsNearlyEqual(
+						EnhancedInput->GetActionValue(InputAssets.Horizontal).Get<float>(),
+						1.0f))
+				{
+					return WaitOrFail(TEXT("D did not become active before opening the journal."));
+				}
+				Test->TestTrue(
+					TEXT("J reaches the controller while D is held"),
+					PlayerController->InputKey(
+						FInputKeyEventArgs::CreateSimulated(EKeys::J, IE_Pressed, 1.0f)));
+				Phase = 2;
+				return false;
+
+			case 2:
+				if (!PlayerController->IsQuestJournalOpen())
+				{
+					return WaitOrFail(TEXT("Deferred J command did not open the journal."));
+				}
+				if (++WaitFrames < 5)
+				{
+					return false;
+				}
+				PlayerController->InputKey(
+					FInputKeyEventArgs::CreateSimulated(EKeys::D, IE_Released, 0.0f));
+				WaitFrames = 0;
+				Phase = 3;
+				return false;
+
+			case 3:
+				if (++WaitFrames < 3)
+				{
+					return false;
+				}
+				if (UFlyingCabQuestJournalWidget* Journal =
+					PlayerController->GetQuestJournalWidget())
+				{
+					Test->TestTrue(
+						TEXT("J closes the journal after the held direction was released"),
+						Journal->HandleNavigationKey(EKeys::J));
+				}
+				else
+				{
+					Test->AddError(TEXT("Deferred transition test lost the journal widget."));
+					return true;
+				}
+				PlayerController->InputKey(
+					FInputKeyEventArgs::CreateSimulated(EKeys::J, IE_Released, 0.0f));
+				WaitFrames = 0;
+				Phase = 4;
+				return false;
+
+			case 4:
+				if (PlayerController->IsQuestJournalOpen()
+					|| !FMath::IsNearlyZero(
+						EnhancedInput->GetActionValue(InputAssets.Horizontal).Get<float>()))
+				{
+					return WaitOrFail(TEXT("A direction value remained latched after closing the journal."));
+				}
+				Test->TestFalse(
+					TEXT("Raw D is neutral after the journal transition"),
+					PlayerController->IsInputKeyDown(EKeys::D));
+				Test->TestTrue(
+					TEXT("W reaches the controller before reset"),
+					PlayerController->InputKey(
+						FInputKeyEventArgs::CreateSimulated(EKeys::W, IE_Pressed, 1.0f)));
+				Phase = 5;
+				return false;
+
+			case 5:
+				if (!Vehicle
+					|| !EnhancedInput->GetActionValue(InputAssets.Thrust).Get<bool>())
+				{
+					return WaitOrFail(TEXT("W did not become active before reset."));
+				}
+				Test->TestTrue(
+					TEXT("R reaches the controller while W is held"),
+					PlayerController->InputKey(
+						FInputKeyEventArgs::CreateSimulated(EKeys::R, IE_Pressed, 1.0f)));
+				Phase = 6;
+				return false;
+
+			case 6:
+				if (PlayerController->IsInputKeyDown(EKeys::W))
+				{
+					return WaitOrFail(TEXT("Deferred reset did not flush the held W key."));
+				}
+				PlayerController->InputKey(
+					FInputKeyEventArgs::CreateSimulated(EKeys::W, IE_Released, 0.0f));
+				PlayerController->InputKey(
+					FInputKeyEventArgs::CreateSimulated(EKeys::R, IE_Released, 0.0f));
+				Phase = 7;
+				return false;
+
+			case 7:
+				if (EnhancedInput->GetActionValue(InputAssets.Thrust).Get<bool>())
+				{
+					return WaitOrFail(TEXT("Thrust remained latched after a reset transition."));
+				}
+				Test->TestFalse(
+					TEXT("Raw W is neutral after reset"),
+					PlayerController->IsInputKeyDown(EKeys::W));
+				Test->TestTrue(
+					TEXT("D reaches the controller before exiting the vehicle"),
+					PlayerController->InputKey(
+						FInputKeyEventArgs::CreateSimulated(EKeys::D, IE_Pressed, 1.0f)));
+				Phase = 8;
+				return false;
+
+			case 8:
+				if (!Vehicle
+					|| !FMath::IsNearlyEqual(
+						EnhancedInput->GetActionValue(InputAssets.Horizontal).Get<float>(),
+						1.0f))
+				{
+					return WaitOrFail(TEXT("D did not become active before leaving the vehicle."));
+				}
+				Test->TestTrue(
+					TEXT("Q reaches the controller while D is held"),
+					PlayerController->InputKey(
+						FInputKeyEventArgs::CreateSimulated(EKeys::Q, IE_Pressed, 1.0f)));
+				Phase = 9;
+				return false;
+
+			case 9:
+				if (!Cast<AFlyingCabCharacter>(PlayerController->GetPawn()))
+				{
+					return WaitOrFail(TEXT("Deferred Q command did not possess the on-foot character."));
+				}
+				PlayerController->InputKey(
+					FInputKeyEventArgs::CreateSimulated(EKeys::D, IE_Released, 0.0f));
+				PlayerController->InputKey(
+					FInputKeyEventArgs::CreateSimulated(EKeys::Q, IE_Released, 0.0f));
+				WaitFrames = 0;
+				Phase = 10;
+				return false;
+
+			default:
+			{
+				if (++WaitFrames < 5)
+				{
+					return false;
+				}
+				AFlyingCabCharacter* Character =
+					Cast<AFlyingCabCharacter>(PlayerController->GetPawn());
+				if (!Character
+					|| !FMath::IsNearlyZero(
+						EnhancedInput->GetActionValue(InputAssets.Horizontal).Get<float>())
+					|| !FMath::IsNearlyZero(Character->GetTestKeyboardHorizontalInput()))
+				{
+					return WaitOrFail(TEXT("Horizontal input remained latched after leaving the vehicle."));
+				}
+				Test->TestFalse(
+					TEXT("Raw D is neutral on foot"),
+					PlayerController->IsInputKeyDown(EKeys::D));
+				Test->TestTrue(
+					TEXT("On-foot movement stays neutral after the Q transition"),
+					FMath::IsNearlyZero(Character->GetLastMovementInputVector().X));
+				return true;
+			}
+			}
+		}
+
+	private:
+		bool WaitOrFail(const TCHAR* Message)
+		{
+			if (FPlatformTime::Seconds() < Deadline)
+			{
+				return false;
+			}
+			Test->AddError(Message);
+			return true;
+		}
+
+		FAutomationTestBase* Test = nullptr;
+		double Deadline = 0.0;
+		int32 Phase = 0;
+		int32 WaitFrames = 0;
 	};
 
 	class FFlyingCabVerifyLivingWorldCycleCommand final : public IAutomationLatentCommand
@@ -1252,6 +1649,23 @@ bool FFlyingCabInputTransitionChainPIETest::RunTest(const FString& Parameters)
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabDeferredInputTransitionsPIETest,
+	"FlyingCab.Functional.PIE.DeferredInputTransitions",
+	EAutomationTestFlags::EditorContext
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabDeferredInputTransitionsPIETest::RunTest(const FString& Parameters)
+{
+	if (!AutomationOpenMap(FlightLabMap, true))
+	{
+		AddError(TEXT("FlightLab map could not be opened for the deferred input-transition test."));
+		return false;
+	}
+	ADD_LATENT_AUTOMATION_COMMAND(FFlyingCabVerifyDeferredInputTransitionsCommand(this));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FFlyingCabWorldStartupPIETest,
 	"FlyingCab.Functional.PIE.WorldStartup",
 	EAutomationTestFlags::EditorContext
@@ -1316,6 +1730,22 @@ bool FFlyingCabPassengerCoursePIETest::RunTest(const FString& Parameters)
 		return false;
 	}
 	ADD_LATENT_AUTOMATION_COMMAND(FFlyingCabCompleteCourseCommand(this));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabRecoveryInputPIETest,
+	"FlyingCab.Functional.PIE.RecoveryInputRelease",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabRecoveryInputPIETest::RunTest(const FString& Parameters)
+{
+	if (!AutomationOpenMap(FlightLabMap, true))
+	{
+		AddError(TEXT("FlightLab map could not be opened for recovery input test."));
+		return false;
+	}
+	ADD_LATENT_AUTOMATION_COMMAND(FFlyingCabVerifyRecoveryInputCommand(this));
 	return true;
 }
 

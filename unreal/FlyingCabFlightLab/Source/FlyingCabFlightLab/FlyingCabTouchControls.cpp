@@ -433,13 +433,15 @@ void UFlyingCabTouchControls::SetResourceState(
 			ResourceText->SetText(DisplayText);
 		}
 
-		const bool bCritical = bPendingVehicleDestroyed
-			|| PendingFuelPercent <= 0.15f
-			|| PendingHullPercent <= 0.25f;
+		const bool bCriticalHull = bPendingVehicleDestroyed
+			|| PendingHullPercent <= 0.20f;
+		const bool bCriticalFuel = PendingFuelPercent <= 0.20f;
 		ResourceText->SetColorAndOpacity(FSlateColor(
-			bCritical
+			bCriticalHull
 				? FLinearColor(1.0f, 0.18f, 0.04f)
-				: FLinearColor(0.20f, 0.92f, 0.72f)));
+				: (bCriticalFuel
+					? FLinearColor(0.22f, 0.62f, 1.0f)
+					: FLinearColor(0.20f, 0.92f, 0.72f))));
 	}
 
 	if (RefuelButton)
@@ -1236,9 +1238,10 @@ void UFlyingCabTouchControls::HandleResetPressed()
 	{
 		return;
 	}
-	if (AFlyingCabPawn* Pawn = GetFlyingCabPawn())
+	if (AFlyingCabPlayerController* PlayerController =
+		Cast<AFlyingCabPlayerController>(GetOwningPlayer()))
 	{
-		Pawn->ResetVehicle();
+		PlayerController->RequestVehicleReset();
 	}
 }
 

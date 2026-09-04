@@ -34,6 +34,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabInteraction, Log, All);
 AFlyingCabPlayerController::AFlyingCabPlayerController()
 {
 	bAutoManageActiveCameraTarget = false;
+	ControlInput = CreateDefaultSubobject<UFlyingCabControlInputComponent>(TEXT("ControlInput"));
 }
 
 void AFlyingCabPlayerController::BeginPlay()
@@ -111,6 +112,30 @@ void AFlyingCabPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReaso
 void AFlyingCabPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
+
+	// Enhanced Input has finished evaluating its delegates when Super::PlayerTick
+	// returns. Gameplay transitions requested by those delegates are deliberately
+	// executed here so their input flush cannot freeze an action value mid-pass.
+	if (bDeferredInputTransitionGuard)
+	{
+		bDeferredInputTransitionGuard = false;
+	}
+	ProcessDeferredInputCommands();
+	if (ControlInput)
+	{
+		if (UFlyingCabControlInputComponent::IsControlFrameEnabled())
+		{
+			ControlInput->BuildControlFrame(
+				this,
+				Cast<UEnhancedInputComponent>(InputComponent),
+				GetControlInputBlock());
+		}
+		else
+		{
+			ControlInput->ResetControlFrame(GetControlInputBlock());
+		}
+	}
+
 	if (!bDeveloperObserverMode || !CameraRig)
 	{
 		return;
@@ -138,6 +163,7 @@ void AFlyingCabPlayerController::PlayerTick(float DeltaTime)
 
 bool AFlyingCabPlayerController::InputKey(const FInputKeyEventArgs& Params)
 {
+	if (ControlInput) { ControlInput->TraceKeyEvent(Params); }
 	if (Params.Event == IE_Pressed && Params.Key == EKeys::O)
 	{
 		ToggleDeveloperObserverMode();
@@ -167,6 +193,10 @@ bool AFlyingCabPlayerController::InputKey(const FInputKeyEventArgs& Params)
 void AFlyingCabPlayerController::FlushPressedKeys()
 {
 	Super::FlushPressedKeys();
+	if (ControlInput)
+	{
+		ControlInput->ResetControlFrame(GetControlInputBlock());
+	}
 	if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(GetPawn()))
 	{
 		Vehicle->ReleaseKeyboardInputState();
@@ -339,16 +369,24 @@ void AFlyingCabPlayerController::SetupInputComponent()
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent);
 		EnhancedInput && InputAssets.IsValid())
 	{
+		EnhancedInput->BindActionValue(InputAssets.Horizontal);
+		EnhancedInput->BindActionValue(InputAssets.Thrust);
+		EnhancedInput->BindActionValue(InputAssets.Service);
 		EnhancedInput->BindAction(
 			InputAssets.Interact,
 			ETriggerEvent::Started,
 			this,
 			&AFlyingCabPlayerController::RequestContextInteraction);
 		EnhancedInput->BindAction(
+			InputAssets.Restart,
+			ETriggerEvent::Started,
+			this,
+			&AFlyingCabPlayerController::RequestVehicleReset);
+		EnhancedInput->BindAction(
 			InputAssets.QuestJournal,
 			ETriggerEvent::Started,
 			this,
-			&AFlyingCabPlayerController::ToggleQuestJournal);
+			&AFlyingCabPlayerController::RequestQuestJournalToggle);
 		return;
 	}
 	UE_LOG(
@@ -541,6 +579,10 @@ bool AFlyingCabPlayerController::EnsureEnhancedInputContext()
 	{
 		InputSubsystem->AddMappingContext(InputAssets.MappingContext, 0);
 	}
+	if (ControlInput)
+	{
+		ControlInput->InvalidateMappedKeys();
+	}
 	return true;
 }
 
@@ -557,9 +599,106 @@ void AFlyingCabPlayerController::RemoveEnhancedInputContext()
 	{
 		InputSubsystem->RemoveMappingContext(InputAssets.MappingContext);
 	}
+	if (ControlInput)
+	{
+		ControlInput->InvalidateMappedKeys();
+	}
+}
+
+bool AFlyingCabPlayerController::IsControlFrameEnabled() const
+{
+	return ControlInput && UFlyingCabControlInputComponent::IsControlFrameEnabled();
+}
+
+void AFlyingCabPlayerController::TraceVehicleInput(const AFlyingCabPawn* Vehicle,
+	const FVector2D& Keyboard, const FVector2D& Touch, const FVector& AppliedForce, const TCHAR* Reason)
+{
+	if (ControlInput)
+	{
+		ControlInput->TraceVehicleState(Vehicle, Keyboard, Touch, AppliedForce, Reason);
+	}
+}
+
+const FFlyingCabControlFrame& AFlyingCabPlayerController::GetControlFrame() const
+{
+	static const FFlyingCabControlFrame EmptyFrame;
+	return ControlInput ? ControlInput->GetControlFrame() : EmptyFrame;
+}
+
+EFlyingCabInputBlock AFlyingCabPlayerController::GetControlInputBlock() const
+{
+	if (bDeferredInputTransitionGuard)
+	{
+		return EFlyingCabInputBlock::Transition;
+	}
+	if (bGameFlowScreenOpen)
+	{
+		return EFlyingCabInputBlock::Menu;
+	}
+	if (bQuestJournalOpen)
+	{
+		return EFlyingCabInputBlock::QuestJournal;
+	}
+	if (bDeveloperObserverMode)
+	{
+		return EFlyingCabInputBlock::Observer;
+	}
+	return EFlyingCabInputBlock::None;
 }
 
 void AFlyingCabPlayerController::RequestContextInteraction()
+{
+	bContextInteractionRequested = true;
+}
+
+void AFlyingCabPlayerController::RequestVehicleReset()
+{
+	bVehicleResetRequested = true;
+}
+
+void AFlyingCabPlayerController::RequestQuestJournalToggle()
+{
+	bQuestJournalToggleRequested = true;
+}
+
+void AFlyingCabPlayerController::ProcessDeferredInputCommands()
+{
+	const bool bToggleJournal = bQuestJournalToggleRequested;
+	const bool bInteract = bContextInteractionRequested;
+	const bool bResetVehicle = bVehicleResetRequested;
+	bQuestJournalToggleRequested = false;
+	bContextInteractionRequested = false;
+	bVehicleResetRequested = false;
+
+	// Only one state-changing command is accepted per input frame. The journal has
+	// priority because it changes pause/focus state; interaction precedes reset.
+	if (bToggleJournal)
+	{
+		bDeferredInputTransitionGuard = true;
+		ToggleQuestJournal();
+		return;
+	}
+	if (IsGameplayInputSuppressed())
+	{
+		return;
+	}
+	if (bInteract)
+	{
+		bDeferredInputTransitionGuard = true;
+		ExecuteContextInteraction();
+		return;
+	}
+	if (bResetVehicle)
+	{
+		if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(GetPawn()))
+		{
+			bDeferredInputTransitionGuard = true;
+			Vehicle->ResetVehicle();
+		}
+	}
+}
+
+void AFlyingCabPlayerController::ExecuteContextInteraction()
 {
 	if (AFlyingCabPawn* Vehicle = Cast<AFlyingCabPawn>(GetPawn()))
 	{
@@ -1031,6 +1170,7 @@ void AFlyingCabPlayerController::CloseQuestJournal()
 	}
 	SetPause(false);
 	// The journal still suppresses gameplay while raw/action state is neutralized.
+	bDeferredInputTransitionGuard = true;
 	FlushPressedKeys();
 	RestoreGameplayInputMode();
 	EnsureEnhancedInputContext();

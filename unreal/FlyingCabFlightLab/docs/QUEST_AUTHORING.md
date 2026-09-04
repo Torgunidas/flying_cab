@@ -57,7 +57,7 @@ Dzielnice mają stabilne identyfikatory w `DA_FlyingCabCityLayout`, niezależne 
 ## Questgiverzy, interactables i dialogi
 
 - Questgiver działa już bez dialogu: pierwsza interakcja przyjmuje zadanie, kolejna śledzi je, a stan `ReadyToTurnIn` je kończy.
-- Pierwsze huby są opisane wspólnie w `FlyingCabQuestHubData`: Mike działa w biurze Nightshift, a Jack na platformie Rainline. Te same dane sterują spawnem i znacznikami `M`/`J` na minimapie.
+- Pierwsze huby są opisane wspólnie w `FlyingCabQuestHubData`: Mike działa w biurze Nightshift, a Jack na skybridge'u w Cobalt Heights. Te same dane sterują spawnem i znacznikami `M`/`J` na minimapie.
 - `OfferDialogueId`, `ActiveDialogueId` i `CompletionDialogueId` są zarezerwowanymi połączeniami z przyszłym systemem dialogowym. Nie zawierają tekstu ani logiki questa.
 - Przyszły dialog powinien pytać subsystem o `QuestId`/status i wywoływać jego publiczne API. Nie może bezpośrednio modyfikować `FFlyingCabQuestRuntimeState`.
 - Każdy nowy rodzaj obiektu świata może implementować `IFlyingCabInteractable::GetQuestTargetId()` lub otrzymać `UFlyingCabQuestEventComponent` w Blueprintcie.
@@ -73,7 +73,7 @@ Dzielnice mają stabilne identyfikatory w `DA_FlyingCabCityLayout`, niezależne 
 
 - `Quest.FirstShift` uruchamia się automatycznie w Free Roam: odbierz pasażera, dostarcz go, odbierz 75 kredytów.
 - `Quest.NightshiftContract` oferuje Mike w biurze Nightshift: ukończ dwa kursy, wróć do zleceniodawcy, odbierz 200 kredytów.
-- `Get_Money` oferuje Jack na platformie Rainline i jest pierwszym zadaniem w kategorii `Side`.
+- `Get_Money` oferuje Jack na skybridge'u w Cobalt Heights i jest pierwszym zadaniem w kategorii `Side`.
 - Są to definicje zastępcze do testowania fundamentu. Docelową treść tworzymy jako Data Assets bez zmian w C++.
 
 ## Dziennik i komunikacja z graczem
@@ -98,5 +98,5 @@ Dzielnice mają stabilne identyfikatory w `DA_FlyingCabCityLayout`, niezależne 
 8. Wróć do dispatchera. Jego marker powinien zmienić się na `?`; interakcja kończy zadanie i przyznaje `200 CR` dokładnie raz.
 9. Uruchom `TIME ATTACK`. Tracker zadań nie może być widoczny, a kursy nie mogą zmieniać ich postępu ani przyznawać nagród questowych.
 10. W `FREE ROAM` naciśnij `J`. Sprawdź dotykiem i klawiaturą przełączanie `MAIN QUEST`/`SIDE QUEST`, wybór zadania oraz `TRACK`/`STOP TRACKING`.
-11. Odszukaj na minimapie czarny znacznik `J`, podejdź na piechotę do Jacka na platformie Rainline i przyjmij `Get_Money`. Zadanie powinno pojawić się jako `TAKEN` albo `TRACKED` w `SIDE QUEST`.
+11. Odszukaj na minimapie czarny znacznik `J`, wyląduj na skybridge'u w Cobalt Heights, podejdź na piechotę do Jacka i przyjmij `Get_Money`. Zadanie powinno pojawić się jako `TAKEN` albo `TRACKED` w `SIDE QUEST`.
 12. Otwórz dziennik podczas trzymania `W` albo `A`, puść klawisz i zamknij dziennik. Sterowanie nie może pozostać zablokowane.

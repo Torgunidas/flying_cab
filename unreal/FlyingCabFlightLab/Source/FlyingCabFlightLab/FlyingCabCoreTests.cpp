@@ -5,6 +5,7 @@
 #include "Engine/GameInstance.h"
 #include "FlyingCabCityData.h"
 #include "FlyingCabCityLayoutAsset.h"
+#include "FlyingCabControlInputComponent.h"
 #include "FlyingCabDispatchComponent.h"
 #include "FlyingCabEconomyAsset.h"
 #include "FlyingCabEconomyComponent.h"
@@ -25,6 +26,55 @@
 #include "InputAction.h"
 #include "InputMappingContext.h"
 #include "InputModifiers.h"
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FFlyingCabControlFrameValidationTest,
+	"FlyingCab.Core.Input.ControlFrameValidation",
+	EAutomationTestFlags_ApplicationContextMask
+		| EAutomationTestFlags::ProductFilter)
+
+bool FFlyingCabControlFrameValidationTest::RunTest(const FString& Parameters)
+{
+	UFlyingCabControlInputComponent* Control = NewObject<UFlyingCabControlInputComponent>();
+	const TArray<FKey> NoMappedKeys;
+	AddExpectedMessagePlain(
+		TEXT("STALE_ACTION_VALUE action=Test"),
+		ELogVerbosity::Warning,
+		EAutomationExpectedMessageFlags::Contains,
+		2);
+
+	for (const float StaleValue : {1.0f, -1.0f})
+	{
+		uint8 StaleFrames = 0;
+		bool bReported = false;
+		TestEqual(TEXT("A single unmatched edge has one grace sample"),
+			Control->ValidateActionValue(TEXT("Test"), StaleValue, NoMappedKeys,
+				nullptr, StaleFrames, bReported), StaleValue);
+		bool bStayedNeutral = true;
+		for (int32 Sample = 0; Sample < 1000; ++Sample)
+		{
+			bStayedNeutral &= FMath::IsNearlyZero(Control->ValidateActionValue(
+				TEXT("Test"), StaleValue, NoMappedKeys, nullptr, StaleFrames, bReported));
+		}
+		TestTrue(TEXT("A stale action remains neutral throughout 1000 samples"), bStayedNeutral);
+		TestEqual(TEXT("The stale guard saturates without wrapping"), StaleFrames, uint8(2));
+		TestTrue(TEXT("One stale episode is reported"), bReported);
+		Control->ValidateActionValue(TEXT("Test"), 0.0f, NoMappedKeys,
+			nullptr, StaleFrames, bReported);
+		TestEqual(TEXT("A neutral action rearms the guard"), StaleFrames, uint8(0));
+		TestFalse(TEXT("Recovery rearms diagnostic reporting"), bReported);
+	}
+
+	Control->ResetControlFrame(EFlyingCabInputBlock::Transition);
+	const uint64 BeforeSequence = Control->GetControlFrame().Sequence;
+	Control->BuildControlFrame(nullptr, nullptr, EFlyingCabInputBlock::QuestJournal);
+	const FFlyingCabControlFrame& Frame = Control->GetControlFrame();
+	TestTrue(TEXT("Suppressed frames contain no movement or service"),
+		FMath::IsNearlyZero(Frame.Horizontal) && FMath::IsNearlyZero(Frame.Thrust) && !Frame.bService);
+	TestEqual(TEXT("A suppressed frame records its reason"), Frame.Block, EFlyingCabInputBlock::QuestJournal);
+	TestTrue(TEXT("Each published frame advances the sequence"), Frame.Sequence > BeforeSequence);
+	return true;
+}
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FFlyingCabDispatchFareTest,
@@ -659,13 +709,23 @@ bool FFlyingCabVehicleVitalsLifecycleTest::RunTest(const FString& Parameters)
 		Vitals->Advance(1.0f, 1.0f, 1.0f, 0.0f));
 	TestTrue(TEXT("Horizontal and vertical thrust consume configured fuel"),
 		FMath::IsNearlyEqual(Vitals->GetFuel(), 2.0f));
+	TestTrue(TEXT("A positive fuel reserve keeps thrusters available"),
+		Vitals->CanUseThrusters());
 	TestTrue(TEXT("Fuel depletion emits a single empty transition"),
 		Vitals->Advance(1.0f, 1.0f, 1.0f, 0.0f));
+	TestFalse(TEXT("An empty fuel reserve disables thrusters"),
+		Vitals->CanUseThrusters());
+	TestFalse(TEXT("Requested thrust at zero fuel does not repeat the empty transition"),
+		Vitals->Advance(1.0f, 0.0f, 1.0f, 0.0f));
+	TestTrue(TEXT("Requested thrust cannot consume or regenerate an empty reserve"),
+		FMath::IsNearlyZero(Vitals->GetFuel()));
 	TestFalse(TEXT("An empty reserve does not repeat its transition"),
 		Vitals->Advance(0.0f, 0.0f, 0.0f, 0.0f));
 	Vitals->Advance(1.0f, 0.0f, 0.0f, -1000.0f);
 	TestTrue(TEXT("Descending without thrust regenerates the reserve"),
 		FMath::IsNearlyEqual(Vitals->GetFuel(), 0.5f));
+	TestTrue(TEXT("Regenerated fuel immediately enables thrusters"),
+		Vitals->CanUseThrusters());
 	TestTrue(TEXT("Refuelling returns the amount actually accepted"),
 		FMath::IsNearlyEqual(Vitals->AddFuel(2.0f), 2.0f));
 	Vitals->Advance(1.0f, 0.0f, 1.0f, 0.0f);
@@ -744,6 +804,14 @@ bool FFlyingCabCityDataConsistencyTest::RunTest(const FString& Parameters)
 			Position.X >= WorldMin.X && Position.X <= WorldMax.X
 				&& Position.Y >= WorldMin.Y && Position.Y <= WorldMax.Y);
 		RuntimeDistrictCount += District.BuildsRuntimeGeometry() ? 1 : 0;
+
+		const FVector PickupLocation =
+			FlyingCabCityData::GetPassengerPickupLocation(District.StopLocation);
+		const FVector DropoffLocation =
+			FlyingCabCityData::GetPassengerDropoffLocation(District.StopLocation);
+		TestTrue(
+			*FString::Printf(TEXT("District '%s' separates pickup and dropoff"), *Name),
+			FVector::Distance(PickupLocation, DropoffLocation) >= 800.0f);
 	}
 	TestEqual(TEXT("Four districts are built by the runtime east expansion"), RuntimeDistrictCount, 4);
 
@@ -776,6 +844,22 @@ bool FFlyingCabCityDataConsistencyTest::RunTest(const FString& Parameters)
 				&& Hub.MinimapWorldPosition.X <= WorldMax.X
 				&& Hub.MinimapWorldPosition.Y >= WorldMin.Y
 				&& Hub.MinimapWorldPosition.Y <= WorldMax.Y);
+		for (const FFlyingCabDistrictDefinition& District : Districts)
+		{
+			const FVector Pickup =
+				FlyingCabCityData::GetPassengerPickupLocation(District.StopLocation);
+			const FVector Dropoff =
+				FlyingCabCityData::GetPassengerDropoffLocation(District.StopLocation);
+			const FVector2D PickupMap(Pickup.X, Pickup.Z);
+			const FVector2D DropoffMap(Dropoff.X, Dropoff.Z);
+			TestTrue(
+				*FString::Printf(
+					TEXT("Quest hub '%s' is distinct from passenger zones in %s"),
+					*Hub.DisplayName,
+					*District.DisplayName),
+				FVector2D::Distance(Hub.MinimapWorldPosition, PickupMap) >= 500.0f
+					&& FVector2D::Distance(Hub.MinimapWorldPosition, DropoffMap) >= 500.0f);
+		}
 	}
 	return true;
 }

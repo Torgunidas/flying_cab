@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FlyingCabControlInputComponent.h"
 #include "FlyingCabQuestTypes.h"
 #include "FlyingCabRunTypes.h"
 #include "GameFramework/PlayerController.h"
@@ -41,6 +42,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Interaction")
 	void RequestContextInteraction();
+	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Flight")
+	void RequestVehicleReset();
 	FText GetContextPrompt();
 	void ShowEventMessage(
 		const FText& Message,
@@ -80,9 +83,14 @@ public:
 	bool IsGameFlowScreenOpen() const { return bGameFlowScreenOpen; }
 	bool IsQuestJournalOpen() const { return bQuestJournalOpen; }
 	UFlyingCabQuestJournalWidget* GetQuestJournalWidget() const { return QuestJournalWidget; }
+	bool IsControlFrameEnabled() const;
+	const FFlyingCabControlFrame& GetControlFrame() const;
+	EFlyingCabInputBlock GetControlInputBlock() const;
+	void TraceVehicleInput(const AFlyingCabPawn* Vehicle, const FVector2D& Keyboard,
+		const FVector2D& Touch, const FVector& AppliedForce, const TCHAR* Reason = nullptr);
 	bool IsGameplayInputSuppressed() const
 	{
-		return bGameFlowScreenOpen || bQuestJournalOpen || bDeveloperObserverMode;
+		return GetControlInputBlock() != EFlyingCabInputBlock::None;
 	}
 	bool IsDeveloperObserverMode() const { return bDeveloperObserverMode; }
 	AFlyingCabCameraRig* GetCameraRig() const { return CameraRig; }
@@ -94,6 +102,9 @@ protected:
 	virtual void OnPossess(APawn* InPawn) override;
 
 private:
+	void ProcessDeferredInputCommands();
+	void ExecuteContextInteraction();
+	void RequestQuestJournalToggle();
 	void TryExitVehicle(AFlyingCabPawn* Vehicle);
 	void TryEnterVehicle(AFlyingCabCharacter* OnFootPawn, AFlyingCabPawn* Vehicle);
 	bool TryInteractWithNearbyActor(AFlyingCabCharacter* OnFootPawn);
@@ -174,6 +185,9 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UFlyingCabTouchControls> InterfaceWidget;
 
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Input")
+	TObjectPtr<UFlyingCabControlInputComponent> ControlInput;
+
 	TArray<TWeakObjectPtr<AActor>> CachedInteractables;
 	TArray<TWeakObjectPtr<AFlyingCabPawn>> CachedVehicles;
 	TWeakObjectPtr<AFlyingCabCharacter> CachedContextPromptPawn;
@@ -191,4 +205,8 @@ private:
 	bool bGameFlowScreenOpen = false;
 	bool bQuestJournalOpen = false;
 	bool bDeveloperObserverMode = false;
+	bool bContextInteractionRequested = false;
+	bool bVehicleResetRequested = false;
+	bool bQuestJournalToggleRequested = false;
+	bool bDeferredInputTransitionGuard = false;
 };

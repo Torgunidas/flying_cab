@@ -130,18 +130,23 @@ void AFlyingCabCityExpansion::BuildExpansionGeometry()
 	AddBlock(TEXT("CobaltCanopy"), FVector(10850.0f, 0.0f, 6050.0f), FVector(13.0f, 5.2f, 10.0f), Magenta);
 	AddBlock(TEXT("OrbitalCanopy"), FVector(13750.0f, 0.0f, 6250.0f), FVector(9.0f, 5.2f, 6.0f), Green);
 
-	// Curbside platforms for the four new passenger districts.
+	// Every district gets one long curbside apron. Pickup and dropoff use opposite
+	// ends, leaving a neutral service strip in the middle.
 	for (const FFlyingCabDistrictDefinition& District : FlyingCabCityData::GetDistricts())
 	{
-		if (!District.BuildsRuntimeGeometry())
-		{
-			continue;
-		}
+		const FLinearColor PlatformColor = District.BuildsRuntimeGeometry()
+			? District.AccentColor
+			: Roadbed;
 		AddBlock(
-			FString::Printf(TEXT("Platform%s"), *District.RuntimeGeometryName),
+			FString::Printf(TEXT("CurbsidePlatform%s"), *District.MinimapCode),
 			District.StopLocation - FVector(0.0f, 0.0f, 190.0f),
-			FVector(District.RuntimePlatformHalfWidth, 4.8f, 0.8f),
-			District.AccentColor);
+			FVector(
+				FMath::Max(
+					District.RuntimePlatformHalfWidth,
+					FlyingCabCityData::GetCurbsidePlatformScaleX()),
+				4.8f,
+				0.8f),
+			PlatformColor);
 	}
 
 	// A few narrow bridges make the extension a navigable space rather than an empty box.

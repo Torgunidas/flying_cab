@@ -16,8 +16,8 @@ namespace
 			TEXT("QuestGiver.Jack"),
 			TEXT("JACK"),
 			TEXT("J"),
-			FVector(8300.0f, 0.0f, 2620.0f),
-			FVector2D(8300.0f, 2620.0f),
+			FVector(10150.0f, 0.0f, 4955.0f),
+			FVector2D(10150.0f, 4955.0f),
 			TEXT("Get_Money")}};
 }
 

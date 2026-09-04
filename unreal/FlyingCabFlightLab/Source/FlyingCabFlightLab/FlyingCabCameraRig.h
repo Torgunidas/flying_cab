@@ -51,7 +51,7 @@ private:
 	float VehicleArmLength = 3200.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera", meta = (ClampMin = "0.0"))
-	float OnFootArmLength = 1050.0f;
+	float OnFootArmLength = 1900.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Camera")
 	FVector OnFootTargetOffset = FVector(0.0f, 0.0f, 80.0f);

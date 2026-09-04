@@ -40,6 +40,11 @@ public:
 	float GetHealthPercent() const;
 	bool IsDead() const { return bDead; }
 
+#if WITH_DEV_AUTOMATION_TESTS
+	float GetTestKeyboardHorizontalInput() const { return KeyboardHorizontalInput; }
+	float GetTestKeyboardThrustInput() const { return KeyboardThrustInput; }
+#endif
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;

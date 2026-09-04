@@ -35,6 +35,8 @@ namespace
 
 	const FVector2D MinimapWorldMin(-5000.0f, 0.0f);
 	const FVector2D MinimapWorldMax(15000.0f, 6500.0f);
+	constexpr float PassengerZoneHorizontalOffset = 430.0f;
+	constexpr float CurbsidePlatformScaleX = 22.0f;
 	const TCHAR* CityLayoutAssetPath =
 		TEXT("/Game/Data/DA_FlyingCabCityLayout.DA_FlyingCabCityLayout");
 
@@ -68,6 +70,23 @@ TConstArrayView<FFlyingCabDistrictDefinition> FlyingCabCityData::GetDistricts()
 {
 	const UFlyingCabCityLayoutAsset* Asset = GetCityLayoutAsset();
 	return Asset ? MakeArrayView(Asset->Districts) : MakeArrayView(Districts);
+}
+
+FVector FlyingCabCityData::GetPassengerPickupLocation(
+	const FVector& DistrictStopLocation)
+{
+	return DistrictStopLocation - FVector(PassengerZoneHorizontalOffset, 0.0f, 0.0f);
+}
+
+FVector FlyingCabCityData::GetPassengerDropoffLocation(
+	const FVector& DistrictStopLocation)
+{
+	return DistrictStopLocation + FVector(PassengerZoneHorizontalOffset, 0.0f, 0.0f);
+}
+
+float FlyingCabCityData::GetCurbsidePlatformScaleX()
+{
+	return CurbsidePlatformScaleX;
 }
 
 TArray<FFlyingCabServiceDefinition> FlyingCabCityData::GetFuelStations()

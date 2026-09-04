@@ -96,7 +96,7 @@ bool UFlyingCabDispatchComponent::InitializeNetwork()
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	DropoffZone = GetWorld()->SpawnActor<AFlyingCabDeliveryZone>(
 		AFlyingCabDeliveryZone::StaticClass(),
-		DeliveryStops[1],
+		FlyingCabCityData::GetPassengerDropoffLocation(DeliveryStops[1]),
 		FRotator::ZeroRotator,
 		SpawnParameters);
 	if (!DropoffZone)
@@ -408,7 +408,7 @@ void UFlyingCabDispatchComponent::SpawnPassengerOffer()
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	AFlyingCabDeliveryZone* Zone = GetWorld()->SpawnActor<AFlyingCabDeliveryZone>(
 		AFlyingCabDeliveryZone::StaticClass(),
-		DeliveryStops[PickupIndex],
+		FlyingCabCityData::GetPassengerPickupLocation(DeliveryStops[PickupIndex]),
 		FRotator::ZeroRotator,
 		SpawnParameters);
 	if (!Zone)
@@ -507,8 +507,8 @@ int32 UFlyingCabDispatchComponent::CalculateEstimatedFare(
 		return FMath::RoundToInt(BaseFare);
 	}
 	return CalculateEstimatedFare(
-		DeliveryStops[PickupIndex],
-		DeliveryStops[DropoffIndex],
+		FlyingCabCityData::GetPassengerPickupLocation(DeliveryStops[PickupIndex]),
+		FlyingCabCityData::GetPassengerDropoffLocation(DeliveryStops[DropoffIndex]),
 		BaseFare,
 		FarePerMeterTowardTarget);
 }
@@ -530,7 +530,9 @@ void UFlyingCabDispatchComponent::HandleZoneReady(AFlyingCabDeliveryZone* Zone)
 		const FFlyingCabPassengerOfferState SelectedOffer = PassengerOffers[OfferIndex];
 		CurrentPickupIndex = SelectedOffer.PickupIndex;
 		CurrentDropoffIndex = SelectedOffer.DropoffIndex;
-		DropoffZone->SetActorLocation(DeliveryStops[CurrentDropoffIndex]);
+		DropoffZone->SetActorLocation(
+			FlyingCabCityData::GetPassengerDropoffLocation(
+				DeliveryStops[CurrentDropoffIndex]));
 		bPassengerOnBoard = true;
 		ActiveFare = BaseFare;
 		if (TrackedPawn)

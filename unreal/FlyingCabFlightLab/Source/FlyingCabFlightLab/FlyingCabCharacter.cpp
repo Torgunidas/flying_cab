@@ -95,7 +95,7 @@ AFlyingCabCharacter::AFlyingCabCharacter()
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetCapsuleComponent());
-	CameraBoom->TargetArmLength = 1050.0f;
+	CameraBoom->TargetArmLength = 1900.0f;
 	CameraBoom->SetRelativeRotation(FRotator(-5.0f, -90.0f, 0.0f));
 	CameraBoom->TargetOffset = FVector(0.0f, 0.0f, 80.0f);
 	CameraBoom->bDoCollisionTest = false;

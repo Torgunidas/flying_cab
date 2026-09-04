@@ -102,9 +102,12 @@ private:
 	void SetKeyboardServiceInput(float Value);
 	void RefreshKeyboardInputState();
 	void ClearAllInputState(const TCHAR* Reason, bool bFlushPressedKeys);
+	void TraceControlInput(const TCHAR* Reason = nullptr) const;
 	void ToggleFlightTelemetry();
 	void DrawFlightTelemetry(float HorizontalInput, float ThrustInput, const FVector& Velocity) const;
 	void UpdateVisualResponse(float DeltaSeconds, const FVector& Velocity);
+	void UpdateCriticalResourceAppearance(float DeltaSeconds);
+	FLinearColor GetBaseVehicleDisplayColor() const;
 	void RefreshPlayerFocusAppearance();
 	void RefreshVehicleIdentityAppearance(bool bForce = false);
 	bool HasRequiredVehicleAccess() const;
@@ -215,6 +218,26 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation", meta = (ClampMin = "0.0"))
 	float PlayerFocusLightIntensity = 1200.0f;
 
+	/** Hull or fuel at or below this fraction adds a warning pulse to the vehicle body. */
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation|Critical Resources", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float CriticalResourceThreshold = 0.20f;
+
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation|Critical Resources", meta = (ClampMin = "0.1"))
+	float CriticalWarningPulseFrequency = 1.35f;
+
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation|Critical Resources", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float CriticalWarningMaskStrength = 0.50f;
+
+	/** Local glow reinforcing the body tint at the pulled-back gameplay camera distance. */
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation|Critical Resources", meta = (ClampMin = "0.0"))
+	float CriticalWarningLightIntensity = 900.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation|Critical Resources")
+	FLinearColor CriticalHullMaskColor = FLinearColor(1.0f, 0.015f, 0.005f);
+
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|Presentation|Critical Resources")
+	FLinearColor CriticalFuelMaskColor = FLinearColor(0.01f, 0.18f, 1.0f);
+
 	/** Runtime readout used while tuning the FlightLab prototype. Toggle with F3. */
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Debug")
 	bool bShowFlightTelemetry = false;
@@ -272,12 +295,15 @@ private:
 	FTransform SpawnTransform;
 
 	float KeyboardHorizontalInput = 0.0f;
+	FVector LastAppliedControlForce = FVector::ZeroVector;
 	float KeyboardThrustInput = 0.0f;
 	uint32 ForcedInputResetCount = 0;
 	float PreviousHorizontalVelocity = 0.0f;
 	float VisualHorizontalAcceleration = 0.0f;
 	bool bHasPreviousHorizontalVelocity = false;
 	FVector CameraTrackingOffset = FVector::ZeroVector;
+	float CriticalWarningElapsed = 0.0f;
+	bool bCriticalWarningAppearanceActive = false;
 	float TouchHorizontalInput = 0.0f;
 	float TouchThrustInput = 0.0f;
 	bool bKeyboardRefuelPressed = false;

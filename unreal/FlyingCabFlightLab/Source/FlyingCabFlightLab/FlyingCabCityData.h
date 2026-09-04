@@ -94,6 +94,9 @@ struct FFlyingCabTrafficRouteDefinition
 namespace FlyingCabCityData
 {
 	TConstArrayView<FFlyingCabDistrictDefinition> GetDistricts();
+	FVector GetPassengerPickupLocation(const FVector& DistrictStopLocation);
+	FVector GetPassengerDropoffLocation(const FVector& DistrictStopLocation);
+	float GetCurbsidePlatformScaleX();
 	TArray<FFlyingCabServiceDefinition> GetFuelStations();
 	TArray<FFlyingCabServiceDefinition> GetRepairStations();
 	TConstArrayView<FFlyingCabTrafficRouteDefinition> GetTrafficRoutes();
