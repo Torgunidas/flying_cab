@@ -85,7 +85,11 @@ public:
 		UWorld* World = AutomationCommon::GetAnyGameWorld();
 		auto* PC = World ? Cast<AFlyingCabPlayerController>(World->GetFirstPlayerController()) : nullptr;
 		AFlyingCabLivingWorldManager* Manager = nullptr;
-		if (World) for (TActorIterator<AFlyingCabLivingWorldManager> It(World); It; ++It) { Manager=*It; break; }
+		if (World)
+		{
+			TActorIterator<AFlyingCabLivingWorldManager> It(World);
+			if (It) Manager = *It;
+		}
 		if (!Manager || !PC)
 		{
 			if (FPlatformTime::Seconds()-WallStart<20) return false;

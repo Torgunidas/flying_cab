@@ -77,7 +77,11 @@ public:
 		UWorld* World = AutomationCommon::GetAnyGameWorld();
 		auto* PC = World ? Cast<AFlyingCabPlayerController>(World->GetFirstPlayerController()) : nullptr;
 		AFlyingCabCityExpansion* City = nullptr;
-		if (World) for (TActorIterator<AFlyingCabCityExpansion> It(World); It; ++It) { City=*It; break; }
+		if (World)
+		{
+			TActorIterator<AFlyingCabCityExpansion> It(World);
+			if (It) City = *It;
+		}
 		if (!City || !PC)
 		{
 			if (FPlatformTime::Seconds()-Started<15) return false;
