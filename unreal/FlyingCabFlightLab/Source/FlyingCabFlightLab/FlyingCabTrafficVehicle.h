@@ -54,11 +54,14 @@ public:
 	float GetVisualPitchDegrees() const;
 	FName GetLivingRouteId() const;
 	bool UsesLivingRoute() const { return LivingRoute != nullptr; }
+	AActor* GetLastLivingObstacle() const { return LastLivingObstacle.Get(); }
 
 	FOnFlyingCabNearMiss OnNearMiss;
 	FOnFlyingCabTrafficStopReached OnLivingStopReached;
 
 private:
+	mutable TWeakObjectPtr<AActor> LastLivingObstacle;
+	FVector LivingStopLocation = FVector::ZeroVector;
 	void TickLegacyRoute(float DeltaSeconds);
 	void TickLivingRoute(float DeltaSeconds);
 	bool HasLivingRouteObstacle(float LookAheadDistance) const;

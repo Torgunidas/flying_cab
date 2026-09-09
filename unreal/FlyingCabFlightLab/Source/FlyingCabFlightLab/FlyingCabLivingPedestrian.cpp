@@ -19,30 +19,42 @@ AFlyingCabLivingPedestrian::AFlyingCabLivingPedestrian()
 	SetRootComponent(CollisionBody);
 	CollisionBody->InitCapsuleSize(24.0f, 58.0f);
 	CollisionBody->SetMobility(EComponentMobility::Movable);
-	CollisionBody->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	// Ambient passengers are not physical obstacles for the player. Keep a
+	// query-only proxy so traffic/pedestrian sensors can still yield to them.
+	CollisionBody->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionBody->SetCollisionObjectType(ECC_WorldDynamic);
 	CollisionBody->SetCollisionResponseToAllChannels(ECR_Ignore);
 	CollisionBody->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-	CollisionBody->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
-	CollisionBody->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	CollisionBody->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
 	CollisionBody->SetGenerateOverlapEvents(false);
 	CollisionBody->SetCanEverAffectNavigation(false);
 
 	VisualMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualMesh"));
 	VisualMesh->SetupAttachment(CollisionBody);
 	VisualMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	VisualMesh->SetRelativeScale3D(FVector(0.34f, 0.34f, 1.05f));
+	// Match the cylinder + head silhouette used by delivery-zone passengers.
+	// Keep the existing authored route origin and its ground clearance.
+	VisualMesh->SetRelativeLocation(FVector(0.0f, 0.0f, -18.0f));
+	VisualMesh->SetRelativeScale3D(FVector(0.18f, 0.18f, 0.70f));
+	PassengerHead = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PassengerHead"));
+	PassengerHead->SetupAttachment(CollisionBody);
+	PassengerHead->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	PassengerHead->SetRelativeLocation(FVector(0.0f, 0.0f, 35.0f));
+	PassengerHead->SetRelativeScale3D(FVector(0.22f));
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> BasicMaterial(
 		TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
-	if (CubeMesh.Succeeded())
+	if (CylinderMesh.Succeeded())
 	{
-		VisualMesh->SetStaticMesh(CubeMesh.Object);
+		VisualMesh->SetStaticMesh(CylinderMesh.Object);
 	}
+	if (SphereMesh.Succeeded()) { PassengerHead->SetStaticMesh(SphereMesh.Object); }
 	if (BasicMaterial.Succeeded())
 	{
 		VisualMesh->SetMaterial(0, BasicMaterial.Object);
+		PassengerHead->SetMaterial(0, BasicMaterial.Object);
 	}
 }
 
@@ -71,6 +83,8 @@ void AFlyingCabLivingPedestrian::Configure(
 	VisualMesh->SetVectorParameterValueOnMaterials(
 		TEXT("Color"),
 		FVector(Color.R, Color.G, Color.B));
+	PassengerHead->SetVectorParameterValueOnMaterials(
+		TEXT("Color"), FVector(Color.R, Color.G, Color.B));
 }
 
 void AFlyingCabLivingPedestrian::Tick(float DeltaSeconds)
@@ -114,6 +128,15 @@ void AFlyingCabLivingPedestrian::Tick(float DeltaSeconds)
 	}
 
 	const float DistanceToNode = Route->GetForwardDistanceToNode(RouteDistance, NextNodeIndex);
+	const FFlyingCabLivingRouteNode* NextNode = Route->GetNode(NextNodeIndex);
+	// A boarding point is a small queue, not one exact position that every walker must occupy.
+	// Join the queue before the spacing sensor stops us behind another waiting passenger.
+	if (NextNode && NextNode->Action == EFlyingCabLivingRouteAction::BoardVehicle && DistanceToNode <= 180.f)
+	{
+		CurrentSpeed = 0.f;
+		ProcessRouteNode();
+		return;
+	}
 	const float SensorDistance = FMath::Min(
 		DistanceToNode,
 		FMath::Max(Route->GetMinimumSpacing(), CurrentSpeed * 0.45f + 70.0f));
@@ -346,7 +369,7 @@ void AFlyingCabLivingPedestrian::SetAgentVisible(bool bVisible)
 {
 	SetActorHiddenInGame(!bVisible);
 	CollisionBody->SetCollisionEnabled(
-		bVisible ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
+		bVisible ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
 }
 
 void AFlyingCabLivingPedestrian::BeginNodeWait(float Duration)

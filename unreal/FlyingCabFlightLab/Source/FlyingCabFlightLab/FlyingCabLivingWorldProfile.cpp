@@ -42,7 +42,9 @@ bool FFlyingCabLivingRouteDefinition::IsValid(FString& OutError) const
 	for (int32 NodeIndex = 0; NodeIndex < Nodes.Num(); ++NodeIndex)
 	{
 		const FFlyingCabLivingRouteNode& Node = Nodes[NodeIndex];
-		if (Node.LocalLocation.ContainsNaN() || Node.WaitDuration < 0.0f)
+		if (Node.LocalLocation.ContainsNaN() || !FMath::IsFinite(Node.SpeedLimit)
+			|| Node.SpeedLimit < 0.0f || Node.WaitDuration < 0.0f
+			|| (!Node.TrafficSignal.IsNone() && Node.TrafficSignal != TEXT("Horizontal") && Node.TrafficSignal != TEXT("Vertical")))
 		{
 			OutError = FString::Printf(TEXT("Route %s has an invalid node at index %d."), *RouteId.ToString(), NodeIndex);
 			return false;

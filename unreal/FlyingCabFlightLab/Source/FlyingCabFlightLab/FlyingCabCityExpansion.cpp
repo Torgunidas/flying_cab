@@ -3,24 +3,21 @@
 #include "FlyingCabCityExpansion.h"
 
 #include "Components/SceneComponent.h"
+#include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
-#include "Engine/StaticMeshActor.h"
-#include "EngineUtils.h"
 #include "FlyingCabCityData.h"
+#include "FlyingCabQuestHubData.h"
+#include "FlyingCabTrafficSignals.h"
 #include "Materials/MaterialInterface.h"
 #include "UObject/ConstructorHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabCityExpansion, Log, All);
 
-namespace
-{
-	const FName EastBoundaryTag(TEXT("EastBoundary"));
-}
-
 AFlyingCabCityExpansion::AFlyingCabCityExpansion()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.TickInterval = .2f;
 
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
 	SetRootComponent(SceneRoot);
@@ -36,141 +33,137 @@ AFlyingCabCityExpansion::AFlyingCabCityExpansion()
 void AFlyingCabCityExpansion::BeginPlay()
 {
 	Super::BeginPlay();
-	OpenExistingEasternBoundary();
 	BuildExpansionGeometry();
 }
 
-void AFlyingCabCityExpansion::OpenExistingEasternBoundary()
+void AFlyingCabCityExpansion::Tick(float DeltaSeconds)
 {
-	int32 OpenedBoundaries = 0;
-	for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
-	{
-		AStaticMeshActor* MeshActor = *It;
-		if (!MeshActor)
-		{
-			continue;
-		}
-
-		FVector BoundsOrigin = FVector::ZeroVector;
-		FVector BoundsExtent = FVector::ZeroVector;
-		MeshActor->GetActorBounds(false, BoundsOrigin, BoundsExtent);
-		const bool bHasBoundaryTag = MeshActor->ActorHasTag(EastBoundaryTag);
-		bool bMatchesLegacyFallback = !bHasBoundaryTag
-			&& FMath::Abs(BoundsOrigin.X - 4950.0f) <= 350.0f
-			&& BoundsExtent.X <= 350.0f
-			&& BoundsExtent.Z >= 2200.0f;
-#if WITH_EDITOR
-		bMatchesLegacyFallback = bMatchesLegacyFallback
-			|| (!bHasBoundaryTag
-				&& MeshActor->GetActorLabel().Equals(TEXT("Arena_RightBoundary")));
-#endif
-		if (!bHasBoundaryTag && !bMatchesLegacyFallback)
-		{
-			continue;
-		}
-		if (bMatchesLegacyFallback)
-		{
-			UE_LOG(
-				LogFlyingCabCityExpansion,
-				Warning,
-				TEXT("Opening %s through the legacy boundary heuristic; add Actor Tag '%s' to the map actor."),
-				*MeshActor->GetName(),
-				*EastBoundaryTag.ToString());
-		}
-
-		if (UStaticMeshComponent* Mesh = MeshActor->GetStaticMeshComponent())
-		{
-			Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			Mesh->SetVisibility(false, true);
-			++OpenedBoundaries;
-		}
-	}
-
-	if (OpenedBoundaries > 0)
-	{
-		UE_LOG(
-			LogFlyingCabCityExpansion,
-			Display,
-			TEXT("Opened %d existing eastern arena boundary component(s)."),
-			OpenedBoundaries);
-	}
-	else
-	{
-		UE_LOG(
-			LogFlyingCabCityExpansion,
-			Warning,
-			TEXT("Existing eastern arena boundary was not found."));
-		ensureMsgf(
-			false,
-			TEXT("FlightLab requires a static mesh actor tagged '%s' for the east boundary."),
-			*EastBoundaryTag.ToString());
-	}
+	Super::Tick(DeltaSeconds);
+	if (!SignalLabel) return;
+	const double Time = GetWorld()->GetTimeSeconds();
+	const bool H = FlyingCabTrafficSignals::IsGreen(TEXT("Horizontal"),Time);
+	const bool V = FlyingCabTrafficSignals::IsGreen(TEXT("Vertical"),Time);
+	SignalLabel->SetText(FText::FromString(H ? TEXT("E-W  GO  //  N-S  WAIT")
+		: V ? TEXT("E-W  WAIT  //  N-S  GO") : TEXT("CLEARING CROSSING // WAIT")));
+	SignalLabel->SetTextRenderColor(H || V ? FColor(80,240,180) : FColor(255,110,70));
 }
 
 void AFlyingCabCityExpansion::BuildExpansionGeometry()
 {
-	const FLinearColor Structure(0.025f, 0.045f, 0.075f);
-	const FLinearColor Roadbed(0.035f, 0.075f, 0.095f);
-	const FLinearColor Cyan(0.02f, 0.62f, 0.82f);
-	const FLinearColor Amber(0.92f, 0.32f, 0.04f);
-	const FLinearColor Magenta(0.72f, 0.06f, 0.70f);
-	const FLinearColor Green(0.08f, 0.62f, 0.32f);
+	const FLinearColor Structure(.025f,.045f,.075f);
+	const FLinearColor Lane(.035f,.18f,.22f);
+	const FVector2D Min = FlyingCabCityData::GetMinimapWorldMin();
+	const FVector2D Max = FlyingCabCityData::GetMinimapWorldMax();
+	const FVector2D Mid = (Min + Max) * .5;
+	const FVector2D Size = Max - Min;
+	AddBlock(TEXT("MetroFloor"), FVector(Mid.X,0,Min.Y-50), FVector(Size.X/100,12,1), Structure);
+	AddBlock(TEXT("MetroCeiling"), FVector(Mid.X,0,Max.Y+50), FVector(Size.X/100,12,1), Structure);
+	AddBlock(TEXT("MetroWestBoundary"), FVector(Min.X-50,0,Mid.Y), FVector(1,12,Size.Y/100), Structure);
+	AddBlock(TEXT("MetroEastBoundary"), FVector(Max.X+50,0,Mid.Y), FVector(1,12,Size.Y/100), Structure);
 
-	// The original arena spans roughly -5000..5000. This adds another 10000 cm.
-	AddBlock(TEXT("EastFloor"), FVector(10000.0f, 0.0f, -50.0f), FVector(100.0f, 6.0f, 1.0f), Structure);
-	AddBlock(TEXT("EastCeiling"), FVector(10000.0f, 0.0f, 6550.0f), FVector(100.0f, 6.0f, 1.0f), Structure);
-	AddBlock(TEXT("NewEastBoundary"), FVector(15000.0f, 0.0f, 3250.0f), FVector(1.0f, 6.0f, 65.0f), Structure);
-
-	// Ground and ceiling silhouettes establish readable districts without closing flight lanes.
-	AddBlock(TEXT("GlasswardBase"), FVector(5650.0f, 0.0f, 330.0f), FVector(9.0f, 5.2f, 6.6f), Cyan);
-	AddBlock(TEXT("RainlineBase"), FVector(8050.0f, 0.0f, 470.0f), FVector(11.0f, 5.2f, 9.4f), Amber);
-	AddBlock(TEXT("CobaltBase"), FVector(10600.0f, 0.0f, 620.0f), FVector(10.0f, 5.2f, 12.4f), Magenta);
-	AddBlock(TEXT("OrbitalBase"), FVector(13900.0f, 0.0f, 430.0f), FVector(12.0f, 5.2f, 8.6f), Green);
-	AddBlock(TEXT("GlasswardCanopy"), FVector(7100.0f, 0.0f, 6200.0f), FVector(10.0f, 5.2f, 7.0f), Cyan);
-	AddBlock(TEXT("CobaltCanopy"), FVector(10850.0f, 0.0f, 6050.0f), FVector(13.0f, 5.2f, 10.0f), Magenta);
-	AddBlock(TEXT("OrbitalCanopy"), FVector(13750.0f, 0.0f, 6250.0f), FVector(9.0f, 5.2f, 6.0f), Green);
-
-	// Every district gets one long curbside apron. Pickup and dropoff use opposite
-	// ends, leaving a neutral service strip in the middle.
-	for (const FFlyingCabDistrictDefinition& District : FlyingCabCityData::GetDistricts())
+	// Lane markings are behind the flight plane and never collide with traffic or the cab.
+	for (const FFlyingCabHighwayStrip& Strip : FlyingCabCityData::GetHighwayStrips())
 	{
-		const FLinearColor PlatformColor = District.BuildsRuntimeGeometry()
-			? District.AccentColor
-			: Roadbed;
-		AddBlock(
-			FString::Printf(TEXT("CurbsidePlatform%s"), *District.MinimapCode),
-			District.StopLocation - FVector(0.0f, 0.0f, 190.0f),
-			FVector(
-				FMath::Max(
-					District.RuntimePlatformHalfWidth,
-					FlyingCabCityData::GetCurbsidePlatformScaleX()),
-				4.8f,
-				0.8f),
-			PlatformColor);
+		AddBlock(Strip.Name, FVector(Strip.Center.X,-520,Strip.Center.Y),
+			FVector(Strip.HalfSize.X/50, .08, Strip.HalfSize.Y/50), Lane, false);
 	}
-
-	// A few narrow bridges make the extension a navigable space rather than an empty box.
-	AddBlock(TEXT("RainlineBridge"), FVector(7450.0f, 0.0f, 3450.0f), FVector(7.0f, 4.6f, 0.65f), Roadbed);
-	AddBlock(TEXT("CobaltBridge"), FVector(10150.0f, 0.0f, 4850.0f), FVector(7.5f, 4.6f, 0.65f), Roadbed);
-	AddBlock(TEXT("OrbitalBridge"), FVector(12450.0f, 0.0f, 2100.0f), FVector(7.0f, 4.6f, 0.65f), Roadbed);
-
+	// Regular luminous dashes give speed and scale cues along long empty corridors.
+	for (double X=Min.X+2200; X<Max.X-1500; X+=1400)
+	{
+		for (double Z : {Mid.Y, Min.Y+1250, Max.Y-1250})
+			AddBlock(TEXT("LaneDash"), FVector(X,-480,Z), FVector(2.8,.1,.12), FLinearColor(.08f,.45f,.55f),false);
+	}
+	for (double Z=Min.Y+2200; Z<Max.Y-1500; Z+=1400)
+	{
+		for (double X : {Mid.X, Min.X+1250, Max.X-1250})
+			AddBlock(TEXT("LaneDashVertical"), FVector(X,-480,Z), FVector(.12,.1,2.8), FLinearColor(.08f,.45f,.55f),false);
+	}
+	ResidentialWindows = NewObject<UInstancedStaticMeshComponent>(this,TEXT("ResidentialWindows"));
+	ResidentialWindows->SetupAttachment(SceneRoot);
+	ResidentialWindows->SetStaticMesh(CubeMesh);
+	ResidentialWindows->SetMaterial(0,BasicMaterial);
+	ResidentialWindows->SetMobility(EComponentMobility::Movable);
+	ResidentialWindows->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ResidentialWindows->SetGenerateOverlapEvents(false);
+	ResidentialWindows->SetCastShadow(false);
+	AddInstanceComponent(ResidentialWindows);
+	ResidentialWindows->RegisterComponent();
+	ResidentialWindows->SetVectorParameterValueOnMaterials(TEXT("Color"),FVector(.85,.65,.24));
 	for (const FFlyingCabDistrictDefinition& District : FlyingCabCityData::GetDistricts())
 	{
-		if (District.BuildsRuntimeGeometry())
+		const FVector Stop = District.StopLocation;
+		const float Height = District.ResidentialTowerHeight;
+		const FString Code = District.MinimapCode;
+		AddBlock(TEXT("CurbsidePlatform")+District.MinimapCode,
+			Stop-FVector(0,0,190), FVector(FMath::Max(District.RuntimePlatformHalfWidth,22.f),4.8,.8), District.AccentColor);
+		// Shallow solid foundations add readable silhouettes without closing approach lanes.
+		AddBlock(TEXT("CurbsideFoundation")+District.MinimapCode,
+			Stop-FVector(0,0,280), FVector(15,4.4,1), Structure);
+		// This is a real obstacle in the flight plane, not a background facade.
+		AddBlock(TEXT("ResidentialTower")+Code,Stop+FVector(0,0,Height*.5f-150),
+			FVector(8.5,4.8,Height/100),Structure+District.AccentColor*.13f);
+		AddBlock(TEXT("ResidentialRoofTrim")+Code,Stop+FVector(0,246,Height-155),
+			FVector(8.5,.06,.12),District.AccentColor,false);
+		AddDistrictLabel(District.DisplayName,Stop+FVector(0,260,Height*.45f),District.AccentColor);
+		for (float Z=0; Z<Height-220; Z+=115)
 		{
-			AddDistrictLabel(
-				District.DisplayName,
-				District.StopLocation + FVector(0.0f, 80.0f, 170.0f),
-				District.AccentColor);
+			if (FMath::Abs(Z-Height*.45f)<60) continue; // Reserve a clean strip for the block name.
+			for (double X : {-300.,-150.,0.,150.,300.})
+			{
+				ResidentialWindows->AddInstance(FTransform(FRotator::ZeroRotator,
+					Stop+FVector(X,245,Z),FVector(.60,.045,.40)));
+			}
+		}
+		for (bool bRight : {false,true})
+		{
+			const FVector Curb = bRight ? FlyingCabCityData::GetPassengerDropoffLocation(Stop)
+				: FlyingCabCityData::GetPassengerPickupLocation(Stop);
+			const FLinearColor CurbColor = bRight ? FLinearColor(1.f,.18f,.04f) : FLinearColor(0.f,.85f,1.f);
+			const FString Side = bRight ? TEXT("Right") : TEXT("Left");
+			AddBlock(TEXT("ResidentialCurb")+Code+Side,Curb+FVector(0,247,-155),FVector(5.2,.05,.12),CurbColor,false);
+			AddDistrictLabel(bRight ? TEXT("DROPOFF") : TEXT("PICKUP"),Curb+FVector(0,260,-95),CurbColor);
+			AddBlock(TEXT("ResidentialDoor")+Code+Side,Stop+FVector(bRight ? 350 : -350,247,-65),
+				FVector(.9,.04,1.65),FLinearColor(.02f,.06f,.08f),false);
+			// Named, non-interactive anchors for a later interior/foot-quest stage.
+			auto* Entrance = NewObject<USceneComponent>(this,FName(*(TEXT("HomeEntry_")+Code+TEXT("_")+Side)));
+			Entrance->SetupAttachment(SceneRoot);
+			Entrance->SetRelativeLocation(FlyingCabCityData::GetResidentialEntranceLocation(District,bRight));
+			Entrance->ComponentTags = {TEXT("FutureResidentialInterior"),District.DistrictId};
+			AddInstanceComponent(Entrance);
+			Entrance->RegisterComponent();
+		}
+		if (!District.FuelStationName.IsEmpty() || !District.RepairStationName.IsEmpty())
+		{
+			const FLinearColor ServiceColor = !District.FuelStationName.IsEmpty()
+				? FLinearColor(.05f,1.f,.3f) : FLinearColor(.75f,.1f,1.f);
+			AddBlock(TEXT("ResidentialServiceRoof")+Code,FlyingCabCityData::GetDistrictServiceLocation(District)+FVector(0,0,-148),
+				FVector(7.8,4.8,.04),ServiceColor,false);
 		}
 	}
-
-	UE_LOG(
-		LogFlyingCabCityExpansion,
-		Display,
-		TEXT("East city extension built with %d blocks and %d district labels; city width is now approximately 20000 cm."),
-		RuntimeBlocks.Num(),
-		RuntimeLabels.Num());
+	for (const FFlyingCabNeighborhoodDefinition& Estate : FlyingCabCityData::GetNeighborhoods())
+	{
+		const FVector C = Estate.Center;
+		AddBlock(TEXT("TransitTerrace")+Estate.NeighborhoodId.ToString(), C-FVector(0,0,290), FVector(43,5,.8), Estate.Color);
+		AddDistrictLabel(TEXT("NPC TRANSIT // ")+Estate.DisplayName, C+FVector(0,-300,-150), Estate.Color);
+		// Building facades remain in the background: pedestrians disappear through their doors.
+		for (double Offset : {-1800.,1800.})
+		{
+			AddBlock(TEXT("TransitBuilding"), C+FVector(Offset,-350,0), FVector(4,1,5), Estate.Color*.45f, false);
+			AddBlock(TEXT("TransitDoor"), C+FVector(Offset,-280,-140), FVector(.9,.1,1.8), Estate.Color,false);
+		}
+		AddDistrictLabel(Estate.DisplayName, C+FVector(0,-350,1300), Estate.Color);
+	}
+	// Dedicated quest plazas: no passenger offer, destination or service trigger on these pads.
+	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs())
+	{
+		AddBlock(TEXT("QuestPlaza")+Hub.DisplayName, Hub.WorldLocation-FVector(0,0,110),
+			FVector(20,6,1), FLinearColor(.12f,.15f,.2f));
+		AddDistrictLabel(Hub.DisplayName+TEXT(" // DISPATCH"), Hub.WorldLocation+FVector(0,-200,200), FLinearColor::White);
+	}
+	AddDistrictLabel(TEXT("CROSS CENTRAL // SIGNAL CONTROL"), FVector(Mid.X,-300,Mid.Y+800), FLinearColor(.7f,.8f,.85f));
+	SignalLabel = RuntimeLabels.Last();
+	UE_LOG(LogFlyingCabCityExpansion, Display, TEXT("Metro city built: %.0f x %.0f cm, %d neighborhoods, %d taxi stops."),
+		Size.X, Size.Y, FlyingCabCityData::GetNeighborhoods().Num(), FlyingCabCityData::GetDistricts().Num());
 }
 
 void AFlyingCabCityExpansion::AddBlock(

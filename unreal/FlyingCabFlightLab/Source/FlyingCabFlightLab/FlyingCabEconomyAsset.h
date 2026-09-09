@@ -33,6 +33,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flying Cab|Fares", meta = (ClampMin = "0.0"))
 	float FarePerMeterTowardTarget = 1.10f;
 
+	/** Distance-rate premium for journeys between neighborhoods (base fare is unchanged). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flying Cab|Fares", meta = (ClampMin = "1.0"))
+	float InterNeighborhoodFareMultiplier = 1.5f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flying Cab|Fares", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float FareBacktrackPenaltyRatio = 0.5f;
 

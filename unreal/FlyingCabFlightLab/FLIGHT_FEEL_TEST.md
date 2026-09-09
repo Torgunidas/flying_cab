@@ -1,5 +1,20 @@
 # FlightLab — procedura testowa lotu
 
+## Aktualny oblot: osiedla mieszkalne
+
+Szczegóły: [RESIDENTIAL_DISTRICTS.md](docs/RESIDENTIAL_DISTRICTS.md). Bak 200, start 130; HUD nadal pokazuje 65%. Każde osiedle ma sześć platform z kolizyjnymi wieżowcami. Podejmowanie jest przy lewej krawędzi, oddawanie przy prawej. Budynki wymagają ominięcia; paliwo i naprawy są na wydzielonych dachowych lądowiskach. Sprawdź zwykły kurs i tankowanie po przejeździe autostradą. Wnętrza i nowe questy piesze pozostają kolejnym etapem.
+
+## Aktualny oblot: Metro City (2026-09-04)
+
+Mapa ma teraz cztery razy większy obszar, obwodnicę, krzyż autostrad i cztery osiedla. Aktualne położenia, taryfy i parametry opisuje [METRO_CITY.md](docs/METRO_CITY.md); starsze opisy lokalizacji poniżej są historyczne.
+
+- Przeleć obwodnicę i oba ramiona krzyża. Tory ruchu powinny pozostać wolne od platform, a auta stopniowo zwalniać przy zjeździe do osiedla.
+- W obserwatorze porównaj perony osiedli: wsiadanie → przejazd → wysiadanie → powrót przez autostradę. Piesi dojścia i odejścia korzystają z osobnych pasów w głębi peronu.
+- W każdym osiedlu znajdziesz jedną stację FUEL. REPAIR jest tylko lewo–góra i prawo–dół. Mike i Jack stoją na oddzielnych placach.
+- Porównaj kurs LOCAL i INTER: między osiedlami licznik ma stawkę odległości wyższą o 50%, nadal dla jednego pasażera.
+- Oceń wytrzymałość przy zwykłym lataniu. Uderzenie, które przy zmianie prędkości 1400 cm/s zabierało cały hull, powinno zabrać teraz około 29 punktów. Nie zmieniono siły napędu ani sterowania.
+- Nie trzeba powtarzać całego audytu wejścia przed oblotem. Automatyczna regresja pozostaje osobnym zabezpieczeniem, a kanoniczny wariant to nadal `UseControlFrame=0`.
+
 ## Przygotowanie
 
 1. Otwórz projekt i uruchom mapę `FlightLab` w trybie **Selected Viewport**.
@@ -53,15 +68,17 @@
 
 ### 6. Regresja utraty wejścia
 
+Kanoniczna wersja i zasady jej zmiany: [INPUT_CANONICAL_BASELINE.md](docs/INPUT_CANONICAL_BASELINE.md). Domyślne `flyingcab.UseControlFrame=0`; nie włączaj eksperymentu podczas testu wersji kanonicznej.
+
 - Przytrzymaj `D`, użyj `Shift+F1` albo `Alt+Tab`, puść `D` poza viewportem i wróć do gry.
 - `Horizontal keyboard` oraz `Horizontal effective` powinny natychmiast wrócić do `0.00`.
 - Powtórz próbę z `W`. `Thrust keyboard` oraz `Thrust effective` muszą wrócić do `0.00`; dodatnia `Velocity Z` może jeszcze krótko zanikać z powodu zamierzonej bezwładności, ale `Command Z` musi wynosić `0.0`.
 - Telemetria `F3` pokazuje osobno wartości `keyboard`, `touch` i `effective` dla kierunku oraz ciągu. Po utracie fokusu żadna wartość klawiatury nie może pozostać na `1.00`.
 - Przytrzymaj `D`, kliknij jeden z przycisków ekranowych i puść `D`, gdy kursor znajduje się nad HUD-em. Przycisk ekranowy nie może przejąć fokusu klawiatury, a `D` musi wrócić do `0`.
 - Wciśnij jednocześnie `A` i `D`, potem puszczaj je pojedynczo w różnej kolejności. Kierunek powinien być neutralny przy obu wciśniętych, a po puszczeniu jednego odpowiadać drugiemu bez pozostawania aktywnym po puszczeniu obu.
-- Przytrzymaj `W`, `Spację`, `A` albo `D` i w tym samym czasie wykonaj reset klawiszem `R`. Po resecie sterowanie musi pozostać neutralne, dopóki nie puścisz wszystkich klawiszy danej osi. Ponowne sterowanie powinno zadziałać dopiero po puszczeniu i kolejnym naciśnięciu.
-- Powtórz próbę przez zniszczenie auta przy aktywnym ciągu. Po holowaniu thrust i kierunek muszą pozostać wyłączone nawet wtedy, gdy Unreal nie zarejestrował wcześniejszego puszczenia klawisza.
-- Włącz telemetrię `F3`. Pole `forced resets` powinno zwiększyć licznik po wymuszonym czyszczeniu wejścia; wszystkie wartości `effective`, `keyboard` i `touch` muszą pozostać neutralne aż do ponownego naciśnięcia.
+- Przytrzymaj `W`, `Spację`, `A` albo `D` i w tym samym czasie wykonaj reset klawiszem `R`. Puść ruch przy resecie, odczekaj kilka klatek: wartości wejścia oraz siła mają wrócić do zera. Ponowne naciśnięcie ma działać. Powtórz z puszczeniem dopiero po resecie; gdy klawisz wciąż jest trzymany, silnik może wznowić wejście po auto-repeat — nie jest to blokada.
+- Powtórz próbę przez zniszczenie auta przy aktywnym ciągu: puść przycisk podczas wraku, a w osobnej próbie dopiero po holowaniu. Po puszczeniu thrust i kierunek muszą wrócić do zera, a świeże naciśnięcie ponownie działać. W razie zatrzasku sprawdź w logu dostarczone `KEY Released`, wartości akcji i siłę, zamiast wnioskować wyłącznie z prędkości.
+- Włącz telemetrię `F3`. Licznik wymuszonych czyszczeń powinien wzrosnąć po resecie; po puszczeniu wszystkich wejść `effective`, `keyboard` i `touch` mają być neutralne. Ta wersja nie obiecuje ignorowania fizycznie trzymanych klawiszy aż do nowego wciśnięcia.
 
 ### 7. Sterowanie dotykowe
 
@@ -116,7 +133,8 @@
 
 - Początkowy poziom paliwa powinien wynosić `65%`. Ciąg pionowy powinien zużywać paliwo szybciej niż sterowanie poziome.
 - Puść wszystkie przyciski podczas opadania. Paliwo powinno regenerować się bardzo powoli, proporcjonalnie do prędkości opadania.
-- Odszukaj zielony punkt `F` przy `Midtown Exchange` albo `Ashline Market`, zatrzymaj się w zielonej strefie i przytrzymaj `E` albo przycisk `REFUEL`.
+- Zużycie przy pełnym ciągu: pion `1,35` jednostki/s, poziom `0,675` jednostki/s (o 25% mniej niż wcześniej). Siła i prędkość lotu nie zostały zmienione.
+- Odszukaj zieloną etykietę `FUEL` przy `Midtown Exchange`, `Ashline Market` albo `Rainline Bazaar`, zatrzymaj się w zielonej strefie i przytrzymaj `E` albo przycisk `REFUEL`.
 - Tankowanie powinno płynnie zwiększać paliwo i pobierać `2 CR` za jednostkę. Powinno zatrzymać się po puszczeniu przycisku, zapełnieniu zbiornika albo wyczerpaniu kredytów.
 - Przy zerowym paliwie normalny ciąg powinien przestać działać. Kontrolowane opadanie powinno powoli odzyskać minimalną rezerwę energii.
 - Zużyj część paliwa i lekko uszkodź pojazd, a następnie naciśnij `R`. Reset powinien przywrócić pozycję testową, `65%` paliwa i `100%` kadłuba; saldo kredytów oraz aktywny kurs nie powinny się zmienić.
@@ -139,7 +157,7 @@
 
 ### 16. Rozbudowane miasto, paliwo i nowa krzywa obrażeń
 
-- Minimapa powinna pokazywać dziesięć dzielnic: `YP`, `ME`, `ST`, `AM`, `ND`, `ZS`, `GT`, `RB`, `CH` i `OG`. Zielone punkty `F` powinny znajdować się przy Midtown Exchange, Ashline Market i Rainline Bazaar.
+- Minimapa powinna pokazywać dziesięć dzielnic: `YP`, `ME`, `ST`, `AM`, `ND`, `ZS`, `GT`, `RB`, `CH` i `OG`. Zielone etykiety `FUEL` powinny znajdować się przy Midtown Exchange, Ashline Market i Rainline Bazaar; krótka linia wskazuje dokładną pozycję stacji, osobno od żółtych ofert pasażerów.
 - Wykonaj co najmniej trzy kursy obejmujące nowe dzielnice. Na długiej trasie pojazd powinien mieć czas dojść do prędkości maksymalnej, a hamowanie przed bramką powinno wymagać wyczucia.
 - Początkowy poziom paliwa wynosi `65%`. Zanotuj paliwo na początku i końcu każdego kursu; celem jest zauważalny koszt długiej trasy i potrzeba tankowania po kilku kursach, a nie po każdym zleceniu.
 - Sprawdź trzy stacje: `MIDTOWN FUEL`, `ASHLINE CHARGE` i `RAINLINE ENERGY`. Zatrzymanie i koszt tankowania powinny działać identycznie.
@@ -149,7 +167,7 @@
 
 ### 17. Nightshift Repair
 
-- Na minimapie powinien być widoczny fioletowy punkt `R` w górnej, centralnej części miasta.
+- Na minimapie powinna być widoczna kontrastowa fioletowa etykieta `REPAIR` przy Nightshift; druga oznacza Orbital Bodyworks we wschodniej części miasta.
 - Lekko uszkodź pojazd, a następnie wyląduj na osobnej platformie `NIGHTSHIFT REPAIR` i zatrzymaj się w fioletowej strefie.
 - HUD i przycisk serwisowy powinny zmienić opis na `REPAIR`. Przytrzymaj `E` albo przycisk dotykowy; kadłub powinien rosnąć, a saldo maleć o `1 CR` za każdy naprawiony punkt.
 - Puść przycisk przed pełną naprawą. Proces powinien zatrzymać się natychmiast i dać się wznowić.
@@ -205,6 +223,12 @@
 - Uruchom build `Development` lub `Shipping` na urządzeniu albo poza edytorem.
 - Potwierdź, że odmowa wyjścia, brak dostępu, `PASSENGER SECURED`, wypłata, brak kredytów, `IMPACT`, pusty bak, śmierć postaci i holowanie pojawiają się w panelu komunikatów HUD, a nie wyłącznie jako debug overlay silnika.
 - Kolejny komunikat powinien zastąpić poprzedni, pozostać czytelny na jasnym i ciemnym tle oraz zniknąć po swoim czasie życia.
+
+### 24. Pasażerowie ruchu NPC — poprawka komfortu
+
+- Pieszy wsiadający i wysiadający z taksówki NPC ma sylwetkę taką jak pasażer gracza: cylindryczny tułów i kulista głowa, zamiast dużej kostki.
+- Po wysiadaniu nie może fizycznie blokować ani uszkadzać pojazdu gracza; pieszy gracz również może przez niego przejść. Ten sam kontrakt obowiązuje po wyjściu NPC z budynku.
+- NPC nadal wykonuje pętlę trasy i pozostaje widoczny dla czujników ruchu ulicznego. Usunięcie fizycznej przeszkody nie usuwa reagowania NPC na otoczenie.
 
 ## Co zapisać po teście
 

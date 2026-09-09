@@ -6,6 +6,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabCityLayoutAsset, Log, All);
 
 UFlyingCabCityLayoutAsset::UFlyingCabCityLayoutAsset()
 {
+	Neighborhoods.Append(FlyingCabCityData::GetFallbackNeighborhoods());
 	for (const FFlyingCabDistrictDefinition& District : FlyingCabCityData::GetFallbackDistricts())
 	{
 		Districts.Add(District);
@@ -54,11 +55,29 @@ bool UFlyingCabCityLayoutAsset::IsConfigurationValid(FString& OutError) const
 	}
 
 	TSet<FName> DistrictIds;
+	TSet<FName> NeighborhoodIds;
+	for (const FFlyingCabNeighborhoodDefinition& Neighborhood : Neighborhoods)
+	{
+		if (Neighborhood.NeighborhoodId.IsNone() || NeighborhoodIds.Contains(Neighborhood.NeighborhoodId)
+			|| Neighborhood.DisplayName.IsEmpty() || Neighborhood.Center.ContainsNaN()
+			|| Neighborhood.Center.X <= MinimapWorldMin.X || Neighborhood.Center.X >= MinimapWorldMax.X
+			|| Neighborhood.Center.Z <= MinimapWorldMin.Y || Neighborhood.Center.Z >= MinimapWorldMax.Y)
+		{
+			OutError = TEXT("Neighborhoods need unique IDs, names and centers inside the city.");
+			return false;
+		}
+		NeighborhoodIds.Add(Neighborhood.NeighborhoodId);
+	}
 	TSet<FString> Names;
 	TSet<FString> Codes;
 	TSet<FString> ServiceNames;
 	for (const FFlyingCabDistrictDefinition& District : Districts)
 	{
+		if (!NeighborhoodIds.Contains(District.NeighborhoodId))
+		{
+			OutError = TEXT("Every taxi stop must belong to a configured neighborhood.");
+			return false;
+		}
 		if (District.DistrictId.IsNone() || DistrictIds.Contains(District.DistrictId))
 		{
 			OutError = TEXT("Every district needs a unique, non-empty DistrictId.");
@@ -83,6 +102,13 @@ bool UFlyingCabCityLayoutAsset::IsConfigurationValid(FString& OutError) const
 			return false;
 		}
 		const FVector2D Position = District.GetMapPosition();
+		if (!FMath::IsFinite(District.ResidentialTowerHeight) || District.ResidentialTowerHeight < 400.f
+			|| District.ResidentialTowerHeight > 1200.f
+			|| Position.Y + District.ResidentialTowerHeight >= MinimapWorldMax.Y)
+		{
+			OutError = TEXT("Residential towers need a 400-1200 cm height and a roof inside city bounds.");
+			return false;
+		}
 		if (Position.X < MinimapWorldMin.X || Position.X > MinimapWorldMax.X
 			|| Position.Y < MinimapWorldMin.Y || Position.Y > MinimapWorldMax.Y)
 		{

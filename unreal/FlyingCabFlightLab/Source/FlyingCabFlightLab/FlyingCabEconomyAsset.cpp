@@ -38,6 +38,11 @@ bool UFlyingCabEconomyAsset::IsConfigurationValid(FString& OutError) const
 		OutError = TEXT("Fare backtrack penalty ratio must be in [0, 1].");
 		return false;
 	}
+	if (!FMath::IsFinite(InterNeighborhoodFareMultiplier) || InterNeighborhoodFareMultiplier < 1.0f)
+	{
+		OutError = TEXT("The inter-neighborhood fare multiplier must be finite and at least one.");
+		return false;
+	}
 	if (TimeAttackTargetCredits <= 0 || FuelPricePerUnit <= 0
 		|| RepairPricePerHullUnit <= 0)
 	{

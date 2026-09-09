@@ -8,6 +8,7 @@
 #include "FlyingCabPawn.generated.h"
 
 class UBoxComponent;
+class UFlyingCabHighwayAssistComponent;
 class UPointLightComponent;
 class UPrimitiveComponent;
 class USceneComponent;
@@ -136,6 +137,9 @@ private:
 	TObjectPtr<UFlyingCabVehicleVitalsComponent> Vitals;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
+	TObjectPtr<UFlyingCabHighwayAssistComponent> HighwayAssist;
+
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
 	TObjectPtr<UPointLightComponent> DamageLight;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
@@ -242,18 +246,18 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Debug")
 	bool bShowFlightTelemetry = false;
 
-	/** Normalized energy capacity. Values deliberately use percentages for fast tuning. */
+	/** Fuel units; the HUD and critical warning normalize against this capacity. */
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Resources", meta = (ClampMin = "1.0"))
-	float MaxFuel = 100.0f;
+	float MaxFuel = 200.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Resources", meta = (ClampMin = "0.0"))
-	float StartingFuel = 65.0f;
+	float StartingFuel = 130.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Resources", meta = (ClampMin = "0.0"))
-	float VerticalFuelPerSecond = 1.8f;
+	float VerticalFuelPerSecond = 1.35f;
 
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Resources", meta = (ClampMin = "0.0"))
-	float HorizontalFuelPerSecond = 0.9f;
+	float HorizontalFuelPerSecond = 0.675f;
 
 	/** Regenerative recovery while descending without thrust. */
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Resources", meta = (ClampMin = "0.0"))
@@ -271,7 +275,7 @@ private:
 
 	/** An impact at this speed change deals a full hull of damage. */
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Damage", meta = (ClampMin = "1.0"))
-	float DamageFullHullSpeed = 1400.0f;
+	float DamageFullHullSpeed = 2000.0f;
 
 	/** Shapes the damage ramp above the safe threshold; 2 gives a forgiving quadratic curve. */
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Damage", meta = (ClampMin = "1.0"))

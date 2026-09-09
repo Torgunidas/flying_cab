@@ -58,6 +58,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Living World")
 	TObjectPtr<UStaticMeshComponent> VisualMesh;
 
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Living World")
+	TObjectPtr<UStaticMeshComponent> PassengerHead;
+
 	UPROPERTY(Transient)
 	TObjectPtr<AFlyingCabLivingRoute> Route;
 

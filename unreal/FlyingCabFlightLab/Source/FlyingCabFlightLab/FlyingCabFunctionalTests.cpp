@@ -171,7 +171,7 @@ namespace
 			Test->TestEqual(
 				TEXT("Dispatch exposes all passenger stops"),
 				State.Dispatch->GetStopCount(),
-				10);
+				24);
 			Test->TestNotNull(TEXT("The inactive dropoff zone is created"), State.Dispatch->GetDropoffZone());
 			Test->TestFalse(
 				TEXT("Legacy point-to-point traffic is disabled by default"),
@@ -205,7 +205,7 @@ namespace
 				TEXT("Bootstrap registers all living pedestrians"),
 				Bootstrap->GetLivingPedestrianCount(),
 				LivingWorld ? LivingWorld->GetPedestrians().Num() : 0);
-			Test->TestEqual(TEXT("Three fuel stations are present"), Bootstrap->GetFuelStationCount(), 3);
+			Test->TestEqual(TEXT("Four fuel stations are present"), Bootstrap->GetFuelStationCount(), 4);
 			Test->TestEqual(TEXT("Two repair stations are present"), Bootstrap->GetRepairStationCount(), 2);
 			Test->TestEqual(TEXT("One city expansion actor is present"), CountActors<AFlyingCabCityExpansion>(State.World), 1);
 			Test->TestEqual(TEXT("Two on-foot portals are present"), CountActors<AFlyingCabOnFootPortal>(State.World), 2);

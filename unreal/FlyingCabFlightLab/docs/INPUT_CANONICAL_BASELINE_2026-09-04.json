@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "id": "input-canonical-2026-09-04",
+  "baseHead": "771e1fa9addfff7a0471f0e517e97af7ecad8c60",
+  "workingTreeChangesIncluded": false,
+  "defaultUseControlFrame": 0,
+  "files": [
+    {
+      "path": "Config/DefaultEngine.ini",
+      "format": "utf8-lf",
+      "sha256": "BA18CBE6FC8BAE698467835A59B822C21AF095E5C0DFF3535631B64828C36F01"
+    },
+    {
+      "path": "Config/DefaultInput.ini",
+      "format": "utf8-lf",
+      "sha256": "297008520DE4DA8EFED6064CB30C09335679A6BC65355DED98843162F9F21212"
+    },
+    {
+      "path": "Content/Blueprints/BP_FlyingCabPawn.uasset",
+      "format": "binary",
+      "sha256": "EAA6CD5356DC09CBB3F8EDF69BCCFAE0D599AA1B1A2C9901561410CC24D44D39"
+    },
+    {
+      "path": "Content/Input/IA_FlyingCabHorizontal.uasset",
+      "format": "binary",
+      "sha256": "433328A9B04792F74248F584F3AE3E8C243AA69F6FB7E9A286739438641ABD60"
+    },
+    {
+      "path": "Content/Input/IA_FlyingCabInteract.uasset",
+      "format": "binary",
+      "sha256": "EB3D669A262D0C69F49CAA542F2CD612033BC07D2ABB708BA02443366CEF9B15"
+    },
+    {
+      "path": "Content/Input/IA_FlyingCabQuestJournal.uasset",
+      "format": "binary",
+      "sha256": "F5472079DFA18C2871CE41A39DECB11168931D150F7A2210EB4F210A28ABEECA"
+    },
+    {
+      "path": "Content/Input/IA_FlyingCabRestart.uasset",
+      "format": "binary",
+      "sha256": "6F91D1107D3E837D99005679A61BB5F1E2F7B1CAE06D7478BBF68F4796D0D71D"
+    },
+    {
+      "path": "Content/Input/IA_FlyingCabService.uasset",
+      "format": "binary",
+      "sha256": "164BBFCDFFEE50494EA3F3F8D38B9239199847B862844E3A0645C9D67D8209C0"
+    },
+    {
+      "path": "Content/Input/IA_FlyingCabTelemetry.uasset",
+      "format": "binary",
+      "sha256": "8A5FC961A9D0CE7E3189BD9A6DE59A7974C53848310952379285AE3053AAF6A7"
+    },
+    {
+      "path": "Content/Input/IA_FlyingCabThrust.uasset",
+      "format": "binary",
+      "sha256": "A5C7F9E13708FAC2ADF9BA68E33FC09BBE98E2C524F832F0586929A6DDDED945"
+    },
+    {
+      "path": "Content/Input/IMC_FlyingCabGameplay.uasset",
+      "format": "binary",
+      "sha256": "3260DF5404B53F892F686258F3EEEF8A19502E030125C5232877BED04D1F4393"
+    },
+    {
+      "path": "FlyingCabFlightLab.uproject",
+      "format": "utf8-lf",
+      "sha256": "40E634A8AA41AB7D18CDBF9639DD2C6C301F9B6D418F42B94E55009A53519E48"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabCharacter.cpp",
+      "format": "utf8-lf",
+      "sha256": "A087B5CF4A97C711DB778C919C8ADCFBC495D7859BF45519E34C3637E5D9CE31"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabCharacter.h",
+      "format": "utf8-lf",
+      "sha256": "EB8814F1AECD69420AC00AF048F9CF44FFFECB0D8751CC79D6660A4773242BDC"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabControlInputComponent.cpp",
+      "format": "utf8-lf",
+      "sha256": "F8198D445687429992EC5A9ED23BA6F691033E53ACA95C24ADF80B93DFE23229"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabControlInputComponent.h",
+      "format": "utf8-lf",
+      "sha256": "39D89DD4A3A76478DA95E101D43A53C5ABD9E967E074D01D05CC8C10D61252DE"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabFleetComponent.cpp",
+      "format": "utf8-lf",
+      "sha256": "4BAD21B652A36C8809A252D4557F2D1ADD2865F2DF79D45EF229462724A89F3F"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabFleetComponent.h",
+      "format": "utf8-lf",
+      "sha256": "E6955038F43A2C99915036657D43EE98ABAC03ACA47067AD0803A997412DE6CF"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabGameFlowWidget.cpp",
+      "format": "utf8-lf",
+      "sha256": "5FF8A77F609BD3725D82D295C2B7265033D2D96622812014CE07488BD66DB844"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabGameFlowWidget.h",
+      "format": "utf8-lf",
+      "sha256": "CC2292B6DA80416A57DD47AB1FE70B41E09AFFBFC3CD567936D0230A07E47BCE"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabInputData.cpp",
+      "format": "utf8-lf",
+      "sha256": "99F94DA1A61F264223A9E45C6415E7F8A738FB40BBDFCBBC3B4BAF769EF55647"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabInputData.h",
+      "format": "utf8-lf",
+      "sha256": "E4485D078B162B177362938C5BE06561BDF4D3D164531E5E67912E66AC31C567"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabPawn.cpp",
+      "format": "utf8-lf",
+      "sha256": "18697E47195423505E1A7300FAFB17233910145EDD7D67811604869E5561E32B"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabPawn.h",
+      "format": "utf8-lf",
+      "sha256": "D140ED01C0B9C76B446B701FC634963B7430F328CD06BEC2063138F4FE957C13"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabPlayerController.cpp",
+      "format": "utf8-lf",
+      "sha256": "E6EDCDA3531E9C80B4E0D1A6EC414E819B34744BC7560FC254E425B1CF22C8A1"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabPlayerController.h",
+      "format": "utf8-lf",
+      "sha256": "F1C205DE8752192DAC9D72F481AB15FD247DFB67E0171D29F1F1238D3B2DBCF1"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabQuestJournalWidget.cpp",
+      "format": "utf8-lf",
+      "sha256": "292D33CD5FB86650441399CACEC5266D753EBA435F56779A88B6BC3FD86FB3F7"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabQuestJournalWidget.h",
+      "format": "utf8-lf",
+      "sha256": "491147CF50BE0717E7351839D28CB0E9B7D4AA3BC380B6CEF54BF6FA5EAFE96E"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabTouchControls.cpp",
+      "format": "utf8-lf",
+      "sha256": "8D97B39EE3DEA7342ECCBB272CBA3005249C9B094A107EBA577EBB4FE101C618"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabTouchControls.h",
+      "format": "utf8-lf",
+      "sha256": "08D88FFBA4CAD95F647EFA7CF128BA8230EE18E88FCE77D1A19463FB9EF47A6F"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabVehicleVitalsComponent.cpp",
+      "format": "utf8-lf",
+      "sha256": "82743A22B67F6652CD201BE9143ADEEAD363A51E4EE792A490386B1B061EE307"
+    },
+    {
+      "path": "Source/FlyingCabFlightLab/FlyingCabVehicleVitalsComponent.h",
+      "format": "utf8-lf",
+      "sha256": "04AC1737145849AA39F3145F6BDAECBFCECB791141B020164F07A13EBBD6096D"
+    }
+  ]
+}

@@ -75,6 +75,14 @@ struct FFlyingCabLivingRouteNode
 	/** Shared key used to match vehicle stops with boarding and exiting pedestrians. */
 	UPROPERTY(EditAnywhere, Category = "Flying Cab|Living World")
 	FName StopId = NAME_None;
+
+	/** Limit on the incoming segment. Zero inherits route cruise speed. */
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|Living World", meta = (ClampMin = "0.0"))
+	float SpeedLimit = 0.0f;
+
+	/** Optional central-cross signal: Horizontal or Vertical. Other nodes remain unsignalled. */
+	UPROPERTY(EditAnywhere, Category = "Flying Cab|Living World")
+	FName TrafficSignal = NAME_None;
 };
 
 /** Data-asset representation of an authored or generated living-world route. */

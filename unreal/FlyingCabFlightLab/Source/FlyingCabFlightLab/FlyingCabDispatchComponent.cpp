@@ -19,6 +19,7 @@ UFlyingCabDispatchComponent::UFlyingCabDispatchComponent()
 		DeliveryStops.Add(District.StopLocation);
 		DeliveryStopNames.Emplace(District.DisplayName);
 		DeliveryStopIds.Add(District.DistrictId);
+		DeliveryNeighborhoodIds.Add(District.NeighborhoodId);
 	}
 }
 
@@ -30,6 +31,7 @@ void UFlyingCabDispatchComponent::Configure(const UFlyingCabEconomyAsset* Config
 	}
 	BaseFare = FMath::Max(0.0f, Config->BaseFare);
 	FarePerMeterTowardTarget = FMath::Max(0.0f, Config->FarePerMeterTowardTarget);
+	InterNeighborhoodFareMultiplier = FMath::Max(1.0f, Config->InterNeighborhoodFareMultiplier);
 	FareBacktrackPenaltyRatio = FMath::Clamp(Config->FareBacktrackPenaltyRatio, 0.0f, 1.0f);
 }
 
@@ -358,7 +360,7 @@ void UFlyingCabDispatchComponent::UpdateActiveFare()
 			FareLastDistance,
 			Distance,
 			BaseFare,
-			FarePerMeterTowardTarget,
+			ActiveFareRate,
 			FareBacktrackPenaltyRatio);
 		FareLastDistance = Distance;
 	}
@@ -417,7 +419,10 @@ void UFlyingCabDispatchComponent::SpawnPassengerOffer()
 		return;
 	}
 
-	const FString DestinationName = GetStopName(DropoffIndex);
+	const bool bInterNeighborhood = GetFareRateForJourney(PickupIndex, DropoffIndex) > FarePerMeterTowardTarget;
+	const FString DestinationName = GetStopName(DropoffIndex)
+		+ (bInterNeighborhood ? FString::Printf(TEXT(" // INTER +%d%% / m"),
+			FMath::RoundToInt((InterNeighborhoodFareMultiplier-1.f)*100.f)) : TEXT(" // LOCAL"));
 	const int32 EstimatedFare = CalculateEstimatedFare(PickupIndex, DropoffIndex);
 	const float Lifetime = DispatchRandom.FRandRange(
 		FMath::Min(PassengerLifetimeMin, PassengerLifetimeMax),
@@ -510,7 +515,17 @@ int32 UFlyingCabDispatchComponent::CalculateEstimatedFare(
 		FlyingCabCityData::GetPassengerPickupLocation(DeliveryStops[PickupIndex]),
 		FlyingCabCityData::GetPassengerDropoffLocation(DeliveryStops[DropoffIndex]),
 		BaseFare,
-		FarePerMeterTowardTarget);
+		GetFareRateForJourney(PickupIndex, DropoffIndex));
+}
+
+float UFlyingCabDispatchComponent::GetFareRateForJourney(int32 PickupIndex, int32 DropoffIndex) const
+{
+	const bool bInterNeighborhood = DeliveryNeighborhoodIds.IsValidIndex(PickupIndex)
+		&& DeliveryNeighborhoodIds.IsValidIndex(DropoffIndex)
+		&& !DeliveryNeighborhoodIds[PickupIndex].IsNone()
+		&& !DeliveryNeighborhoodIds[DropoffIndex].IsNone()
+		&& DeliveryNeighborhoodIds[PickupIndex] != DeliveryNeighborhoodIds[DropoffIndex];
+	return FarePerMeterTowardTarget * (bInterNeighborhood ? InterNeighborhoodFareMultiplier : 1.0f);
 }
 
 void UFlyingCabDispatchComponent::HandleZoneReady(AFlyingCabDeliveryZone* Zone)
@@ -535,6 +550,7 @@ void UFlyingCabDispatchComponent::HandleZoneReady(AFlyingCabDeliveryZone* Zone)
 				DeliveryStops[CurrentDropoffIndex]));
 		bPassengerOnBoard = true;
 		ActiveFare = BaseFare;
+		ActiveFareRate = GetFareRateForJourney(CurrentPickupIndex, CurrentDropoffIndex);
 		if (TrackedPawn)
 		{
 			const FVector FareDelta =

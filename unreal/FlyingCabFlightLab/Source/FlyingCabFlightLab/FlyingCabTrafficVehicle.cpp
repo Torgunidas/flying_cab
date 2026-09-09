@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "FlyingCabTrafficVehicle.h"
+#include "FlyingCabTrafficSignals.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/PointLightComponent.h"
@@ -208,7 +209,7 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 		MovementState = EFlyingCabTrafficMovementState::Dwelling;
 		if (DwellRemaining <= 0.0f)
 		{
-			CurrentLivingStopId = NAME_None;
+			// Keep the berth registered until we actually leave it, including an obstructed departure.
 			AdvanceLivingRouteNode();
 			MovementState = EFlyingCabTrafficMovementState::Cruising;
 		}
@@ -216,6 +217,10 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 	}
 
 	const FFlyingCabLivingRouteNode* NextNode = LivingRoute->GetNode(NextLivingNodeIndex);
+	if (!CurrentLivingStopId.IsNone() && FVector::DistSquared(GetActorLocation(),LivingStopLocation) > FMath::Square(300.f))
+	{
+		CurrentLivingStopId = NAME_None;
+	}
 	if (!NextNode)
 	{
 		CurrentSpeed = 0.0f;
@@ -224,15 +229,17 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 	const float DistanceToNode = LivingRoute->GetForwardDistanceToNode(
 		RouteDistance,
 		NextLivingNodeIndex);
-	const bool bStopsAtNode = IsVehicleStopAction(NextNode->Action);
+	const bool bRedSignal = !FlyingCabTrafficSignals::IsGreen(NextNode->TrafficSignal, GetWorld()->GetTimeSeconds());
+	const bool bStopsAtNode = IsVehicleStopAction(NextNode->Action) || bRedSignal;
 	const float EffectiveDeceleration = FMath::Max(1.0f, LivingRoute->GetDeceleration());
 	const float BrakingDistance = FMath::Square(CurrentSpeed) / (2.0f * EffectiveDeceleration) + 35.0f;
 	const float SensorDistance = FMath::Max(
 		LivingRoute->GetMinimumSpacing(),
 		CurrentSpeed * 0.65f + 180.0f);
-	const bool bBlocked = HasLivingRouteObstacle(SensorDistance);
+	// A pedestrian waiting beyond the door must not block approach to the stop itself.
+	const bool bBlocked = HasLivingRouteObstacle(bStopsAtNode ? FMath::Min(SensorDistance,DistanceToNode) : SensorDistance);
 
-	float DesiredSpeed = CruiseSpeed;
+	float DesiredSpeed = NextNode->SpeedLimit > 0.f ? FMath::Min(CruiseSpeed, NextNode->SpeedLimit) : CruiseSpeed;
 	if (bStopsAtNode && DistanceToNode <= BrakingDistance)
 	{
 		const float RemainingForBraking = FMath::Max(0.0f, DistanceToNode - 4.0f);
@@ -277,7 +284,7 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 	}
 
 	RouteDistance = CandidateDistance;
-	if (DistanceToNode <= FMath::Max(4.0f, RequestedAdvance + 1.0f))
+	if (!bRedSignal && DistanceToNode <= FMath::Max(4.0f, RequestedAdvance + 1.0f))
 	{
 		RouteDistance = LivingRoute->GetNodeDistance(NextLivingNodeIndex);
 		SetActorLocation(
@@ -291,12 +298,13 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 
 bool AFlyingCabTrafficVehicle::HasLivingRouteObstacle(float LookAheadDistance) const
 {
+	LastLivingObstacle.Reset();
 	if (!LivingRoute || !GetWorld() || LookAheadDistance <= 0.0f)
 	{
 		return false;
 	}
 	const FVector Direction = LivingRoute->GetWorldDirectionAtDistance(RouteDistance).GetSafeNormal();
-	const FVector Start = GetActorLocation() + Direction * 155.0f;
+	const FVector Start = GetActorLocation() + Direction * FMath::Min(155.0f,LookAheadDistance*.5f);
 	const FVector End = LivingRoute->GetWorldLocationAtDistance(RouteDistance + LookAheadDistance);
 	FCollisionObjectQueryParams ObjectTypes;
 	ObjectTypes.AddObjectTypesToQuery(ECC_WorldStatic);
@@ -319,12 +327,23 @@ bool AFlyingCabTrafficVehicle::HasLivingRouteObstacle(float LookAheadDistance) c
 	{
 		const AActor* HitActor = Hit.GetActor();
 		const UPrimitiveComponent* HitComponent = Hit.GetComponent();
+		const AFlyingCabLivingPedestrian* Pedestrian = Cast<AFlyingCabLivingPedestrian>(HitActor);
+		const FFlyingCabLivingRouteNode* Destination = LivingRoute->GetNode(NextLivingNodeIndex);
+		// A boarding passenger occupies the door approach, not a traffic crossing.
+		// Only the person waiting for this exact stop is exempt; walking pedestrians still stop cars.
+		const FName ServedStop = Destination && IsVehicleStopAction(Destination->Action)
+			? Destination->StopId : CurrentLivingStopId;
+		if (Pedestrian && !ServedStop.IsNone() && Pedestrian->GetWaitingStopId() == ServedStop)
+		{
+			continue;
+		}
 		if (Cast<AFlyingCabPawn>(HitActor)
 			|| Cast<AFlyingCabTrafficVehicle>(HitActor)
 			|| Cast<AFlyingCabLivingPedestrian>(HitActor)
 			|| (HitComponent
 				&& HitComponent->GetCollisionResponseToChannel(ECC_WorldDynamic) == ECR_Block))
 		{
+			LastLivingObstacle = Hit.GetActor();
 			return true;
 		}
 	}
@@ -349,6 +368,7 @@ void AFlyingCabTrafficVehicle::ProcessLivingRouteNode()
 	if (IsVehicleStopAction(Node->Action))
 	{
 		CurrentLivingStopId = Node->StopId;
+		LivingStopLocation = GetActorLocation();
 		CurrentSpeed = 0.0f;
 		DwellRemaining = FMath::Max(0.05f, Node->WaitDuration);
 		MovementState = EFlyingCabTrafficMovementState::Dwelling;

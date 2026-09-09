@@ -9,15 +9,15 @@ namespace
 			TEXT("QuestGiver.Mike"),
 			TEXT("MIKE"),
 			TEXT("M"),
-			FVector(22990.0f, 0.0f, 760.0f),
-			FVector2D(470.0f, 4120.0f),
+			FVector(-10000.0f, 0.0f, 10060.0f),
+			FVector2D(-10000.0f, 10060.0f),
 			TEXT("Quest.NightshiftContract")},
 		{
 			TEXT("QuestGiver.Jack"),
 			TEXT("JACK"),
 			TEXT("J"),
-			FVector(10150.0f, 0.0f, 4955.0f),
-			FVector2D(10150.0f, 4955.0f),
+			FVector(20500.0f, 0.0f, 4860.0f),
+			FVector2D(20500.0f, 4860.0f),
 			TEXT("Get_Money")}};
 }
 

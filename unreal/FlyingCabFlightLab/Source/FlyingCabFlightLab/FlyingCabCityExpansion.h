@@ -7,14 +7,14 @@
 #include "FlyingCabCityExpansion.generated.h"
 
 class UMaterialInterface;
+class UInstancedStaticMeshComponent;
 class USceneComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 
 /**
- * Runtime-built east side of the flight lab. Keeping the prototype geometry in
- * code makes it portable and avoids introducing editor-generated map changes.
+ * Data-driven metro geometry. Collision-free express corridors separate four estates.
  */
 UCLASS()
 class FLYINGCABFLIGHTLAB_API AFlyingCabCityExpansion : public AActor
@@ -23,12 +23,12 @@ class FLYINGCABFLIGHTLAB_API AFlyingCabCityExpansion : public AActor
 
 public:
 	AFlyingCabCityExpansion();
+	virtual void Tick(float DeltaSeconds) override;
 
 protected:
 	virtual void BeginPlay() override;
 
 private:
-	void OpenExistingEasternBoundary();
 	void BuildExpansionGeometry();
 	void AddBlock(
 		const FString& Name,
@@ -49,6 +49,13 @@ private:
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UTextRenderComponent>> RuntimeLabels;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UTextRenderComponent> SignalLabel;
+
+	/** All apartment windows share one collision-free instanced draw component. */
+	UPROPERTY(Transient)
+	TObjectPtr<UInstancedStaticMeshComponent> ResidentialWindows;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UStaticMesh> CubeMesh;

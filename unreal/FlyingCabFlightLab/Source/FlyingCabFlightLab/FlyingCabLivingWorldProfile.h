@@ -20,6 +20,10 @@ public:
 	bool IsConfigurationValid(FString& OutError) const;
 	static UFlyingCabLivingWorldProfile* LoadDefaultAsset();
 	static TArray<FFlyingCabLivingRouteDefinition> BuildPrototypeRoutes();
+
+	/** Regenerates editable city itineraries from the current city layout. Does not save assets. */
+	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Living World")
+	static TArray<FFlyingCabLivingRouteDefinition> BuildCityRoutes();
 	static int32 CountAgents(
 		TConstArrayView<FFlyingCabLivingRouteDefinition> Definitions,
 		EFlyingCabLivingAgentKind AgentKind);

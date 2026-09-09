@@ -23,9 +23,9 @@
 namespace
 {
 	constexpr float MinimapLeft = 10.0f;
-	constexpr float MinimapRight = 216.0f;
+	constexpr float MinimapRight = 308.0f;
 	constexpr float MinimapTop = 24.0f;
-	constexpr float MinimapBottom = 168.0f;
+	constexpr float MinimapBottom = 228.0f;
 	constexpr int32 MaxPassengerMinimapMarkers = 6;
 }
 
@@ -501,7 +501,7 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	MinimapSlot->SetAnchors(FAnchors(0.0f, 0.0f));
 	MinimapSlot->SetAlignment(FVector2D(0.0f, 0.0f));
 	MinimapSlot->SetPosition(FVector2D(12.0f, 12.0f));
-	MinimapSlot->SetSize(FVector2D(228.0f, 180.0f));
+	MinimapSlot->SetSize(FVector2D(320.0f, 240.0f));
 	MinimapSlot->SetZOrder(20);
 
 	UTextBlock* MapTitle = WidgetTree->ConstructWidget<UTextBlock>();
@@ -513,6 +513,29 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	UCanvasPanelSlot* MapTitleSlot = MinimapCanvas->AddChildToCanvas(MapTitle);
 	MapTitleSlot->SetPosition(FVector2D(8.0f, 3.0f));
 	MapTitleSlot->SetSize(FVector2D(210.0f, 18.0f));
+
+	// A stable road skeleton helps read neighborhoods without following tiny moving NPC pins.
+	const FVector2D CityMin = FlyingCabCityData::GetMinimapWorldMin();
+	const FVector2D CityMax = FlyingCabCityData::GetMinimapWorldMax();
+	const FVector2D CityMid = (CityMin + CityMax) * .5;
+	auto MapRoad = [&](const TCHAR* Name, FVector2D A, FVector2D B)
+	{
+		A = WorldToMinimap(A); B = WorldToMinimap(B);
+		UBorder* Road = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), FName(Name));
+		Road->SetVisibility(ESlateVisibility::HitTestInvisible);
+		Road->SetBrushColor(FLinearColor(.06f,.25f,.3f,.75f));
+		UCanvasPanelSlot* Slot = MinimapCanvas->AddChildToCanvas(Road);
+		Slot->SetAlignment(FVector2D(.5,.5)); Slot->SetPosition((A+B)*.5);
+		Slot->SetSize(FVector2D(FMath::Max(FMath::Abs(A.X-B.X),4.),FMath::Max(FMath::Abs(A.Y-B.Y),4.)));
+		Slot->SetZOrder(-1);
+	};
+	const FVector2D RingMin = CityMin + FVector2D(1250,1250), RingMax = CityMax - FVector2D(1250,1250);
+	MapRoad(TEXT("HighwayEW"),FVector2D(RingMin.X,CityMid.Y),FVector2D(RingMax.X,CityMid.Y));
+	MapRoad(TEXT("HighwayNS"),FVector2D(CityMid.X,RingMin.Y),FVector2D(CityMid.X,RingMax.Y));
+	MapRoad(TEXT("RingWest"),RingMin,FVector2D(RingMin.X,RingMax.Y));
+	MapRoad(TEXT("RingNorth"),FVector2D(RingMin.X,RingMax.Y),RingMax);
+	MapRoad(TEXT("RingEast"),RingMax,FVector2D(RingMax.X,RingMin.Y));
+	MapRoad(TEXT("RingSouth"),FVector2D(RingMax.X,RingMin.Y),RingMin);
 
 	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs())
 	{
@@ -587,50 +610,62 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		StopCodeSlot->SetSize(FVector2D(30.0f, 16.0f));
 	}
 
+	// Service badges sit above their true map pin. Shape, text and opaque
+	// backing distinguish them from passenger offers, even at the same curb.
+	auto AddServiceBadge = [&](FName Name, const FVector2D& WorldPosition,
+		const TCHAR* Label, float Width, const FLinearColor& Color)
+	{
+		const FVector2D Position = WorldToMinimap(WorldPosition);
+		const bool bBelowPin = FCString::Strcmp(Label, TEXT("FUEL")) == 0;
+		AddMinimapPoint(MinimapCanvas, FName(*(Name.ToString() + TEXT("Pin"))),
+			WorldPosition, FVector2D(6.0f, 6.0f), Color);
+		UBorder* Leader = WidgetTree->ConstructWidget<UBorder>();
+		Leader->SetBrushColor(Color);
+		Leader->SetVisibility(ESlateVisibility::HitTestInvisible);
+		UCanvasPanelSlot* LeaderSlot = MinimapCanvas->AddChildToCanvas(Leader);
+		LeaderSlot->SetPosition(Position + FVector2D(-1.0f, bBelowPin ? 4.0f : -12.0f));
+		LeaderSlot->SetSize(FVector2D(2.0f, 10.0f));
+		LeaderSlot->SetZOrder(6);
+
+		UBorder* Badge = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), Name);
+		Badge->SetBrushColor(Color);
+		Badge->SetPadding(FMargin(2.0f));
+		Badge->SetVisibility(ESlateVisibility::HitTestInvisible);
+		UBorder* Backing = WidgetTree->ConstructWidget<UBorder>();
+		Backing->SetBrushColor(FLinearColor(0.005f, 0.01f, 0.02f, 1.0f));
+		Backing->SetPadding(FMargin(0.0f));
+		Badge->AddChild(Backing);
+		UTextBlock* Text = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(),
+			FName(*(Name.ToString() + TEXT("Label"))));
+		Text->SetText(FText::FromString(Label));
+		Text->SetColorAndOpacity(FSlateColor(Color));
+		Text->SetJustification(ETextJustify::Center);
+		FSlateFontInfo Font = Text->GetFont();
+		Font.Size = 10;
+		Font.TypefaceFontName = TEXT("Bold");
+		Text->SetFont(Font);
+		Backing->AddChild(Text);
+		Backing->SetVerticalAlignment(VAlign_Center);
+		UCanvasPanelSlot* BadgeSlot = MinimapCanvas->AddChildToCanvas(Badge);
+		BadgeSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+		BadgeSlot->SetPosition(Position + FVector2D(0.0f, bBelowPin ? 22.0f : -22.0f));
+		BadgeSlot->SetSize(FVector2D(Width, 20.0f));
+		BadgeSlot->SetZOrder(7);
+	};
 	const TArray<FFlyingCabServiceDefinition> FuelStations =
 		FlyingCabCityData::GetFuelStations();
 	for (int32 Index = 0; Index < FuelStations.Num(); ++Index)
 	{
-		const FVector2D WorldPosition = FuelStations[Index].GetMapPosition();
-		const FVector2D FuelStationMapPosition = WorldToMinimap(WorldPosition);
-		AddMinimapPoint(
-			MinimapCanvas,
-			FName(*FString::Printf(TEXT("FuelStationPin%d"), Index)),
-			WorldPosition,
-			FVector2D(9.0f, 9.0f),
-			FLinearColor(0.15f, 1.0f, 0.45f, 0.95f));
-		UTextBlock* FuelCode = WidgetTree->ConstructWidget<UTextBlock>();
-		FuelCode->SetText(FText::FromString(TEXT("F")));
-		FuelCode->SetColorAndOpacity(FSlateColor(FLinearColor(0.15f, 1.0f, 0.45f)));
-		FSlateFontInfo FuelFont = FuelCode->GetFont();
-		FuelFont.Size = 9;
-		FuelCode->SetFont(FuelFont);
-		UCanvasPanelSlot* FuelCodeSlot = MinimapCanvas->AddChildToCanvas(FuelCode);
-		FuelCodeSlot->SetPosition(FuelStationMapPosition + FVector2D(6.0f, 2.0f));
-		FuelCodeSlot->SetSize(FVector2D(18.0f, 16.0f));
+		AddServiceBadge(FName(*FString::Printf(TEXT("FuelStationBadge%d"), Index)),
+			FuelStations[Index].GetMapPosition(), TEXT("FUEL"), 36.0f, FLinearColor(0.15f, 1.0f, 0.45f));
 	}
 
 	const TArray<FFlyingCabServiceDefinition> RepairStations =
 		FlyingCabCityData::GetRepairStations();
 	for (int32 Index = 0; Index < RepairStations.Num(); ++Index)
 	{
-		const FVector2D WorldPosition = RepairStations[Index].GetMapPosition();
-		const FVector2D RepairStationMapPosition = WorldToMinimap(WorldPosition);
-		AddMinimapPoint(
-			MinimapCanvas,
-			FName(*FString::Printf(TEXT("RepairStationPin%d"), Index)),
-			WorldPosition,
-			FVector2D(10.0f, 10.0f),
-			FLinearColor(0.78f, 0.12f, 1.0f, 0.95f));
-		UTextBlock* RepairCode = WidgetTree->ConstructWidget<UTextBlock>();
-		RepairCode->SetText(FText::FromString(TEXT("R")));
-		RepairCode->SetColorAndOpacity(FSlateColor(FLinearColor(0.78f, 0.12f, 1.0f)));
-		FSlateFontInfo RepairFont = RepairCode->GetFont();
-		RepairFont.Size = 9;
-		RepairCode->SetFont(RepairFont);
-		UCanvasPanelSlot* RepairCodeSlot = MinimapCanvas->AddChildToCanvas(RepairCode);
-		RepairCodeSlot->SetPosition(RepairStationMapPosition + FVector2D(6.0f, 2.0f));
-		RepairCodeSlot->SetSize(FVector2D(18.0f, 16.0f));
+		AddServiceBadge(FName(*FString::Printf(TEXT("RepairStationBadge%d"), Index)),
+			RepairStations[Index].GetMapPosition(), TEXT("REPAIR"), 50.0f, FLinearColor(0.90f, 0.45f, 1.0f));
 	}
 
 	PassengerOfferMarkers.Reset();
@@ -872,7 +907,7 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	ResourcePanel->AddChild(ResourceText);
 	UCanvasPanelSlot* ResourceSlot = RootCanvas->AddChildToCanvas(ResourcePanel);
 	ResourceSlot->SetAnchors(FAnchors(0.0f, 0.0f));
-	ResourceSlot->SetPosition(FVector2D(12.0f, 200.0f));
+	ResourceSlot->SetPosition(FVector2D(12.0f, 260.0f));
 	ResourceSlot->SetSize(FVector2D(260.0f, 126.0f));
 	ResourceSlot->SetZOrder(20);
 

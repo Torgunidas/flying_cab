@@ -769,8 +769,8 @@ bool FFlyingCabCityDataConsistencyTest::RunTest(const FString& Parameters)
 	const FVector2D WorldMin = FlyingCabCityData::GetMinimapWorldMin();
 	const FVector2D WorldMax = FlyingCabCityData::GetMinimapWorldMax();
 
-	TestEqual(TEXT("The city exposes ten passenger districts"), Districts.Num(), 10);
-	TestEqual(TEXT("The city exposes three fuel stations"), FuelStations.Num(), 3);
+	TestEqual(TEXT("The city exposes twenty-four passenger stops"), Districts.Num(), 24);
+	TestEqual(TEXT("The city exposes four fuel stations"), FuelStations.Num(), 4);
 	TestEqual(TEXT("The city exposes two repair stations"), RepairStations.Num(), 2);
 	TestTrue(TEXT("Minimap X bounds are ordered"), WorldMin.X < WorldMax.X);
 	TestTrue(TEXT("Minimap Z bounds are ordered"), WorldMin.Y < WorldMax.Y);
@@ -813,7 +813,7 @@ bool FFlyingCabCityDataConsistencyTest::RunTest(const FString& Parameters)
 			*FString::Printf(TEXT("District '%s' separates pickup and dropoff"), *Name),
 			FVector::Distance(PickupLocation, DropoffLocation) >= 800.0f);
 	}
-	TestEqual(TEXT("Four districts are built by the runtime east expansion"), RuntimeDistrictCount, 4);
+	TestEqual(TEXT("All twenty-four stops have data-driven platforms"), RuntimeDistrictCount, 24);
 
 	auto TestServiceLocations = [this, WorldMin, WorldMax](
 		const TArray<FFlyingCabServiceDefinition>& Stations,
@@ -880,11 +880,11 @@ bool FFlyingCabDataAssetValidationTest::RunTest(const FString& Parameters)
 	{
 		FString Error;
 		TestTrue(TEXT("The city layout asset passes structural validation"), CityAsset->IsConfigurationValid(Error));
-		TestEqual(TEXT("The city asset contains all districts"), CityAsset->Districts.Num(), 10);
+		TestEqual(TEXT("The city asset contains all districts"), CityAsset->Districts.Num(), 24);
 		TestEqual(TEXT("The city asset contains all traffic routes"), CityAsset->TrafficRoutes.Num(), 8);
 	}
 	UFlyingCabCityLayoutAsset* InvalidCity = NewObject<UFlyingCabCityLayoutAsset>();
-	InvalidCity->Districts[0].RuntimePlatformHalfWidth = 10.0f;
+	InvalidCity->Districts[0].RuntimePlatformHalfWidth = 0.0f;
 	FString CityValidationError;
 	TestFalse(
 		TEXT("Mismatched runtime geometry tuning is rejected"),

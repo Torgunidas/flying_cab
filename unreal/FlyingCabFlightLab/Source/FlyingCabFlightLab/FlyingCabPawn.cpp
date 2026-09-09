@@ -12,6 +12,7 @@
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "FlyingCabInputData.h"
+#include "FlyingCabHighwayAssistComponent.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabPlayerController.h"
 #include "GameFramework/PlayerController.h"
@@ -47,6 +48,7 @@ AFlyingCabPawn::AFlyingCabPawn()
 	CollisionBody->BodyInstance.bLockYRotation = true;
 	CollisionBody->BodyInstance.bLockZRotation = true;
 	Vitals = CreateDefaultSubobject<UFlyingCabVehicleVitalsComponent>(TEXT("Vitals"));
+	HighwayAssist = CreateDefaultSubobject<UFlyingCabHighwayAssistComponent>(TEXT("HighwayAssist"));
 
 	VisualMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualMesh"));
 	VisualMesh->SetupAttachment(CollisionBody);
@@ -193,6 +195,7 @@ void AFlyingCabPawn::Tick(float DeltaSeconds)
 	RefreshPlayerFocusAppearance();
 	RefreshKeyboardInputState();
 	LastAppliedControlForce = FVector::ZeroVector;
+	HighwayAssist->Advance(DeltaSeconds);
 
 	if (!CollisionBody || !CollisionBody->IsSimulatingPhysics())
 	{
@@ -219,7 +222,8 @@ void AFlyingCabPawn::Tick(float DeltaSeconds)
 		DeltaSeconds,
 		RequestedHorizontalInput,
 		RequestedThrustInput,
-		Velocity.Z))
+		Velocity.Z,
+		HighwayAssist->GetFuelMultiplier()))
 	{
 		ShowFuelEmptyWarning();
 	}
@@ -236,8 +240,9 @@ void AFlyingCabPawn::Tick(float DeltaSeconds)
 		Velocity.Z = FMath::FInterpTo(Velocity.Z, 0.0f, DeltaSeconds, UpwardCoastDamping);
 	}
 
-	Velocity.X = FMath::Clamp(Velocity.X, -MaxHorizontalSpeed, MaxHorizontalSpeed);
-	Velocity.Z = FMath::Clamp(Velocity.Z, -MaxFallSpeed, MaxClimbSpeed);
+	const float HighwaySpeed = HighwayAssist->GetSpeedMultiplier();
+	Velocity.X = FMath::Clamp(Velocity.X, -MaxHorizontalSpeed * HighwaySpeed, MaxHorizontalSpeed * HighwaySpeed);
+	Velocity.Z = FMath::Clamp(Velocity.Z, -MaxFallSpeed * HighwaySpeed, MaxClimbSpeed * HighwaySpeed);
 	CollisionBody->SetPhysicsLinearVelocity(Velocity);
 
 	UpdateVisualResponse(DeltaSeconds, Velocity);
@@ -319,6 +324,7 @@ void AFlyingCabPawn::ResetVehicle()
 	{
 		Vitals->ResetResources();
 	}
+	HighwayAssist->ResetAssist();
 	CriticalWarningElapsed = 0.0f;
 	RefreshVehicleIdentityAppearance(true);
 	if (DamageLight)
@@ -477,6 +483,7 @@ void AFlyingCabPawn::RecoverVehicle(float RecoveryFuelPercent)
 	{
 		Vitals->Recover(RecoveryFuelPercent);
 	}
+	HighwayAssist->ResetAssist();
 	CriticalWarningElapsed = 0.0f;
 
 	CollisionBody->SetSimulatePhysics(true);

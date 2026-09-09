@@ -67,6 +67,7 @@ public:
 	int32 GetStopCount() const { return DeliveryStops.Num(); }
 	FString GetStopName(int32 StopIndex) const;
 	FName GetStopId(int32 StopIndex) const;
+	float GetFareRateForJourney(int32 PickupIndex, int32 DropoffIndex) const;
 	AFlyingCabDeliveryZone* GetDropoffZone() const { return DropoffZone; }
 	const TArray<FFlyingCabPassengerOfferState>& GetPassengerOffers() const
 	{
@@ -111,6 +112,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery")
 	TArray<FName> DeliveryStopIds;
 
+	UPROPERTY(Transient)
+	TArray<FName> DeliveryNeighborhoodIds;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Delivery", meta = (ClampMin = "0.0"))
 	float ArrivalMaxPlanarSpeed = 180.0f;
 
@@ -124,16 +128,16 @@ private:
 	int32 DispatchRandomSeed = 1977;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Passengers", meta = (ClampMin = "1", ClampMax = "8"))
-	int32 MaxWaitingPassengers = 4;
+	int32 MaxWaitingPassengers = 6;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Passengers", meta = (ClampMin = "1", ClampMax = "8"))
-	int32 InitialWaitingPassengers = 3;
+	int32 InitialWaitingPassengers = 4;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Passengers", meta = (ClampMin = "1.0"))
-	float PassengerLifetimeMin = 32.0f;
+	float PassengerLifetimeMin = 60.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Passengers", meta = (ClampMin = "1.0"))
-	float PassengerLifetimeMax = 52.0f;
+	float PassengerLifetimeMax = 100.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Passengers", meta = (ClampMin = "0.1"))
 	float PassengerSpawnIntervalMin = 3.0f;
@@ -163,6 +167,8 @@ private:
 	int32 CurrentDropoffIndex = INDEX_NONE;
 	int32 CompletedDeliveries = 0;
 	float ActiveFare = 0.0f;
+	float InterNeighborhoodFareMultiplier = 1.5f;
+	float ActiveFareRate = 1.10f;
 	float FareLastDistance = 0.0f;
 	float PassengerSpawnCountdown = 0.0f;
 	bool bPassengerOnBoard = false;

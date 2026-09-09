@@ -62,7 +62,7 @@ bool AFlyingCabLivingWorldManager::Initialize(UFlyingCabLivingWorldProfile* InPr
 int32 AFlyingCabLivingWorldManager::GetPrototypeVehicleCount()
 {
 	const TArray<FFlyingCabLivingRouteDefinition> Definitions =
-		UFlyingCabLivingWorldProfile::BuildPrototypeRoutes();
+		UFlyingCabLivingWorldProfile::BuildCityRoutes();
 	return UFlyingCabLivingWorldProfile::CountAgents(
 		Definitions,
 		EFlyingCabLivingAgentKind::Vehicle);
@@ -71,7 +71,7 @@ int32 AFlyingCabLivingWorldManager::GetPrototypeVehicleCount()
 int32 AFlyingCabLivingWorldManager::GetPrototypePedestrianCount()
 {
 	const TArray<FFlyingCabLivingRouteDefinition> Definitions =
-		UFlyingCabLivingWorldProfile::BuildPrototypeRoutes();
+		UFlyingCabLivingWorldProfile::BuildCityRoutes();
 	return UFlyingCabLivingWorldProfile::CountAgents(
 		Definitions,
 		EFlyingCabLivingAgentKind::Pedestrian);
@@ -124,7 +124,7 @@ bool AFlyingCabLivingWorldManager::DiscoverOrGenerateRoutes(UFlyingCabLivingWorl
 	}
 
 	const TArray<FFlyingCabLivingRouteDefinition> PrototypeDefinitions =
-		UFlyingCabLivingWorldProfile::BuildPrototypeRoutes();
+		UFlyingCabLivingWorldProfile::BuildCityRoutes();
 	return GenerateRoutes(PrototypeDefinitions);
 }
 
@@ -256,7 +256,8 @@ void AFlyingCabLivingWorldManager::RegisterPedestrianWaiting(
 	for (AFlyingCabTrafficVehicle* Vehicle : TrafficVehicles)
 	{
 		if (!IsValid(Vehicle)
-			|| Vehicle->GetMovementState() != EFlyingCabTrafficMovementState::Dwelling
+			|| (Vehicle->GetMovementState() != EFlyingCabTrafficMovementState::Dwelling
+				&& Vehicle->GetCurrentTrafficSpeed() > 40.f)
 			|| Vehicle->GetCurrentLivingStopId() != StopId)
 		{
 			continue;

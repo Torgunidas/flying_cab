@@ -38,7 +38,8 @@ bool UFlyingCabVehicleVitalsComponent::Advance(
 	float DeltaSeconds,
 	float HorizontalInput,
 	float ThrustInput,
-	float VerticalVelocity)
+	float VerticalVelocity,
+	float FuelConsumptionMultiplier)
 {
 	const float EffectiveDeltaSeconds = FMath::Max(0.0f, DeltaSeconds);
 	DamageCooldownRemaining = FMath::Max(
@@ -61,7 +62,8 @@ bool UFlyingCabVehicleVitalsComponent::Advance(
 	{
 		const float FuelUsed = (
 			FMath::Abs(EffectiveHorizontalInput) * HorizontalFuelPerSecond
-			+ EffectiveThrustInput * VerticalFuelPerSecond) * EffectiveDeltaSeconds;
+			+ EffectiveThrustInput * VerticalFuelPerSecond) * EffectiveDeltaSeconds
+			* FMath::Clamp(FuelConsumptionMultiplier, 0.1f, 1.0f);
 		CurrentFuel = FMath::Max(0.0f, CurrentFuel - FuelUsed);
 	}
 	else if (FMath::IsNearlyZero(EffectiveHorizontalInput)

@@ -63,16 +63,16 @@ private:
 		ESpawnActorCollisionHandlingMethod CollisionHandling);
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot")
-	FVector NightshiftEntranceLocation = FVector(470.0f, 0.0f, 4120.0f);
+	FVector NightshiftEntranceLocation = FVector(-9600.0f, 0.0f, 10120.0f);
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot")
-	FVector NightshiftExteriorReturnLocation = FVector(310.0f, 0.0f, 4068.0f);
+	FVector NightshiftExteriorReturnLocation = FVector(-9450.0f, 0.0f, 10068.0f);
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot")
-	FVector NightshiftOfficeLocation = FVector(23000.0f, 0.0f, 650.0f);
+	FVector NightshiftOfficeLocation = FVector(50000.0f, 0.0f, 650.0f);
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot")
-	FVector ServiceVehicleLocation = FVector(-600.0f, 0.0f, 4040.0f);
+	FVector ServiceVehicleLocation = FVector(-10600.0f, 0.0f, 10050.0f);
 
 	/** Kept only as a rollback switch while the route-driven living world is evaluated. */
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Traffic")

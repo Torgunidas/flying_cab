@@ -22,14 +22,17 @@ public:
 	TArray<FFlyingCabDistrictDefinition> Districts;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flying Cab|City")
+	TArray<FFlyingCabNeighborhoodDefinition> Neighborhoods;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flying Cab|City")
 	TArray<FFlyingCabServiceDefinition> StandaloneRepairStations;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flying Cab|Traffic")
 	TArray<FFlyingCabTrafficRouteDefinition> TrafficRoutes;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flying Cab|Minimap")
-	FVector2D MinimapWorldMin = FVector2D(-5000.0f, 0.0f);
+	FVector2D MinimapWorldMin = FVector2D(-15000.0f, 0.0f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Flying Cab|Minimap")
-	FVector2D MinimapWorldMax = FVector2D(15000.0f, 6500.0f);
+	FVector2D MinimapWorldMax = FVector2D(25000.0f, 13000.0f);
 };
