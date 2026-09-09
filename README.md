@@ -1,128 +1,61 @@
-# flying_cab
-# FlyingCab
+# Flying Cab — Unreal Engine
 
-FlyingCab to prototypowa gra 2D tworzona w Godot 4. Repozytorium zawiera
-sceny, skrypty i zasoby potrzebne do uruchomienia projektu.
+Główny projekt gry rozwijamy w **Unreal Engine 5.8 (C++)**. Windows i macOS korzystają z **tego samego repozytorium i gałęzi `main`**.
 
-## Wymagania
+Otwieraj: [`unreal/FlyingCabFlightLab/FlyingCabFlightLab.uproject`](unreal/FlyingCabFlightLab/FlyingCabFlightLab.uproject).
+Mapa startowa: `/Game/Maps/FlightLab`. Moduł gry: `FlyingCabFlightLab`.
 
-- Godot Engine 4.x (projekt korzysta z `features = "4.4, Mobile"` w pliku
-  `project.godot`)
-- System Windows lub przeglądarka (przygotowane presety eksportu)
+## Start na PC i Macu
 
-## Uruchomienie
+1. Zainstaluj tę samą wersję UE 5.8 na obu komputerach oraz kompilator odpowiedni dla tej wersji silnika (Visual Studio na Windows, Xcode na macOS).
+2. Pobierz repozytorium:
 
-1. Otwórz `project.godot` w Godot 4.
-2. Główną sceną startową jest `scenes/ui_scenes/MainMenu.tscn`
-   (UID `uid://dy0b0lt64gpho`).
-3. Uruchom projekt z poziomu edytora (`F5`) lub skorzystaj z jednego z
-   presetów eksportu:
-   - **Web** – plik wynikowy `exports/index.html`
-   - **Windows Desktop** – plik `FlyingCab.exe`
+   ```sh
+   git clone --branch main https://github.com/Torgunidas/flying_cab.git
+   cd flying_cab
+   ```
 
-## Struktura katalogów
+3. Zbuduj moduł edytora lokalnie:
 
-Assets/ – grafika i dźwięki (wiele paczek ZIP i plików PSD/SVG)
-dialogues/ – zasoby dialogów (*.tres, *.tscn)
-scenes/ – sceny gry (poziomy, UI, pojazdy, questy)
-scripts/ – skrypty GDScript (logika gracza, NPC, system questów, UI)
+   Windows, PowerShell:
 
-markdown
-Kopiuj
+   ```powershell
+   .\scripts\Build-Editor.ps1 -EngineRoot 'D:\Unreal\UE_5.8'
+   ```
 
-Najważniejsze skrypty:
+   macOS, Terminal:
 
-- `GameState.gd` – przechowuje stan globalny (np. pieniądze, wybrany poziom)
-- `GameRoot.gd` – ładuje poziom i gracza po uruchomieniu
-- `QuestSys.gd` – zarządza misjami/questami
-- `car_neo.gd` – model pojazdu/taksówki
-- `ui_logic/` – logika menu, dialogów, mapy i innych elementów interfejsu
-- `MessageSys.gd` – wyświetla krótkie komunikaty na środku ekranu
+   ```sh
+   bash scripts/build-editor-mac.sh '/Users/Shared/Epic Games/UE_5.8'
+   ```
 
-Autoloady definiowane są w `project.godot` (GameState, QuestSys, QuestLog itp.).
+   Podaj rzeczywistą lokalizację swojej instalacji. Skrypty nie zmieniają wersji projektu.
 
-## Eksport
+4. Otwórz `.uproject`, poczekaj na przygotowanie shaderów i uruchom mapę przyciskiem Play.
 
-Plik `export_presets.cfg` zawiera dwa presety:
+**Masz już repo na Macu, ale nie widzisz Unreala?** Zobacz [instrukcję synchronizacji i naprawy pobierania gałęzi](docs/WORKING_ON_MAC_AND_PC.md).
 
-- **Web** – eksport do folderu `exports/`
-- **Windows Desktop** – eksport do `FlyingCab.exe`
+## Co znajduje się w repo
 
-Aby zbudować grę, w edytorze Godot wybierz `Project > Export...` i uruchom
-eksport zgodnie z wybranym presetem.
+| Ścieżka | Przeznaczenie |
+| --- | --- |
+| `unreal/FlyingCabFlightLab/` | Aktywny projekt: Source, Config, Content i zasoby Build |
+| `scripts/` | Budowanie edytora na obu systemach |
+| `docs/` | Wspólna organizacja pracy i raport porządkowania |
+| `unreal/FlyingCabFlightLab/docs/` | Dokumentacja rozgrywki, autorowania i testów |
+| `archive/godot/` | Stary prototyp Godota, wyłącznie archiwum do inspiracji |
 
-Instrukcja dodawania nowego questa
-Utwórz zasób QuestData
+Godota otwiera się osobno przez `archive/godot/project.godot`. Zachowano jego strukturę i dawne instrukcje; nie są instrukcjami głównego projektu.
+Historyczne audyty Unreal pozostają w katalogu głównym, aby zachować odnośniki.
 
-W Godot wybierz New Resource → QuestData (dzięki class_name QuestData w pliku QuestData.gd).
+## Zasady pracy
 
-Wypełnij pola:
+- Przed pracą zamknij edytor i wykonaj `git pull --ff-only` na `main`.
+- Przed zmianą komputera zapisz zasoby, zrób commit i `git push origin main`. Sam commit nie wysyła zmian na GitHub.
+- `Content`, `Config`, `Source`, `Build` i `.uproject` są wspólne. Pliki wynikowe oraz cache powstają osobno na każdym komputerze.
+- Nie edytuj równocześnie tej samej mapy lub Blueprinta na dwóch komputerach. Zasoby `.uasset` i `.umap` są binarne.
+- Zmiany UE uzgadniaj dla obu komputerów. Aktualne sterowanie ma chroniony [punkt odniesienia](unreal/FlyingCabFlightLab/docs/INPUT_CANONICAL_BASELINE.md).
 
-id – unikalny identyfikator.
+Repo używa zwykłego Git; obecne zasoby Unreal nie wymagają Git LFS. Archiwum zawiera starsze paczki i eksporty, więc pierwsze pobranie może być duże.
 
-title – krótka nazwa.
-
-description – opis zadania.
-
-objective – tekst pokazywany w okienku celu (QuestObjectiveUI).
-
-reward – kwota wypłacana po ukończeniu.
-
-next_quest_id – opcjonalnie id kolejnego questa w linii.
-
-start_target domyślnie ustaw na "quest_giver".
-
-Dodaj zasób do QuestSysRoot
-
-Otwórz scenes/QuestSysRoot.tscn.
-
-W Inspectorze w polu quests dodaj nowo utworzony .tres.
-Dzięki temu autoload QuestSys zarejestruje questa w _ready() (linie 20‑23).
-
-Umieść StartTrigger w poziomie
-
-W scenie poziomu (np. scenes/level_1.tscn) dodaj węzeł Area2D z przypiętym skryptem StartTrigger.gd i wpisz quest_id.
-
-Dodaj go do grupy quest_giver (wymagane do wyświetlenia znacznika startu, jeśli system markerów zostanie rozszerzony).
-
-Gdy gracz wejdzie w obszar, quest zostanie aktywowany.
-
-Zdefiniuj cel questa
-
-W miejscu, do którego gracz ma dotrzeć, dodaj Area2D z przypiętym skryptem EndTrigger.gd (ustaw quest_id).
-
-Ten węzeł powinien należeć do grupy quest_goal – dzięki temu MapOverlay wyświetli nad nim ikonę „!” (patrz funkcja _build_goal_markers).
-
-Opcjonalnie możesz ustawić reward_scene (np. scenes/quest/RewardBox.tscn) i reward_texture, aby po ukończeniu pojawił się prosty obiekt nagrody.
-
-(Opcjonalnie) Dodaj dialog
-
-Jeśli quest rozpoczyna się rozmową z NPC, użyj węzła QuestGiver (scripts/info_board.gd).
-
-W polu dialog_resource ustaw DialogBook lub DialogData. W dialogu można w akcjach wykorzystać start_quest i finish_quest.
-Odpowiedzi (DialogAnswer) mają pole `show_if_unavailable`, które decyduje,
-czy przycisk powinien być widoczny, gdy warunki (requirements) nie są spełnione.
-
-Test
-
-Uruchom poziom. Po wejściu w StartTrigger quest pojawi się w QuestLog, a aktualny cel w QuestObjectiveUI.
-
-Marker „!” będzie widoczny nad węzłem z grupy quest_goal, jeżeli quest jest aktywny. Po wejściu w EndTrigger quest zostanie ukończony i (jeśli zadano) pojawi się RewardBox.
-
-### Mini‑mapa we wnętrzach
-
-Sceny należące do grupy `interiors` korzystają z innego powiększenia mini‑mapy.
-Aby MapOverlay mógł prawidłowo ustawić limity kamery w takich poziomach,
-należy dodać węzeł (np. `Sprite2D` lub `Node2D`) w grupie `level_bounds`
-określający rozmiar planszy.
-
-### Sterowanie mini‑mapą
-
-Powiększenie mini‑mapy można zmieniać kółkiem myszy lub gestem pinch na
-urządzeniach dotykowych. Zakres przybliżenia kontrolują zmienne eksportowane
-`zoom_step`, `min_zoom` oraz `max_zoom` w skrypcie `MapOverlay.gd`.
-
-## Licencja
-
-Projekt udostępniany jest na licencji MIT. Szczegóły znajdują się w pliku
-`LICENSE`.
+Licencja kodu projektu: [MIT](LICENSE). Materiały zewnętrzne w archiwum mogą mieć własne warunki licencji.

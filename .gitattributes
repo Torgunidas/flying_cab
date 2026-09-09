@@ -1,2 +1,13 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Identical text checkouts on Windows/macOS; binary Unreal assets must not merge as text.
+*.sh text eol=lf
+*.ps1 text eol=lf
+*.cpp text eol=lf
+*.h text eol=lf
+*.cs text eol=lf
+*.ini text eol=lf
+*.uproject text eol=lf
+*.uasset binary
+*.umap binary
