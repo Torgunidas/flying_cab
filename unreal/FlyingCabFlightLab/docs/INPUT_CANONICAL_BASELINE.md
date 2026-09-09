@@ -72,3 +72,9 @@ Nowy komponent nie czyta klawiszy, nie przechowuje poleceń i nie generuje ciąg
 ### Osiedla i zasięg — wyłącznie wartości zasobów
 
 Przy zagęszczeniu osiedli na prośbę użytkownika w `FlyingCabPawn.h` oraz `FlyingCabVehicleVitalsComponent.h` zmieniono `MaxFuel` 100 → 200 i `StartingFuel` 65 → 130. Reszta obsługi wejścia, fizyki, resetu/recovery i rozliczania paliwa bez zmian względem etapu Highway Turbo. Manifest nadal zgłasza te same pięć oczekiwanych plików i 27 zgodnych. Geometria, nowe perony i testy są poza chronioną logiką wejścia. Szczegóły: `RESIDENTIAL_DISTRICTS.md`.
+
+### Wizualizacja dwóch dysz — 2026-09-09
+
+Na prośbę użytkownika dodano `UFlyingCabThrusterVisualComponent`. Zmiany w `FlyingCabPawn.h/.cpp` obejmują wyłącznie referencję i utworzenie komponentu, zapis prędkości przed dotychczasowym tłumieniem oraz przekazanie już zastosowanego przyspieszenia napędu i tłumienia do wizualizacji, przed limitami prędkości. Reset i recovery zerują dodatkowo stan efektów. Dotychczasowe instrukcje odczytu wejścia, stosowania sił, tłumienia i ograniczania prędkości zachowały kolejność i treść; mapowania, bramki, flush, Q/J/R i wariant `UseControlFrame=0` pozostają bez zmian.
+
+Na macOS nie ma `pwsh`, więc próba uruchomienia `scripts/Verify-InputBaseline.ps1` zakończyła się brakiem interpretera. Przed i po zmianach wykonano równoważne sprawdzenie SHA-256 w Pythonie z identyczną normalizacją tekstu UTF-8/LF: te same pięć historycznie zmienionych plików, 27 zgodnych. Przejrzano powyższy przyrost w plikach pojazdu; manifest bez zmian. Wyniki testów i granice efektu opisuje `THRUSTER_VISUALS.md`.

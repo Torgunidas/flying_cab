@@ -9,6 +9,7 @@
 
 class UBoxComponent;
 class UFlyingCabHighwayAssistComponent;
+class UFlyingCabThrusterVisualComponent;
 class UPointLightComponent;
 class UPrimitiveComponent;
 class USceneComponent;
@@ -138,6 +139,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
 	TObjectPtr<UFlyingCabHighwayAssistComponent> HighwayAssist;
+
+	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
+	TObjectPtr<UFlyingCabThrusterVisualComponent> ThrusterVisuals;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
 	TObjectPtr<UPointLightComponent> DamageLight;

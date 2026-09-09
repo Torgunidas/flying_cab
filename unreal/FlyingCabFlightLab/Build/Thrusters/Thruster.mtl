@@ -1,0 +1,6 @@
+newmtl Metal
+Kd 0.17 0.20 0.23
+newmtl Rim
+Kd 0.34 0.26 0.16
+newmtl Ceramic
+Kd 0.022 0.028 0.033

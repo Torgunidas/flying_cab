@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "FlyingCabPawn.h"
+#include "FlyingCabThrusterVisualComponent.h"
 
 #include "EnhancedInputComponent.h"
 #include "Components/BoxComponent.h"
@@ -49,6 +50,7 @@ AFlyingCabPawn::AFlyingCabPawn()
 	CollisionBody->BodyInstance.bLockZRotation = true;
 	Vitals = CreateDefaultSubobject<UFlyingCabVehicleVitalsComponent>(TEXT("Vitals"));
 	HighwayAssist = CreateDefaultSubobject<UFlyingCabHighwayAssistComponent>(TEXT("HighwayAssist"));
+	ThrusterVisuals = CreateDefaultSubobject<UFlyingCabThrusterVisualComponent>(TEXT("ThrusterVisuals"));
 
 	VisualMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("VisualMesh"));
 	VisualMesh->SetupAttachment(CollisionBody);
@@ -230,6 +232,7 @@ void AFlyingCabPawn::Tick(float DeltaSeconds)
 	UpdateCriticalResourceAppearance(DeltaSeconds);
 
 	const bool bHasDriverControl = IsPlayerControlled();
+	const FVector VelocityBeforeCoast = Velocity;
 	if (bHasDriverControl && FMath::IsNearlyZero(HorizontalInput))
 	{
 		Velocity.X = FMath::FInterpTo(Velocity.X, 0.0f, DeltaSeconds, HorizontalCoastDamping);
@@ -240,6 +243,10 @@ void AFlyingCabPawn::Tick(float DeltaSeconds)
 		Velocity.Z = FMath::FInterpTo(Velocity.Z, 0.0f, DeltaSeconds, UpwardCoastDamping);
 	}
 
+	// Observe only the existing powered force and coast damping, before the speed caps.
+	// Gravity and collision impulses must never produce a false engine firing.
+	ThrusterVisuals->SubmitAcceleration(LastAppliedControlForce / Mass,
+		DeltaSeconds > UE_SMALL_NUMBER ? (Velocity - VelocityBeforeCoast) / DeltaSeconds : FVector::ZeroVector);
 	const float HighwaySpeed = HighwayAssist->GetSpeedMultiplier();
 	Velocity.X = FMath::Clamp(Velocity.X, -MaxHorizontalSpeed * HighwaySpeed, MaxHorizontalSpeed * HighwaySpeed);
 	Velocity.Z = FMath::Clamp(Velocity.Z, -MaxFallSpeed * HighwaySpeed, MaxClimbSpeed * HighwaySpeed);
@@ -325,6 +332,7 @@ void AFlyingCabPawn::ResetVehicle()
 		Vitals->ResetResources();
 	}
 	HighwayAssist->ResetAssist();
+	ThrusterVisuals->ResetVisuals();
 	CriticalWarningElapsed = 0.0f;
 	RefreshVehicleIdentityAppearance(true);
 	if (DamageLight)
@@ -484,6 +492,7 @@ void AFlyingCabPawn::RecoverVehicle(float RecoveryFuelPercent)
 		Vitals->Recover(RecoveryFuelPercent);
 	}
 	HighwayAssist->ResetAssist();
+	ThrusterVisuals->ResetVisuals();
 	CriticalWarningElapsed = 0.0f;
 
 	CollisionBody->SetSimulatePhysics(true);
