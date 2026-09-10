@@ -63,6 +63,9 @@ bool AFlyingCabWorldBootstrap::Bootstrap(
 		TrafficVehicles.Num(),
 		GetConfiguredTrafficVehicleCount(),
 		GetLivingPedestrianCount());
+	// Only the post-2026-09-10 binary prints this line; its absence in a PIE log means a stale module.
+	UE_LOG(LogFlyingCabWorldBootstrap, Display, TEXT("A_R7 supercars parked: %d/%d."),
+		Supercars.Num(), FlyingCabSupercarData::GetDistrictIds().Num());
 	return bBootstrapSucceeded;
 }
 

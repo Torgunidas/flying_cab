@@ -102,3 +102,7 @@ Przed zmianami równoważne sprawdzenie SHA-256 wykazało 27 zgodnych plików i 
 W już zmienionym `FlyingCabTouchControls.cpp` podmieniono dodatkowo tylko źródło znaczników NPC na listę profili i aktorów otwartej mapy. Zastane zmiany w Pawnie, efektach dysz, ruchu i pojazdach zostały zachowane. Historyczny manifest nie został zmieniony.
 
 Kompilacja edytora UE 5.8 zakończyła się powodzeniem. Dodano test PIE rozmowy obejmujący m.in. puszczenie `A` w dialogu i wznowienie sterowania; uruchomienie pełnych testów zostało odrzucone w oknie uprawnień, więc brak wyniku runtime dla tego wdrożenia. Ocena w grze i ręczna akceptacja pozostają do wykonania; nie nadano nowej wersji kanonicznej. Instrukcja: `QUEST_AUTHORING.md`.
+
+### Kontrola manifestu na macOS i poprawki po audycie — 2026-09-10
+
+Dodano `scripts/verify-input-baseline.py`: wersjonowany odpowiednik `Verify-InputBaseline.ps1` z tą samą normalizacją (UTF-8 bez BOM, końce linii LF, SHA-256; pliki binarne bajt po bajcie), tymi samymi komunikatami i kodami wyjścia. Przed i po poprawkach z audytu projektu (`docs/AUDYT_PROJEKTU_2026-09-10.md` w katalogu głównym repo) kontrola wykazuje te same dziewięć historycznie zmienionych plików i 23 zgodne. Poprawki objęły `FlyingCabWorldBootstrap.cpp` (dodatkowa linia logu) i moduł edytora `FlyingCabNarrativeEditor` (ostrzeżenie o nieaktualnej binarce); żaden plik z manifestu nie został zmieniony, manifest pozostaje historyczny, wariant `UseControlFrame=0` bez zmian.

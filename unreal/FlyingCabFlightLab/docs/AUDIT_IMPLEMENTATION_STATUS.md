@@ -112,3 +112,23 @@ Przykład poprawnego uruchomienia testu fallbacku: `-ExecCmds="flyingcab.UseCont
 - Weryfikacja końcowa: build UE 5.8 Win64 Development — sukces; **26/26** testów z domyślnym `UseControlFrame=0` (`Saved/Logs/RecoveryDefaultTraceVerifiedTests.log`) i **26/26** z eksperymentalnym `1` (`Saved/Logs/RecoveryExperimentalTraceTests.log`). Oba procesy zakończyły się kodem 0. W logach potwierdzono zapis wciśnięć/puszczeń i niezerowej/zerowej siły napędu. Pierwsze uruchomienie pełnego pakietu zatrzymało się przed testami na dostępie do cache Zen w sandboxie; powyższe wyniki pochodzą z ponownego, poprawnie uruchomionego procesu.
 - Następna weryfikacja: ręcznie powtórzyć ten sam scenariusz przez Parsec na domyślnej ścieżce. Jeśli ciąg ponownie pozostanie aktywny po puszczeniu, odczytać nowy log i sprawdzić, czy kontroler otrzymał `KEY Released` oraz na którym etapie pozostała niezerowa wartość. Zielone testy syntetyczne nie zamykają tego zgłoszenia.
 - Pliki tego zgłoszenia: `FlyingCabControlInputComponent.cpp/.h`, `FlyingCabPlayerController.cpp/.h`, `FlyingCabPawn.cpp/.h`, `FlyingCabFunctionalTests.cpp` i ten dokument. Wcześniejsze zmiany pozostawiono bez nadpisania; brak commita i push.
+
+## Audyt projektu — 2026-09-10 (Mac/PC, repo, supercar)
+
+Raport: `docs/AUDYT_PROJEKTU_2026-09-10.md` w katalogu głównym repo (sekcja 8 opisuje wdrożone poprawki i przekazanie dla Codexa). Przyczyna braku supercara na Macu: po pullu edytor ładował moduł skompilowany przed zmianami, bez ostrzeżenia. Kod supercara kompiluje się na macOS i przechodzi test `FlyingCab.Functional.PIE.Supercar`.
+
+| ID | Status | Stan obecny |
+|---|---|---|
+| A-01 | zakończone | `scripts/sync-mac.sh` i `scripts/Sync-Windows.ps1` (pull + build); ostrzeżenie edytora o źródłach nowszych niż binarka w module `FlyingCabNarrativeEditor`; linia `A_R7 supercars parked` w bootstrapie; zasady w README, `WORKING_ON_MAC_AND_PC.md` i `AGENTS.md`. Skrypt Windows i ostrzeżenie edytora czekają na sprawdzenie na Windows. |
+| A-02 | zakończone (zasada) | Reguła „build i testy na obu systemach albo jawny zapis, który system czeka” dodana do głównego `AGENTS.md`. |
+| A-03 | zakończone | `scripts/verify-input-baseline.py`; wynik zgodny ze skryptem PowerShell (23 zgodne, 9 historycznie zmienionych). |
+| A-04 | zakończone | Alias Findera usunięty z indeksu Git, `*-alias` w `.gitignore`. Plik lokalny pozostał. |
+| A-05 | zakończone | Jawne reguły `binary` dla png/psd/gif/ase/aseprite/ai/eps/pdf/fbx/blend/otf/ttf/mp3/wav/ogg/zip/7z/pck/exe/dll oraz `*.py text eol=lf`. Bez zmian blobów; `git status` po zmianie czysty. |
+| A-06 | do wykonania lokalnie | Na Macu: `git config --global --unset-all filter.lfs.clean` itd. albo `brew install git-lfs`. Nie zmieniano konfiguracji użytkownika. |
+| A-07 | decyzja użytkownika | Gałęzie zdalne: `codex/unreal-audit-fixes` scalona; `codex/evaluate-vehicle-control-system-redesign`, `not_stable`, `working-dialog-system` niescalone (era Godota). |
+| A-08 | zasada | Wyniki testów zapisywać w docs (data, maszyna, liczby); ścieżki `Saved/` nie są współdzielone. |
+| A-09 | zakończone | Patrz A-01 (linia logu bootstrapu, ostrzeżenie edytora). |
+| A-10 | wdrożone, do weryfikacji na Windows | Soak wykonuje cykl rozgrzewający `Q`/`Q` przed krokiem 1 (spawn pieszego poza pomiarem z zimnym cache); karencja przejść i sekwencja seedu bez zmian. Ścieżka wejścia gry nietknięta. |
+| A-11 | wdrożone częściowo, do weryfikacji na Windows | Przyczyna: zaklinowanie kadłubów na skrzyżowaniu w martwej strefie czujnika (155 cm). Dodano diagnostykę blokera ruchu (`GetLastObstacleDescription`, `Obstacle detail` w teście Metro) i przeciśnięcie po 10 s wyłącznie przez inny pojazd NPC (`GridlockCreepAfterSeconds`, `GridlockCreepSpeed`). Arbitraż skrzyżowań pozostaje otwarty. |
+
+Pierwsza tura poprawek (skrypty, ostrzeżenie edytora, Git) była tylko kompilowana na macOS, bez testów (polecenie użytkownika). Druga tura (A-10, A-11): build macOS bez ostrzeżeń, uruchomiono tylko testy objęte zmianami (`InputSoak` oba seedy i `MetroTrafficFlow`): 3/3 zaliczone, 0 przeciśnięć (`Saved/Logs/AuditMacA10A11_2026-09-10.log`). Pełny pakiet i Windows pozostają do wykonania.

@@ -44,3 +44,7 @@ Test izoluje auto i postać poza miastem, usuwa wpływ grawitacji/kolizji otocze
 ## Wynik wdrożenia — 2026-09-04
 
 Build UE 5.8 Win64 Development i cały pakiet **29/29** poprawne (`Saved/Logs/CanonicalReliabilityFinalTests.log`). Dwukrotne wykonanie każdego z seedów dało identyczne zdarzenia, model i wyniki po wyłączeniu pól czasu/globalnej klatki z porównania. Kontrola negatywna prawidłowo wykryła celowo zgubione puszczenia: SpaceBar w kroku 57 dla 1977 i Up w kroku 27 dla 9042026 (`Saved/Logs/CanonicalReliabilityNegativeControl.log`, oczekiwany błąd procesu). Manifest kanoniczny: 32/32 pliki zgodne, bez aktualizacji sum.
+
+## Rozgrzewka soaku — 2026-09-10
+
+`InputSoak.Seed1977` raz nie przeszedł na Macu w pierwszej sesji PIE procesu z zimnym cache: pierwsze `Q` w kroku 4 nie zdążyło utworzyć postaci pieszej w dwóch klatkach karencji. Soak wykonuje teraz przed krokiem 1 jeden cykl `Q` (wyjście) i `Q` (powrót), czekając na rzeczywisty spawn i powrót do taksówki (limit 120 klatek na przejście, przekroczenie kończy test błędem `Warm-up: ...`). Model wejścia, karencje, seedy i zliczanie pokrycia są bez zmian; wiersz `Start` w CSV pojawia się po rozgrzewce. Ścieżka wejścia gry nie została zmieniona. Szczegóły: `docs/AUDYT_PROJEKTU_2026-09-10.md` w katalogu głównym repo.

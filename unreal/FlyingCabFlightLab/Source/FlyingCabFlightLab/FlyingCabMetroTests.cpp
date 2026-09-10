@@ -140,6 +140,7 @@ public:
 				Test->AddError(FString::Printf(TEXT("Traffic stalled >45 game seconds: %s at %s state=%d"),
 					*Vehicle->GetLivingRouteId().ToString(),*Vehicle->GetActorLocation().ToCompactString(),int32(Vehicle->GetMovementState())));
 				Test->AddInfo(FString::Printf(TEXT("Last obstacle: %s"),*GetNameSafe(Vehicle->GetLastLivingObstacle())));
+				Test->AddInfo(FString::Printf(TEXT("Obstacle detail: %s"),*Vehicle->GetLastObstacleDescription()));
 				for (TActorIterator<AActor> It(World); It; ++It)
 				{
 					if (FVector::Dist(It->GetActorLocation(),Vehicle->GetActorLocation())>1600) continue;
@@ -158,8 +159,14 @@ public:
 		Test->TestTrue(TEXT("Ambient passengers disembark"),Manager->GetTotalPassengerExits()>=4);
 		Test->TestEqual(TEXT("Every pedestrian boards during the session"),HasRidden.Num(),8);
 		Test->TestEqual(TEXT("Every pedestrian completes at least one ride"),HasExited.Num(),8);
+		int32 Creeps=0;
 		for (const auto& Pair : Observed)
+		{
 			Test->TestTrue(*FString::Printf(TEXT("Vehicle %s travels at least 100 metres"),*Pair.Key->GetName()),Pair.Value.Distance>10000.f);
+			Creeps+=Pair.Key->GetGridlockCreepCount();
+		}
+		// Informational: a creep means an NPC interlock was resolved by passing through, not a failure.
+		Test->AddInfo(FString::Printf(TEXT("Gridlock creeps during the session: %d"),Creeps));
 		return true;
 	}
 private:

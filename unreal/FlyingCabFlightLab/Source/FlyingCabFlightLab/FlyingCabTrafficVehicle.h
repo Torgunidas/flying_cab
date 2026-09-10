@@ -58,6 +58,10 @@ public:
 	FName GetLivingRouteId() const;
 	bool UsesLivingRoute() const { return LivingRoute != nullptr; }
 	AActor* GetLastLivingObstacle() const { return LastLivingObstacle.Get(); }
+	/** Sensor obstacle, physical blocker from the move sweep, wait time and creep count, for logs and tests. */
+	FString GetLastObstacleDescription() const;
+	float GetObstacleWaitSeconds() const { return ObstacleWaitSeconds; }
+	int32 GetGridlockCreepCount() const { return GridlockCreepCount; }
 
 	FOnFlyingCabNearMiss OnNearMiss;
 	FOnFlyingCabTrafficStopReached OnLivingStopReached;
@@ -69,6 +73,18 @@ protected:
 private:
 	void ApplyVisualBody();
 	mutable TWeakObjectPtr<AActor> LastLivingObstacle;
+	TWeakObjectPtr<AActor> LastMoveBlocker;
+	FName LastMoveBlockerComponent = NAME_None;
+	float ObstacleWaitSeconds = 0.0f;
+	int32 GridlockCreepCount = 0;
+	bool bGridlockCreeping = false;
+
+	/** After this long interlocked with another NPC car the sensor cannot see, the car creeps through it. 0 disables. */
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Traffic", meta = (ClampMin = "0.0"))
+	float GridlockCreepAfterSeconds = 10.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|Traffic", meta = (ClampMin = "0.0"))
+	float GridlockCreepSpeed = 150.0f;
 	FVector LivingStopLocation = FVector::ZeroVector;
 	void TickLegacyRoute(float DeltaSeconds);
 	void TickLivingRoute(float DeltaSeconds);

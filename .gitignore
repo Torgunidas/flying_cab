@@ -34,6 +34,7 @@ unreal/**/*.xcodeproj/
 # Local IDE and operating-system metadata (Windows and macOS)
 .DS_Store
 ._*
+*-alias
 Thumbs.db
 Desktop.ini
 .idea/

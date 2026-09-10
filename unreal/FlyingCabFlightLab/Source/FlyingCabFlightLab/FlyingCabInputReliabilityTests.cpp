@@ -432,6 +432,28 @@ public:
 		if (LastFrame == GFrameCounter) { return false; }
 		LastFrame = GFrameCounter;
 		Fixture.Isolate(true);
+		// Warm-up (audit 2026-09-10, A-10): one exit/re-entry cycle before step 1 loads the on-foot
+		// assets, so the first real transition is not measured against a cold cache with the
+		// two-frame grace. The seeded sequence and the model start unchanged after it.
+		if (WarmupStage < 4)
+		{
+			if (PendingRelease.IsValid()) { Send(Fixture.PC.Get(), PendingRelease, IE_Released); PendingRelease = FKey(); return false; }
+			const bool bCharacter = Cast<AFlyingCabCharacter>(Fixture.PC->GetPawn()) != nullptr;
+			if (WarmupStage == 0) { Pulse(EKeys::Q); WarmupStage = 1; WarmupFrames = 0; return false; }
+			if (WarmupStage == 1)
+			{
+				if (bCharacter) { WarmupStage = 2; }
+				else if (++WarmupFrames > 120) { return Finish(TEXT("Warm-up: exit to on-foot did not happen")); }
+				return false;
+			}
+			if (WarmupStage == 2) { Pulse(EKeys::Q); WarmupStage = 3; WarmupFrames = 0; return false; }
+			if (!bCharacter && Fixture.PC->GetPawn() == Fixture.Cab.Get())
+			{
+				WarmupStage = 4; ResetModelAfterFlush(); Grace = 3; Event = TEXT("Start");
+			}
+			else if (++WarmupFrames > 120) { return Finish(TEXT("Warm-up: return to the cab did not happen")); }
+			return false;
+		}
 		if (bRecovering && !Fixture.Cab->IsDestroyed())
 		{
 			bRecovering = false;
@@ -655,7 +677,7 @@ private:
 	double Started = FPlatformTime::Seconds();
 	double PreviousFixedDelta = 0.0;
 	uint64 LastFrame = MAX_uint64;
-	int32 Step = 0, Grace = 0, ModeFrames = 0, NextCrash = 600, DrainFrames = 0;
+	int32 Step = 0, Grace = 0, ModeFrames = 0, NextCrash = 600, DrainFrames = 0, WarmupStage = 0, WarmupFrames = 0;
 	int32 HeldSince[8] = {};
 	bool Physical[8] = {}, Delivered[8] = {}, Touch[4] = {};
 	bool bInitialized = false, bJournal = false, bObserver = false, bOnFoot = false, bRecovering = false, bDraining = false;

@@ -11,3 +11,30 @@
 *.uproject text eol=lf
 *.uasset binary
 *.umap binary
+*.py text eol=lf
+
+# Binary media, models and archives: never normalize line endings or merge as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.tga binary
+*.bmp binary
+*.psd binary
+*.ase binary
+*.aseprite binary
+*.ai binary
+*.eps binary
+*.pdf binary
+*.fbx binary
+*.blend binary
+*.otf binary
+*.ttf binary
+*.mp3 binary
+*.wav binary
+*.ogg binary
+*.zip binary
+*.7z binary
+*.pck binary
+*.exe binary
+*.dll binary

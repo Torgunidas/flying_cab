@@ -1,6 +1,6 @@
 # Flying Cab — chroniony punkt odniesienia sterowania
 
-Przed zmianami w sterowaniu, przejściach UI, possession, resecie lub recovery przeczytaj w całości `docs/INPUT_CANONICAL_BASELINE.md` i uruchom `scripts/Verify-InputBaseline.ps1`.
+Przed zmianami w sterowaniu, przejściach UI, possession, resecie lub recovery przeczytaj w całości `docs/INPUT_CANONICAL_BASELINE.md` i uruchom `scripts/Verify-InputBaseline.ps1` (Windows) albo `python3 scripts/verify-input-baseline.py` (macOS, ten sam algorytm i komunikaty).
 
 - Kanoniczny wariant to `input-canonical-2026-09-04`, UE 5.8, `flyingcab.UseControlFrame=0`, potwierdzony ręcznie przez użytkownika po długiej sesji przez Parsec.
 - Nie włączaj domyślnie eksperymentalnej ramki, nie usuwaj działającej ścieżki ani nie zmieniaj kolejności przetwarzania wejścia przy okazji innych prac.

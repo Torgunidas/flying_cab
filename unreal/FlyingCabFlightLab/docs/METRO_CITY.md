@@ -78,3 +78,11 @@ Końcowy test wizualny `GameplayComfort` z renderowaniem poza ekranem również 
 - Dokumentacja: ten plik, `INPUT_CANONICAL_BASELINE.md`, `AUDIT_IMPLEMENTATION_STATUS.md`, `FLIGHT_FEEL_TEST.md`.
 
 Pliki źródłowe powyżej znajdują się w `Source/FlyingCabFlightLab`. Pozostałe zastane zmiany diagnostyki, raportów, wyglądu pieszych i wcześniejszego obniżenia spalania zachowano. Żadnych commitów ani push; produkty buildu i logi pozostają lokalne i ignorowane przez Git.
+
+## Zator na skrzyżowaniu i przeciśnięcie — 2026-09-10
+
+Podczas audytu projektu `FlyingCab.Functional.PIE.MetroTrafficFlow` raz zgłosił kolumnę 12 aut na pionowym pasie X ≈ −13 614 (Z 5 998–7 436). Czoło kolumny stało w `WaitingForObstacle` bez przeszkody z czujnika: jego kadłub był zaklinowany z autem jadącym w poprzek, którego czujnik nie obejmuje (zaczyna 155 cm przed autem), a auto poprzeczne widziało czoło czujnikiem i też czekało. Zmiany w `FlyingCabTrafficVehicle`:
+
+- `GetLastObstacleDescription()` opisuje przeszkodę z czujnika, aktora i komponent blokujący sweep ruchu, czas oczekiwania i liczbę przeciśnięć; test Metro dopisuje to jako `Obstacle detail` i podsumowuje `Gridlock creeps during the session`.
+- Gdy sweep ruchu blokuje inny pojazd NPC, czujnik nic nie widzi i oczekiwanie trwa ≥ `GridlockCreepAfterSeconds` (10 s), auto przesuwa się bez sweepu z prędkością ≤ `GridlockCreepSpeed` (150 cm/s), aż droga będzie czysta; zdarzenie jest logowane jako `Warning`. Reguła nie dotyczy gracza, pieszych ani geometrii; kolejka za autem na przystanku widzi je czujnikiem, więc nie przeciska się.
+- Przyczyna źródłowa (brak arbitrażu na skrzyżowaniach bez sygnalizacji) pozostaje otwarta; szczegóły i wynik weryfikacji: `docs/AUDYT_PROJEKTU_2026-09-10.md` w katalogu głównym repo, sekcja 8.4.

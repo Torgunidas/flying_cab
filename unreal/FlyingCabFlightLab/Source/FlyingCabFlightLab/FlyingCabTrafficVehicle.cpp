@@ -14,6 +14,8 @@
 #include "Materials/MaterialInterface.h"
 #include "UObject/ConstructorHelpers.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabTrafficVehicle, Log, All);
+
 AFlyingCabTrafficVehicle::AFlyingCabTrafficVehicle()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -245,6 +247,8 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 		DwellRemaining = FMath::Max(0.0f, DwellRemaining - DeltaSeconds);
 		CurrentSpeed = 0.0f;
 		MovementState = EFlyingCabTrafficMovementState::Dwelling;
+		ObstacleWaitSeconds = 0.0f;
+		bGridlockCreeping = false;
 		if (DwellRemaining <= 0.0f)
 		{
 			// Keep the berth registered until we actually leave it, including an obstructed departure.
@@ -296,6 +300,7 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 	{
 		DesiredSpeed = 0.0f;
 		MovementState = EFlyingCabTrafficMovementState::WaitingForObstacle;
+		ObstacleWaitSeconds += DeltaSeconds;
 	}
 
 	const float ChangeRate = DesiredSpeed < CurrentSpeed
@@ -307,20 +312,54 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 	const float CandidateDistance = LivingRoute->NormalizeDistance(RouteDistance + Advance);
 
 	FHitResult Hit;
-	SetActorLocation(
-		LivingRoute->GetWorldLocationAtDistance(CandidateDistance),
-		true,
-		&Hit,
-		ETeleportType::None);
+	const FVector Target = LivingRoute->GetWorldLocationAtDistance(CandidateDistance);
+	SetActorLocation(Target, true, &Hit, ETeleportType::None);
 	if (Hit.IsValidBlockingHit())
 	{
-		CurrentSpeed = 0.0f;
-		MovementState = EFlyingCabTrafficMovementState::WaitingForObstacle;
+		LastMoveBlocker = Hit.GetActor();
+		LastMoveBlockerComponent = Hit.GetComponent() ? Hit.GetComponent()->GetFName() : NAME_None;
 		if (Cast<AFlyingCabPawn>(Hit.GetActor()))
 		{
 			bEncounterInvalidated = true;
 		}
-		return;
+		// Gridlock (audit 2026-09-10, A-11): the sensor starts 155 cm ahead, so a car interlocked
+		// bumper-to-bumper with a crossing NPC car sees nothing yet cannot move, and the crossing car
+		// waits for it in turn. After a long wait creep through that car only; never through the
+		// player, pedestrians or city geometry.
+		const bool bInterlockedWithTraffic = !bBlocked && Cast<AFlyingCabTrafficVehicle>(Hit.GetActor()) != nullptr;
+		if (bInterlockedWithTraffic && GridlockCreepAfterSeconds > 0.0f && ObstacleWaitSeconds >= GridlockCreepAfterSeconds)
+		{
+			if (!bGridlockCreeping)
+			{
+				bGridlockCreeping = true;
+				++GridlockCreepCount;
+				UE_LOG(LogFlyingCabTrafficVehicle, Warning, TEXT("%s on %s waited %.1f s interlocked with %s; creeping through."),
+					*GetName(), *GetLivingRouteId().ToString(), ObstacleWaitSeconds, *GetNameSafe(Hit.GetActor()));
+			}
+			ObstacleWaitSeconds += DeltaSeconds;
+			CurrentSpeed = FMath::Min(CurrentSpeed, GridlockCreepSpeed);
+			SetActorLocation(Target, false, nullptr, ETeleportType::TeleportPhysics);
+		}
+		else
+		{
+			CurrentSpeed = 0.0f;
+			MovementState = EFlyingCabTrafficMovementState::WaitingForObstacle;
+			if (!bBlocked)
+			{
+				ObstacleWaitSeconds += DeltaSeconds;
+			}
+			return;
+		}
+	}
+	else
+	{
+		LastMoveBlocker.Reset();
+		LastMoveBlockerComponent = NAME_None;
+		bGridlockCreeping = false;
+		if (!bBlocked)
+		{
+			ObstacleWaitSeconds = 0.0f;
+		}
 	}
 
 	RouteDistance = CandidateDistance;
@@ -334,6 +373,13 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 			ETeleportType::TeleportPhysics);
 		ProcessLivingRouteNode();
 	}
+}
+
+FString AFlyingCabTrafficVehicle::GetLastObstacleDescription() const
+{
+	return FString::Printf(TEXT("sensor=%s move=%s/%s wait=%.1fs creeps=%d"),
+		*GetNameSafe(LastLivingObstacle.Get()), *GetNameSafe(LastMoveBlocker.Get()),
+		*LastMoveBlockerComponent.ToString(), ObstacleWaitSeconds, GridlockCreepCount);
 }
 
 bool AFlyingCabTrafficVehicle::HasLivingRouteObstacle(float LookAheadDistance) const

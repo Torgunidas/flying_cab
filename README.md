@@ -30,6 +30,7 @@ Mapa startowa: `/Game/Maps/FlightLab`. Moduł gry: `FlyingCabFlightLab`.
    ```
 
    Podaj rzeczywistą lokalizację swojej instalacji. Skrypty nie zmieniają wersji projektu.
+   Ten sam parametr przyjmują skrypty synchronizacji `scripts/sync-mac.sh` i `scripts/Sync-Windows.ps1` (pull + build), używane przy każdej zmianie komputera.
 
 4. Otwórz `.uproject`, poczekaj na przygotowanie shaderów i uruchom mapę przyciskiem Play.
 
@@ -40,7 +41,7 @@ Mapa startowa: `/Game/Maps/FlightLab`. Moduł gry: `FlyingCabFlightLab`.
 | Ścieżka | Przeznaczenie |
 | --- | --- |
 | `unreal/FlyingCabFlightLab/` | Aktywny projekt: Source, Config, Content i zasoby Build |
-| `scripts/` | Budowanie edytora na obu systemach |
+| `scripts/` | Budowanie i synchronizacja (pull + build) edytora na obu systemach |
 | `docs/` | Wspólna organizacja pracy i raport porządkowania |
 | `unreal/FlyingCabFlightLab/docs/` | Dokumentacja rozgrywki, autorowania i testów |
 | `archive/godot/` | Stary prototyp Godota, wyłącznie archiwum do inspiracji |
@@ -50,7 +51,8 @@ Historyczne audyty Unreal pozostają w katalogu głównym, aby zachować odnośn
 
 ## Zasady pracy
 
-- Przed pracą zamknij edytor i wykonaj `git pull --ff-only` na `main`.
+- Przed pracą zamknij edytor i uruchom skrypt synchronizacji: na Macu `bash scripts/sync-mac.sh '/Users/Shared/Epic Games/UE_5.8'`, na Windows `.\scripts\Sync-Windows.ps1 -EngineRoot 'D:\Unreal\UE_5.8'`. Skrypt wykonuje `git pull --ff-only` i od razu buduje moduły edytora.
+- Sam `git pull` nie wystarcza po zmianach C++: edytor otwarty z `.uproject` ładuje starą binarkę z `Binaries/` bez ostrzeżenia i gra działa jak przed pullem (tak „zniknął” supercar na Macu, audyt 2026-09-10). Edytor pokazuje teraz ostrzeżenie na starcie, gdy `Source/` jest nowsze niż skompilowane moduły.
 - Przed zmianą komputera zapisz zasoby, zrób commit i `git push origin main`. Sam commit nie wysyła zmian na GitHub.
 - `Content`, `Config`, `Source`, `Build` i `.uproject` są wspólne. Pliki wynikowe oraz cache powstają osobno na każdym komputerze.
 - Nie edytuj równocześnie tej samej mapy lub Blueprinta na dwóch komputerach. Zasoby `.uasset` i `.umap` są binarne.

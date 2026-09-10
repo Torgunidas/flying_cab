@@ -32,8 +32,67 @@
 #include "Widgets/Input/SComboBox.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Text/STextBlock.h"
+#include "Framework/Notifications/NotificationManager.h"
+#include "Widgets/Notifications/SNotificationList.h"
+#include "HAL/FileManager.h"
+#include "Misc/App.h"
+#include "Misc/CoreDelegates.h"
+#include "Misc/DateTime.h"
+#include "Misc/Paths.h"
 
 #define LOCTEXT_NAMESPACE "FlyingCabNarrativeEditor"
+
+DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabNarrativeEditor, Log, All);
+
+namespace
+{
+	// After `git pull` the editor loads the existing Binaries/<Platform> modules without any prompt:
+	// it only compares their BuildId with the engine, never source timestamps (audit 2026-09-10).
+	// Compare them here and tell the user, otherwise the game silently runs old code.
+	void WarnIfCompiledModulesAreStale()
+	{
+		IFileManager& Files = IFileManager::Get();
+		FString NewestBinary;
+		FDateTime NewestBinaryTime = FDateTime::MinValue();
+		for (const TCHAR* Module : {TEXT("FlyingCabFlightLab"), TEXT("FlyingCabNarrativeEditor")})
+		{
+			const FString File = FModuleManager::Get().GetModuleFilename(Module);
+			const FDateTime Time = File.IsEmpty() ? FDateTime::MinValue() : Files.GetTimeStamp(*File);
+			if (Time > NewestBinaryTime) { NewestBinaryTime = Time; NewestBinary = File; }
+		}
+		if (NewestBinaryTime == FDateTime::MinValue()) return;
+		TArray<FString> Sources;
+		Files.FindFilesRecursive(Sources, *FPaths::GameSourceDir(), TEXT("*"), true, false);
+		FString NewestSource;
+		FDateTime NewestSourceTime = FDateTime::MinValue();
+		for (const FString& File : Sources)
+		{
+			const FString Extension = FPaths::GetExtension(File);
+			if (Extension != TEXT("cpp") && Extension != TEXT("h") && Extension != TEXT("cs") && Extension != TEXT("inl")) continue;
+			const FDateTime Time = Files.GetTimeStamp(*File);
+			if (Time > NewestSourceTime) { NewestSourceTime = Time; NewestSource = File; }
+		}
+		if (NewestSourceTime <= NewestBinaryTime)
+		{
+			UE_LOG(LogFlyingCabNarrativeEditor, Display, TEXT("Compiled modules are current: %s built %s, newest source %s."),
+				*FPaths::GetCleanFilename(NewestBinary), *NewestBinaryTime.ToString(), *NewestSourceTime.ToString());
+			return;
+		}
+		const FString Message = FString::Printf(
+			TEXT("Source is newer than the compiled game modules: %s changed %s, but %s was built %s. Close the editor and run scripts/sync-mac.sh or scripts/Sync-Windows.ps1, otherwise the game runs old code."),
+			*FPaths::GetCleanFilename(NewestSource), *NewestSourceTime.ToString(), *FPaths::GetCleanFilename(NewestBinary), *NewestBinaryTime.ToString());
+		UE_LOG(LogFlyingCabNarrativeEditor, Warning, TEXT("%s"), *Message);
+		if (IsRunningCommandlet() || FApp::IsUnattended() || !FSlateApplication::IsInitialized()) return;
+		FNotificationInfo Info(FText::FromString(Message));
+		Info.ExpireDuration = 60.f;
+		Info.FadeOutDuration = 2.f;
+		Info.bUseSuccessFailIcons = true;
+		if (TSharedPtr<SNotificationItem> Item = FSlateNotificationManager::Get().AddNotification(Info))
+		{
+			Item->SetCompletionState(SNotificationItem::CS_Fail);
+		}
+	}
+}
 
 namespace
 {
@@ -295,6 +354,7 @@ public:
 		for (const FName Class : {FName(TEXT("FlyingCabQuestDefinition")), FName(TEXT("FlyingCabDialogueDefinition")), FName(TEXT("FlyingCabNpcDefinition")), FName(TEXT("FlyingCabNpcRoster"))})
 			Properties.RegisterCustomClassLayout(Class, FOnGetDetailCustomizationInstance::CreateLambda([]() { return MakeShared<FNarrativeDetails>(); }));
 		UToolMenus::RegisterStartupCallback(FSimpleMulticastDelegate::FDelegate::CreateRaw(this, &FFlyingCabNarrativeEditorModule::RegisterMenus));
+		StaleModuleCheckHandle = FCoreDelegates::OnFEngineLoopInitComplete.AddStatic(&WarnIfCompiledModulesAreStale);
 	}
 	void RegisterMenus()
 	{
@@ -306,6 +366,7 @@ public:
 	}
 	virtual void ShutdownModule() override
 	{
+		FCoreDelegates::OnFEngineLoopInitComplete.Remove(StaleModuleCheckHandle);
 		UToolMenus::UnRegisterStartupCallback(this); UToolMenus::UnregisterOwner(this);
 		if (auto* Properties = FModuleManager::GetModulePtr<FPropertyEditorModule>(TEXT("PropertyEditor")))
 		{
@@ -318,6 +379,7 @@ public:
 	}
 private:
 	TArray<TSharedPtr<IAssetTypeActions>> AssetActions;
+	FDelegateHandle StaleModuleCheckHandle;
 };
 
 IMPLEMENT_MODULE(FFlyingCabNarrativeEditorModule, FlyingCabNarrativeEditor)

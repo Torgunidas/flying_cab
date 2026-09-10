@@ -52,12 +52,21 @@ Skrypty przyjmują folder silnika jako parametr lub zmienną środowiskową `UE_
 
 ## Codzienny obieg zmian
 
-Na komputerze, na którym zaczynasz pracę:
+Na komputerze, na którym zaczynasz pracę, zamknij edytor i uruchom skrypt synchronizacji. Wykonuje on `git pull --ff-only` na bieżącej gałęzi, wypisuje zmienione pliki C++ i od razu buduje moduły edytora:
+
+macOS:
 
 ```sh
-git switch main
-git pull --ff-only
+bash scripts/sync-mac.sh '/Users/Shared/Epic Games/UE_5.8'
 ```
+
+Windows (PowerShell):
+
+```powershell
+.\scripts\Sync-Windows.ps1 -EngineRoot 'D:\Unreal\UE_5.8'
+```
+
+Build bez zmian kończy się w kilka sekund, więc skrypt buduje zawsze. Skrypt nie używa `reset --hard` ani `clean`; przy rozbieżnej historii zatrzymuje się tak samo jak `git pull --ff-only`, a lokalne zmiany zostawia nietknięte. Gdy chcesz tylko pobrać zmiany bez budowania (np. same assety lub dokumentacja), nadal możesz użyć `git pull --ff-only`, ale przed otwarciem edytora po zmianach w `Source/` build jest obowiązkowy.
 
 Po pracy zapisz wszystkie zasoby w edytorze, zamknij go i sprawdź zmiany:
 
@@ -70,11 +79,21 @@ git commit -m "Describe the completed change"
 git push origin main
 ```
 
-Jeśli zmieniałeś dokumentację lub skrypty, dodaj też odpowiednie pliki. Na drugim komputerze pobierz zmiany i przebuduj moduł po zmianach C++.
+Jeśli zmieniałeś dokumentację lub skrypty, dodaj też odpowiednie pliki. Na drugim komputerze uruchom skrypt synchronizacji; build jest jego częścią, nie osobnym krokiem do zapamiętania.
 Przy większych pracach można używać gałęzi funkcjonalnych; muszą być wypchnięte i ostatecznie scalone do wspólnego `main`.
 
 To samo `.uasset`/`.umap` edytuj kolejno na komputerach: push z pierwszego, pull na drugim. Git nie potrafi sensownie połączyć dwóch niezależnych zmian binarnych.
 Save gry, preferencje edytora oraz zawartość `Saved/` nie są synchronizowane przez repo.
+
+## Dlaczego build po pullu jest obowiązkowy
+
+Edytor uruchomiony z `.uproject` sprawdza tylko, czy pliki modułów w `Binaries/<Platforma>/` istnieją i czy ich `BuildId` zgadza się z silnikiem. Nie porównuje dat źródeł z binarką. Po pullu ze zmianami w `Source/` stary moduł ładuje się bez komunikatu: assety i konfiguracja są nowe, ale kod jest stary. Tak 2026-09-10 na Macu nie było supercara, choć repo było aktualne (szczegóły: `docs/AUDYT_PROJEKTU_2026-09-10.md`).
+
+Zabezpieczenia dodane po audycie:
+
+- Skrypty `scripts/sync-mac.sh` i `scripts/Sync-Windows.ps1` łączą pull z buildem.
+- Moduł edytora `FlyingCabNarrativeEditor` po starcie edytora porównuje najnowszy plik w `Source/` z datą skompilowanych modułów. Gdy źródła są nowsze, loguje ostrzeżenie `Source is newer than the compiled game modules` i pokazuje powiadomienie w edytorze z poleceniem uruchomienia skryptu.
+- Bootstrap świata loguje `A_R7 supercars parked: 4/4.`; brak tej linii w logu PIE oznacza moduł zbudowany przed 2026-09-10.
 
 ## Sprawdzenie zgodności
 
