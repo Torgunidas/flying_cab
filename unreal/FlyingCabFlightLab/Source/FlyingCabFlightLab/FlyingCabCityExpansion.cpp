@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "FlyingCabCityExpansion.h"
+#include "FlyingCabAuthoredWorld.h"
+#include "Engine/TextRenderActor.h"
 
 #include "Components/SceneComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -34,8 +36,21 @@ AFlyingCabCityExpansion::AFlyingCabCityExpansion()
 void AFlyingCabCityExpansion::BeginPlay()
 {
 	Super::BeginPlay();
-	BuildExpansionGeometry();
+	if (!bBakedToLevel) BuildExpansionGeometry();
 }
+
+#if WITH_EDITOR
+void AFlyingCabCityExpansion::BakeToLevel()
+{
+ if (bBakedToLevel) return;
+ bBaking = true;
+ BuildExpansionGeometry();
+ bBaking = false;
+ BakeParent = nullptr;
+ bBakedToLevel = true;
+ MarkPackageDirty();
+}
+#endif
 
 void AFlyingCabCityExpansion::Tick(float DeltaSeconds)
 {
@@ -79,6 +94,8 @@ void AFlyingCabCityExpansion::BuildExpansionGeometry()
 		for (double X : {Mid.X, Min.X+1250, Max.X-1250})
 			AddBlock(TEXT("LaneDashVertical"), FVector(X,-480,Z), FVector(.12,.1,2.8), FLinearColor(.08f,.45f,.55f),false);
 	}
+	if (!bBaking)
+ {
 	ResidentialWindows = NewObject<UInstancedStaticMeshComponent>(this,TEXT("ResidentialWindows"));
 	ResidentialWindows->SetupAttachment(SceneRoot);
 	ResidentialWindows->SetStaticMesh(CubeMesh);
@@ -90,9 +107,29 @@ void AFlyingCabCityExpansion::BuildExpansionGeometry()
 	AddInstanceComponent(ResidentialWindows);
 	ResidentialWindows->RegisterComponent();
 	ResidentialWindows->SetVectorParameterValueOnMaterials(TEXT("Color"),FVector(.85,.65,.24));
-	for (const FFlyingCabDistrictDefinition& District : FlyingCabCityData::GetDistricts())
+ }
+ for (const FFlyingCabDistrictDefinition& District : FlyingCabCityData::GetDistricts())
 	{
-		const FVector Stop = District.StopLocation;
+#if WITH_EDITOR
+  if (bBaking)
+  {
+   auto* Anchor = GetWorld()->SpawnActor<AFlyingCabDistrictAnchor>(District.StopLocation, FRotator::ZeroRotator);
+   Anchor->Definition = District;
+   Anchor->SetActorLabel(TEXT("STOP - ")+District.DisplayName);
+   Anchor->SetFolderPath(TEXT("Flying Cab/Stops"));
+   BakeParent = Anchor;
+   auto* WindowActor = GetWorld()->SpawnActor<AFlyingCabWorldGeometry>();
+   WindowActor->SetActorLabel(TEXT("Windows - ")+District.DisplayName);
+   WindowActor->SetFolderPath(TEXT("Flying Cab/Stops"));
+   WindowActor->AttachToActor(Anchor,FAttachmentTransformRules::KeepWorldTransform);
+   WindowActor->Color = FLinearColor(.85f,.65f,.24f);
+   ResidentialWindows = WindowActor->Windows;
+   ResidentialWindows->SetStaticMesh(CubeMesh);
+   ResidentialWindows->SetMaterial(0,BasicMaterial);
+   WindowActor->ApplyColor();
+  }
+#endif
+  const FVector Stop = District.StopLocation;
 		const float Height = District.ResidentialTowerHeight;
 		const FString Code = District.MinimapCode;
 		AddBlock(TEXT("CurbsidePlatform")+District.MinimapCode,
@@ -132,11 +169,11 @@ void AFlyingCabCityExpansion::BuildExpansionGeometry()
 			AddBlock(TEXT("ResidentialDoor")+Code+Side,Stop+FVector(bRight ? 350 : -350,247,-65),
 				FVector(.9,.04,1.65),FLinearColor(.02f,.06f,.08f),false);
 			// Named, non-interactive anchors for a later interior/foot-quest stage.
-			auto* Entrance = NewObject<USceneComponent>(this,FName(*(TEXT("HomeEntry_")+Code+TEXT("_")+Side)));
-			Entrance->SetupAttachment(SceneRoot);
-			Entrance->SetRelativeLocation(FlyingCabCityData::GetResidentialEntranceLocation(District,bRight));
+			auto* Entrance = NewObject<USceneComponent>(bBaking ? BakeParent : this,FName(*(TEXT("HomeEntry_")+Code+TEXT("_")+Side)));
+			Entrance->SetupAttachment(bBaking ? BakeParent->GetRootComponent() : SceneRoot.Get());
+			Entrance->SetRelativeLocation(FlyingCabCityData::GetResidentialEntranceLocation(District,bRight) - (bBaking ? Stop : FVector::ZeroVector));
 			Entrance->ComponentTags = {TEXT("FutureResidentialInterior"),District.DistrictId};
-			AddInstanceComponent(Entrance);
+			(bBaking ? BakeParent : this)->AddInstanceComponent(Entrance);
 			Entrance->RegisterComponent();
 		}
 		if (!District.FuelStationName.IsEmpty() || !District.RepairStationName.IsEmpty())
@@ -147,6 +184,7 @@ void AFlyingCabCityExpansion::BuildExpansionGeometry()
 				FVector(7.8,4.8,.04),ServiceColor,false);
 		}
 	}
+	BakeParent = nullptr;
 	for (const FFlyingCabNeighborhoodDefinition& Estate : FlyingCabCityData::GetNeighborhoods())
 	{
 		const FVector C = Estate.Center;
@@ -168,7 +206,7 @@ void AFlyingCabCityExpansion::BuildExpansionGeometry()
 		AddDistrictLabel(Hub.DisplayName+TEXT(" // DISPATCH"), Hub.WorldLocation+FVector(0,-200,200), FLinearColor::White);
 	}
 	AddDistrictLabel(TEXT("CROSS CENTRAL // SIGNAL CONTROL"), FVector(Mid.X,-300,Mid.Y+800), FLinearColor(.7f,.8f,.85f));
-	SignalLabel = RuntimeLabels.Last();
+	if (!bBaking) SignalLabel = RuntimeLabels.Last();
 	UE_LOG(LogFlyingCabCityExpansion, Display, TEXT("Metro city built: %.0f x %.0f cm, %d neighborhoods, %d taxi stops."),
 		Size.X, Size.Y, FlyingCabCityData::GetNeighborhoods().Num(), FlyingCabCityData::GetDistricts().Num());
 }
@@ -185,7 +223,23 @@ void AFlyingCabCityExpansion::AddBlock(
 		return;
 	}
 
-	UStaticMeshComponent* Block = NewObject<UStaticMeshComponent>(
+#if WITH_EDITOR
+ if (bBaking)
+ {
+  auto* Piece = GetWorld()->SpawnActor<AFlyingCabWorldGeometry>(Location,FRotator::ZeroRotator);
+  Piece->SetActorLabel(Name);
+  Piece->SetFolderPath(BakeParent ? TEXT("Flying Cab/Stops") : TEXT("Flying Cab/City"));
+  Piece->Mesh->SetStaticMesh(CubeMesh);
+  Piece->Mesh->SetMaterial(0,BasicMaterial);
+  Piece->Mesh->SetCollisionProfileName(bCollisionEnabled ? TEXT("BlockAll") : TEXT("NoCollision"));
+  Piece->Color = Color;
+  Piece->ApplyColor();
+  Piece->SetActorScale3D(Scale);
+  if (BakeParent) Piece->AttachToActor(BakeParent,FAttachmentTransformRules::KeepWorldTransform);
+  return;
+ }
+#endif
+ UStaticMeshComponent* Block = NewObject<UStaticMeshComponent>(
 		this,
 		MakeUniqueObjectName(this, UStaticMeshComponent::StaticClass(), FName(*Name)));
 	Block->SetupAttachment(SceneRoot);
@@ -212,7 +266,25 @@ void AFlyingCabCityExpansion::AddDistrictLabel(
 	const FVector& Location,
 	const FLinearColor& Color)
 {
-	UTextRenderComponent* Label = NewObject<UTextRenderComponent>(
+#if WITH_EDITOR
+ if (bBaking)
+ {
+  auto* TextActor = GetWorld()->SpawnActor<ATextRenderActor>(Location,FRotator(0,90,0));
+  TextActor->SetActorLabel(Name);
+  TextActor->SetFolderPath(BakeParent ? TEXT("Flying Cab/Stops") : TEXT("Flying Cab/City"));
+  auto* Text = TextActor->GetTextRender();
+  Text->SetMobility(EComponentMobility::Movable);
+  Text->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
+  Text->SetVerticalAlignment(EVerticalTextAligment::EVRTA_TextCenter);
+  Text->SetWorldSize(48);
+  Text->SetTextRenderColor(Color.ToFColor(true));
+  Text->SetText(FText::FromString(Name));
+  if (BakeParent) TextActor->AttachToActor(BakeParent,FAttachmentTransformRules::KeepWorldTransform);
+  if (Name == TEXT("CROSS CENTRAL // SIGNAL CONTROL")) SignalLabel = Text;
+  return;
+ }
+#endif
+ UTextRenderComponent* Label = NewObject<UTextRenderComponent>(
 		this,
 		MakeUniqueObjectName(this, UTextRenderComponent::StaticClass(), FName(*Name)));
 	Label->SetupAttachment(SceneRoot);

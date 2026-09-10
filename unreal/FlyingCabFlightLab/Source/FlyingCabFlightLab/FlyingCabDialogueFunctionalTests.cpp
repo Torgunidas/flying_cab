@@ -10,6 +10,7 @@
 #include "FlyingCabQuestSubsystem.h"
 #include "FlyingCabQuestDefinition.h"
 #include "FlyingCabDialogueSession.h"
+#include "FlyingCabDialogueWidget.h"
 #include "InputKeyEventArgs.h"
 #include "InputCoreTypes.h"
 
@@ -61,6 +62,7 @@ namespace
 				Test->TestTrue(TEXT("Conversation pauses the world"), World->IsPaused());
 				Test->TestTrue(TEXT("Conversation suppresses gameplay"), PC->IsGameplayInputSuppressed());
 				Test->TestEqual(TEXT("Opening Q does not accept the quest"), Quests->GetQuestStatus(TEXT("Quest.NightshiftContract")), EFlyingCabQuestStatus::Inactive);
+				VerifyPresentation(PC);
 				PC->InputKey(FInputKeyEventArgs::CreateSimulated(EKeys::A, IE_Released, 0));
 				PC->CloseDialogue(); ++Phase; return false;
 			}
@@ -101,6 +103,37 @@ namespace
 			return true;
 		}
 	private:
+		/** The line must type itself in, and no answer may be taken before it has arrived. */
+		void VerifyPresentation(AFlyingCabPlayerController* PC)
+		{
+			auto* Widget = PC->GetDialogueWidget();
+			auto* Session = PC->GetDialogueSession();
+			Test->TestNotNull(TEXT("The conversation view exists"), Widget);
+			if (!Widget || !Session) return;
+			Test->TestFalse(TEXT("Opening does not show the line at once"), Widget->IsRevealComplete());
+			for (int32 Step = 0; Step < 40 && Widget->GetTotalCharacterCount() == 0; ++Step)
+			{
+				Widget->AdvancePresentation(0.02f);
+			}
+			Test->TestTrue(TEXT("The line is wrapped and starts typing"), Widget->GetTotalCharacterCount() > 0);
+			Test->TestTrue(TEXT("The line types in rather than appearing whole"),
+				Widget->GetRevealedCharacterCount() < Widget->GetTotalCharacterCount());
+			Test->TestEqual(TEXT("No answer arrives while the line types"), Widget->GetRevealedOptionCount(), 0);
+			const int32 RevisionBefore = Session->GetView().Revision;
+			Widget->HandleDialogueKey(EKeys::One);
+			Test->TestEqual(TEXT("A number key before the answer arrives changes nothing"),
+				Session->GetView().Revision, RevisionBefore);
+			Widget->SkipReveal();
+			Test->TestEqual(TEXT("Skipping shows the whole line"),
+				Widget->GetRevealedCharacterCount(), Widget->GetTotalCharacterCount());
+			for (int32 Step = 0; Step < 40 && !Widget->IsRevealComplete(); ++Step)
+			{
+				Widget->AdvancePresentation(0.02f);
+			}
+			Test->TestTrue(TEXT("A skipped line brings the answers right away"), Widget->IsRevealComplete());
+			Test->TestTrue(TEXT("Every answer is on screen"), Widget->GetRevealedOptionCount() > 0);
+		}
+
 		FAutomationTestBase* Test;
 		double Deadline;
 		int32 Phase = 0;

@@ -125,6 +125,9 @@ struct FFlyingCabHighwayStrip
 
 namespace FlyingCabCityData
 {
+ FLYINGCABFLIGHTLAB_API TArray<FFlyingCabDistrictDefinition> GetWorldDistricts(const UWorld* World);
+ FLYINGCABFLIGHTLAB_API TArray<FFlyingCabServiceDefinition> GetWorldFuelStations(const UWorld* World);
+ FLYINGCABFLIGHTLAB_API TArray<FFlyingCabServiceDefinition> GetWorldRepairStations(const UWorld* World);
 	TStaticArray<FFlyingCabHighwayStrip, 6> GetHighwayStrips();
 	bool IsOnHighway(const FVector& WorldLocation);
 	FLYINGCABFLIGHTLAB_API TConstArrayView<FFlyingCabDistrictDefinition> GetDistricts();

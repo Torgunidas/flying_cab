@@ -50,14 +50,14 @@ Przypisz gotowy asset do `Dialogue` w odpowiednim temacie profilu. Jeden NPC mo�
 
 ## Dodanie lub przeniesienie NPC
 
-Utwórz **New NPC profile**, ustaw imię, powitanie, literę minimapy i tematy. Następnie użyj jednej z możliwości:
+Utwórz **New NPC profile**, ustaw imię, powitanie, literę minimapy i tematy. Sposób umieszczenia zależy od mapy:
 
-- **Open NPC roster**: dodaj profil i `World Location`. Lista zasila automatyczne tworzenie NPC oraz znaczniki minimapy.
-- Umieść aktora `FlyingCabQuestGiver` na mapie i przypisz `Npc Profile`. Aktor z tym samym identyfikatorem zastępuje pozycję z listy. Umieszczony nowy profil również trafia do znaczników.
+- **Aktywna mapa FlightLab:** umieść aktora `FlyingCabQuestGiver`, przypisz `Npc Profile` i zapisz mapę. Pozycję ustalaj bezpośrednio w widoku poziomu.
+- **Open NPC roster** pozostaje źródłem dla starszych map bez zapisanego świata i jednorazowej konwersji. Sama zmiana listy nie dodaje NPC do przebudowanej mapy FlightLab.
 
-Każdy osobny NPC powinien mieć osobny profil; duplikacja profilu nadaje nową tożsamość. Lokalizacja w liście jest punktem pojawienia się aktora, więc dobierz wysokość do podłoża. Nowy punkt sprawdź pieszo w Play.
+Każdy osobny NPC powinien mieć osobny profil; duplikacja profilu nadaje nową tożsamość. Dobierz wysokość aktora do podłoża. Umieszczony NPC automatycznie trafia do znaczników minimapy. Nowy punkt sprawdź pieszo w Play.
 
-Mike i Jack korzystają z `DA_NPC_Mike`, `DA_NPC_Jack` i `DA_FlyingCabNpcRoster` w `Content/Data/Narrative`. Ich oryginalne questy i lokalizacje są zachowane. Każdy ma też przykładowy temat o mieście. Domyślne assety oraz opcjonalny Widget Blueprint rozmowy wybiera się w **Project Settings → Game → Flying Cab Narrative**.
+Mike i Jack są zapisani w mapie i korzystają z profili `DA_NPC_Mike` oraz `DA_NPC_Jack` w `Content/Data/Narrative`. `DA_FlyingCabNpcRoster` zachowuje dane źródłowe. Ich oryginalne questy i lokalizacje są zachowane. Każdy ma też przykładowy temat o mieście. Domyślne assety oraz opcjonalny Widget Blueprint rozmowy wybiera się w **Project Settings → Game → Flying Cab Narrative**.
 
 ## Powiązania zadań i granice wersji
 
@@ -65,7 +65,30 @@ Mike i Jack korzystają z `DA_NPC_Mike`, `DA_NPC_Jack` i `DA_FlyingCabNpcRoster`
 
 Questy i rozmowy są dostępne w Free Roam. Time Attack nie zmienia ich postępu. Stan questów żyje w `GameInstance`; nie dodano zapisu na dysk. Po zmianie struktury definicji rozpocznij nową sesję Play. Dotychczasowy dziennik `J` pozostaje widokiem statusów i śledzenia.
 
-Dialog pauzuje grę. Odpowiedzi wybiera się kliknięciem/dotykiem lub `W/S` / strzałkami i `Enter` / `Spacja`; `Esc` zamyka rozmowę. Logika wyborów należy do `UFlyingCabDialogueSession`, a nie widgetu. Docelowy Widget Blueprint może implementować `PresentDialogue` i korzystać z `ChooseOption` / `CloseDialogue`; publiczne API subsystemu questów pozostaje właścicielem postępu i ukończenia.
+Dialog pauzuje grę. Logika wyborów należy do `UFlyingCabDialogueSession`, a nie widgetu. Docelowy Widget Blueprint może implementować `PresentDialogue` i korzystać z `ChooseOption` / `CloseDialogue`; publiczne API subsystemu questów pozostaje właścicielem postępu i ukończenia.
+
+## Jak wygląda rozmowa
+
+Okno zajmuje dolny pas ekranu, więc miasto i rozmówca pozostają widoczni. Po lewej stoi tabliczka z imieniem i dymek z kwestią NPC, po prawej kolumna odpowiedzi gracza.
+
+Kwestia NPC **wpisuje się** znak po znaku, z krótkim przytrzymaniem po przecinku i dłuższym po kropce. Dopiero po jej zakończeniu odpowiedzi pojawiają się **pojedynczo, od góry**, każda wjeżdżając z prawej. Tekst w odpowiedziach jest pełny od pierwszej klatki; wpisuje się wyłącznie kwestia NPC.
+
+Sterowanie:
+
+| Klawisz | Działanie |
+|---|---|
+| `Spacja` / `Enter` podczas wpisywania | kończy tekst i od razu pokazuje odpowiedzi; **nie** wybiera odpowiedzi |
+| `Spacja` / `Enter` po wpisaniu | potwierdza zaznaczoną odpowiedź |
+| `W` / `S`, strzałki | zmieniają zaznaczenie wśród już pokazanych odpowiedzi |
+| `1`–`9` | wybierają odpowiedź o danym numerze, o ile już się pojawiła |
+| `Esc`, przycisk `X` | zamykają rozmowę |
+| mysz, dotyk | najechanie zaznacza, kliknięcie wybiera; kliknięcie w tło pomija wpisywanie |
+
+Odpowiedź, która jeszcze nie wjechała, jest niewidoczna i nie da się jej wybrać ani myszą, ani numerem. Odpowiedzi niedostępne pokazują się na szaro razem z powodem, tak jak wcześniej.
+
+Budowę tej warstwy, jej granice i punkty rozszerzenia opisuje `NPC_CONVERSATION_UI.md`.
+
+Tempo, przerwy, dystans wjazdu i opcjonalne dźwięki ustawia się w **Project Settings → Game → Flying Cab Narrative**, sekcja `Presentation`. Dźwięki są domyślnie puste; projekt nie zawiera assetów audio. Profil NPC ma opcjonalne pole `Portrait`: przypisana tekstura pojawia się przy imieniu, puste zostawia samą tabliczkę.
 
 ## Praktyczna próba
 

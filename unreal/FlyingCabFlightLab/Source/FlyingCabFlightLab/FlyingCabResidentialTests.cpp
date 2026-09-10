@@ -93,7 +93,7 @@ public:
 			FootCapsule->GetUnscaledCapsuleHalfHeight());
 		// Ignore ambient agents: validate static access geometry, not momentary traffic occupancy.
 		FCollisionQueryParams Params;
-		for (TActorIterator<AActor> It(World); It; ++It) if (*It!=City) Params.AddIgnoredActor(*It);
+		for (TActorIterator<AActor> It(World); It; ++It) if (*It!=City && !It->ActorHasTag(TEXT("FlyingCab.CityGeometry"))) Params.AddIgnoredActor(*It);
 		auto Clear = [&](const FString& Name, const FVector& From, const FVector& To, const FVector& Extent)
 		{
 			FHitResult Hit;
@@ -140,7 +140,12 @@ public:
 		for (const auto& Hub : FlyingCabQuestHubData::GetQuestHubs(World))
 			Clear(Hub.DisplayName+TEXT(" plaza"),Hub.WorldLocation,Hub.WorldLocation+FVector(0,0,300),FVector(110,45,35));
 		TArray<USceneComponent*> Components;
-		City->GetComponents(Components);
+		for (TActorIterator<AActor> It(World); It; ++It)
+  {
+   TArray<USceneComponent*> ActorComponents;
+   It->GetComponents(ActorComponents);
+   Components.Append(ActorComponents);
+  }
 		int32 Entrances=0;
 		for (auto* Component : Components) Entrances += Component->ComponentHasTag(TEXT("FutureResidentialInterior"));
 		Test->TestEqual(TEXT("Two stable future entrance anchors on all 24 platforms"),Entrances,48);

@@ -5,6 +5,8 @@ Główny projekt gry rozwijamy w **Unreal Engine 5.8 (C++)**. Windows i macOS ko
 Otwieraj: [`unreal/FlyingCabFlightLab/FlyingCabFlightLab.uproject`](unreal/FlyingCabFlightLab/FlyingCabFlightLab.uproject).
 Mapa startowa: `/Game/Maps/FlightLab`. Moduł gry: `FlyingCabFlightLab`.
 
+Świat jest zapisany w mapie i dostępny do edycji przed Play. Pierwsze kroki: [edycja świata w UE](unreal/FlyingCabFlightLab/docs/WORLD_EDITING.md).
+
 ## Start na PC i Macu
 
 1. Zainstaluj tę samą wersję UE 5.8 na obu komputerach oraz kompilator odpowiedni dla tej wersji silnika (Visual Studio na Windows, Xcode na macOS).

@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "FlyingCabWorldBootstrap.h"
+#include "FlyingCabAuthoredWorld.h"
 
 #include "Engine/GameInstance.h"
 #include "FlyingCabAccessTerminal.h"
@@ -110,6 +111,11 @@ void AFlyingCabWorldBootstrap::ResetCompetitiveServiceAccess()
 
 bool AFlyingCabWorldBootstrap::SpawnCityExpansion()
 {
+ if (AFlyingCabAuthoredWorld::Find(GetWorld()))
+ {
+  for (TActorIterator<AFlyingCabCityExpansion> It(GetWorld()); It; ++It) { CityExpansion = *It; break; }
+  return CityExpansion && CityExpansion->bBakedToLevel;
+ }
 	CityExpansion = GetWorld()->SpawnActor<AFlyingCabCityExpansion>(
 		AFlyingCabCityExpansion::StaticClass(),
 		FVector::ZeroVector,
@@ -124,6 +130,21 @@ bool AFlyingCabWorldBootstrap::SpawnCityExpansion()
 
 bool AFlyingCabWorldBootstrap::SpawnServiceStations()
 {
+ if (AFlyingCabAuthoredWorld::Find(GetWorld()))
+ {
+  FuelStations.Reset(); RepairStations.Reset();
+  for (TActorIterator<AFlyingCabFuelStation> It(GetWorld()); It; ++It)
+  {
+   It->Configure(It->GetServiceName(), EconomyConfig ? EconomyConfig->FuelPricePerUnit : 2);
+   FuelStations.Add(*It);
+  }
+  for (TActorIterator<AFlyingCabRepairStation> It(GetWorld()); It; ++It)
+  {
+   It->Configure(It->GetServiceName(), EconomyConfig ? EconomyConfig->RepairPricePerHullUnit : 1);
+   RepairStations.Add(*It);
+  }
+  return true;
+ }
 	const TArray<FFlyingCabServiceDefinition> FuelDefinitions =
 		FlyingCabCityData::GetFuelStations();
 	FuelStations.Reset();
@@ -175,7 +196,17 @@ bool AFlyingCabWorldBootstrap::SpawnOnFootSlice()
 {
 	const FActorSpawnParameters SpawnParameters =
 		MakeSpawnParameters(ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-	NightshiftOffice = GetWorld()->SpawnActor<AFlyingCabNightshiftOffice>(
+ auto* Authored = AFlyingCabAuthoredWorld::Find(GetWorld());
+ if (Authored)
+ {
+  NightshiftOffice = Authored->Office;
+  NightshiftEntrance = Authored->Entrance;
+  NightshiftExit = Authored->Exit;
+  ServiceAccessTerminal = Authored->Terminal;
+ }
+ else
+ {
+ NightshiftOffice = GetWorld()->SpawnActor<AFlyingCabNightshiftOffice>(
 		AFlyingCabNightshiftOffice::StaticClass(),
 		NightshiftOfficeLocation,
 		FRotator::ZeroRotator,
@@ -185,12 +216,15 @@ bool AFlyingCabWorldBootstrap::SpawnOnFootSlice()
 		NightshiftEntranceLocation,
 		FRotator::ZeroRotator,
 		SpawnParameters);
+ }
 	if (!NightshiftOffice || !NightshiftEntrance)
 	{
 		UE_LOG(LogFlyingCabWorldBootstrap, Error, TEXT("Could not create Nightshift Office entrance."));
 		return false;
 	}
 
+	if (!Authored)
+ {
 	NightshiftExit = GetWorld()->SpawnActor<AFlyingCabOnFootPortal>(
 		AFlyingCabOnFootPortal::StaticClass(),
 		NightshiftOffice->GetExitPortalLocation(),
@@ -201,6 +235,7 @@ bool AFlyingCabWorldBootstrap::SpawnOnFootSlice()
 		NightshiftOffice->GetTerminalLocation(),
 		FRotator::ZeroRotator,
 		SpawnParameters);
+ }
 	if (!NightshiftExit || !ServiceAccessTerminal)
 	{
 		UE_LOG(LogFlyingCabWorldBootstrap, Error, TEXT("Could not complete Nightshift Office interactables."));
@@ -216,7 +251,7 @@ bool AFlyingCabWorldBootstrap::SpawnOnFootSlice()
 		AFlyingCabQuestGiver* QuestGiver = nullptr;
 		for (TActorIterator<AFlyingCabQuestGiver> It(GetWorld()); It; ++It)
 			if (It->GetNpcId() == Hub.HubId) { QuestGiver = *It; break; }
-		if (!QuestGiver && (Hub.Profile || Quest))
+		if (!Authored && !QuestGiver && (Hub.Profile || Quest))
 			QuestGiver = GetWorld()->SpawnActor<AFlyingCabQuestGiver>(AFlyingCabQuestGiver::StaticClass(), Hub.WorldLocation, FRotator::ZeroRotator, SpawnParameters);
 		if (!QuestGiver)
 		{
@@ -228,6 +263,8 @@ bool AFlyingCabWorldBootstrap::SpawnOnFootSlice()
 		QuestGivers.Add(QuestGiver);
 	}
 
+	if (!Authored)
+ {
 	NightshiftEntrance->Configure(
 		TEXT("NIGHTSHIFT OFFICE"),
 		FText::FromString(TEXT("Q // ENTER NIGHTSHIFT OFFICE")),
@@ -238,6 +275,7 @@ bool AFlyingCabWorldBootstrap::SpawnOnFootSlice()
 		FText::FromString(TEXT("Q // RETURN TO CITY")),
 		NightshiftExteriorReturnLocation,
 		FLinearColor(0.05f, 0.78f, 1.0f));
+ }
 	RefreshServiceAccess();
 
 	UE_LOG(
@@ -259,7 +297,12 @@ bool AFlyingCabWorldBootstrap::SpawnServiceVehicle(
 		return false;
 	}
 
-	FVector GroundedLocation = ServiceVehicleLocation;
+ if (auto* Authored = AFlyingCabAuthoredWorld::Find(GetWorld()))
+ {
+  if (!Authored->ServiceVehicleSpawn) return true; // Explicit deletion in the authored level.
+  ServiceVehicleLocation = Authored->ServiceVehicleSpawn->GetActorLocation();
+ }
+ FVector GroundedLocation = ServiceVehicleLocation;
 	FHitResult GroundHit;
 	const FVector TraceStart = ServiceVehicleLocation + FVector(0.0f, 0.0f, 600.0f);
 	const FVector TraceEnd = ServiceVehicleLocation - FVector(0.0f, 0.0f, 900.0f);
@@ -302,7 +345,25 @@ bool AFlyingCabWorldBootstrap::SpawnServiceVehicle(
 
 bool AFlyingCabWorldBootstrap::SpawnSupercars()
 {
-	// Separate bays on four district curbs, clear of the central pickup markers.
+ if (auto* Authored = AFlyingCabAuthoredWorld::Find(GetWorld()))
+ {
+  for (AActor* Spawn : Authored->SupercarSpawns)
+  {
+   if (!IsValid(Spawn)) continue;
+   const FTransform Transform = Spawn->GetActorTransform();
+   auto* Car = GetWorld()->SpawnActorDeferred<AFlyingCabPawn>(AFlyingCabPawn::StaticClass(), Transform,
+    this, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+   if (!Car) return false;
+   Car->ConfigureAsSupercar();
+   const FName DistrictId = Spawn->Tags.IsEmpty() ? FName(*Spawn->GetName()) : Spawn->Tags[0];
+   Car->ConfigureVehicleIdentity(FName(*(TEXT("Vehicle.A_R7.")+DistrictId.ToString())),
+    TEXT("A_R7 SUPERSPORT"), NAME_None, FLinearColor(.95f,.08f,.025f));
+   Car->FinishSpawning(Transform);
+   Supercars.Add(Car);
+  }
+  return true;
+ }
+ // Separate bays on four district curbs, clear of the central pickup markers.
 	const auto DistrictIds = FlyingCabSupercarData::GetDistrictIds();
 	for (const FName DistrictId : DistrictIds)
 	{

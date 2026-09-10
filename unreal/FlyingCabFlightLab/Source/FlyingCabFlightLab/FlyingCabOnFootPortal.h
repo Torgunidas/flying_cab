@@ -23,7 +23,10 @@ class FLYINGCABFLIGHTLAB_API AFlyingCabOnFootPortal
 public:
 	AFlyingCabOnFootPortal();
 
-	void Configure(
+	virtual void OnConstruction(const FTransform& Transform) override;
+ UPROPERTY(EditInstanceOnly, Category="Flying Cab|On Foot Portal") TObjectPtr<AActor> DestinationActor;
+ UPROPERTY(EditAnywhere, Category="Flying Cab|On Foot Portal") FVector DestinationOffset = FVector::ZeroVector;
+ void Configure(
 		const FString& InPortalName,
 		const FText& InPrompt,
 		const FVector& InDestination,
@@ -54,8 +57,12 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|On Foot Portal")
 	TObjectPtr<UPointLightComponent> PortalLight;
 
+	UPROPERTY(EditAnywhere, Category="Flying Cab|On Foot Portal")
 	FString PortalName = TEXT("DOOR");
+	UPROPERTY(EditAnywhere, Category="Flying Cab|On Foot Portal")
 	FText InteractionPrompt = FText::FromString(TEXT("Q // ENTER"));
+	UPROPERTY(EditAnywhere, Category="Flying Cab|On Foot Portal")
 	FVector Destination = FVector::ZeroVector;
+	UPROPERTY(EditAnywhere, Category="Flying Cab|On Foot Portal")
 	FLinearColor PortalColor = FLinearColor(0.05f, 0.75f, 1.0f);
 };

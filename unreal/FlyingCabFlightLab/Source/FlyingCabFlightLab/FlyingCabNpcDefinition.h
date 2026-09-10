@@ -5,6 +5,7 @@
 
 class UFlyingCabDialogueDefinition;
 class UFlyingCabQuestDefinition;
+class UTexture2D;
 
 USTRUCT(BlueprintType)
 struct FLYINGCABFLIGHTLAB_API FFlyingCabNpcTopic
@@ -32,6 +33,9 @@ public:
 	FText DisplayName;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC")
 	FString MinimapInitial = TEXT("N");
+	/** Optional face shown beside the name during a conversation. Empty leaves just the nameplate. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC")
+	TSoftObjectPtr<UTexture2D> Portrait;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC", meta = (MultiLine = "true"))
 	FText Greeting = NSLOCTEXT("FlyingCab", "NpcGreeting", "What can I do for you?");
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC", meta = (TitleProperty = "Title"))

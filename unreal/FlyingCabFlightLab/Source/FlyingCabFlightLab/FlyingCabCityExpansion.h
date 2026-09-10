@@ -24,6 +24,10 @@ class FLYINGCABFLIGHTLAB_API AFlyingCabCityExpansion : public AActor
 public:
 	AFlyingCabCityExpansion();
 	virtual void Tick(float DeltaSeconds) override;
+#if WITH_EDITOR
+ void BakeToLevel();
+#endif
+ UPROPERTY(VisibleAnywhere, Category="Authoring") bool bBakedToLevel = false;
 
 protected:
 	virtual void BeginPlay() override;
@@ -50,8 +54,10 @@ private:
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<UTextRenderComponent>> RuntimeLabels;
 
-	UPROPERTY(Transient)
+	UPROPERTY()
 	TObjectPtr<UTextRenderComponent> SignalLabel;
+ bool bBaking = false;
+ AActor* BakeParent = nullptr;
 
 	/** All apartment windows share one collision-free instanced draw component. */
 	UPROPERTY(Transient)

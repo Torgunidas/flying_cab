@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "FlyingCabQuestHubData.h"
+#include "FlyingCabAuthoredWorld.h"
 #include "FlyingCabNpcDefinition.h"
 #include "FlyingCabQuestDefinition.h"
 #include "FlyingCabQuestGiver.h"
@@ -39,11 +40,14 @@ TArray<FFlyingCabQuestHubDefinition> FlyingCabQuestHubData::GetQuestHubs(UWorld*
 		const int32 Existing = Result.IndexOfByPredicate([&Hub](const auto& Item) { return Item.HubId == Hub.HubId; });
 		if (Existing == INDEX_NONE) Result.Add(Hub); else Result[Existing] = Hub;
 	};
+	if (!AFlyingCabAuthoredWorld::Find(World))
+ {
 	if (auto* Roster = UFlyingCabNpcRoster::LoadDefaultAsset())
 	{
 		for (const auto& Spawn : Roster->Npcs) AddProfile(Spawn.Profile, Spawn.WorldLocation);
 	}
 	else Result = QuestHubs; // Recovery only when the shipped editable roster is missing.
+ }
 	if (World)
 		for (TActorIterator<AFlyingCabQuestGiver> It(World); It; ++It)
 			AddProfile(It->GetNpcProfile(), It->GetActorLocation());

@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "FlyingCabLivingWorldManager.h"
+#include "FlyingCabAuthoredWorld.h"
 
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -41,7 +42,7 @@ bool AFlyingCabLivingWorldManager::Initialize(UFlyingCabLivingWorldProfile* InPr
 {
 	if (bInitialized)
 	{
-		return !Routes.IsEmpty();
+		return !Routes.IsEmpty() || AFlyingCabAuthoredWorld::Find(GetWorld());
 	}
 	bInitialized = true;
 	if (!DiscoverOrGenerateRoutes(InProfile) || !SpawnPopulation())
@@ -91,6 +92,7 @@ bool AFlyingCabLivingWorldManager::DiscoverOrGenerateRoutes(UFlyingCabLivingWorl
 		}
 		else if (IsValid(Route))
 		{
+   if (AFlyingCabAuthoredWorld::Find(GetWorld())) return false;
 			UE_LOG(
 				LogFlyingCabLivingWorld,
 				Warning,
@@ -109,6 +111,7 @@ bool AFlyingCabLivingWorldManager::DiscoverOrGenerateRoutes(UFlyingCabLivingWorl
 		return true;
 	}
 
+	if (AFlyingCabAuthoredWorld::Find(GetWorld())) return true;
 	if (InProfile)
 	{
 		FString ValidationError;

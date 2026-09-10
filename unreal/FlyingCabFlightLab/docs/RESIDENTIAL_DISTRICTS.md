@@ -1,5 +1,7 @@
 # Osiedla mieszkalne i większy bak — 2026-09-04
 
+**Aktualizacja 2026-09-10:** aktywna mapa zawiera już zapisaną geometrię i obiekty dostępne przed Play. Bieżący sposób edycji opisuje [WORLD_EDITING.md](WORLD_EDITING.md). Poniższe wzmianki o generowaniu przy starcie opisują poprzedni etap.
+
 ## Zmiana gameplayowa
 
 - Bak **200 jednostek**, start **130** (nadal 65%). Spalanie, Highway Turbo i cena **2 CR/jednostkę** bez zmian. Pełny bak daje dwukrotny zasięg względem wcześniejszej pojemności przy tym samym sposobie lotu. Uzupełnienie większej ilości paliwa kosztuje proporcjonalnie więcej; tankowanie nadal respektuje dostępne saldo.

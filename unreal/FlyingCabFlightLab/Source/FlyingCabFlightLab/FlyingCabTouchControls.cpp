@@ -585,8 +585,8 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		HubSlot->SetZOrder(8);
 	}
 
-	const TConstArrayView<FFlyingCabDistrictDefinition> Districts =
-		FlyingCabCityData::GetDistricts();
+	const TArray<FFlyingCabDistrictDefinition> Districts =
+		FlyingCabCityData::GetWorldDistricts(GetWorld());
 	for (int32 Index = 0; Index < Districts.Num(); ++Index)
 	{
 		const FFlyingCabDistrictDefinition& District = Districts[Index];
@@ -653,7 +653,7 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 		BadgeSlot->SetZOrder(7);
 	};
 	const TArray<FFlyingCabServiceDefinition> FuelStations =
-		FlyingCabCityData::GetFuelStations();
+		FlyingCabCityData::GetWorldFuelStations(GetWorld());
 	for (int32 Index = 0; Index < FuelStations.Num(); ++Index)
 	{
 		AddServiceBadge(FName(*FString::Printf(TEXT("FuelStationBadge%d"), Index)),
@@ -661,7 +661,7 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	}
 
 	const TArray<FFlyingCabServiceDefinition> RepairStations =
-		FlyingCabCityData::GetRepairStations();
+		FlyingCabCityData::GetWorldRepairStations(GetWorld());
 	for (int32 Index = 0; Index < RepairStations.Num(); ++Index)
 	{
 		AddServiceBadge(FName(*FString::Printf(TEXT("RepairStationBadge%d"), Index)),

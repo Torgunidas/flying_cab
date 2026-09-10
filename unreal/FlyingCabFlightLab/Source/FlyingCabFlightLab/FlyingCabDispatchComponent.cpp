@@ -25,6 +25,14 @@ UFlyingCabDispatchComponent::UFlyingCabDispatchComponent()
 
 void UFlyingCabDispatchComponent::Configure(const UFlyingCabEconomyAsset* Config)
 {
+ DeliveryStops.Reset(); DeliveryStopNames.Reset(); DeliveryStopIds.Reset(); DeliveryNeighborhoodIds.Reset();
+ for (const auto& District : FlyingCabCityData::GetWorldDistricts(GetWorld()))
+ {
+  DeliveryStops.Add(District.StopLocation);
+  DeliveryStopNames.Emplace(District.DisplayName);
+  DeliveryStopIds.Add(District.DistrictId);
+  DeliveryNeighborhoodIds.Add(District.NeighborhoodId);
+ }
 	if (!Config)
 	{
 		return;

@@ -106,3 +106,28 @@ Kompilacja edytora UE 5.8 zakończyła się powodzeniem. Dodano test PIE rozmowy
 ### Kontrola manifestu na macOS i poprawki po audycie — 2026-09-10
 
 Dodano `scripts/verify-input-baseline.py`: wersjonowany odpowiednik `Verify-InputBaseline.ps1` z tą samą normalizacją (UTF-8 bez BOM, końce linii LF, SHA-256; pliki binarne bajt po bajcie), tymi samymi komunikatami i kodami wyjścia. Przed i po poprawkach z audytu projektu (`docs/AUDYT_PROJEKTU_2026-09-10.md` w katalogu głównym repo) kontrola wykazuje te same dziewięć historycznie zmienionych plików i 23 zgodne. Poprawki objęły `FlyingCabWorldBootstrap.cpp` (dodatkowa linia logu) i moduł edytora `FlyingCabNarrativeEditor` (ostrzeżenie o nieaktualnej binarce); żaden plik z manifestu nie został zmieniony, manifest pozostaje historyczny, wariant `UseControlFrame=0` bez zmian.
+
+### Prezentacja rozmowy NPC — 2026-09-10
+
+Na prośbę użytkownika przebudowano wygląd rozmowy: okno zeszło do dolnego pasa ekranu, kwestia NPC wpisuje się znak po znaku, a odpowiedzi gracza pojawiają się pojedynczo po prawej stronie dymka. Zmiana dotyczy wyłącznie prezentacji.
+
+Kontrola przed i po zmianach wykazuje **te same dziewięć historycznie zmienionych plików i 23 zgodne**. Żaden plik z manifestu nie został dotknięty; manifest pozostaje historyczny, wariant `UseControlFrame=0` bez zmian.
+
+Zmienione pliki leżą poza manifestem: `FlyingCabDialogueWidget.h/.cpp`, `FlyingCabDialoguePresentation.h/.cpp` (nowe), `FlyingCabNarrativeSettings.h/.cpp`, `FlyingCabNpcDefinition.h`, `FlyingCabDialogueSession.h/.cpp` oraz testy. Nie zmieniono `AFlyingCabPlayerController::OpenDialogue`/`CloseDialogue`, pauzy, `FlushPressedKeys`, strażnika przejścia, focusu, kolejności Q/J/R ani mapowań wejścia.
+
+Wewnątrz modalu obsługa klawiszy została rozszerzona, wyłącznie w widgecie:
+
+- pierwszy `Enter` lub `Spacja` podczas wpisywania kończy tekst i nie wybiera odpowiedzi; dopiero kolejne naciśnięcie potwierdza wybór;
+- `1`–`9` wybierają odpowiedź, ale tylko taką, która już się pojawiła;
+- `W/S`, strzałki i `Esc` działają jak dotychczas.
+
+Szczegóły warstwy prezentacji: `NPC_CONVERSATION_UI.md`.
+
+Zachowano końcowe `return FReply::Handled()` dla wszystkich pozostałych klawiszy, więc `Q`, `J` i `R` nadal nie przeciekają przez modal do odroczonej kolejki poleceń. Animacja korzysta z `NativeTick` widgetu, a nie z timerów świata, ponieważ rozmowa pauzuje grę. Ewentualne dźwięki interfejsu odtwarzane są z flagą dźwięku UI z tego samego powodu.
+
+
+### Edytowalny świat zapisany w mapie — 2026-09-10
+
+Na prośbę użytkownika przeniesiono stałą geometrię, usługi, NPC, biuro, portale i trasy do mapy `FlightLab`. Chroniona ścieżka sterowania pozostaje bez zmian. Jedyny przyrost w pliku manifestu to `FlyingCabTouchControls.cpp`: odczyt przystanków i stacji do minimapy przez `GetWorldDistricts/GetWorldFuelStations/GetWorldRepairStations(GetWorld())`, z własną tablicą zamiast widoku tymczasowej tablicy. Nie zmieniono handlerów UI, focusu, Q/J/R, flush, possession ani wariantu `UseControlFrame=0`.
+
+Kontrola PowerShell przed i po: te same 9 historycznych różnic, 23 zgodne, 0 brakujących. Historyczny manifest bez zmian. Windows UE 5.8: build i pełny pakiet **50/50** (w tym test zapisanej mapy i dotychczasowe testy wejścia) zaliczone. macOS: build i pakiet Automation dla tego etapu **czekają na weryfikację**. Szczegóły: `WORLD_EDITING.md` i `AUDIT_IMPLEMENTATION_STATUS.md`.

@@ -155,3 +155,63 @@ Uwagi:
 - Ostrzeżenie `LogFlyingCabQuests: Warning: Skipping invalid quest entry … At least one objective is required.` (12 ×) pochodzi z testów `FlyingCab.Core.Quests.CatalogResilienceAndCredits` (8) i `FlyingCab.Core.Quests.ValidatedChains` (4) dla obiektów tymczasowych tworzonych przez te testy; nie dotyczy zmian z audytu.
 - `Get-ExecutionPolicy` na tym PC ma `Undefined` we wszystkich zakresach; skrypty uruchamiano z polityką `Bypass` dla procesu. W zwykłym oknie PowerShell z domyślną polityką `Restricted` trzeba użyć `powershell -ExecutionPolicy Bypass -File .\scripts\Sync-Windows.ps1 -EngineRoot 'D:\Unreal\UE_5.8'` albo ustawić `RemoteSigned` dla użytkownika.
 - Logi i raporty z tej sesji leżą w `Saved/` tego PC (A-08): `AuditWinFull_2026-09-10`, `AuditWinMetro1…3_2026-09-10`, `AuditWinStaleCheck_2026-09-10` i `AuditWinStaleCheck2…4_2026-09-10`, `AuditWinAfterRebuild_2026-09-10`, `AuditWinFinal_2026-09-10`.
+
+### Prezentacja rozmowy NPC — 2026-09-10
+
+Pełny opis warstwy prezentacji dla programisty: `NPC_CONVERSATION_UI.md`.
+
+Na polecenie użytkownika przebudowano wygląd i rytm rozmowy z NPC. Logika rozmowy, warunki, akcje i nagrody pozostają bez zmian w `UFlyingCabDialogueSession`; zmiana dotyczy wyłącznie warstwy prezentacji.
+
+Co się zmieniło:
+
+- Okno zeszło z pełnoekranowego modalu do dolnego pasa ekranu. Przyciemnienie tła spadło z 0,78 do 0,30, więc miasto i rozmówca pozostają widoczni.
+- Kwestia NPC wpisuje się znak po znaku (domyślnie 55 znaków na sekundę), z krótszym przytrzymaniem po przecinku i dłuższym po kropce.
+- Odpowiedzi gracza stoją po prawej stronie dymka i pojawiają się pojedynczo od góry, co 0,085 s, wjeżdżając z prawej. Ich tekst jest pełny od pierwszej klatki.
+- `Spacja` lub `Enter` podczas wpisywania kończy tekst zamiast wybierać odpowiedź. Klawisze `1`–`9` wybierają odpowiedź, ale tylko taką, która już się pojawiła.
+- Profil NPC ma opcjonalne pole `Portrait`; puste zostawia samą tabliczkę z imieniem.
+- Tempo, dystans wjazdu i opcjonalne dźwięki konfiguruje się w **Project Settings → Game → Flying Cab Narrative**, sekcja `Presentation`.
+
+Rozwiązania warte zapamiętania:
+
+- **Tekst nie przeskakuje podczas wpisywania.** Linia jest łamana raz, własnym algorytmem opartym o `FSlateFontMeasure`, i wyświetlana bez `AutoWrapText`. Obok stoi bliźniaczy blok tekstu z pełną treścią i widocznością `Hidden`, który rezerwuje docelową wysokość, nie rysując niczego. Odpowiedzi też są w drzewie od początku jako `Hidden`, więc kolumna nie skacze w miarę ich pojawiania się.
+- **Animacja chodzi na czasie rzeczywistym.** Rozmowa pauzuje świat, więc timery `FTimerManager` by nie zadziałały. Prezentacja liczy czas z `FPlatformTime::Seconds()` w `NativeTick`, z ograniczeniem kroku do 0,25 s. Z tego samego powodu dźwięki interfejsu odtwarzane są z flagą dźwięku UI.
+- **Logika prezentacji jest testowalna bez świata i bez Slate.** `FFlyingCabTypewriter`, `FFlyingCabDialogueStage` i `FFlyingCabTextWrapper` w `FlyingCabDialoguePresentation.h/.cpp` to zwykłe struktury C++. Widget tylko przekazuje im deltę i odczytuje wynik.
+- **`SetText` leci wyłącznie gdy licznik odsłoniętych znaków wzrósł** i tylko w fazie wpisywania, zgodnie z wymaganiem `GODOT_MIGRATION_CONTRACTS.md` o braku stałej inwalidacji tekstów.
+
+Weryfikacja na Windows (UE 5.8 z `D:\Unreal\UE_5.8`, testy z `-NullRHI`):
+
+| Krok | Wynik |
+|---|---|
+| `.\scripts\Build-Editor.ps1 -EngineRoot 'D:\Unreal\UE_5.8'` | `Result: Succeeded`, kod 0. Jedyne ostrzeżenia to znane C4996 z nagłówka silnika `Character.h(798)`, nie z kodu projektu. |
+| Pełny pakiet `Automation RunTests FlyingCab` | `Saved/Logs/DialogueVerified.log`, raport `Saved/Automation/DialogueVerified/index.json`: **49 wykonanych, 49 zaliczonych** (39 czysto, 10 z ostrzeżeniami), 0 niezaliczonych, 0 pominiętych; 94,5 s testów. W logu 0 linii `Error:`. |
+| Nowe testy jednostkowe | `FlyingCab.Core.Dialogue.Typewriter`, `FlyingCab.Core.Dialogue.RevealTimeline`, `FlyingCab.Core.Dialogue.TextWrap` — zaliczone. |
+| `FlyingCab.Functional.PIE.NpcConversation` | Zaliczony po rozszerzeniu o prezentację: po otwarciu tekst nie jest pełny, klawisz numeryczny przed pojawieniem się odpowiedzi nie zmienia rewizji widoku, a pominięcie pokazuje całą kwestię i wszystkie odpowiedzi. Dotychczasowe asercje o pauzie, jednorazowej nagrodzie i powrocie sterowania po puszczeniu `A` zachowane. |
+| Manifest sterowania | `Verify-InputBaseline.ps1` przed i po pracy: kod 1, **te same dziewięć historycznie zmienionych plików, 23 z 32 zgodne, 0 brakujących**. Żaden plik z manifestu nie został dotknięty. |
+
+Nie wykonano oceny wizualnej w edytorze GUI ani ręcznego przejścia rozmowy w PIE. Zielone testy nie zatwierdzają wyglądu ani tempa; próbę z sekcji „Praktyczna próba” w `QUEST_AUTHORING.md` wykonuje użytkownik. Nie commitowano.
+
+
+### Świat edytowalny przed Play — 2026-09-10
+
+Na zlecenie użytkownika aktywna mapa `Content/Maps/FlightLab.umap` została przekształcona w zapisany poziom: **505 aktorów**, 24 grupy przystanków, oddzielne obiekty geometrii/napisów, instancjonowane okna, 4 stacje paliwa, 2 warsztaty, NPC, biuro, portale, terminal, punkty pojazdów i trasy ruchu. Dodano 28 zapisanych materiałów w `Content/World/Materials`. Zmiany prezentacji dialogów zastane po pracy z Claude'em zachowano.
+
+`AFlyingCabAuthoredWorld` przechowuje powiązania stałych obiektów. Bootstrap korzysta z mapy; tworzy tylko dynamiczne pojazdy i populację ruchu. `AFlyingCabCityExpansion` na tej mapie steruje napisem sygnalizacji i nie generuje geometrii. Brak zapisanej usługi/NPC/trasy nie powoduje jej odtworzenia z dawnych tabel. Stare mapy bez znacznika konwersji zachowują wcześniejszy fallback.
+
+Przesunięcie `AFlyingCabDistrictAnchor` przenosi podpięte elementy i miejsca kursów. Minimapę przystanków i stacji zasilają odczyty rzeczywistych aktorów konkretnego świata. Dispatch odświeża listę po utworzeniu świata, zamiast polegać tylko na danych odczytanych w konstruktorze. Portale mają zapisywane parametry oraz referencje do ruchomych punktów docelowych. Trasy NPC korzystają z istniejącego mechanizmu tras umieszczonych w poziomie.
+
+Instrukcja pierwszych kroków i ograniczenia: **`WORLD_EDITING.md`**. Edycja tras pozostaje ręczna: przesunięcie budynku nie przebudowuje ich automatycznie. Obszary autostrad/bonus Highway Turbo i linie dróg minimapy nadal wynikają z granic układu danych. Pełną grupę przystanku należy przesuwać w X/Z; obrót/skala całej grupy nie zmienia rozstawu stref pasażera. Nowe identyfikatory lokacji questowych wymagają spójności z katalogiem danych walidacji.
+
+Weryfikacja: Windows 11, UE 5.8.0, MSVC 14.51.36252, 2026-09-10:
+
+| Kontrola | Wynik |
+|---|---|
+| Build edytora | **Succeeded**, kod 0. Pozostało znane ostrzeżenie C4996 z nagłówka silnika `Character.h` i informacja o niepreferowanej wersji MSVC; nowe pliki bez ostrzeżeń kompilatora w końcowym buildzie. |
+| Jednorazowa konwersja i zapis | `Bake-EditableWorld.py`: 505 aktorów, kod 0, bez błędów i ostrzeżeń commandletu. |
+| Pełny pakiet NullRHI | **50/50 zaliczone**: 40 bez ostrzeżeń, 10 z dotychczasowymi ostrzeżeniami, 0 błędów, 0 pominiętych. `Saved/Automation/EditableWorldFull/index.json`, lokalny log `Saved/Logs/EditableWorldFull.log`. |
+| Nowy `FlyingCab.Functional.PIE.AuthoredWorld` | Zapisane obiekty po wczytaniu, brak generowania geometrii/duplikowania stacji, referencja docelowa portalu, odczyt przesuniętych aktorów bez modyfikowania współdzielonego assetu: zaliczone. |
+| `Verify-EditableWorld.py` | Na kopii mapy: geometria istnieje przed Play, odmowa ponownej konwersji, przesunięcie całego przystanku i osobno budynku, dziedziczenie pozycji stacji, zapis/ponowne wczytanie, zachowanie koloru i materiału oraz referencji portalu: zaliczone. Kopia testowa usunięta. Log `Saved/Logs/EditableWorldPersistence2.log`, kod 0. |
+| Renderowanie i kolizje osiedla | `ResidentialAccess` z renderowaniem poza ekranem: **1/1**, kod 0. Obejrzano wygenerowany widok platformy `Saved/Automation/ResidentialPlatform.png`: budynek, okna, platforma, napisy i stacja obecne. Zrzut SceneCapture ma szum tła; nie jest pełną ręczną sesją edytora. |
+| Manifest wejścia | Te same 9 historycznych różnic, 23/32 zgodne, 0 brakujących. Jedyny przyrost w chronionym pliku dotyczy odczytu danych minimapy, opisany w `INPUT_CANONICAL_BASELINE.md`. |
+| macOS | **Build i pełny pakiet Automation dla tego etapu czekają na weryfikację.** Brak dostępu do Maca w tej sesji. Wspólna mapa i źródła, UE 5.8, bez rozdzielania wersji systemowych. |
+
+Nie wykonano commita ani push. Zmiany świata i zastane zmiany dialogów pozostają w drzewie roboczym. Instrukcje edycji NPC oraz dokument własności stanu zaktualizowano do mapy jako źródła położenia. Lokalne logi, kopia bezpieczeństwa mapy i binaria pozostają w ignorowanych katalogach.

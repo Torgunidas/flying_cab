@@ -3,6 +3,10 @@
 #include "FlyingCabCityData.h"
 
 #include "FlyingCabCityLayoutAsset.h"
+#include "FlyingCabAuthoredWorld.h"
+#include "FlyingCabFuelStation.h"
+#include "FlyingCabRepairStation.h"
+#include "EngineUtils.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabCityData, Log, All);
 
@@ -229,4 +233,35 @@ TConstArrayView<FFlyingCabTrafficRouteDefinition>
 FlyingCabCityData::GetFallbackTrafficRoutes()
 {
 	return MakeArrayView(TrafficRoutes);
+}
+
+TArray<FFlyingCabDistrictDefinition> FlyingCabCityData::GetWorldDistricts(const UWorld* World)
+{
+ TArray<FFlyingCabDistrictDefinition> Result;
+ if (AFlyingCabAuthoredWorld::Find(World))
+ {
+  for (TActorIterator<AFlyingCabDistrictAnchor> It(const_cast<UWorld*>(World)); It; ++It) Result.Add(It->GetWorldDefinition());
+  // Preserve the canonical ordering for seeded dispatch and existing quest IDs.
+  const auto Defaults = GetDistricts();
+  Result.StableSort([Defaults](const auto& A,const auto& B) {
+   auto Rank = [Defaults](FName Id) { for(int32 I=0; I<Defaults.Num(); ++I) if(Defaults[I].DistrictId==Id) return I; return MAX_int32; };
+   return Rank(A.DistrictId)<Rank(B.DistrictId);
+  });
+ }
+ else Result.Append(GetDistricts());
+ return Result;
+}
+TArray<FFlyingCabServiceDefinition> FlyingCabCityData::GetWorldFuelStations(const UWorld* World)
+{
+ if (!AFlyingCabAuthoredWorld::Find(World)) return GetFuelStations();
+ TArray<FFlyingCabServiceDefinition> Result;
+ for (TActorIterator<AFlyingCabFuelStation> It(const_cast<UWorld*>(World)); It; ++It) Result.Add({It->GetServiceName(), It->GetActorLocation()});
+ return Result;
+}
+TArray<FFlyingCabServiceDefinition> FlyingCabCityData::GetWorldRepairStations(const UWorld* World)
+{
+ if (!AFlyingCabAuthoredWorld::Find(World)) return GetRepairStations();
+ TArray<FFlyingCabServiceDefinition> Result;
+ for (TActorIterator<AFlyingCabRepairStation> It(const_cast<UWorld*>(World)); It; ++It) Result.Add({It->GetServiceName(), It->GetActorLocation()});
+ return Result;
 }

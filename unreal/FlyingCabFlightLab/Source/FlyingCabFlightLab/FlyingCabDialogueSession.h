@@ -6,6 +6,7 @@
 
 class UFlyingCabNpcDefinition;
 class UFlyingCabQuestSubsystem;
+class UTexture2D;
 
 USTRUCT(BlueprintType)
 struct FLYINGCABFLIGHTLAB_API FFlyingCabDialogueOptionView
@@ -33,6 +34,9 @@ struct FLYINGCABFLIGHTLAB_API FFlyingCabDialogueView
 	int32 Revision = 0;
 	UPROPERTY(BlueprintReadOnly, Category = "Dialogue")
 	FText Feedback;
+	/** Comes from the NPC profile and may be empty; the view never loads it. */
+	UPROPERTY(BlueprintReadOnly, Category = "Dialogue")
+	TSoftObjectPtr<UTexture2D> Portrait;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFlyingCabDialogueChanged);

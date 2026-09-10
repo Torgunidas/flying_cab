@@ -20,6 +20,7 @@ class FLYINGCABFLIGHTLAB_API AFlyingCabRepairStation : public AActor
 	GENERATED_BODY()
 
 public:
+ const FString& GetServiceName() const { return ServiceName; }
 	AFlyingCabRepairStation();
 
 	virtual void BeginPlay() override;

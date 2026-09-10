@@ -150,6 +150,7 @@ void UFlyingCabDialogueSession::Refresh()
 	++View.Revision; View.Options.Reset(); ChoiceIndices.Reset();
 	if (!bActive || !Profile) { OnChanged.Broadcast(); return; }
 	View.Speaker = Profile->DisplayName;
+	View.Portrait = Profile->Portrait;
 	if (bTopics)
 	{
 		View.Text = Profile->Greeting;

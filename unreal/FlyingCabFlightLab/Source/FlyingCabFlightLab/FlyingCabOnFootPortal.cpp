@@ -94,7 +94,7 @@ bool AFlyingCabOnFootPortal::Interact(AFlyingCabCharacter* Character, FText& Out
 
 	Character->GetCharacterMovement()->StopMovementImmediately();
 	Character->SetActorLocation(
-		Destination,
+		DestinationActor ? DestinationActor->GetActorTransform().TransformPosition(DestinationOffset) : Destination,
 		false,
 		nullptr,
 		ETeleportType::TeleportPhysics);
@@ -124,4 +124,10 @@ void AFlyingCabOnFootPortal::ApplyAppearance()
 	PortalLabel->SetText(FText::FromString(PortalName));
 	PortalLabel->SetTextRenderColor(PortalColor.ToFColor(true));
 	PortalLight->SetLightColor(PortalColor);
+}
+
+void AFlyingCabOnFootPortal::OnConstruction(const FTransform& Transform)
+{
+ Super::OnConstruction(Transform);
+ ApplyAppearance();
 }

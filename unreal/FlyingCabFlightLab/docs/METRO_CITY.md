@@ -1,5 +1,7 @@
 # Metro City — czterokrotnie większy obszar
 
+**Aktualizacja 2026-09-10:** aktywna mapa zawiera już zapisaną geometrię i obiekty dostępne przed Play. Bieżący sposób edycji opisuje [WORLD_EDITING.md](WORLD_EDITING.md). Poniższe wzmianki o generowaniu przy starcie opisują poprzedni etap.
+
 Stan implementacji: 2026-09-04. Unreal Engine 5.8. Sterowanie gracza niezmienione.
 
 Późniejsze rozszerzenia: [Highway Turbo](HIGHWAY_TURBO.md) oraz [24 platformy mieszkalne i większy bak](RESIDENTIAL_DISTRICTS.md). Poniższy opis 12 przystanków dokumentuje bazowy etap Metro; obecnie każde osiedle ma sześć platform, usługi znajdują się na dachach, a bak ma 200 jednostek.
