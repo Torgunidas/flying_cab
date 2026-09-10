@@ -23,6 +23,7 @@
 #include "FlyingCabRepairStation.h"
 #include "FlyingCabTrafficVehicle.h"
 #include "FlyingCabVehiclePaint.h"
+#include "FlyingCabSupercarData.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabWorldBootstrap, Log, All);
 
@@ -46,10 +47,11 @@ bool AFlyingCabWorldBootstrap::Bootstrap(
 	const bool bStationsReady = SpawnServiceStations();
 	const bool bOnFootReady = SpawnOnFootSlice();
 	const bool bServiceVehicleReady = SpawnServiceVehicle(ServiceVehicleClass);
+	const bool bSupercarsReady = SpawnSupercars();
 	const bool bTrafficReady = SpawnTraffic();
 	const bool bLivingWorldReady = SpawnLivingWorld();
 	bBootstrapSucceeded = bCityReady && bStationsReady && bOnFootReady
-		&& bServiceVehicleReady && bTrafficReady && bLivingWorldReady;
+		&& bServiceVehicleReady && bSupercarsReady && bTrafficReady && bLivingWorldReady;
 
 	UE_LOG(
 		LogFlyingCabWorldBootstrap,
@@ -293,6 +295,37 @@ bool AFlyingCabWorldBootstrap::SpawnServiceVehicle(
 		TEXT("Nightshift service vehicle spawned at %s; access requires Vehicle.Service."),
 		*GroundedLocation.ToCompactString());
 	return true;
+}
+
+bool AFlyingCabWorldBootstrap::SpawnSupercars()
+{
+	// Separate bays on four district curbs, clear of the central pickup markers.
+	const auto DistrictIds = FlyingCabSupercarData::GetDistrictIds();
+	for (const FName DistrictId : DistrictIds)
+	{
+		const FFlyingCabDistrictDefinition* District = FlyingCabCityData::GetDistricts().FindByPredicate(
+			[DistrictId](const FFlyingCabDistrictDefinition& Entry) { return Entry.DistrictId == DistrictId; });
+		if (!District) return false;
+		const FVector Probe = District->StopLocation + FVector(FlyingCabSupercarData::GetBayOffsetX(DistrictId), 0.f, 500.f);
+		FHitResult Ground;
+		if (!GetWorld()->LineTraceSingleByObjectType(Ground, Probe, Probe - FVector(0,0,1200),
+			FCollisionObjectQueryParams(ECC_WorldStatic), FCollisionQueryParams(SCENE_QUERY_STAT(SupercarBay), false))
+			|| Ground.ImpactNormal.Z < .65f)
+		{
+			UE_LOG(LogFlyingCabWorldBootstrap, Error, TEXT("No safe A_R7 bay at %s"), *DistrictId.ToString());
+			return false;
+		}
+		const FTransform Transform(FRotator::ZeroRotator, Ground.ImpactPoint + FVector(0,0,33));
+		AFlyingCabPawn* Car = GetWorld()->SpawnActorDeferred<AFlyingCabPawn>(AFlyingCabPawn::StaticClass(),
+			Transform, this, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+		if (!Car) return false;
+		Car->ConfigureAsSupercar();
+		Car->ConfigureVehicleIdentity(FName(*(TEXT("Vehicle.A_R7.") + DistrictId.ToString())),
+			TEXT("A_R7 SUPERSPORT"), NAME_None, FLinearColor(.95f,.08f,.025f));
+		Car->FinishSpawning(Transform);
+		Supercars.Add(Car);
+	}
+	return Supercars.Num() == DistrictIds.Num();
 }
 
 bool AFlyingCabWorldBootstrap::SpawnTraffic()

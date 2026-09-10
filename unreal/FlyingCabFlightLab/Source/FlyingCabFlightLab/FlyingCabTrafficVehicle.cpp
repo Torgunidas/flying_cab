@@ -57,6 +57,14 @@ AFlyingCabTrafficVehicle::AFlyingCabTrafficVehicle()
 	RunningLight->SetCastShadows(false);
 }
 
+void AFlyingCabTrafficVehicle::ConfigureAsSupercar()
+{
+	bSupercar = true;
+	VisualBodyAsset = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Vehicles/A_R7/SM_A_R7_Supercar.SM_A_R7_Supercar")));
+	CollisionBody->SetBoxExtent(FVector(130.f, 74.f, 35.f));
+	ApplyVisualBody();
+}
+
 void AFlyingCabTrafficVehicle::ApplyVisualBody()
 {
 	if (UStaticMesh* Mesh = VisualBodyAsset.LoadSynchronous())
@@ -66,7 +74,7 @@ void AFlyingCabTrafficVehicle::ApplyVisualBody()
 			VisualMesh->EmptyOverrideMaterials();
 			VisualMesh->SetStaticMesh(Mesh);
 			// Fit the existing traffic hull without changing its collisions.
-			VisualMesh->SetRelativeScale3D(FVector(130.f / 110.f, 50.f / 45.f, 42.f / 35.f));
+			VisualMesh->SetRelativeScale3D(bSupercar ? FVector(130.f / 110.f) : FVector(130.f / 110.f, 50.f / 45.f, 42.f / 35.f));
 		}
 	}
 }
@@ -261,7 +269,8 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 		NextLivingNodeIndex);
 	const bool bRedSignal = !FlyingCabTrafficSignals::IsGreen(NextNode->TrafficSignal, GetWorld()->GetTimeSeconds());
 	const bool bStopsAtNode = IsVehicleStopAction(NextNode->Action) || bRedSignal;
-	const float EffectiveDeceleration = FMath::Max(1.0f, LivingRoute->GetDeceleration());
+	const float Performance = bSupercar ? 1.6f : 1.f;
+	const float EffectiveDeceleration = FMath::Max(1.0f, LivingRoute->GetDeceleration() * Performance);
 	const float BrakingDistance = FMath::Square(CurrentSpeed) / (2.0f * EffectiveDeceleration) + 35.0f;
 	const float SensorDistance = FMath::Max(
 		LivingRoute->GetMinimumSpacing(),
@@ -270,6 +279,7 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 	const bool bBlocked = HasLivingRouteObstacle(bStopsAtNode ? FMath::Min(SensorDistance,DistanceToNode) : SensorDistance);
 
 	float DesiredSpeed = NextNode->SpeedLimit > 0.f ? FMath::Min(CruiseSpeed, NextNode->SpeedLimit) : CruiseSpeed;
+	DesiredSpeed *= Performance;
 	if (bStopsAtNode && DistanceToNode <= BrakingDistance)
 	{
 		const float RemainingForBraking = FMath::Max(0.0f, DistanceToNode - 4.0f);
@@ -290,7 +300,7 @@ void AFlyingCabTrafficVehicle::TickLivingRoute(float DeltaSeconds)
 
 	const float ChangeRate = DesiredSpeed < CurrentSpeed
 		? EffectiveDeceleration
-		: FMath::Max(1.0f, LivingRoute->GetAcceleration());
+		: FMath::Max(1.0f, LivingRoute->GetAcceleration() * Performance);
 	CurrentSpeed = FMath::FInterpConstantTo(CurrentSpeed, DesiredSpeed, DeltaSeconds, ChangeRate);
 	const float RequestedAdvance = CurrentSpeed * DeltaSeconds;
 	const float Advance = FMath::Min(RequestedAdvance, DistanceToNode);

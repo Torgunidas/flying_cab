@@ -155,6 +155,21 @@ AFlyingCabPawn::AFlyingCabPawn()
 	}
 }
 
+void AFlyingCabPawn::ConfigureAsSupercar()
+{
+	check(!HasActorBegunPlay());
+	bSupercar = true;
+	VisualBodyAsset = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Vehicles/A_R7/SM_A_R7_Supercar.SM_A_R7_Supercar")));
+	MaxHorizontalSpeed = 3150.f;
+	HorizontalThrustAcceleration = 4200.f;
+	MaxClimbSpeed = 1725.f;
+	VerticalThrustAcceleration = 3000.f;
+	StartingFuel = MaxFuel;
+	VisualPitchFullAcceleration = 4200.f;
+	CollisionBody->SetBoxExtent(FVector(110.f, 62.f, 29.f));
+	CollisionBody->BodyInstance.bUseCCD = true;
+}
+
 void AFlyingCabPawn::ApplyVisualBody()
 {
 	if (UStaticMesh* Mesh = VisualBodyAsset.LoadSynchronous())

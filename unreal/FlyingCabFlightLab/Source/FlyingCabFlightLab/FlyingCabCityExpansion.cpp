@@ -7,6 +7,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "FlyingCabCityData.h"
+#include "FlyingCabSupercarData.h"
 #include "FlyingCabQuestHubData.h"
 #include "FlyingCabTrafficSignals.h"
 #include "Materials/MaterialInterface.h"
@@ -96,6 +97,12 @@ void AFlyingCabCityExpansion::BuildExpansionGeometry()
 		const FString Code = District.MinimapCode;
 		AddBlock(TEXT("CurbsidePlatform")+District.MinimapCode,
 			Stop-FVector(0,0,190), FVector(FMath::Max(District.RuntimePlatformHalfWidth,22.f),4.8,.8), District.AccentColor);
+		if (FlyingCabSupercarData::GetDistrictIds().Contains(District.DistrictId))
+		{
+			// A connected bay beyond the passenger curb leaves pickup/dropoff space clear.
+			const FVector Bay = Stop + FVector(FlyingCabSupercarData::GetBayOffsetX(District.DistrictId),0,0);
+			AddBlock(TEXT("SupercarBay")+Code, Bay-FVector(0,0,190), FVector(5.2,4.8,.8), District.AccentColor);
+		}
 		// Shallow solid foundations add readable silhouettes without closing approach lanes.
 		AddBlock(TEXT("CurbsideFoundation")+District.MinimapCode,
 			Stop-FVector(0,0,280), FVector(15,4.4,1), Structure);

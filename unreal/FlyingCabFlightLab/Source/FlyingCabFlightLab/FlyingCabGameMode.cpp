@@ -264,6 +264,10 @@ void AFlyingCabGameMode::InitializeWorldBootstrap()
 	if (Fleet)
 	{
 		Fleet->RegisterVehicle(WorldBootstrap->GetServiceVehicle());
+		for (AFlyingCabPawn* Supercar : WorldBootstrap->GetSupercars())
+		{
+			Fleet->RegisterVehicle(Supercar);
+		}
 	}
 
 	if (TrafficAwareness)

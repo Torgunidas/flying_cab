@@ -211,6 +211,11 @@ bool AFlyingCabLivingWorldManager::SpawnPopulation()
 					return false;
 				}
 				const FLinearColor Color = FlyingCabVehiclePaint::Get(TrafficVehicles.Num());
+				// One A_R7 per express route; it obeys the same traffic signals and spacing.
+				if (Route->GetRouteClass() == EFlyingCabLivingRouteClass::Express && AgentIndex == 0)
+				{
+					Vehicle->ConfigureAsSupercar();
+				}
 				Vehicle->ConfigureLivingRoute(Route, InitialAlpha, Color);
 				Vehicle->OnLivingStopReached.AddUObject(
 					this,

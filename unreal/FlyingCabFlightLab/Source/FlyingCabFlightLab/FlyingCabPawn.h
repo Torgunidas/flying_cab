@@ -32,6 +32,9 @@ class FLYINGCABFLIGHTLAB_API AFlyingCabPawn : public APawn
 
 public:
 	AFlyingCabPawn();
+	/** Apply only to a deferred-spawned optional A_R7, before BeginPlay configures vitals. */
+	void ConfigureAsSupercar();
+	bool IsSupercar() const { return bSupercar; }
 
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
@@ -307,6 +310,7 @@ private:
 	bool bCachedAccessState = false;
 
 	FTransform SpawnTransform;
+	bool bSupercar = false;
 
 	float KeyboardHorizontalInput = 0.0f;
 	FVector LastAppliedControlForce = FVector::ZeroVector;

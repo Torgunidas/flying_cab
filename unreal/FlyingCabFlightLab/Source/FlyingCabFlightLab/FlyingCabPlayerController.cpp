@@ -1450,8 +1450,8 @@ void AFlyingCabPlayerController::ApplyTouchControlsVisibility()
 
 bool AFlyingCabPlayerController::OpenDialogue(AFlyingCabQuestGiver* Npc)
 {
-	const auto* Character = Cast<AFlyingCabCharacter>(GetPawn());
-	if (!IsValid(Npc) || !Npc->GetNpcProfile() || !Character || Character->IsDead()
+	const auto* PlayerCharacter = Cast<AFlyingCabCharacter>(GetPawn());
+	if (!IsValid(Npc) || !Npc->GetNpcProfile() || !PlayerCharacter || PlayerCharacter->IsDead()
 		|| bDialogueOpen || bGameFlowScreenOpen || bQuestJournalOpen || bDeveloperObserverMode) return false;
 	auto* Quests = GetGameInstance() ? GetGameInstance()->GetSubsystem<UFlyingCabQuestSubsystem>() : nullptr;
 	DialogueSession = NewObject<UFlyingCabDialogueSession>(this);

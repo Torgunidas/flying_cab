@@ -88,10 +88,10 @@ void UFlyingCabDialogueWidget::RefreshView()
 			const auto& Option = CurrentView.Options[I];
 			auto* Button = WidgetTree->ConstructWidget<UFlyingCabDialogueOptionButton>(); Button->InitializeOption(this, I, CurrentView.Revision);
 			Button->SetIsEnabled(Option.bEnabled); Button->SetBackgroundColor(FLinearColor(0.10f, 0.17f, 0.24f));
-			auto* Padding = WidgetTree->ConstructWidget<UBorder>(); Padding->SetPadding(FMargin(16, 12)); Padding->SetBrushColor(FLinearColor::Transparent);
+			auto* OptionBorder = WidgetTree->ConstructWidget<UBorder>(); OptionBorder->SetPadding(FMargin(16, 12)); OptionBorder->SetBrushColor(FLinearColor::Transparent);
 			auto* Text = WidgetTree->ConstructWidget<UTextBlock>(); Text->SetAutoWrapText(true); auto Font = Text->GetFont(); Font.Size = 17; Text->SetFont(Font);
 			Text->SetText(Option.bEnabled ? Option.Text : FText::Format(NSLOCTEXT("FlyingCab", "DisabledChoice", "{0}\n{1}"), Option.Text, Option.UnavailableReason));
-			Padding->SetContent(Text); Button->SetContent(Padding);
+			OptionBorder->SetContent(Text); Button->SetContent(OptionBorder);
 			Options->AddChildToVerticalBox(Button)->SetPadding(FMargin(0, 0, 0, 8)); OptionButtons.Add(Button);
 		}
 		if (!OptionButtons.IsEmpty()) OptionButtons[0]->SetBackgroundColor(FLinearColor(0.22f, 0.30f, 0.37f));

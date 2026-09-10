@@ -61,7 +61,9 @@ void UFlyingCabThrusterVisualComponent::BeginPlay()
 	{
 		if (Mesh->GetFName() == TEXT("VisualMesh")) BodyVisual = Mesh;
 	}
-	for (int32 Index = 0; Index < 3; ++Index)
+	const auto* Cab = Cast<AFlyingCabPawn>(GetOwner());
+	const int32 NozzleCount = Cab && Cab->IsSupercar() ? 4 : 3;
+	for (int32 Index = 0; Index < NozzleCount; ++Index)
 	{
 		auto& Jet = Nozzles.AddDefaulted_GetRef();
 		auto Name = [Index](const TCHAR* Suffix) { return FName(*FString::Printf(TEXT("Thruster%d%s"), Index, Suffix)); };
@@ -159,6 +161,8 @@ void UFlyingCabThrusterVisualComponent::TickComponent(float DeltaSeconds, ELevel
 
 void UFlyingCabThrusterVisualComponent::UpdatePlumes()
 {
+	const auto* Cab = Cast<AFlyingCabPawn>(GetOwner());
+	const bool bSupercar = Cab && Cab->IsSupercar();
 	const FVector UnderbodyExhaust = GetExhaustDirection();
 	const FQuat BodyRotation = BodyVisual ? BodyVisual->GetComponentQuat() : GetOwner()->GetActorQuat();
 	const float Alignment = Demand.Power > .003f ? FMath::Max(0.f, FVector::DotProduct(UnderbodyExhaust, Demand.ExhaustDirection)) : 1.f;
@@ -166,13 +170,19 @@ void UFlyingCabThrusterVisualComponent::UpdatePlumes()
 	for (int32 Index = 0; Index < Nozzles.Num(); ++Index)
 	{
 		auto& Jet = Nozzles[Index];
-		const bool bRear = Index == 2;
+		const bool bRear = !bSupercar && Index == 2;
 		const FVector Exhaust = bRear ? RearExhaustDirection : UnderbodyExhaust;
 		const float JetPower = bRear ? RearDisplayedPower : UnderbodyPower;
 		const FQuat Rotation = FRotationMatrix::MakeFromXZ(Exhaust, FVector(0, 1, 0)).ToQuat();
 		// Camera-side emission keeps reversing streams clear of the hull.
 		const FVector Mount = bRear ? FVector(114.f * RearExhaustDirection.X, 65, 0) : FVector(Index == 0 ? -84 : 84, 65, -35);
 		Jet.Mouth = GetOwner()->GetActorLocation() + BodyRotation.RotateVector(Mount);
+		if (bSupercar && BodyVisual)
+		{
+			// Centers of the four downward rim faces in the normalized A_R7 asset.
+			const FVector RimMount(Index < 2 ? 67.37f : -66.25f, Index % 2 ? -44.76f : 44.76f, -21.65f);
+			Jet.Mouth = BodyVisual->GetComponentTransform().TransformPosition(RimMount);
+		}
 		const float Length = (95.f + 175.f * FMath::Sqrt(FMath::Max(0.f, JetPower))) * PlumeLengthScale * (bRear ? 1.f : .5f);
 		const float WidthScale = bRear ? 4.f : 3.f;
 		for (auto* Mesh : {Jet.Plume.Get(), Jet.Heat.Get()}) Mesh->SetWorldLocationAndRotation(Jet.Mouth, Rotation);

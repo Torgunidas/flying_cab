@@ -35,6 +35,8 @@ class FLYINGCABFLIGHTLAB_API AFlyingCabTrafficVehicle : public AActor
 
 public:
 	AFlyingCabTrafficVehicle();
+	void ConfigureAsSupercar();
+	bool IsSupercar() const { return bSupercar; }
 
 	virtual void Tick(float DeltaSeconds) override;
 	void Configure(
@@ -153,6 +155,7 @@ private:
 	float RouteLength = 0.0f;
 	float RouteDistance = 0.0f;
 	float CruiseSpeed = 450.0f;
+	bool bSupercar = false;
 	float CurrentSpeed = 0.0f;
 	float DwellRemaining = 0.0f;
 	int32 NextLivingNodeIndex = INDEX_NONE;

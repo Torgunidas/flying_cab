@@ -33,6 +33,7 @@ public:
 	void ResetCompetitiveServiceAccess();
 
 	AFlyingCabPawn* GetServiceVehicle() const { return ServiceVehicle; }
+	const TArray<TObjectPtr<AFlyingCabPawn>>& GetSupercars() const { return Supercars; }
 	const TArray<TObjectPtr<AFlyingCabTrafficVehicle>>& GetTrafficVehicles() const
 	{
 		return TrafficVehicles;
@@ -57,6 +58,7 @@ private:
 	bool SpawnServiceStations();
 	bool SpawnOnFootSlice();
 	bool SpawnServiceVehicle(UClass* ServiceVehicleClass);
+	bool SpawnSupercars();
 	bool SpawnTraffic();
 	bool SpawnLivingWorld();
 	FActorSpawnParameters MakeSpawnParameters(
@@ -104,6 +106,8 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<AFlyingCabPawn> ServiceVehicle;
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<AFlyingCabPawn>> Supercars;
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<AFlyingCabTrafficVehicle>> TrafficVehicles;

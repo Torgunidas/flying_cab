@@ -1,5 +1,9 @@
 # Kanoniczne sterowanie: input-canonical-2026-09-04
 
+### A_R7 Supersport — 2026-09-10
+
+Dodano opcjonalną konfigurację `ConfigureAsSupercar` do `FlyingCabPawn.h/.cpp`: osobny model, parametry prędkości/przyspieszenia, pełny bak i dopasowany collider z CCD, wyłącznie dla czterech aut tworzonych przez bootstrap. Nie zmieniono odczytu wejść, mapowań, tłumienia, Q/J/R, possession ani resetu/recovery. Komponent efektów rozpoznaje ten wariant i umieszcza cztery strumienie przy felgach. Domyślna taksówka i `UseControlFrame=0` pozostają bez zmian. Kontrola przed i po wdrożeniu wskazuje te same dziewięć historycznie zmienionych plików; manifest nie został zmieniony. Szczegóły: `A_R7_SUPERCAR.md`.
+
 Status: **zatwierdzony przez użytkownika punkt odniesienia**, nie gwarancja braku wszystkich możliwych błędów. Data akceptacji: 2026-09-04. Ten dokument określa aktualne zasady; raport Claude'a z 2026-09-03 opisuje diagnozę historyczną i docelową architekturę, nie polecenie automatycznego zastąpienia działającej wersji.
 
 ## Co dokładnie jest kanoniczne
