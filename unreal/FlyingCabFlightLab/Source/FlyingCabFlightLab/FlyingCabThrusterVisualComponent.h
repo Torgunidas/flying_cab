@@ -23,15 +23,11 @@ USTRUCT()
 struct FThrusterNozzleVisual
 {
 	GENERATED_BODY()
-	UPROPERTY(Transient) TObjectPtr<UStaticMeshComponent> Joint;
-	UPROPERTY(Transient) TObjectPtr<UStaticMeshComponent> Nozzle;
-	UPROPERTY(Transient) TObjectPtr<UStaticMeshComponent> Core;
 	UPROPERTY(Transient) TObjectPtr<UStaticMeshComponent> Plume;
 	UPROPERTY(Transient) TObjectPtr<UStaticMeshComponent> Heat;
 	UPROPERTY(Transient) TObjectPtr<UPointLightComponent> Light;
 	UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> PlumeMaterial;
 	UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> HeatMaterial;
-	UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> CoreMaterial;
 	FVector Mouth = FVector::ZeroVector;
 	FVector SurfacePoint = FVector::ZeroVector;
 	FVector SurfaceNormal = FVector::UpVector;
@@ -54,7 +50,7 @@ struct FThrusterSurfaceParticle
 	bool bWet = false;
 };
 
-/** Two gimballed jets, thermal refraction and pooled surface outwash. No input ownership. */
+/** Two underbody plumes and a rear horizontal plume, with heat and surface outwash. No input ownership. */
 UCLASS(ClassGroup = (FlyingCab), meta = (BlueprintSpawnableComponent))
 class FLYINGCABFLIGHTLAB_API UFlyingCabThrusterVisualComponent : public UActorComponent
 {
@@ -79,17 +75,13 @@ protected:
 	virtual void BeginPlay() override;
 private:
 	UStaticMeshComponent* CreateMesh(FName Name, UStaticMesh* Mesh, UMaterialInterface* Material);
-	void UpdateNozzles(float DeltaSeconds);
+	void UpdatePlumes();
 	void UpdateSurface(float DeltaSeconds);
 	void CreateSurfacePool();
 	void SpawnSurfaceParticle(const FThrusterNozzleVisual& Nozzle, float Side);
-	UPROPERTY() TSoftObjectPtr<UStaticMesh> NozzleMesh;
 	UPROPERTY() TSoftObjectPtr<UStaticMesh> CardMesh;
-	UPROPERTY() TSoftObjectPtr<UStaticMesh> SphereMesh;
 	UPROPERTY() TSoftObjectPtr<UMaterialInterface> PlumeBase;
 	UPROPERTY() TSoftObjectPtr<UMaterialInterface> HeatBase;
-	UPROPERTY() TSoftObjectPtr<UMaterialInterface> GlowBase;
-	UPROPERTY() TSoftObjectPtr<UMaterialInterface> MetalBase;
 	UPROPERTY() TSoftObjectPtr<UMaterialInterface> DustBase;
 	UPROPERTY(Transient) TArray<FThrusterNozzleVisual> Nozzles;
 	UPROPERTY(Transient) TArray<FThrusterSurfaceParticle> Particles;
@@ -98,8 +90,9 @@ private:
 	FThrusterVisualDemand Demand;
 	bool bHasSample = false;
 	float DisplayedPower = 0.f;
-	float NozzlePitch = -90.f;
-	float MetalHeat = 0.f;
+	float RearDisplayedPower = 0.f;
+	FVector RearExhaustDirection = FVector(-1, 0, 0);
+	float ExhaustPitch = -90.f;
 	float VisualTime = 0.f;
 	float SurfaceTime = 0.f;
 	int32 NextParticle = 0;

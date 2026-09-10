@@ -48,6 +48,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Quests")
 	bool StartQuest(FName QuestId);
 
+	UFUNCTION(BlueprintPure, Category = "Flying Cab|Quests")
+	bool CanStartQuest(FName QuestId, FText& OutReason) const;
+
+	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Quests")
+	bool TurnInQuestAtNpc(FName QuestId, FName NpcId);
+
 	/** Returns how many active quests advanced. */
 	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Quests")
 	int32 RecordEvent(FName EventId, FName TargetId = NAME_None, int32 Amount = 1);

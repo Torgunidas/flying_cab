@@ -3,6 +3,8 @@
 #include "FlyingCabQuestDefinition.h"
 
 #include "Misc/DataValidation.h"
+#include "FlyingCabQuestCatalog.h"
+#include "FlyingCabNarrativeSettings.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabQuestDefinition, Log, All);
 
@@ -25,14 +27,22 @@ void UFlyingCabQuestDefinition::PostLoad()
 EDataValidationResult UFlyingCabQuestDefinition::IsDataValid(
 	FDataValidationContext& Context) const
 {
-	const EDataValidationResult ParentResult = Super::IsDataValid(Context);
+	Super::IsDataValid(Context);
 	FString ValidationError;
 	if (!IsConfigurationValid(ValidationError))
 	{
 		Context.AddError(FText::FromString(ValidationError));
 		return EDataValidationResult::Invalid;
 	}
-	return ParentResult;
+	const auto* Catalog = GetDefault<UFlyingCabNarrativeSettings>()->QuestCatalog.LoadSynchronous();
+	if (Catalog)
+	{
+		const bool bRegistered = Catalog->Quests.Contains(this);
+		const bool bValid = bRegistered ? Catalog->IsQuestEntryValid(this, ValidationError) : Catalog->IsQuestContentValid(this, ValidationError);
+		if (!bValid) { Context.AddError(FText::FromString(ValidationError)); return EDataValidationResult::Invalid; }
+		if (!bRegistered) Context.AddWarning(NSLOCTEXT("FlyingCab", "DraftQuest", "Draft quest: use Add to catalog before assigning it to an NPC."));
+	}
+	return EDataValidationResult::Valid;
 }
 #endif
 
@@ -81,3 +91,31 @@ bool UFlyingCabQuestDefinition::IsConfigurationValid(FString& OutError) const
 	OutError.Reset();
 	return true;
 }
+
+#if WITH_EDITOR
+void UFlyingCabQuestDefinition::EnsureAuthoringIds()
+{
+	if (QuestId.IsNone()) QuestId = FName(*FString::Printf(TEXT("Quest.%s"), *FGuid::NewGuid().ToString(EGuidFormats::Digits)));
+	TSet<FName> Used;
+	for (auto& Objective : Objectives)
+	{
+		if (Objective.ObjectiveId.IsNone() || Used.Contains(Objective.ObjectiveId))
+			Objective.ObjectiveId = FName(*FString::Printf(TEXT("Objective_%s"), *FGuid::NewGuid().ToString(EGuidFormats::Digits)));
+		Used.Add(Objective.ObjectiveId);
+	}
+}
+void UFlyingCabQuestDefinition::PostEditChangeProperty(FPropertyChangedEvent& Event)
+{
+	EnsureAuthoringIds();
+	Super::PostEditChangeProperty(Event);
+}
+void UFlyingCabQuestDefinition::PostDuplicate(EDuplicateMode::Type Mode)
+{
+	Super::PostDuplicate(Mode);
+	if (Mode == EDuplicateMode::Normal)
+	{
+		QuestId = NAME_None;
+		EnsureAuthoringIds();
+	}
+}
+#endif

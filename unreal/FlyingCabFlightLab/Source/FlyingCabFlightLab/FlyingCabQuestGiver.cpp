@@ -8,6 +8,9 @@
 #include "Components/TextRenderComponent.h"
 #include "Engine/GameInstance.h"
 #include "FlyingCabCharacter.h"
+#include "FlyingCabNpcDefinition.h"
+#include "FlyingCabPlayerController.h"
+#include "Misc/DataValidation.h"
 #include "FlyingCabQuestDefinition.h"
 #include "FlyingCabQuestSubsystem.h"
 #include "Materials/MaterialInterface.h"
@@ -94,6 +97,13 @@ void AFlyingCabQuestGiver::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 bool AFlyingCabQuestGiver::Interact(AFlyingCabCharacter* Character, FText& OutMessage)
 {
+	if (NpcProfile && Character && !Character->IsDead())
+	{
+		auto* Controller = Cast<AFlyingCabPlayerController>(Character->GetController());
+		const bool bOpened = Controller && Controller->OpenDialogue(this);
+		OutMessage = bOpened ? FText::GetEmpty() : NSLOCTEXT("FlyingCab", "CannotTalk", "Conversation unavailable. Check the NPC profile and quest mode.");
+		return bOpened;
+	}
 	if (!Character || Character->IsDead() || !QuestDefinition)
 	{
 		OutMessage = FText::FromString(TEXT("NO ASSIGNMENT AVAILABLE"));
@@ -145,6 +155,10 @@ bool AFlyingCabQuestGiver::Interact(AFlyingCabCharacter* Character, FText& OutMe
 
 FText AFlyingCabQuestGiver::GetInteractionPrompt(const AFlyingCabCharacter* Character) const
 {
+	if (NpcProfile)
+	{
+		return FText::Format(NSLOCTEXT("FlyingCab", "TalkToNpc", "Q // TALK TO {0}"), NpcProfile->DisplayName);
+	}
 	if (!QuestDefinition)
 	{
 		return FText::FromString(TEXT("Q // NO ASSIGNMENT"));
@@ -193,11 +207,27 @@ UFlyingCabQuestSubsystem* AFlyingCabQuestGiver::GetQuestSubsystem() const
 void AFlyingCabQuestGiver::RefreshAppearance()
 {
 	const UFlyingCabQuestSubsystem* Quests = GetQuestSubsystem();
-	const EFlyingCabQuestStatus Status = Quests && QuestDefinition
-		? Quests->GetQuestStatus(QuestDefinition->QuestId)
-		: EFlyingCabQuestStatus::Inactive;
+	EFlyingCabQuestStatus Status = Quests && QuestDefinition
+		? Quests->GetQuestStatus(QuestDefinition->QuestId) : EFlyingCabQuestStatus::Inactive;
+	bool bHasQuest = QuestDefinition != nullptr;
+	if (NpcProfile)
+	{
+		DisplayName = NpcProfile->DisplayName;
+		bHasQuest = false;
+		Status = EFlyingCabQuestStatus::Completed;
+		int32 BestPriority = -1;
+		for (const auto& Topic : NpcProfile->Topics)
+		{
+			if (!Topic.Quest) continue;
+			const auto TopicStatus = Quests ? Quests->GetQuestStatus(Topic.Quest->QuestId) : EFlyingCabQuestStatus::Inactive;
+			FText Reason;
+			if (Quests && TopicStatus == EFlyingCabQuestStatus::Inactive && !Quests->CanStartQuest(Topic.Quest->QuestId, Reason)) continue;
+			const int32 Priority = TopicStatus == EFlyingCabQuestStatus::ReadyToTurnIn ? 3 : TopicStatus == EFlyingCabQuestStatus::Inactive ? 2 : TopicStatus == EFlyingCabQuestStatus::Active ? 1 : 0;
+			if (Priority > BestPriority) { Status = TopicStatus; BestPriority = Priority; bHasQuest = true; }
+		}
+	}
 	FLinearColor Color(0.10f, 0.72f, 1.0f);
-	FString Marker(TEXT("!"));
+	FString Marker(bHasQuest ? TEXT("!") : TEXT("..."));
 	if (Status == EFlyingCabQuestStatus::Active)
 	{
 		Color = FLinearColor(1.0f, 0.72f, 0.08f);
@@ -229,8 +259,47 @@ void AFlyingCabQuestGiver::HandleQuestStateChanged(
 	FName QuestId,
 	EFlyingCabQuestStatus Status)
 {
-	if (QuestDefinition && QuestDefinition->QuestId == QuestId)
+	if (NpcProfile || QuestId.IsNone() || (QuestDefinition && QuestDefinition->QuestId == QuestId))
 	{
 		RefreshAppearance();
 	}
 }
+
+
+FName AFlyingCabQuestGiver::GetNpcId() const
+{
+	return NpcProfile ? NpcProfile->NpcId : QuestGiverId;
+}
+
+UFlyingCabQuestDefinition* AFlyingCabQuestGiver::GetQuestDefinition() const
+{
+	if (NpcProfile)
+		for (const auto& Topic : NpcProfile->Topics) if (Topic.Quest) return Topic.Quest;
+	return QuestDefinition;
+}
+
+void AFlyingCabQuestGiver::ConfigureProfile(UFlyingCabNpcDefinition* Profile)
+{
+	NpcProfile = Profile;
+	RefreshAppearance();
+}
+
+void AFlyingCabQuestGiver::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	RefreshAppearance();
+}
+
+#if WITH_EDITOR
+EDataValidationResult AFlyingCabQuestGiver::IsDataValid(FDataValidationContext& Context) const
+{
+	Super::IsDataValid(Context);
+	if (NpcProfile) return NpcProfile->IsDataValid(Context);
+	if (!QuestDefinition)
+	{
+		Context.AddError(NSLOCTEXT("FlyingCab", "NpcNeedsProfile", "Assign an NPC profile in Flying Cab / NPC."));
+		return EDataValidationResult::Invalid;
+	}
+	return EDataValidationResult::Valid;
+}
+#endif

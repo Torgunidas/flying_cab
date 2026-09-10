@@ -10,6 +10,7 @@
 class UBoxComponent;
 class UPointLightComponent;
 class UPrimitiveComponent;
+class UStaticMesh;
 class UStaticMeshComponent;
 class AFlyingCabLivingRoute;
 class AFlyingCabPawn;
@@ -59,7 +60,12 @@ public:
 	FOnFlyingCabNearMiss OnNearMiss;
 	FOnFlyingCabTrafficStopReached OnLivingStopReached;
 
+protected:
+	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void BeginPlay() override;
+
 private:
+	void ApplyVisualBody();
 	mutable TWeakObjectPtr<AActor> LastLivingObstacle;
 	FVector LivingStopLocation = FVector::ZeroVector;
 	void TickLegacyRoute(float DeltaSeconds);
@@ -86,6 +92,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Traffic")
 	TObjectPtr<UStaticMeshComponent> VisualMesh;
+
+	UPROPERTY()
+	TSoftObjectPtr<UStaticMesh> VisualBodyAsset;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Traffic")
 	TObjectPtr<UPointLightComponent> RunningLight;

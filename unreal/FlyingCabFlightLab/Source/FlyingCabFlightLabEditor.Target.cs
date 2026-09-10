@@ -10,6 +10,6 @@ public class FlyingCabFlightLabEditorTarget : TargetRules
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V7;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_8;
-		ExtraModuleNames.Add("FlyingCabFlightLab");
+		ExtraModuleNames.AddRange(new[] { "FlyingCabFlightLab", "FlyingCabNarrativeEditor" });
 	}
 }

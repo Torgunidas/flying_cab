@@ -1,0 +1,8 @@
+newmtl Body
+Kd 0.85 0.65 0.16
+newmtl Glass
+Kd 0.025 0.055 0.08
+newmtl Headlight
+Kd 1 0.94 0.7
+newmtl Taillight
+Kd 0.8 0.015 0.008

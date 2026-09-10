@@ -831,7 +831,7 @@ bool FFlyingCabCityDataConsistencyTest::RunTest(const FString& Parameters)
 	TestServiceLocations(FuelStations, TEXT("Fuel station"));
 	TestServiceLocations(RepairStations, TEXT("Repair station"));
 
-	const TConstArrayView<FFlyingCabQuestHubDefinition> QuestHubs =
+	const TArray<FFlyingCabQuestHubDefinition> QuestHubs =
 		FlyingCabQuestHubData::GetQuestHubs();
 	TestEqual(TEXT("The city exposes Mike and Jack quest hubs"), QuestHubs.Num(), 2);
 	for (const FFlyingCabQuestHubDefinition& Hub : QuestHubs)

@@ -81,7 +81,7 @@ public:
 			Fx->TickComponent(.016f, LEVELTICK_All, nullptr);
 		}
 		Test->TestTrue(TEXT("Powered lift is visible"), Fx->GetDisplayedPower() > .95f);
-		Test->TestTrue(TEXT("Lift nozzle points down"), Fx->GetExhaustDirection().Z < -.99);
+		Test->TestTrue(TEXT("Lift plumes point down"), Fx->GetExhaustDirection().Equals(FVector(0,0,-1)));
 		TArray<UStaticMeshComponent*> Meshes;
 		Cab->GetComponents(Meshes);
 		int32 NozzleCount=0, PlumeCount=0;
@@ -93,7 +93,7 @@ public:
 			if (Mesh->GetName().EndsWith(TEXT("Nozzle"))) ++NozzleCount;
 			if (Mesh->GetName().EndsWith(TEXT("Plume")) && Mesh->IsVisible()) ++PlumeCount;
 		}
-		Test->TestEqual(TEXT("Exactly two physical nozzles"), NozzleCount, 2);
+		Test->TestEqual(TEXT("No physical nozzles"), NozzleCount, 0);
 		Test->TestEqual(TEXT("Exactly two firing plumes"), PlumeCount, 2);
 		if (FParse::Param(FCommandLine::Get(), TEXT("FlyingCabCaptureThrusters"))) Capture(World, Cab, TEXT("Lift"));
 		Cab->SetTouchHorizontalInput(1);

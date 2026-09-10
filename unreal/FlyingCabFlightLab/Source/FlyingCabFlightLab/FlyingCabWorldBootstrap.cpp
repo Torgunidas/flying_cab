@@ -16,10 +16,13 @@
 #include "FlyingCabQuestDefinition.h"
 #include "FlyingCabQuestGiver.h"
 #include "FlyingCabQuestHubData.h"
+#include "FlyingCabNpcDefinition.h"
+#include "EngineUtils.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabProgressionSubsystem.h"
 #include "FlyingCabRepairStation.h"
 #include "FlyingCabTrafficVehicle.h"
+#include "FlyingCabVehiclePaint.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabWorldBootstrap, Log, All);
 
@@ -200,32 +203,23 @@ bool AFlyingCabWorldBootstrap::SpawnOnFootSlice()
 	}
 	UFlyingCabQuestCatalog* QuestCatalog = UFlyingCabQuestCatalog::LoadDefaultAsset();
 	QuestGivers.Reset();
-	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs())
+	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs(GetWorld()))
 	{
 		UFlyingCabQuestDefinition* Quest = QuestCatalog
 			? QuestCatalog->FindQuest(Hub.QuestId)
 			: nullptr;
-		AFlyingCabQuestGiver* QuestGiver = Quest
-			? GetWorld()->SpawnActor<AFlyingCabQuestGiver>(
-				AFlyingCabQuestGiver::StaticClass(),
-				Hub.WorldLocation,
-				FRotator::ZeroRotator,
-				SpawnParameters)
-			: nullptr;
+		AFlyingCabQuestGiver* QuestGiver = nullptr;
+		for (TActorIterator<AFlyingCabQuestGiver> It(GetWorld()); It; ++It)
+			if (It->GetNpcId() == Hub.HubId) { QuestGiver = *It; break; }
+		if (!QuestGiver && (Hub.Profile || Quest))
+			QuestGiver = GetWorld()->SpawnActor<AFlyingCabQuestGiver>(AFlyingCabQuestGiver::StaticClass(), Hub.WorldLocation, FRotator::ZeroRotator, SpawnParameters);
 		if (!QuestGiver)
 		{
-			UE_LOG(
-				LogFlyingCabWorldBootstrap,
-				Error,
-				TEXT("Could not create quest hub %s for %s."),
-				*Hub.DisplayName,
-				*Hub.QuestId.ToString());
-			return false;
+			UE_LOG(LogFlyingCabWorldBootstrap, Warning, TEXT("Skipping NPC %s: profile/quest is missing."), *Hub.DisplayName);
+			continue;
 		}
-		QuestGiver->Configure(
-			Hub.HubId,
-			FText::FromString(Hub.DisplayName),
-			Quest);
+		if (Hub.Profile) QuestGiver->ConfigureProfile(Hub.Profile);
+		else QuestGiver->Configure(Hub.HubId, FText::FromString(Hub.DisplayName), Quest);
 		QuestGivers.Add(QuestGiver);
 	}
 
@@ -324,7 +318,8 @@ bool AFlyingCabWorldBootstrap::SpawnTraffic()
 			SpawnParameters);
 		if (Vehicle)
 		{
-			Vehicle->Configure(Spec.Start, Spec.End, Spec.Speed, Spec.InitialAlpha, Spec.Color);
+			Vehicle->Configure(Spec.Start, Spec.End, Spec.Speed, Spec.InitialAlpha,
+				FlyingCabVehiclePaint::Get(TrafficVehicles.Num()));
 			TrafficVehicles.Add(Vehicle);
 		}
 	}

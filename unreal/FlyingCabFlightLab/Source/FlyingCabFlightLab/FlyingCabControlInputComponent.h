@@ -27,7 +27,8 @@ enum class EFlyingCabInputBlock : uint8
 	Menu,
 	QuestJournal,
 	Observer,
-	Transition
+	Transition,
+	Dialogue
 };
 
 /** Immutable command snapshot produced once per player-controller tick. */

@@ -17,11 +17,14 @@ public:
 
 #if WITH_EDITOR
 	virtual EDataValidationResult IsDataValid(FDataValidationContext& Context) const override;
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& Event) override;
+	virtual void PostDuplicate(EDuplicateMode::Type DuplicateMode) override;
+	void EnsureAuthoringIds();
 #endif
 
 	bool IsConfigurationValid(FString& OutError) const;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Identity")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Quest|Identity")
 	FName QuestId = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Presentation")
@@ -35,8 +38,16 @@ public:
 	EFlyingCabQuestCategory Category = EFlyingCabQuestCategory::Main;
 
 	/** Objectives advance in array order. Events cannot skip an earlier objective. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Flow")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Flow", meta = (TitleProperty = "Description"))
 	TArray<FFlyingCabQuestObjectiveDefinition> Objectives;
+
+	/** All selected quests must be completed before this quest can start. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Availability")
+	TArray<TObjectPtr<UFlyingCabQuestDefinition>> PrerequisiteQuests;
+
+	/** None permits any NPC offering this quest; otherwise only this NPC may receive it. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Flow", meta = (EditCondition = "bRequiresTurnIn", EditConditionHides))
+	FName TurnInNpcId;
 
 	/** If false, the quest completes as soon as its last objective is satisfied. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Flow")
@@ -54,12 +65,12 @@ public:
 	FFlyingCabQuestReward Reward;
 
 	/** Reserved stable hooks. A future dialogue system can resolve them without changing quest data. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Dialogue")
+	UPROPERTY()
 	FName OfferDialogueId = NAME_None;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Dialogue")
+	UPROPERTY()
 	FName ActiveDialogueId = NAME_None;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Dialogue")
+	UPROPERTY()
 	FName CompletionDialogueId = NAME_None;
 };

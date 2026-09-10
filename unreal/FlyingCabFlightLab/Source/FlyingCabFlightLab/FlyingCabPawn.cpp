@@ -18,6 +18,7 @@
 #include "FlyingCabPlayerController.h"
 #include "GameFramework/PlayerController.h"
 #include "Materials/MaterialInterface.h"
+#include "Engine/StaticMesh.h"
 #include "PhysicsEngine/BodyInstance.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -56,6 +57,7 @@ AFlyingCabPawn::AFlyingCabPawn()
 	VisualMesh->SetupAttachment(CollisionBody);
 	VisualMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	VisualMesh->SetRelativeScale3D(FVector(2.2f, 0.9f, 0.7f));
+	VisualBodyAsset = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Vehicles/LowPolyCab/SM_LowPolyCab.SM_LowPolyCab")));
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> ConeMesh(TEXT("/Engine/BasicShapes/Cone.Cone"));
@@ -153,9 +155,29 @@ AFlyingCabPawn::AFlyingCabPawn()
 	}
 }
 
+void AFlyingCabPawn::ApplyVisualBody()
+{
+	if (UStaticMesh* Mesh = VisualBodyAsset.LoadSynchronous())
+	{
+		if (VisualMesh->GetStaticMesh() != Mesh)
+		{
+			VisualMesh->EmptyOverrideMaterials();
+			VisualMesh->SetStaticMesh(Mesh);
+			VisualMesh->SetRelativeScale3D(FVector::OneVector);
+		}
+	}
+}
+
+void AFlyingCabPawn::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	ApplyVisualBody();
+}
+
 void AFlyingCabPawn::BeginPlay()
 {
 	Super::BeginPlay();
+	ApplyVisualBody();
 
 	CollisionBody->SetMassOverrideInKg(NAME_None, 100.0f, true);
 	CollisionBody->BodyInstance.SetDOFLock(EDOFMode::SixDOF);
@@ -798,22 +820,15 @@ void AFlyingCabPawn::RefreshVehicleIdentityAppearance(bool bForce)
 
 void AFlyingCabPawn::RefreshPlayerFocusAppearance()
 {
-	const bool bShouldShowFocus = IsPlayerControlled() && !IsDestroyed();
+	// Keep legacy Blueprint components inert; the vehicle needs no player marker.
 	if (PlayerFocusHalo)
 	{
-		PlayerFocusHalo->SetVisibility(bShouldShowFocus, true);
-		if (bShouldShowFocus)
-		{
-			PlayerFocusHalo->SetVectorParameterValueOnMaterials(
-				TEXT("Color"),
-				FVector(PlayerFocusColor.R, PlayerFocusColor.G, PlayerFocusColor.B));
-		}
+		PlayerFocusHalo->SetVisibility(false, true);
 	}
 	if (PlayerFocusLight)
 	{
-		PlayerFocusLight->SetLightColor(PlayerFocusColor);
-		PlayerFocusLight->SetIntensity(
-			bShouldShowFocus ? PlayerFocusLightIntensity : 0.0f);
+		PlayerFocusLight->SetIntensity(0.0f);
+		PlayerFocusLight->SetVisibility(false);
 	}
 }
 
@@ -1005,6 +1020,14 @@ void AFlyingCabPawn::UpdateVisualResponse(float DeltaSeconds, const FVector& Vel
 		DeltaSeconds,
 		PitchInterpSpeed);
 	VisualMesh->SetRelativeRotation(FRotator(NewPitch, 0.0f, 0.0f));
+	// Mirror only the visible body. The physical box, tilt and thruster axes stay intact.
+	const float Heading = FMath::Abs(Velocity.X) > 5.f ? Velocity.X : LastAppliedControlForce.X;
+	if (FMath::Abs(Heading) > 1.f)
+	{
+		FVector Scale = VisualMesh->GetRelativeScale3D();
+		Scale.X = FMath::Abs(Scale.X) * (Heading > 0.f ? 1.f : -1.f);
+		VisualMesh->SetRelativeScale3D(Scale);
+	}
 
 	const float HorizontalRatio = MaxHorizontalSpeed > UE_SMALL_NUMBER
 		? FMath::Clamp(Velocity.X / MaxHorizontalSpeed, -1.0f, 1.0f)

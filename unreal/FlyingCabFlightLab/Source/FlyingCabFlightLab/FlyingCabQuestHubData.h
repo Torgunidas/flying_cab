@@ -5,7 +5,10 @@
 #include "Containers/ArrayView.h"
 #include "CoreMinimal.h"
 
-/** Shared, code-native placement for the first quest hubs and their minimap markers. */
+class UFlyingCabNpcDefinition;
+class UWorld;
+
+/** Projection of the NPC roster and optional placed actors, shared by spawn, platforms and minimap. */
 struct FFlyingCabQuestHubDefinition
 {
 	FName HubId = NAME_None;
@@ -14,9 +17,10 @@ struct FFlyingCabQuestHubDefinition
 	FVector WorldLocation = FVector::ZeroVector;
 	FVector2D MinimapWorldPosition = FVector2D::ZeroVector;
 	FName QuestId = NAME_None;
+	UFlyingCabNpcDefinition* Profile = nullptr;
 };
 
 namespace FlyingCabQuestHubData
 {
-	FLYINGCABFLIGHTLAB_API TConstArrayView<FFlyingCabQuestHubDefinition> GetQuestHubs();
+	FLYINGCABFLIGHTLAB_API TArray<FFlyingCabQuestHubDefinition> GetQuestHubs(UWorld* World = nullptr);
 }

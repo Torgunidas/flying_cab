@@ -137,7 +137,7 @@ public:
 				Service.Location-FVector(0,0,104),FVector(110,45,35));
 			Support(Service.DisplayName,Service.Location);
 		}
-		for (const auto& Hub : FlyingCabQuestHubData::GetQuestHubs())
+		for (const auto& Hub : FlyingCabQuestHubData::GetQuestHubs(World))
 			Clear(Hub.DisplayName+TEXT(" plaza"),Hub.WorldLocation,Hub.WorldLocation+FVector(0,0,300),FVector(110,45,35));
 		TArray<USceneComponent*> Components;
 		City->GetComponents(Components);

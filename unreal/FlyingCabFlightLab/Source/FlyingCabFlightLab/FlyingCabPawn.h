@@ -13,6 +13,7 @@ class UFlyingCabThrusterVisualComponent;
 class UPointLightComponent;
 class UPrimitiveComponent;
 class USceneComponent;
+class UStaticMesh;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 class AFlyingCabPawn;
@@ -96,9 +97,11 @@ public:
 #endif
 
 protected:
+	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void BeginPlay() override;
 
 private:
+	void ApplyVisualBody();
 	void SetKeyboardHorizontalInput(float Value);
 	void SetKeyboardThrustInput(float Value);
 	void SetKeyboardServiceInput(float Value);
@@ -133,6 +136,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
 	TObjectPtr<UStaticMeshComponent> VisualMesh;
+
+	UPROPERTY()
+	TSoftObjectPtr<UStaticMesh> VisualBodyAsset;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Components")
 	TObjectPtr<UFlyingCabVehicleVitalsComponent> Vitals;

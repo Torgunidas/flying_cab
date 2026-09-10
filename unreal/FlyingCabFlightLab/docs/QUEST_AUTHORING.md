@@ -1,102 +1,76 @@
-# System zadań — workflow dla projektu Flying Cab
+# Questy i rozmowy NPC — konfiguracja w Unreal 5.8
 
-System jest lekki w runtime, ale jego format jest traktowany jako rdzeń gry. Teksty są wyłącznie prezentacją. Logika, zapis i przyszłe dialogi odnoszą się do stabilnych `FName`: `QuestId`, `ObjectiveId`, `EventId` oraz opcjonalnego `TargetId`.
+Po przebudowie projektu uruchom ponownie edytor. Otwórz **Tools → Flying Cab — Quest & Dialogue tools**. To punkt wejścia do tworzenia questów, profili NPC i rozmów oraz otwierania katalogu i listy NPC. Te same typy assetów są dostępne w Content Browser w kategorii **Flying Cab**.
 
-## Architektura
+## Dodanie zadania do Mike’a lub Jacka
 
-| Element | Odpowiedzialność |
+1. Wybierz **New quest**, nadaj nazwę assetu i zapisz go w `Content/Data/Quests`.
+2. Ustaw `Title`, `Description` i kategorię `Main` lub `Side`. Identyfikatory powstają automatycznie, również przy duplikowaniu assetu.
+3. Rozwiń `Objectives`. Dla każdego etapu wybierz **Objective type**, wpisz opis dla gracza i ustaw `Required Count`. Przy przewozach wybierz opcjonalną dzielnicę w **Target**; `Any / no filter` oznacza dowolny cel.
+4. Ustaw `Reward`. Jeśli gracz ma wrócić po nagrodę, zaznacz `Requires Turn In`. W **Turn in at** możesz wybrać konkretnego NPC albo pozostawić dowolnego NPC oferującego ten quest.
+5. Kliknij **Add to catalog**, następnie **Validate**. Zapisz quest i katalog przez **Save All**.
+6. Otwórz `Content/Data/Narrative/DA_NPC_Mike` lub `DA_NPC_Jack`. Dodaj element w `Topics` i wskaż nowy quest w polu `Quest`. Pusty `Title` używa tytułu zadania. Puste `Dialogue` uruchamia gotową rozmowę o przyjęciu, postępie i oddaniu zadania.
+7. Kliknij **Preview conversation**, sprawdź rozmowę dla różnych stanów i zapisz profil. Uruchom nową sesję Play w **FREE ROAM**, podejdź pieszo do NPC i naciśnij `Q`.
+
+Samo otwarcie rozmowy nie przyjmuje zadania. Gracz wybiera temat, a następnie odpowiedź przyjmującą zlecenie. Ukończone zadanie wymagające oddania otrzymuje osobną odpowiedź odbioru nagrody. Nagroda może zostać przyznana tylko raz.
+
+## Dostępne cele
+
+Zachowano dotychczasowe typy. Cele wykonują się kolejno; wcześniejsze zdarzenia nie są naliczane wstecz. Filtr dotyczy identyfikatora przekazywanego przez istniejącą mechanikę.
+
+| Wybór w edytorze | Co jest liczone / filtrowane |
 |---|---|
-| `UFlyingCabQuestDefinition` | Niezmienna treść jednego zadania: tytuł, sekwencja celów, oddanie, nagrody, następne zadanie i identyfikatory przyszłych dialogów. |
-| `UFlyingCabQuestCatalog` | Jedyny indeks questów używanych przez grę. Domyślna ścieżka: `/Game/Data/Quests/DA_FlyingCabQuestCatalog`. |
-| `UFlyingCabQuestSubsystem` | Źródło prawdy runtime w `GameInstance`: statusy, aktywny etap, liczniki i śledzone zadanie. |
-| `UFlyingCabQuestEventComponent` | Komponent do dodania do dowolnego Blueprintu. Emituje wybrane `EventId`, `TargetId` i `Amount`. |
-| `AFlyingCabQuestGiver` | Konfigurowalny aktor oferujący, przypominający i przyjmujący jedno zadanie. |
-| `AFlyingCabQuestInteractable` | Gotowy ogólny obiekt interakcji, którego nie trzeba programować. |
+| Deliver passengers | Zakończone kursy; opcjonalny filtr dzielnicy docelowej. |
+| Pick up passengers | Zakończone odbiory; filtr wskazuje dzielnicę **docelową**, nie miejsce odbioru. |
+| Earn credits | Dodatni przychód od rozpoczęcia etapu, również nagrody questowe. Wydatki nie cofają postępu. |
+| Buy fuel | Faktycznie kupione jednostki paliwa. |
+| Repair vehicle | Faktycznie kupione jednostki naprawy. |
+| Enter / Exit a vehicle | Wejścia do pojazdu lub wyjścia; zaawansowany filtr identyfikatora pojazdu. |
+| Earn a near-miss bonus | Przyznane bonusy near miss. |
+| Use an object / finish an NPC conversation | Użycia interactable lub normalnie zakończone rozmowy; opcjonalny filtr obiektu/NPC. |
+| Finish an NPC conversation | Normalnie zakończone rozmowy po odwiedzeniu tematu; zamknięcie przez `Esc` nie liczy się. |
+| Claim or confirm access at a terminal | Przyznanie lub potwierdzenie dostępu przez terminal. |
 
-GameMode jedynie łączy ukończenie zadania z istniejącymi właścicielami nagród: ekonomią i `UFlyingCabProgressionSubsystem`. HUD tylko czyta `GetTrackerText()`.
+`Target ID (advanced / custom objects)` służy istniejącym identyfikatorom obiektów. Nie trzeba go wpisywać ręcznie dla dzielnic ani NPC obecnych w liście lub na otwartej mapie. Zdarzenia z własnych Blueprintów wymagają wpisu w `AllowedCustomEventIds` katalogu i emisji przez `UFlyingCabQuestEventComponent`. Nie dodano nowych mechanik konkretnego pasażera ani dostarczania konkretnego pojazdu.
 
-## Tworzenie zadania w edytorze
+## Własne dialogi
 
-1. W Content Browser wybierz `Add` → `Data` → `Data Asset`, a następnie klasę `FlyingCabQuestDefinition`.
-2. Ustaw unikalne `QuestId`, tytuł, opis oraz kategorię `Main` albo `Side`.
-3. Dodaj cele w kolejności wykonania. Każdy cel potrzebuje:
-   - unikalnego `ObjectiveId` w obrębie zadania,
-   - tekstu dla gracza,
-   - `EventId`,
-   - opcjonalnego `TargetId`, jeśli liczy się konkretny obiekt,
-   - `RequiredCount` większego od zera.
-4. Jeżeli gracz ma wrócić do zleceniodawcy, zaznacz `Requires Turn In`.
-5. Ustaw nagrodę w kredytach i opcjonalne identyfikatory dostępu.
-6. Dodaj asset do `DA_FlyingCabQuestCatalog`.
-7. Przypisz asset do aktora `FlyingCabQuestGiver` na mapie albo uruchom go przez `StartQuest` z Blueprintu.
+W narzędziach wybierz **New conversation — quest template** albo **New conversation — small talk**. Pierwszy szablon zawiera ofertę, przypomnienie, oddanie i stan po ukończeniu. Drugi jest zwykłą rozmową bez zadania.
 
-System ma wbudowany katalog zastępczy, dlatego działa także przed utworzeniem assetów binarnych. Po utworzeniu katalogu w Content Browserze jego dane automatycznie zastąpią definicje demonstracyjne C++.
+- `Nodes` zawiera wypowiedzi. Pusty `Speaker` używa imienia NPC. `Choices` to odpowiedzi gracza.
+- `Action` określa efekt odpowiedzi: kontynuacja, przyjęcie, oddanie, śledzenie questa lub powrót do tematów. Puste `Quest` korzysta z questa wskazanego na temacie NPC.
+- **Go to** wybiera następną wypowiedź z listy zawierającej fragment tekstu. `End conversation` kończy rozmowę. Akcja `Back to topics` wraca do tematów i ignoruje przejście.
+- **Default start** wskazuje start rozmowy. `Entry Rules` są sprawdzane od góry; pierwsza pasująca reguła statusu wybiera inną wypowiedź.
+- `Conditions` odpowiedzi wymagają spełnienia wszystkich warunków. `Invert` odwraca warunek. Niedostępna odpowiedź jest wyłączona z wyjaśnieniem albo ukryta przez `Hide When Unavailable`.
+- Teksty mogą używać `{QuestTitle}`, `{QuestDescription}`, `{Objective}`, `{Progress}`, `{Required}` i `{RewardCredits}`.
 
-## Wbudowane zdarzenia
+Identyfikatory wypowiedzi są automatyczne. Po dodaniu nowej wypowiedzi wybierz ją z listy przejść. **Validate** wykrywa m.in. puste teksty i nieistniejące przejścia. **Preview conversation** działa bez Play i symuluje stan questów bez przyznawania rzeczywistych nagród. Przy podglądzie samego dialogu wybierz kontekst questa; przy podglądzie profilu bierze go z tematu. Zmiana początkowego statusu i ponowne uruchomienie pozwalają sprawdzić ofertę, postęp, oddanie i stan po ukończeniu. Podgląd nie symuluje przejazdów ani ekonomii.
 
-| EventId | Emitowane, gdy |
-|---|---|
-| `Vehicle.Entered` | gracz przejmuje pojazd; `TargetId` to identyfikator pojazdu |
-| `Vehicle.Exited` | gracz opuszcza pojazd |
-| `Passenger.PickedUp` | zakończy się curbside link; `TargetId` to stabilny identyfikator dzielnicy docelowej |
-| `Passenger.Delivered` | zakończy się kurs i naliczona zostanie opłata; `TargetId` to ta sama dzielnica docelowa |
-| `Economy.CreditsEarned` | przyznano dodatni przychód; `Amount` to faktycznie przyznane kredyty, a wydatki nie cofają postępu |
-| `Service.FuelPurchased` | faktycznie zakupiono paliwo; `Amount` to liczba jednostek |
-| `Service.RepairPurchased` | faktycznie naprawiono kadłub |
-| `Traffic.NearMiss` | przyznano nagrodę za near miss |
-| `Interaction.Completed` | pomyślnie użyto interactable; `TargetId` pochodzi z aktora |
-| `QuestGiver.Interacted` | gracz rozmawia z questgiverem |
-| `Progression.AccessGranted` | terminal przyznał albo potwierdził dostęp |
+Przypisz gotowy asset do `Dialogue` w odpowiednim temacie profilu. Jeden NPC może mieć wiele zadań i tematów niezwiązanych z zadaniami.
 
-Nowych typów celów nie dodajemy przez rozbudowę `switch`. Nowa mechanika emituje stabilne zdarzenie, a projektant wpisuje ten sam `EventId` w definicji zadania. Jeśli zdarzenie ma nie liczyć się globalnie, używa `TargetId`.
+## Dodanie lub przeniesienie NPC
 
-Literówki w `EventId` są odrzucane przez walidację katalogu. Zdarzenia emitowane wyłącznie przez Blueprinty trzeba najpierw jawnie dopisać do `AllowedCustomEventIds` w `DA_FlyingCabQuestCatalog`; dzięki temu pozostają data-driven, ale nadal podlegają kontroli pisowni.
+Utwórz **New NPC profile**, ustaw imię, powitanie, literę minimapy i tematy. Następnie użyj jednej z możliwości:
 
-Dzielnice mają stabilne identyfikatory w `DA_FlyingCabCityLayout`, niezależne od tekstu wyświetlanego, np. `District.YellowProjects` oraz `District.OrbitalGardens`. Użyj takiego `DistrictId` jako `TargetId`, aby cel dotyczył podjęcia pasażera jadącego do konkretnej dzielnicy albo dostarczenia go do niej.
+- **Open NPC roster**: dodaj profil i `World Location`. Lista zasila automatyczne tworzenie NPC oraz znaczniki minimapy.
+- Umieść aktora `FlyingCabQuestGiver` na mapie i przypisz `Npc Profile`. Aktor z tym samym identyfikatorem zastępuje pozycję z listy. Umieszczony nowy profil również trafia do znaczników.
 
-## Questgiverzy, interactables i dialogi
+Każdy osobny NPC powinien mieć osobny profil; duplikacja profilu nadaje nową tożsamość. Lokalizacja w liście jest punktem pojawienia się aktora, więc dobierz wysokość do podłoża. Nowy punkt sprawdź pieszo w Play.
 
-- Questgiver działa już bez dialogu: pierwsza interakcja przyjmuje zadanie, kolejna śledzi je, a stan `ReadyToTurnIn` je kończy.
-- Pierwsze huby są opisane wspólnie w `FlyingCabQuestHubData`: Mike działa w biurze Nightshift, a Jack na skybridge'u w Cobalt Heights. Te same dane sterują spawnem i znacznikami `M`/`J` na minimapie.
-- `OfferDialogueId`, `ActiveDialogueId` i `CompletionDialogueId` są zarezerwowanymi połączeniami z przyszłym systemem dialogowym. Nie zawierają tekstu ani logiki questa.
-- Przyszły dialog powinien pytać subsystem o `QuestId`/status i wywoływać jego publiczne API. Nie może bezpośrednio modyfikować `FFlyingCabQuestRuntimeState`.
-- Każdy nowy rodzaj obiektu świata może implementować `IFlyingCabInteractable::GetQuestTargetId()` lub otrzymać `UFlyingCabQuestEventComponent` w Blueprintcie.
+Mike i Jack korzystają z `DA_NPC_Mike`, `DA_NPC_Jack` i `DA_FlyingCabNpcRoster` w `Content/Data/Narrative`. Ich oryginalne questy i lokalizacje są zachowane. Każdy ma też przykładowy temat o mieście. Domyślne assety oraz opcjonalny Widget Blueprint rozmowy wybiera się w **Project Settings → Game → Flying Cab Narrative**.
 
-## Zasady zakresu
+## Powiązania zadań i granice wersji
 
-- Questy działają w Free Roam. Time Attack wyłącza ich zdarzenia i tracker, aby nie mieszać progresji z konkurencyjnym wynikiem.
-- Stan żyje obecnie przez czas instancji aplikacji. Struktura `FFlyingCabQuestRuntimeState` ma pola `SaveGame`, ale zapis na dysk zostanie podłączony dopiero razem z zatwierdzonym zakresem pełnego save'a.
-- Cele są obecnie sekwencyjne. Rozgałęzienia powinny wybierać następny asset zadania lub późniejszy dialog; nie dodajemy grafu zależności do pierwszej wersji.
-- Nagrody nadaje koordynator domeny. Subsystem zadań nie posiada kredytów, licencji, pojazdów ani UI.
+`Prerequisite Quests` wymaga ukończenia wszystkich wskazanych zadań przed przyjęciem. `Next Quest` próbuje uruchomić wskazane zadanie po ukończeniu bieżącego i respektuje jego warunki. Wszystkie powiązane questy muszą znaleźć się w katalogu; walidacja odrzuca nieprawidłowe definicje i cykle w łańcuchach następników oraz wymagań. Gdy inne wymaganie nie jest jeszcze ukończone, następny quest trzeba później przyjąć normalną drogą.
 
-## Pierwszy pionowy wycinek
+Questy i rozmowy są dostępne w Free Roam. Time Attack nie zmienia ich postępu. Stan questów żyje w `GameInstance`; nie dodano zapisu na dysk. Po zmianie struktury definicji rozpocznij nową sesję Play. Dotychczasowy dziennik `J` pozostaje widokiem statusów i śledzenia.
 
-- `Quest.FirstShift` uruchamia się automatycznie w Free Roam: odbierz pasażera, dostarcz go, odbierz 75 kredytów.
-- `Quest.NightshiftContract` oferuje Mike w biurze Nightshift: ukończ dwa kursy, wróć do zleceniodawcy, odbierz 200 kredytów.
-- `Get_Money` oferuje Jack na skybridge'u w Cobalt Heights i jest pierwszym zadaniem w kategorii `Side`.
-- Są to definicje zastępcze do testowania fundamentu. Docelową treść tworzymy jako Data Assets bez zmian w C++.
+Dialog pauzuje grę. Odpowiedzi wybiera się kliknięciem/dotykiem lub `W/S` / strzałkami i `Enter` / `Spacja`; `Esc` zamyka rozmowę. Logika wyborów należy do `UFlyingCabDialogueSession`, a nie widgetu. Docelowy Widget Blueprint może implementować `PresentDialogue` i korzystać z `ChooseOption` / `CloseDialogue`; publiczne API subsystemu questów pozostaje właścicielem postępu i ukończenia.
 
-## Dziennik i komunikacja z graczem
+## Praktyczna próba
 
-- `J` otwiera modalny `SHIFT LOG`; `J`, `Esc` albo przycisk `CLOSE` zamyka ekran.
-- Zakładki `MAIN QUEST` i `SIDE QUEST` dzielą zadania według kategorii. Każdy wpis pozostaje w swojej zakładce i pokazuje stan `TAKEN`, `TRACKED`, `READY` albo `DONE`.
-- Wybranie wpisu pokazuje opis, bieżący cel, licznik postępu i nagrodę. `TRACK` wybiera zadanie dla małego trackera HUD, a `STOP TRACKING` ukrywa go bez porzucania zadania.
-- Dotyk jest domyślny: gracz dotyka zakładek, dużych wierszy, przycisków `PREV`/`NEXT` oraz akcji śledzenia. Bez myszy działają też `A/D` lub strzałki lewo/prawo (zakładki), `W/S` lub strzałki góra/dół (wybór), `Enter`/`Spacja` (śledzenie) oraz `J`/`Esc` (zamknięcie).
-- Przyjęcie zadania, ukończenie celu, gotowość do oddania, ukończenie zadania i zniszczenie aktywnej taksówki emitują duże kolejkowane plansze. Drobne informacje używają oddzielnej kolejki komunikatów HUD.
-- UI konsumuje `FFlyingCabQuestJournalEntry` i `FFlyingCabQuestUpdate`. Nie czyta prywatnych map subsystemu i nie modyfikuje stanu runtime.
-- Native widget jest działającym widokiem bazowym. Docelową oprawę można zastąpić klasą potomną Widget Blueprint bez przenoszenia logiki zadań do UMG.
-
-## Test ręczny pierwszej wersji
-
-1. Uruchom `FlightLab` i wybierz `FREE ROAM`.
-2. W prawym górnym rogu powinien pojawić się tracker `FIRST SHIFT`.
-3. Odbierz dowolnego pasażera. Tracker powinien przełączyć się z odbioru na bezpieczny dowóz.
-4. Zakończ kurs. Powinien pojawić się komunikat ukończenia zadania i dodatkowa nagroda `75 CR` poza zwykłą opłatą za kurs.
-5. Odszukaj na minimapie czarny znacznik `M`, poleć do wejścia `NIGHTSHIFT OFFICE`, wysiądź, wejdź do środka i podejdź do Mike'a oznaczonego `!`.
-6. Naciśnij `Q`, aby przyjąć `NIGHTSHIFT CONTRACT`. Wróć do miasta i wykonaj dwa pełne kursy.
-7. Tracker powinien pokazać kolejno `0/2`, `1/2`, a następnie prośbę o powrót do questgiversa.
-8. Wróć do dispatchera. Jego marker powinien zmienić się na `?`; interakcja kończy zadanie i przyznaje `200 CR` dokładnie raz.
-9. Uruchom `TIME ATTACK`. Tracker zadań nie może być widoczny, a kursy nie mogą zmieniać ich postępu ani przyznawać nagród questowych.
-10. W `FREE ROAM` naciśnij `J`. Sprawdź dotykiem i klawiaturą przełączanie `MAIN QUEST`/`SIDE QUEST`, wybór zadania oraz `TRACK`/`STOP TRACKING`.
-11. Odszukaj na minimapie czarny znacznik `J`, wyląduj na skybridge'u w Cobalt Heights, podejdź na piechotę do Jacka i przyjmij `Get_Money`. Zadanie powinno pojawić się jako `TAKEN` albo `TRACKED` w `SIDE QUEST`.
-12. Otwórz dziennik podczas trzymania `W` albo `A`, puść klawisz i zamknij dziennik. Sterowanie nie może pozostać zablokowane.
+1. Dodaj Mike’owi quest: jeden dowóz, nagroda 50 CR, wymagany powrót do Mike’a.
+2. W podglądzie sprawdź cztery stany; w Free Roam otwórz temat i odmów. Zadanie nie powinno pojawić się jako przyjęte.
+3. Przyjmij zadanie, wykonaj kurs, wróć i odbierz nagrodę. Kolejne otwarcie rozmowy nie może jej powtórzyć.
+4. Porozmawiaj o mieście i wróć do tematów. Sprawdź też rozmowę z Jackiem.
+5. Otwórz dialog z trzymanym `A`, puść klawisz w rozmowie i zamknij ją. Sprawdź dalszy ruch pieszy, wejście do auta i dziennik.

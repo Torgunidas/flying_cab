@@ -14,6 +14,9 @@ class AFlyingCabCameraRig;
 class AFlyingCabPawn;
 class UFlyingCabGameFlowWidget;
 class UFlyingCabQuestJournalWidget;
+class UFlyingCabDialogueWidget;
+class UFlyingCabDialogueSession;
+class AFlyingCabQuestGiver;
 class UFlyingCabTouchControls;
 class UPrimitiveComponent;
 
@@ -56,6 +59,12 @@ public:
 		float DurationSeconds = 2.8f,
 		int32 InPriority = 0) const;
 	void CloseQuestJournal();
+	bool OpenDialogue(AFlyingCabQuestGiver* Npc);
+	UFUNCTION(BlueprintCallable, Category = "Flying Cab|Dialogue")
+	void CloseDialogue();
+	bool IsDialogueOpen() const { return bDialogueOpen; }
+	UFlyingCabDialogueSession* GetDialogueSession() const { return DialogueSession; }
+	UFlyingCabDialogueWidget* GetDialogueWidget() const { return DialogueWidget; }
 	void SetQuestStatus(const FText& Status);
 	void SetObjectiveStatus(const FText& Status);
 	void SetMinimapState(
@@ -137,6 +146,8 @@ private:
 
 	UFUNCTION()
 	void HandleQuestUpdated(FFlyingCabQuestUpdate Update);
+	UFUNCTION() void HandleDialogueChanged();
+	UFUNCTION() void HandleDialogueNpcEndPlay(AActor* Actor, EEndPlayReason::Type Reason);
 
 	UPROPERTY(EditDefaultsOnly, Category = "Flying Cab|On Foot", meta = (ClampMin = "0.0"))
 	float ExitGroundReach = 120.0f;
@@ -184,6 +195,9 @@ private:
 
 	UPROPERTY(Transient)
 	TObjectPtr<UFlyingCabTouchControls> InterfaceWidget;
+	UPROPERTY(Transient) TObjectPtr<UFlyingCabDialogueWidget> DialogueWidget;
+	UPROPERTY(Transient) TObjectPtr<UFlyingCabDialogueSession> DialogueSession;
+	TWeakObjectPtr<AFlyingCabQuestGiver> DialogueNpc;
 
 	UPROPERTY(VisibleAnywhere, Category = "Flying Cab|Input")
 	TObjectPtr<UFlyingCabControlInputComponent> ControlInput;
@@ -204,6 +218,7 @@ private:
 
 	bool bGameFlowScreenOpen = false;
 	bool bQuestJournalOpen = false;
+	bool bDialogueOpen = false;
 	bool bDeveloperObserverMode = false;
 	bool bContextInteractionRequested = false;
 	bool bVehicleResetRequested = false;

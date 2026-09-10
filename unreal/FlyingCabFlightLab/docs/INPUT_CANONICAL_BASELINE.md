@@ -78,3 +78,23 @@ Przy zagęszczeniu osiedli na prośbę użytkownika w `FlyingCabPawn.h` oraz `Fl
 Na prośbę użytkownika dodano `UFlyingCabThrusterVisualComponent`. Zmiany w `FlyingCabPawn.h/.cpp` obejmują wyłącznie referencję i utworzenie komponentu, zapis prędkości przed dotychczasowym tłumieniem oraz przekazanie już zastosowanego przyspieszenia napędu i tłumienia do wizualizacji, przed limitami prędkości. Reset i recovery zerują dodatkowo stan efektów. Dotychczasowe instrukcje odczytu wejścia, stosowania sił, tłumienia i ograniczania prędkości zachowały kolejność i treść; mapowania, bramki, flush, Q/J/R i wariant `UseControlFrame=0` pozostają bez zmian.
 
 Na macOS nie ma `pwsh`, więc próba uruchomienia `scripts/Verify-InputBaseline.ps1` zakończyła się brakiem interpretera. Przed i po zmianach wykonano równoważne sprawdzenie SHA-256 w Pythonie z identyczną normalizacją tekstu UTF-8/LF: te same pięć historycznie zmienionych plików, 27 zgodnych. Przejrzano powyższy przyrost w plikach pojazdu; manifest bez zmian. Wyniki testów i granice efektu opisuje `THRUSTER_VISUALS.md`.
+
+### Model auta o małej liczbie polygonów — MVP
+
+Na prośbę użytkownika `FlyingCabPawn.h/.cpp` dodają miękką referencję do siatki auta, podmianę samego `VisualMesh` podczas konstrukcji/BeginPlay oraz odwracanie jego skali X zgodnie z kierunkiem ruchu. Parametr materiału `Color` pozostaje obsługiwany. Kolizja, pochylenie, fizyka, obliczenia siły, wejście, reset i recovery nie są zmieniane. Zakres opisuje `LOW_POLY_CAB.md`. Kontrola manifestu nadal wymaga równoważnego skryptu Python ze względu na brak `pwsh`; manifest pozostaje historyczny. Zgodnie z poleceniem użytkownika testy w Unreal i ocenę wizualną wykonuje użytkownik; po stronie implementacji pozostają przegląd kodu i kompilacja.
+
+Przy dodaniu lakierów i podmianie pojazdów NPC użytkownik zlecił usunięcie oznaczenia gracza. Dalsza zmiana w `FlyingCabPawn.cpp` dotyczy wyłącznie `RefreshPlayerFocusAppearance`: obwódka jest niewidoczna, a dodatkowe światło wyłączone. Odczyt wejścia, possession, reset, recovery i kolejność działania pozostają niezmienione. Dostosowano istniejące oczekiwanie testu dotyczące widoczności oznaczenia, bez uruchamiania testów w Unreal.
+
+### Rozmowy NPC — 2026-09-10
+
+Po audycie użytkownik zlecił wdrożenie konfiguracji questów i rozmów. Dodano osobny modal dialogu, z pauzą, wyczyszczeniem wejść i powrotem przez istniejącą ścieżkę przywracania sterowania. `Q` nadal trafia do istniejącej kolejki interakcji; otwiera rozmowę dopiero podczas wykonania interakcji z NPC. Nie zmieniono kolejności obsługi Q/J/R, mapowań, fizyki ani domyślnego `UseControlFrame=0`.
+
+Przed zmianami równoważne sprawdzenie SHA-256 wykazało 27 zgodnych plików i pięć wcześniej opisanych różnic; `pwsh` nie jest dostępny. Po wdrożeniu: 23 zgodne, dziewięć zmienionych. Cztery nowe różnice obejmują:
+
+- `FlyingCabPlayerController.h/.cpp`: czas życia sesji/widgetu rozmowy, otwieranie i zamykanie modalu, wykluczenie równoczesnego dziennika/obserwatora oraz ukrycie kontrolek na czas rozmowy.
+- `FlyingCabControlInputComponent.h`: dopisany powód blokady `Dialogue`, za dotychczasowymi wartościami enumu; algorytm wejścia bez zmian.
+- `FlyingCabFlightLab.uproject`: rejestracja modułu edytora `FlyingCabNarrativeEditor`; wersja silnika bez zmian.
+
+W już zmienionym `FlyingCabTouchControls.cpp` podmieniono dodatkowo tylko źródło znaczników NPC na listę profili i aktorów otwartej mapy. Zastane zmiany w Pawnie, efektach dysz, ruchu i pojazdach zostały zachowane. Historyczny manifest nie został zmieniony.
+
+Kompilacja edytora UE 5.8 zakończyła się powodzeniem. Dodano test PIE rozmowy obejmujący m.in. puszczenie `A` w dialogu i wznowienie sterowania; uruchomienie pełnych testów zostało odrzucone w oknie uprawnień, więc brak wyniku runtime dla tego wdrożenia. Ocena w grze i ręczna akceptacja pozostają do wykonania; nie nadano nowej wersji kanonicznej. Instrukcja: `QUEST_AUTHORING.md`.

@@ -127,7 +127,7 @@ namespace FlyingCabCityData
 {
 	TStaticArray<FFlyingCabHighwayStrip, 6> GetHighwayStrips();
 	bool IsOnHighway(const FVector& WorldLocation);
-	TConstArrayView<FFlyingCabDistrictDefinition> GetDistricts();
+	FLYINGCABFLIGHTLAB_API TConstArrayView<FFlyingCabDistrictDefinition> GetDistricts();
 	TConstArrayView<FFlyingCabNeighborhoodDefinition> GetNeighborhoods();
 	TConstArrayView<FFlyingCabNeighborhoodDefinition> GetFallbackNeighborhoods();
 	FVector GetPassengerPickupLocation(const FVector& DistrictStopLocation);

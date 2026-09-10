@@ -8,6 +8,7 @@
 #include "FlyingCabLivingRoute.h"
 #include "FlyingCabLivingWorldProfile.h"
 #include "FlyingCabTrafficVehicle.h"
+#include "FlyingCabVehiclePaint.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabLivingWorld, Log, All);
 
@@ -209,10 +210,7 @@ bool AFlyingCabLivingWorldManager::SpawnPopulation()
 				{
 					return false;
 				}
-				const TArray<FLinearColor>& Colors = Route->GetVehicleColors();
-				const FLinearColor Color = Colors.IsEmpty()
-					? FLinearColor(0.08f, 0.80f, 1.0f)
-					: Colors[AgentIndex % Colors.Num()];
+				const FLinearColor Color = FlyingCabVehiclePaint::Get(TrafficVehicles.Num());
 				Vehicle->ConfigureLivingRoute(Route, InitialAlpha, Color);
 				Vehicle->OnLivingStopReached.AddUObject(
 					this,

@@ -28,13 +28,9 @@ UFlyingCabThrusterVisualComponent::UFlyingCabThrusterVisualComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.TickGroup = TG_PostPhysics;
-	NozzleMesh = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Effects/Thrusters/SM_VectorNozzle.SM_VectorNozzle")));
 	CardMesh = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Effects/Thrusters/SM_ThrustCard.SM_ThrustCard")));
-	SphereMesh = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Engine/BasicShapes/Sphere.Sphere")));
 	PlumeBase = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/Effects/Thrusters/M_ThrustPlume.M_ThrustPlume")));
 	HeatBase = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/Effects/Thrusters/M_ThrustHeat.M_ThrustHeat")));
-	GlowBase = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/Effects/Thrusters/M_NozzleGlow.M_NozzleGlow")));
-	MetalBase = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/Effects/Thrusters/M_NozzleMetal.M_NozzleMetal")));
 	DustBase = TSoftObjectPtr<UMaterialInterface>(FSoftObjectPath(TEXT("/Game/Effects/Thrusters/M_ThrustDust.M_ThrustDust")));
 }
 
@@ -65,20 +61,16 @@ void UFlyingCabThrusterVisualComponent::BeginPlay()
 	{
 		if (Mesh->GetFName() == TEXT("VisualMesh")) BodyVisual = Mesh;
 	}
-	for (int32 Index = 0; Index < 2; ++Index)
+	for (int32 Index = 0; Index < 3; ++Index)
 	{
 		auto& Jet = Nozzles.AddDefaulted_GetRef();
 		auto Name = [Index](const TCHAR* Suffix) { return FName(*FString::Printf(TEXT("Thruster%d%s"), Index, Suffix)); };
-		Jet.Joint = CreateMesh(Name(TEXT("Joint")), SphereMesh.LoadSynchronous(), MetalBase.LoadSynchronous());
-		Jet.Nozzle = CreateMesh(Name(TEXT("Nozzle")), NozzleMesh.LoadSynchronous(), nullptr);
-		Jet.Core = CreateMesh(Name(TEXT("Core")), SphereMesh.LoadSynchronous(), GlowBase.LoadSynchronous());
 		Jet.Plume = CreateMesh(Name(TEXT("Plume")), CardMesh.LoadSynchronous(), PlumeBase.LoadSynchronous());
 		Jet.Heat = CreateMesh(Name(TEXT("Heat")), CardMesh.LoadSynchronous(), HeatBase.LoadSynchronous());
 		Jet.Plume->SetTranslucentSortPriority(2);
 		Jet.Heat->SetTranslucentSortPriority(1);
 		Jet.PlumeMaterial = Jet.Plume->CreateDynamicMaterialInstance(0);
 		Jet.HeatMaterial = Jet.Heat->CreateDynamicMaterialInstance(0);
-		Jet.CoreMaterial = Jet.Core->CreateDynamicMaterialInstance(0);
 		if (Jet.PlumeMaterial) Jet.PlumeMaterial->SetScalarParameterValue(TEXT("Seed"), Index * 2.71f);
 		if (Jet.HeatMaterial) Jet.HeatMaterial->SetScalarParameterValue(TEXT("Seed"), Index * 2.71f);
 		Jet.Light = NewObject<UPointLightComponent>(GetOwner(), Name(TEXT("Light")));
@@ -102,22 +94,23 @@ void UFlyingCabThrusterVisualComponent::SubmitAcceleration(const FVector& Contro
 
 FVector UFlyingCabThrusterVisualComponent::GetExhaustDirection() const
 {
-	return FRotator(NozzlePitch, 0, 0).Vector();
+	return FRotator(ExhaustPitch, 0, 0).Vector();
 }
 
 void UFlyingCabThrusterVisualComponent::ResetVisuals()
 {
 	Demand = PendingDemand = FThrusterVisualDemand();
 	bHasSample = false;
-	DisplayedPower = MetalHeat = SurfaceTime = 0.f;
-	NozzlePitch = -90.f;
+	DisplayedPower = RearDisplayedPower = SurfaceTime = 0.f;
+	RearExhaustDirection = FVector(-1, 0, 0);
+	ExhaustPitch = -90.f;
 	for (auto& Particle : Particles)
 	{
 		Particle.Lifetime = 0.f;
 		Particle.Mesh->SetVisibility(false);
 	}
 	for (auto& Jet : Nozzles) Jet.SurfaceStrength = 0.f;
-	UpdateNozzles(0.f);
+	UpdatePlumes();
 }
 
 void UFlyingCabThrusterVisualComponent::TickComponent(float DeltaSeconds, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -137,47 +130,54 @@ void UFlyingCabThrusterVisualComponent::TickComponent(float DeltaSeconds, ELevel
 	VisualTime = FMath::Fmod(VisualTime + Dt, 4096.f);
 	DisplayedPower = FMath::FInterpTo(DisplayedPower, Demand.Power, Dt, Demand.Power > DisplayedPower ? 14.f : 22.f);
 	if (DisplayedPower < .002f) DisplayedPower = 0.f;
+	const float HorizontalAcceleration = Demand.Acceleration.X;
+	const float HorizontalSpeed = Body->GetPhysicsLinearVelocity().X;
+	// Follow travel direction; near rest use thrust so takeoff has a defined rear.
+	const float Heading = FMath::Abs(HorizontalSpeed) > 5.f ? HorizontalSpeed : HorizontalAcceleration;
+	if (FMath::Abs(Heading) > 1.f) RearExhaustDirection = FVector(Heading > 0.f ? -1.f : 1.f, 0, 0);
+	// A rear-facing exhaust represents propulsion; the lower jets show braking.
+	const float PropulsiveAcceleration = HorizontalAcceleration * -RearExhaustDirection.X;
+	const float RearPower = PropulsiveAcceleration > 1.f
+		? FMath::Clamp(PropulsiveAcceleration / 1400.f, 0.f, 1.25f) : 0.f;
+	RearDisplayedPower = FMath::FInterpTo(RearDisplayedPower, RearPower, Dt, RearPower > RearDisplayedPower ? 14.f : 22.f);
+	if (RearDisplayedPower < .002f) RearDisplayedPower = 0.f;
 	if (Demand.Power > .003f)
 	{
 		const float TargetPitch = FMath::RadiansToDegrees(FMath::Atan2(Demand.ExhaustDirection.Z, Demand.ExhaustDirection.X));
-		float Turn = FMath::FindDeltaAngleDegrees(NozzlePitch, TargetPitch);
-		// A horizontal reversal sweeps through the space below the chassis.
+		float Turn = FMath::FindDeltaAngleDegrees(ExhaustPitch, TargetPitch);
+		// Preserve the original underbody sweep when horizontal thrust reverses.
 		if (FMath::Abs(Turn) > 175.f) Turn = GetExhaustDirection().X < 0.f ? 180.f : -180.f;
-		NozzlePitch = FRotator::NormalizeAxis(NozzlePitch + FMath::Clamp(Turn, -900.f * Dt, 900.f * Dt));
+		ExhaustPitch = FRotator::NormalizeAxis(ExhaustPitch + FMath::Clamp(Turn, -900.f * Dt, 900.f * Dt));
 	}
 	else if (DisplayedPower < .02f)
 	{
-		NozzlePitch = FMath::FixedTurn(NozzlePitch, -90.f, 100.f * Dt);
+		ExhaustPitch = FMath::FixedTurn(ExhaustPitch, -90.f, 100.f * Dt);
 	}
-	MetalHeat = FMath::FInterpTo(MetalHeat, FMath::Min(DisplayedPower, 1.f), Dt, Demand.Power > 0.f ? 5.f : 1.8f);
-	UpdateNozzles(Dt);
+	UpdatePlumes();
 	UpdateSurface(Dt);
 }
 
-void UFlyingCabThrusterVisualComponent::UpdateNozzles(float DeltaSeconds)
+void UFlyingCabThrusterVisualComponent::UpdatePlumes()
 {
-	const FVector Exhaust = GetExhaustDirection();
-	const FQuat Rotation = FRotationMatrix::MakeFromXZ(Exhaust, FVector(0, 1, 0)).ToQuat();
+	const FVector UnderbodyExhaust = GetExhaustDirection();
 	const FQuat BodyRotation = BodyVisual ? BodyVisual->GetComponentQuat() : GetOwner()->GetActorQuat();
-	const float Alignment = Demand.Power > .003f ? FMath::Max(0.f, FVector::DotProduct(Exhaust, Demand.ExhaustDirection)) : 1.f;
-	const float JetPower = DisplayedPower * Alignment * Alignment;
+	const float Alignment = Demand.Power > .003f ? FMath::Max(0.f, FVector::DotProduct(UnderbodyExhaust, Demand.ExhaustDirection)) : 1.f;
+	const float UnderbodyPower = DisplayedPower * Alignment * Alignment;
 	for (int32 Index = 0; Index < Nozzles.Num(); ++Index)
 	{
 		auto& Jet = Nozzles[Index];
-		// Outboard gimbals let a braking jet turn upward without passing through the hull.
-		const FVector Mount = GetOwner()->GetActorLocation() + BodyRotation.RotateVector(FVector(Index == 0 ? -84 : 84, 65, 4));
-		Jet.Mouth = Mount + Exhaust * 34.f;
-		Jet.Joint->SetWorldLocation(Mount);
-		Jet.Joint->SetWorldScale3D(FVector(.29f));
-		Jet.Nozzle->SetWorldLocationAndRotation(Mount, Rotation);
-		Jet.Nozzle->SetWorldScale3D(FVector(1));
-		Jet.Core->SetWorldLocationAndRotation(Mount + Exhaust * 23.f, Rotation);
-		Jet.Core->SetWorldScale3D(FVector(.06f, .26f, .26f));
-		if (Jet.CoreMaterial) Jet.CoreMaterial->SetScalarParameterValue(TEXT("Heat"), MetalHeat);
-		const float Length = (95.f + 175.f * FMath::Sqrt(FMath::Max(0.f, JetPower))) * PlumeLengthScale;
+		const bool bRear = Index == 2;
+		const FVector Exhaust = bRear ? RearExhaustDirection : UnderbodyExhaust;
+		const float JetPower = bRear ? RearDisplayedPower : UnderbodyPower;
+		const FQuat Rotation = FRotationMatrix::MakeFromXZ(Exhaust, FVector(0, 1, 0)).ToQuat();
+		// Camera-side emission keeps reversing streams clear of the hull.
+		const FVector Mount = bRear ? FVector(114.f * RearExhaustDirection.X, 65, 0) : FVector(Index == 0 ? -84 : 84, 65, -35);
+		Jet.Mouth = GetOwner()->GetActorLocation() + BodyRotation.RotateVector(Mount);
+		const float Length = (95.f + 175.f * FMath::Sqrt(FMath::Max(0.f, JetPower))) * PlumeLengthScale * (bRear ? 1.f : .5f);
+		const float WidthScale = bRear ? 4.f : 3.f;
 		for (auto* Mesh : {Jet.Plume.Get(), Jet.Heat.Get()}) Mesh->SetWorldLocationAndRotation(Jet.Mouth, Rotation);
-		Jet.Plume->SetWorldScale3D(FVector(Length, 110.f, 1));
-		Jet.Heat->SetWorldScale3D(FVector(Length * 1.65f, 155.f, 1));
+		Jet.Plume->SetWorldScale3D(FVector(Length, 110.f * WidthScale, 1));
+		Jet.Heat->SetWorldScale3D(FVector(Length * 1.65f, 155.f * WidthScale, 1));
 		Jet.Plume->SetVisibility(JetPower > .005f);
 		Jet.Heat->SetVisibility(bEnableHeatDistortion && JetPower > .02f);
 		for (auto* Mat : {Jet.PlumeMaterial.Get(), Jet.HeatMaterial.Get()})
@@ -231,8 +231,10 @@ void UFlyingCabThrusterVisualComponent::UpdateSurface(float DeltaSeconds)
 		SurfaceTime = FMath::Fmod(SurfaceTime, .05f);
 		const FVector Exhaust = GetExhaustDirection();
 		FCollisionQueryParams Query(SCENE_QUERY_STAT(ThrusterOutwash), false, GetOwner());
-		for (auto& Jet : Nozzles)
+		// Preserve the existing two-stream surface effect; the rear plume is horizontal.
+		for (int32 Index = 0; Index < FMath::Min(2, Nozzles.Num()); ++Index)
 		{
+			auto& Jet = Nozzles[Index];
 			Jet.SurfaceStrength = 0.f;
 			FHitResult Hit;
 			if (bEnableSurfaceOutwash && DisplayedPower > .03f && Demand.Power > .01f

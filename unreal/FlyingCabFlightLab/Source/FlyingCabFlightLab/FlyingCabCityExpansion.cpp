@@ -154,7 +154,7 @@ void AFlyingCabCityExpansion::BuildExpansionGeometry()
 		AddDistrictLabel(Estate.DisplayName, C+FVector(0,-350,1300), Estate.Color);
 	}
 	// Dedicated quest plazas: no passenger offer, destination or service trigger on these pads.
-	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs())
+	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs(GetWorld()))
 	{
 		AddBlock(TEXT("QuestPlaza")+Hub.DisplayName, Hub.WorldLocation-FVector(0,0,110),
 			FVector(20,6,1), FLinearColor(.12f,.15f,.2f));

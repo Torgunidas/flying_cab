@@ -4,6 +4,7 @@
 
 #include "FlyingCabCityData.h"
 #include "FlyingCabQuestDefinition.h"
+#include "FlyingCabNarrativeSettings.h"
 #include "Misc/DataValidation.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFlyingCabQuestCatalog, Log, All);
@@ -166,7 +167,7 @@ bool UFlyingCabQuestCatalog::IsConfigurationValid(FString& OutError) const
 	return true;
 }
 
-bool UFlyingCabQuestCatalog::IsQuestEntryValid(
+bool UFlyingCabQuestCatalog::IsQuestContentValid(
 	const UFlyingCabQuestDefinition* Quest,
 	FString& OutError) const
 {
@@ -228,9 +229,7 @@ UFlyingCabQuestDefinition* UFlyingCabQuestCatalog::FindQuest(FName QuestId) cons
 
 UFlyingCabQuestCatalog* UFlyingCabQuestCatalog::LoadDefaultAsset()
 {
-	UFlyingCabQuestCatalog* Loaded = LoadObject<UFlyingCabQuestCatalog>(
-		nullptr,
-		QuestCatalogPath);
+	UFlyingCabQuestCatalog* Loaded = GetDefault<UFlyingCabNarrativeSettings>()->QuestCatalog.LoadSynchronous();
 	if (Loaded)
 	{
 		for (const UFlyingCabQuestDefinition* Quest : Loaded->Quests)
@@ -254,4 +253,36 @@ UFlyingCabQuestCatalog* UFlyingCabQuestCatalog::LoadDefaultAsset()
 const TCHAR* UFlyingCabQuestCatalog::GetDefaultAssetPath()
 {
 	return QuestCatalogPath;
+}
+
+
+bool UFlyingCabQuestCatalog::IsQuestEntryValid(const UFlyingCabQuestDefinition* Quest, FString& OutError) const
+{
+	TSet<const UFlyingCabQuestDefinition*> NextPath;
+	const UFlyingCabQuestDefinition* Current = Quest;
+	TFunction<bool(const UFlyingCabQuestDefinition*, TSet<const UFlyingCabQuestDefinition*>&)> CheckPrerequisites;
+	CheckPrerequisites = [this, &OutError, &CheckPrerequisites](const UFlyingCabQuestDefinition* Item, TSet<const UFlyingCabQuestDefinition*>& Path)
+	{
+		if (!Item || !Quests.Contains(Item)) { OutError = TEXT("Referenced quest is missing from the catalog."); return false; }
+		if (Path.Contains(Item)) { OutError = TEXT("Prerequisite quests form a cycle."); return false; }
+		if (!IsQuestContentValid(Item, OutError)) return false;
+		Path.Add(Item);
+		for (const UFlyingCabQuestDefinition* Required : Item->PrerequisiteQuests)
+			if (!CheckPrerequisites(Required, Path)) return false;
+		Path.Remove(Item);
+		return true;
+	};
+	while (Current)
+	{
+		if (!Quests.Contains(Current)) { OutError = TEXT("Next quest is not in the catalog. Use Add to catalog on that asset."); return false; }
+		if (NextPath.Contains(Current)) { OutError = TEXT("Next quest links form a cycle."); return false; }
+		NextPath.Add(Current);
+		TSet<const UFlyingCabQuestDefinition*> PrerequisitePath;
+		if (!CheckPrerequisites(Current, PrerequisitePath)) return false;
+		if (Current->NextQuest.IsNull()) { OutError.Reset(); return true; }
+		Current = Current->NextQuest.LoadSynchronous();
+		if (!Current) { OutError = TEXT("Next quest reference cannot be loaded."); return false; }
+	}
+	OutError = TEXT("The catalog contains an empty quest reference.");
+	return false;
 }

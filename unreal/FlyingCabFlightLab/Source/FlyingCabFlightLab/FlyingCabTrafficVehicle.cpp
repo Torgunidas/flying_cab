@@ -7,6 +7,7 @@
 #include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+#include "Engine/StaticMesh.h"
 #include "FlyingCabLivingPedestrian.h"
 #include "FlyingCabLivingRoute.h"
 #include "FlyingCabPawn.h"
@@ -34,6 +35,7 @@ AFlyingCabTrafficVehicle::AFlyingCabTrafficVehicle()
 	VisualMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	VisualMesh->SetMobility(EComponentMobility::Movable);
 	VisualMesh->SetRelativeScale3D(FVector(2.6f, 1.0f, 0.84f));
+	VisualBodyAsset = TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Vehicles/LowPolyCab/SM_LowPolyCab.SM_LowPolyCab")));
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(TEXT("/Engine/BasicShapes/Cube.Cube"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> BasicMaterial(
@@ -55,6 +57,32 @@ AFlyingCabTrafficVehicle::AFlyingCabTrafficVehicle()
 	RunningLight->SetCastShadows(false);
 }
 
+void AFlyingCabTrafficVehicle::ApplyVisualBody()
+{
+	if (UStaticMesh* Mesh = VisualBodyAsset.LoadSynchronous())
+	{
+		if (VisualMesh->GetStaticMesh() != Mesh)
+		{
+			VisualMesh->EmptyOverrideMaterials();
+			VisualMesh->SetStaticMesh(Mesh);
+			// Fit the existing traffic hull without changing its collisions.
+			VisualMesh->SetRelativeScale3D(FVector(130.f / 110.f, 50.f / 45.f, 42.f / 35.f));
+		}
+	}
+}
+
+void AFlyingCabTrafficVehicle::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	ApplyVisualBody();
+}
+
+void AFlyingCabTrafficVehicle::BeginPlay()
+{
+	Super::BeginPlay();
+	ApplyVisualBody();
+}
+
 void AFlyingCabTrafficVehicle::Configure(
 	const FVector& InRouteStart,
 	const FVector& InRouteEnd,
@@ -62,6 +90,7 @@ void AFlyingCabTrafficVehicle::Configure(
 	float InitialRouteAlpha,
 	const FLinearColor& VehicleColor)
 {
+	ApplyVisualBody();
 	RouteStart = InRouteStart;
 	RouteEnd = InRouteEnd;
 	const FVector RouteDelta = RouteEnd - RouteStart;
@@ -94,6 +123,7 @@ void AFlyingCabTrafficVehicle::ConfigureLivingRoute(
 	float InitialRouteAlpha,
 	const FLinearColor& VehicleColor)
 {
+	ApplyVisualBody();
 	LivingRoute = InRoute;
 	if (!LivingRoute)
 	{
@@ -453,6 +483,9 @@ void AFlyingCabTrafficVehicle::UpdateRoutePresentation(float DeltaSeconds)
 	{
 		VisualFacingDirection = FMath::Sign(RouteDirection.X);
 	}
+	FVector BodyScale = VisualMesh->GetRelativeScale3D();
+	BodyScale.X = FMath::Abs(BodyScale.X) * VisualFacingDirection;
+	VisualMesh->SetRelativeScale3D(BodyScale);
 	RunningLight->SetRelativeLocation(FVector(
 		VisualFacingDirection * 125.0f,
 		55.0f,

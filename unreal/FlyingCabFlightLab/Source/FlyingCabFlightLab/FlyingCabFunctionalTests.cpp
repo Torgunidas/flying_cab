@@ -284,8 +284,8 @@ namespace
 			Test->TestTrue(
 				TEXT("The gameplay camera provides a wide planning frame"),
 				StartArmLength >= 3100.0f);
-			Test->TestTrue(
-				TEXT("The controlled cab keeps its visual focus marker"),
+			Test->TestFalse(
+				TEXT("The controlled cab has no visual focus marker"),
 				State.Pawn->IsTestPlayerFocusVisible());
 
 			Test->TestTrue(

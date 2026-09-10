@@ -537,7 +537,7 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	MapRoad(TEXT("RingEast"),RingMax,FVector2D(RingMax.X,RingMin.Y));
 	MapRoad(TEXT("RingSouth"),FVector2D(RingMax.X,RingMin.Y),RingMin);
 
-	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs())
+	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs(GetWorld()))
 	{
 		UOverlay* HubMarker = WidgetTree->ConstructWidget<UOverlay>(
 			UOverlay::StaticClass(),

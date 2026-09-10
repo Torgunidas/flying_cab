@@ -42,10 +42,10 @@ struct FLYINGCABFLIGHTLAB_API FFlyingCabQuestObjectiveDefinition
 	GENERATED_BODY()
 
 	/** Stable key within this quest. It is persisted instead of localized text. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Quest")
 	FName ObjectiveId = NAME_None;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest", meta = (MultiLine = "true"))
 	FText Description;
 
 	/** Generic gameplay event, for example Passenger.Delivered or Interaction.Completed. */

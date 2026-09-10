@@ -1,19 +1,22 @@
-# Dysze wektorujące — 2026-09-09
+# Strumienie ciągu — MVP, trzy strugi
 
-Dwa widoczne zespoły napędu na bokach przedniej i tylnej części taksówki. Metalowa obudowa z ceramicznym kanałem i pierścieniem wylotu; żar wnętrza, półprzezroczysta turbulentna struga oraz osobna warstwa refrakcji gorącego powietrza. Animacja działa w płaszczyźnie lotu X/Z i zachowuje czytelność z bocznej kamery.
+Dwie półprzezroczyste turbulentne strugi pod przednią i tylną częścią taksówki oraz trzeci strumień poziomy z tyłu. Bez widocznych obudów, przegubów i żarzących się rdzeni. Zachowane materiały strug, refrakcja gorącego powietrza, światło i podmuch unoszący pył.
+
+Dolne strugi mają połowę wcześniejszej długości i trzykrotną szerokość przy tej samej mocy; warstwy refrakcji skalują się razem z nimi. Ich reakcja na napęd i hamowanie pozostaje bez zmian.
+
+Trzeci strumień jest czterokrotnie szerszy niż pierwotnie. Zaczyna się na końcu nadwozia przeciwnym do kierunku ruchu i wychodzi na zewnątrz: po lewej przy locie w prawo, po prawej przy locie w lewo. Poniżej 5 cm/s kierunek wybiera na podstawie przyspieszenia napędu. Moc zależy od poziomego przyspieszenia zgodnego z kierunkiem ruchu (1400 cm/s² to moc nominalna). Przy hamowaniu lub samym unoszeniu wygasa; kontrciąg nadal pokazują dolne strugi. Ma własne wygładzanie mocy, refrakcję i światło. Istniejący pył nadal obsługują dwa dolne strumienie.
 
 ## Zachowanie i granice fizycznego modelu
 
 `UFlyingCabThrusterVisualComponent` dostaje próbkę zastosowanego przyspieszenia napędu oraz rzeczywistej zmiany prędkości po istniejącym tłumieniu. Próbka powstaje przed ograniczeniem prędkości. Efekty aktualizują się po fizyce; nie odczytują klawiszy, nie dodają sił i nie zmieniają zużycia paliwa. Grawitacja, uderzenia i obcięcie prędkości do limitu nie uruchamiają fikcyjnego ciągu.
 
-- Unoszenie: wylot w dół. Lot ukośny: kierunek przeciwny do sumy sił.
-- Hamowanie podczas lotu w prawo: wylot w prawo. Hamowanie opadania przez ciąg: silniejszy wylot w dół.
-- Kanoniczne tłumienie po puszczeniu przedstawiamy jako kontrciąg. To świadoma interpretacja wizualna istniejącej mechaniki, bez doliczania paliwa za automatyczne hamowanie.
-- Narastanie i zanikanie emisji są wygładzane. Podczas obrotu dyszy emisja maleje, jeśli jej kierunek nie pokrywa się jeszcze z kierunkiem żądanej siły. Gorący metal stygnie wolniej niż struga.
+- Unoszenie kieruje strugi w dół; lot ukośny przeciwnie do sumy sił. Strugi zaczynają się pod nadwoziem, po stronie kamery, by omijać bryłę auta również przy hamowaniu.
+- Moc zależy od całej próbki przyspieszenia w płaszczyźnie X/Z. Hamowanie lotu w prawo daje strugi w prawo, a hamowanie opadania daje strugi w dół.
+- Narastanie i zanikanie emisji oraz zmiana kierunku zachowują wcześniejsze wygładzanie. Podczas zmiany kierunku emisja słabnie do czasu zbliżenia do kierunku docelowego.
 - Brak paliwa, wrak, wyłączona fizyka i opuszczony pojazd wyłączają efekt. Reset i recovery czyszczą także podmuch przy ziemi. Brak nowej próbki nie utrzymuje poprzedniego odpalenia.
 - Zmienność dwóch strug pochodzi z niezależnej fazy turbulencji, a nie z przypadkowej nierównowagi sił.
 
-To stylizacja przepływu do gry 2.5D, nie symulacja CFD. Wylot turbiny jest głównie półprzezroczysty; najcieplejszy obszar przy dyszy ma delikatną bursztynową poświatę. Nie ma rakietowego łańcucha diamentów ani stałego długiego płomienia.
+To stylizacja przepływu do gry 2.5D, nie symulacja CFD. Istniejący półprzezroczysty materiał strumienia pozostaje bez zmian.
 
 ## Podłoże i wydajność
 
@@ -23,7 +26,7 @@ Komponent udostępnia `PlumeLengthScale`, `bEnableHeatDistortion` i `bEnableSurf
 
 ## Zasoby i odtwarzanie
 
-- `Content/Effects/Thrusters/`: zapisane materiały oraz dwa modele; gotowe do użycia i gotowania przez referencje zasobów w komponencie.
+- `Content/Effects/Thrusters/`: istniejące zasoby pozostają na dysku. Komponent używa karty strumienia i materiałów strug, refrakcji oraz pyłu; nie ładuje już modelu dyszy ani materiałów obudowy i rdzenia.
 - `Build/Thrusters/`: źródła OBJ/MTL w centymetrach, +X to kierunek wylotu.
 - `scripts/Build-ThrusterAssets.py`: jawny generator edytorowy, uruchamiany przez `UnrealEditor-Cmd <projekt> -run=pythonscript -script=<skrypt> -unattended -nullrhi`. Nie jest migracją startową i nie zapisuje mapy ani Blueprintu.
 
@@ -34,7 +37,11 @@ Komponent udostępnia `PlumeLengthScale`, `bEnableHeatDistortion` i `bEnableSurf
 - [NASA: badania podmuchu unoszącego pył](https://rotorcraft.arc.nasa.gov/Research/Programs/brownout.html).
 - [Epic: Pixel Normal Offset](https://dev.epicgames.com/documentation/unreal-engine/refraction-using-pixel-normal-offset-in-unreal-engine) — realizacja zniekształcenia tła.
 
-## Weryfikacja
+## Weryfikacja MVP
+
+Istniejące oczekiwania testu efektów zachowują sprawdzanie zmian kierunku i uwzględniają brak fizycznych dysz. Zgodnie z decyzją użytkownika zakres weryfikacji obejmuje przegląd kodu i kompilację; testy w Unreal, gra i renderowanie podglądów nie są uruchamiane. Ocena w locie należy do użytkownika. Kod sterowania i fizyki oraz zasoby pyłu i refrakcji pozostały bez zmian.
+
+## Weryfikacja pierwotnej wersji z dyszami — 2026-09-09
 
 - UE 5.8, Mac Development Editor: kompilacja zakończona sukcesem.
 - Pełny pakiet w udokumentowanym trybie `-NullRHI`: **41/41**, bez niepowodzeń (`Saved/Logs/ThrusterFullNullRHI.log`, raport `Saved/Automation/ThrusterFullNullRHI`). Ostrzeżenia obejmują celowo wywołane zniszczenia, puste paliwo i czyszczenie wejścia, komunikat wydajności diagnostyki oraz zewnętrzny test łączności silnika.

@@ -18,6 +18,11 @@
 #include "FlyingCabQuestDefinition.h"
 #include "FlyingCabQuestEventComponent.h"
 #include "FlyingCabQuestJournalWidget.h"
+#include "FlyingCabDialogueWidget.h"
+#include "FlyingCabDialogueSession.h"
+#include "FlyingCabNpcDefinition.h"
+#include "FlyingCabQuestGiver.h"
+#include "FlyingCabNarrativeSettings.h"
 #include "FlyingCabQuestTypes.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EngineUtils.h"
@@ -82,6 +87,7 @@ void AFlyingCabPlayerController::BeginPlay()
 
 void AFlyingCabPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	CloseDialogue();
 	GetWorldTimerManager().ClearTimer(InterfaceRefreshTimerHandle);
 	if (UGameInstance* GameInstance = GetGameInstance())
 	{
@@ -210,6 +216,7 @@ void AFlyingCabPlayerController::FlushPressedKeys()
 
 void AFlyingCabPlayerController::StartRunMode(EFlyingCabRunMode Mode)
 {
+	CloseDialogue();
 	if (Mode == EFlyingCabRunMode::None)
 	{
 		return;
@@ -263,6 +270,7 @@ void AFlyingCabPlayerController::ShowTimeAttackResults(
 	const FFlyingCabTimeAttackResult& Result,
 	const TArray<float>& BestTimes)
 {
+	CloseDialogue();
 	if (bQuestJournalOpen)
 	{
 		CloseQuestJournal();
@@ -397,6 +405,7 @@ void AFlyingCabPlayerController::SetupInputComponent()
 
 void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
 {
+	CloseDialogue();
 	Super::OnPossess(InPawn);
 	if (!bDeveloperObserverMode)
 	{
@@ -438,7 +447,7 @@ void AFlyingCabPlayerController::OnPossess(APawn* InPawn)
 
 void AFlyingCabPlayerController::ToggleDeveloperObserverMode()
 {
-	if (bGameFlowScreenOpen || bQuestJournalOpen)
+	if (bGameFlowScreenOpen || bQuestJournalOpen || bDialogueOpen)
 	{
 		return;
 	}
@@ -639,6 +648,7 @@ EFlyingCabInputBlock AFlyingCabPlayerController::GetControlInputBlock() const
 	{
 		return EFlyingCabInputBlock::QuestJournal;
 	}
+	if (bDialogueOpen) return EFlyingCabInputBlock::Dialogue;
 	if (bDeveloperObserverMode)
 	{
 		return EFlyingCabInputBlock::Observer;
@@ -1107,6 +1117,7 @@ void AFlyingCabPlayerController::ShowMajorAnnouncement(
 
 void AFlyingCabPlayerController::ToggleQuestJournal()
 {
+	if (bDialogueOpen) return;
 	if (bQuestJournalOpen)
 	{
 		CloseQuestJournal();
@@ -1119,7 +1130,7 @@ void AFlyingCabPlayerController::ToggleQuestJournal()
 
 void AFlyingCabPlayerController::OpenQuestJournal()
 {
-	if (bGameFlowScreenOpen || bQuestJournalOpen)
+	if (bGameFlowScreenOpen || bQuestJournalOpen || bDialogueOpen)
 	{
 		return;
 	}
@@ -1423,10 +1434,10 @@ void AFlyingCabPlayerController::ApplyTouchControlsVisibility()
 	{
 		return;
 	}
-	InterfaceWidget->SetControlsVisible(true);
+	InterfaceWidget->SetControlsVisible(!bDialogueOpen);
 
 #if WITH_EDITOR
-	if (bEnableMouseTouchTestingInEditor && !bGameFlowScreenOpen)
+	if (bEnableMouseTouchTestingInEditor && !bGameFlowScreenOpen && !bDialogueOpen)
 	{
 		SetShowMouseCursor(true);
 		FInputModeGameAndUI InputMode;
@@ -1434,4 +1445,64 @@ void AFlyingCabPlayerController::ApplyTouchControlsVisibility()
 		SetInputMode(InputMode);
 	}
 #endif
+}
+
+
+bool AFlyingCabPlayerController::OpenDialogue(AFlyingCabQuestGiver* Npc)
+{
+	const auto* Character = Cast<AFlyingCabCharacter>(GetPawn());
+	if (!IsValid(Npc) || !Npc->GetNpcProfile() || !Character || Character->IsDead()
+		|| bDialogueOpen || bGameFlowScreenOpen || bQuestJournalOpen || bDeveloperObserverMode) return false;
+	auto* Quests = GetGameInstance() ? GetGameInstance()->GetSubsystem<UFlyingCabQuestSubsystem>() : nullptr;
+	DialogueSession = NewObject<UFlyingCabDialogueSession>(this);
+	if (!DialogueSession->Start(Npc->GetNpcProfile(), Quests)) { DialogueSession = nullptr; return false; }
+	UClass* WidgetClass = GetDefault<UFlyingCabNarrativeSettings>()->DialogueWidgetClass.LoadSynchronous();
+	DialogueWidget = CreateWidget<UFlyingCabDialogueWidget>(this, WidgetClass ? WidgetClass : UFlyingCabDialogueWidget::StaticClass());
+	if (!DialogueWidget) { DialogueSession = nullptr; return false; }
+	DialogueNpc = Npc;
+	Npc->OnEndPlay.AddDynamic(this, &AFlyingCabPlayerController::HandleDialogueNpcEndPlay);
+	DialogueWidget->SetSession(DialogueSession);
+	DialogueSession->OnChanged.AddDynamic(this, &AFlyingCabPlayerController::HandleDialogueChanged);
+	bDialogueOpen = true;
+	FlushPressedKeys();
+	DialogueWidget->AddToViewport(460);
+	SetPause(true);
+	bShowMouseCursor = true;
+	FInputModeUIOnly InputMode;
+	InputMode.SetWidgetToFocus(DialogueWidget->TakeWidget());
+	SetInputMode(InputMode);
+	ApplyTouchControlsVisibility();
+	return true;
+}
+
+void AFlyingCabPlayerController::CloseDialogue()
+{
+	if (!bDialogueOpen) return;
+	if (DialogueNpc.IsValid()) DialogueNpc->OnEndPlay.RemoveDynamic(this, &AFlyingCabPlayerController::HandleDialogueNpcEndPlay);
+	DialogueNpc.Reset();
+	if (DialogueSession)
+	{
+		DialogueSession->OnChanged.RemoveDynamic(this, &AFlyingCabPlayerController::HandleDialogueChanged);
+		DialogueSession->Cancel();
+	}
+	if (DialogueWidget) { DialogueWidget->RemoveFromParent(); DialogueWidget = nullptr; }
+	DialogueSession = nullptr;
+	// Keep the dialogue block during the same neutralization sequence as the journal.
+	SetPause(false);
+	bDeferredInputTransitionGuard = true;
+	FlushPressedKeys();
+	RestoreGameplayInputMode();
+	EnsureEnhancedInputContext();
+	bDialogueOpen = false;
+	ApplyTouchControlsVisibility();
+}
+
+void AFlyingCabPlayerController::HandleDialogueChanged()
+{
+	if (bDialogueOpen && (!DialogueSession || !DialogueSession->IsActive())) CloseDialogue();
+}
+
+void AFlyingCabPlayerController::HandleDialogueNpcEndPlay(AActor* Actor, EEndPlayReason::Type Reason)
+{
+	CloseDialogue();
 }

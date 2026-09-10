@@ -22,6 +22,7 @@ public:
 
 	bool IsConfigurationValid(FString& OutError) const;
 	bool IsQuestEntryValid(const UFlyingCabQuestDefinition* Quest, FString& OutError) const;
+	bool IsQuestContentValid(const UFlyingCabQuestDefinition* Quest, FString& OutError) const;
 	UFlyingCabQuestDefinition* FindQuest(FName QuestId) const;
 
 	static UFlyingCabQuestCatalog* LoadDefaultAsset();

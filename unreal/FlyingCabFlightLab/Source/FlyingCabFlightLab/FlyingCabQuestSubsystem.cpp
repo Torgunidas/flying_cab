@@ -88,11 +88,16 @@ void UFlyingCabQuestSubsystem::StartAutoQuests()
 	{
 		return;
 	}
-	for (const TPair<FName, TObjectPtr<UFlyingCabQuestDefinition>>& Entry : Definitions)
+	TArray<FName> OrderedIds;
+	Definitions.GetKeys(OrderedIds);
+	OrderedIds.Sort(FNameLexicalLess());
+	for (FName Id : OrderedIds)
 	{
-		if (Entry.Value && Entry.Value->bAutoStartInFreeroam)
+		if (Definitions[Id] && Definitions[Id]->bAutoStartInFreeroam)
 		{
-			StartQuest(Entry.Key);
+			const FName PreviousTracked = TrackedQuestId;
+			StartQuest(Id);
+			if (!PreviousTracked.IsNone()) SetTrackedQuest(PreviousTracked);
 		}
 	}
 }
@@ -100,7 +105,8 @@ void UFlyingCabQuestSubsystem::StartAutoQuests()
 bool UFlyingCabQuestSubsystem::StartQuest(FName QuestId)
 {
 	UFlyingCabQuestDefinition* Definition = GetQuestDefinition(QuestId);
-	if (!bGameplayEventsEnabled || !Definition)
+	FText Reason;
+	if (!CanStartQuest(QuestId, Reason))
 	{
 		return false;
 	}
@@ -143,7 +149,7 @@ int32 UFlyingCabQuestSubsystem::RecordEvent(FName EventId, FName TargetId, int32
 	{
 		FFlyingCabQuestRuntimeState* State = States.Find(QuestId);
 		UFlyingCabQuestDefinition* Definition = GetQuestDefinition(QuestId);
-		if (!State || !Definition || !Definition->Objectives.IsValidIndex(State->ActiveObjectiveIndex))
+		if (!State || State->Status != EFlyingCabQuestStatus::Active || !Definition || !Definition->Objectives.IsValidIndex(State->ActiveObjectiveIndex))
 		{
 			continue;
 		}
@@ -161,10 +167,10 @@ int32 UFlyingCabQuestSubsystem::RecordEvent(FName EventId, FName TargetId, int32
 		{
 			State->ObjectiveProgress.SetNumZeroed(Definition->Objectives.Num());
 		}
-		State->ObjectiveProgress[ObjectiveIndex] = FMath::Clamp(
-			State->ObjectiveProgress[ObjectiveIndex] + Amount,
+		State->ObjectiveProgress[ObjectiveIndex] = static_cast<int32>(FMath::Clamp<int64>(
+			static_cast<int64>(State->ObjectiveProgress[ObjectiveIndex]) + Amount,
 			0,
-			Objective.RequiredCount);
+			Objective.RequiredCount));
 		++AdvancedQuestCount;
 		const int32 CurrentProgress = State->ObjectiveProgress[ObjectiveIndex];
 
@@ -389,16 +395,17 @@ bool UFlyingCabQuestSubsystem::CompleteQuest(FName QuestId)
 	OnQuestCompleted.Broadcast(Definition);
 	UE_LOG(LogFlyingCabQuests, Display, TEXT("Quest completed: %s"), *QuestId.ToString());
 
-	UFlyingCabQuestDefinition* NextDefinition = Definition->NextQuest.LoadSynchronous();
-	if (NextDefinition)
+	const FName PreviousTracked = TrackedQuestId;
+	UFlyingCabQuestDefinition* NextDefinition = Definition->NextQuest.Get();
+	if (NextDefinition && GetQuestDefinition(NextDefinition->QuestId) == NextDefinition)
 	{
-		if (!Definitions.Contains(NextDefinition->QuestId))
-		{
-			Definitions.Add(NextDefinition->QuestId, NextDefinition);
-		}
 		StartQuest(NextDefinition->QuestId);
 	}
-	else
+	if (PreviousTracked != QuestId && !PreviousTracked.IsNone())
+	{
+		SetTrackedQuest(PreviousTracked);
+	}
+	else if (TrackedQuestId == QuestId)
 	{
 		SelectNextTrackedQuest();
 	}
@@ -466,4 +473,36 @@ void UFlyingCabQuestSubsystem::SetTrackedQuestInternal(FName QuestId)
 	}
 	TrackedQuestId = QuestId;
 	OnTrackedQuestChanged.Broadcast(TrackedQuestId);
+}
+
+
+bool UFlyingCabQuestSubsystem::CanStartQuest(FName QuestId, FText& OutReason) const
+{
+	OutReason = FText::GetEmpty();
+	const auto* Definition = GetQuestDefinition(QuestId);
+	if (!bGameplayEventsEnabled) OutReason = NSLOCTEXT("FlyingCab", "QuestDisabled", "Assignments are available in Free Roam.");
+	else if (!Definition) OutReason = NSLOCTEXT("FlyingCab", "QuestNotRegistered", "This quest is not registered or has validation errors.");
+	else if (GetQuestStatus(QuestId) != EFlyingCabQuestStatus::Inactive) OutReason = NSLOCTEXT("FlyingCab", "QuestAlreadyStarted", "This quest has already been accepted.");
+	else
+	{
+		for (const UFlyingCabQuestDefinition* Prerequisite : Definition->PrerequisiteQuests)
+		{
+			if (!Prerequisite || GetQuestStatus(Prerequisite->QuestId) != EFlyingCabQuestStatus::Completed)
+			{
+				OutReason = Prerequisite
+					? FText::Format(NSLOCTEXT("FlyingCab", "QuestPrerequisite", "Complete {0} first."), Prerequisite->Title)
+					: NSLOCTEXT("FlyingCab", "QuestMissingPrerequisite", "A prerequisite quest is missing.");
+				break;
+			}
+		}
+	}
+	return OutReason.IsEmpty();
+}
+
+bool UFlyingCabQuestSubsystem::TurnInQuestAtNpc(FName QuestId, FName NpcId)
+{
+	const auto* Definition = GetQuestDefinition(QuestId);
+	return Definition && !NpcId.IsNone()
+		&& (Definition->TurnInNpcId.IsNone() || Definition->TurnInNpcId == NpcId)
+		&& TurnInQuest(QuestId);
 }
