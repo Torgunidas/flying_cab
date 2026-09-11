@@ -36,6 +36,8 @@ Całe przystanki przesuwaj w X/Z. Obracanie lub skalowanie całej grupy nie zmie
 
 ## Granice automatyzacji
 
+Od 2026-09-11 nowe autostrady można układać jako **Content → Tile_Set → Highway → BP_HighwayTile**, z premią przesuwaną i duplikowaną razem z pasem. Instrukcja: [TILE_SET.md](TILE_SET.md). Poniższe ograniczenie nieruchomych stref dotyczy dawnych dekoracji RingNorth itp.
+
 Trasy NPC nie omijają automatycznie nowych przeszkód. Po przesunięciu budynku sprawdź przejazd w Play; przy większej zmianie układu popraw także trasy. Dekoracja autostrady jest osobnym obiektem, ale obszar bonusu Highway Turbo i linie dróg minimapy nadal wynikają z konfiguracji granic miasta. Przesuwanie dekoracji nie przenosi obszaru bonusu.
 
 Usunięte stacje, NPC, przystanki i trasy nie są odtwarzane z domyślnych danych. Nie duplikuj `STOP` z tym samym `DistrictId` ani trasy z tym samym `RouteId`: identyfikatory wiążą je z zadaniami i ruchem. Dodawanie nowej lokalizacji questowej wymaga także uwzględnienia jej w katalogu danych używanym do walidacji questów. Geometrię i dekoracje można duplikować niezależnie.

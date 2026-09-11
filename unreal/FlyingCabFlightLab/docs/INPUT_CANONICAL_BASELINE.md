@@ -131,3 +131,9 @@ Zachowano końcowe `return FReply::Handled()` dla wszystkich pozostałych klawis
 Na prośbę użytkownika przeniesiono stałą geometrię, usługi, NPC, biuro, portale i trasy do mapy `FlightLab`. Chroniona ścieżka sterowania pozostaje bez zmian. Jedyny przyrost w pliku manifestu to `FlyingCabTouchControls.cpp`: odczyt przystanków i stacji do minimapy przez `GetWorldDistricts/GetWorldFuelStations/GetWorldRepairStations(GetWorld())`, z własną tablicą zamiast widoku tymczasowej tablicy. Nie zmieniono handlerów UI, focusu, Q/J/R, flush, possession ani wariantu `UseControlFrame=0`.
 
 Kontrola PowerShell przed i po: te same 9 historycznych różnic, 23 zgodne, 0 brakujących. Historyczny manifest bez zmian. Windows UE 5.8: build i pełny pakiet **50/50** (w tym test zapisanej mapy i dotychczasowe testy wejścia) zaliczone. macOS: build i pakiet Automation dla tego etapu **czekają na weryfikację**. Szczegóły: `WORLD_EDITING.md` i `AUDIT_IMPLEMENTATION_STATUS.md`.
+
+### Linie minimapy gotowych klocków — 2026-09-11
+
+Na prośbę użytkownika `FlyingCabTouchControls.cpp` otrzymał wyłącznie include i utworzenie warstwy `HighwayTileRoads` w `BuildWidgetTree`, poniżej znaczników minimapy. Warstwa jest HitTestInvisible. Osobna klasa `UFlyingCabHighwayMapLayer` odczytuje aktualne końce odcinków z transformacji stref i rysuje linie przycięte do granic miasta. Nie zmieniono handlerów wejścia, focusu, Q/J/R, possession, resetu/recovery ani domyślnego `UseControlFrame=0`. Historyczny manifest pozostaje bez zmian. Przed i po zmianie potwierdzono ten sam zestaw 9 wcześniejszych różnic, 23 zgodne pliki, z opisanym przyrostem prezentacji w TouchControls.
+
+macOS: build i Automation tej zmiany czekają na weryfikację.

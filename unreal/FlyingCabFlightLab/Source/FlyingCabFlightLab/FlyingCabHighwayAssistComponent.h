@@ -46,5 +46,7 @@ private:
 	UPROPERTY()
 	TObjectPtr<UMaterialInterface> Material;
 	float Blend = 0.0f;
+	float ActiveSpeedMultiplier = 1.f;
+	float ActiveFuelMultiplier = 1.f;
 	float VisualTime = 0.0f;
 };

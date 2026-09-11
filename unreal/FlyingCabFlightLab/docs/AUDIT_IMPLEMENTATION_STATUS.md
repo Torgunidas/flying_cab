@@ -215,3 +215,25 @@ Weryfikacja: Windows 11, UE 5.8.0, MSVC 14.51.36252, 2026-09-10:
 | macOS | **Build i pełny pakiet Automation dla tego etapu czekają na weryfikację.** Brak dostępu do Maca w tej sesji. Wspólna mapa i źródła, UE 5.8, bez rozdzielania wersji systemowych. |
 
 Nie wykonano commita ani push. Zmiany świata i zastane zmiany dialogów pozostają w drzewie roboczym. Instrukcje edycji NPC oraz dokument własności stanu zaktualizowano do mapy jako źródła położenia. Lokalne logi, kopia bezpieczeństwa mapy i binaria pozostają w ignorowanych katalogach.
+
+### Tile_Set: gotowy klocek autostrady — 2026-09-11
+
+Dodano `Content/Tile_Set/Highway/BP_HighwayTile` z widocznym pasem, oznaczeniami, obróconą strefą i ustawieniami prędkości/spalania. Aktor można przeciągać, duplikować, obracać i skalować; strefa podąża za geometrią. Nakładanie wybiera najsilniejsze premie bez ich mnożenia. Zachowano dawne sześć stref i komponent efektów pojazdu. Nie zapisano ani nie podmieniono zastanych zmian użytkownika w `FlightLab.umap`. Trasy NPC i linie minimapy pozostają odrębne. Instrukcja: `TILE_SET.md`.
+
+Windows UE 5.8: build zaliczony. `Verify-TileSet.py` w pełnym trybie edytora: duplikowanie, parametry, obrót/skala, zapis i ponowne wczytanie — zaliczone (`Saved/Logs/VerifyTileSetEditor2.log`, marker `TILE_SET_PERSISTENCE_PASS`). Początkowe próby wykryły ograniczenie commandletu przy wstawianiu aktora oraz niepoprawne wywołania API w testach; poprawiono skrypty testowe. Historyczny manifest wejścia przed i po: te same dziewięć różnic, 23 zgodne; żaden chroniony plik nie został zmieniony.
+
+macOS: **build i pełny pakiet Automation dla Tile_Set czekają na weryfikację**; brak dostępu do Maca w tej sesji. Wspólne źródła/assety, UE 5.8 bez zmiany. Ręczna ocena w edytorze pozostaje po stronie użytkownika. Nie wykonano commita ani push.
+
+Końcowy pakiet Windows NullRHI: **51/51 zaliczone**, 40 bez ostrzeżeń, 11 z ostrzeżeniami, 0 błędów i 0 pominiętych; kod procesu 0. Raport `Saved/Automation/TileSetFull2/index.json`, log `Saved/Logs/TileSetFull2.log`. Obejmuje nowy test granic oraz rozszerzony test PIE HighwayTurbo na zapisanym Blueprintcie (mnożnik 1.8, koszt paliwa 0.3, powrót po usunięciu). Jedno dodatkowe ostrzeżenie pochodzi z usuwania aktora w izolowanym świecie testowym bez kontekstu silnika; asercje usunięcia i odczytu premii zaliczone. Pozostałe ostrzeżenia pochodzą z istniejących testów. Nie wykonano renderowanej oceny wyglądu nowego odcinka.
+
+### Tile_Set: linie minimapy — 2026-09-11
+
+Na dalsze polecenie użytkownika dodano dynamiczną warstwę `UFlyingCabHighwayMapLayer`: środki końców stref nowych klocków są rzutowane z X/Z do minimapy, z uwzględnieniem długości, obrotu i skali. Linie są przycinane jako odcinki do granic miasta, rysowane poniżej znaczników i nie przechwytują wejścia. Dodawanie, przesuwanie i usuwanie aktorów jest odczytywane przy rysowaniu. Wyłączenie premii `Enabled` pozostawia linię istniejącej drogi. Dawny szkielet autostrad zachowano. Ruch uliczny i trasy NPC pozostają osobnym systemem.
+
+Zmiana w chronionym `FlyingCabTouchControls.cpp` obejmuje tylko include oraz dodanie warstwy w `BuildWidgetTree`; przegląd i manifest przed/po potwierdzają ten sam zestaw dziewięciu historycznych różnic, 23 zgodne. Szczegóły w `INPUT_CANONICAL_BASELINE.md`. Nie zapisano mapy użytkownika ani nie zmieniono sterowania.
+
+Windows UE 5.8: build zaliczony. Renderowany `FlyingCab.Functional.PIE.HighwayTurbo` **1/1**, kod 0; sprawdzono obecność warstwy w rzeczywistym HUD i HitTestInvisible. Obejrzano `Saved/Automation/TileMinimap.png`: widoczny ukośny odcinek, prawidłowa pozycja w siatce i znaczniki nad linią. Log `Saved/Logs/TileMinimapVisual.log`.
+
+macOS: **build i pełny pakiet Automation rozszerzenia minimapy czekają na weryfikację** (brak dostępu w tej sesji). Brak commita i push.
+
+Końcowy pełny pakiet Windows dla minimapy: **52/52 zaliczone**, 41 bez ostrzeżeń, 11 z ostrzeżeniami, 0 błędów, 0 pominiętych, kod procesu 0. Raport `Saved/Automation/TileMinimapFull/index.json`, log `Saved/Logs/TileMinimapFull.log`. Nowy `FlyingCab.Core.City.HighwayTileMinimap` zaliczony bez ostrzeżeń: pozycja, długość, skos, skala, dodanie drugiego odcinka, usunięcie, wyłączony bonus i przycinanie na granicach. Chroniona ścieżka wejścia zachowana.

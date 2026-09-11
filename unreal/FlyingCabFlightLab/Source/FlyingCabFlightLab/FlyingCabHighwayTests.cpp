@@ -10,6 +10,12 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "FlyingCabCityData.h"
 #include "FlyingCabHighwayAssistComponent.h"
+#include "FlyingCabHighwayTile.h"
+#include "FlyingCabHighwayMapLayer.h"
+#include "FlyingCabTouchControls.h"
+#include "Blueprint/WidgetTree.h"
+#include "Slate/WidgetRenderer.h"
+#include "UObject/UObjectIterator.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabVehicleVitalsComponent.h"
@@ -149,6 +155,53 @@ public:
 		Assist->Advance(.016f);
 		Test->TestEqual(TEXT("Unoccupied vehicle loses turbo"),Assist->GetBlend(),0.f);
 		PC->Possess(Cab);
+		Cab->ResetVehicle();
+		// A placed Blueprint must drive the real vehicle outside all legacy rectangles.
+		auto* TileClass = LoadClass<AFlyingCabHighwayTile>(nullptr,TEXT("/Game/Tile_Set/Highway/BP_HighwayTile.BP_HighwayTile_C"));
+		if (!Test->TestNotNull(TEXT("Reusable tile asset loads"),TileClass)) return true;
+		const FVector TileCenter(80000,0,80000);
+		auto* Tile = World->SpawnActor<AFlyingCabHighwayTile>(TileClass,TileCenter,FRotator::ZeroRotator);
+		Tile->SpeedMultiplier = 1.8f;
+		Tile->FuelConsumptionMultiplier = .3f;
+		Cab->SetActorLocation(TileCenter,false,nullptr,ETeleportType::TeleportPhysics);
+		Assist->Advance(.5f);
+		Test->TestEqual(TEXT("Placed Blueprint grants custom speed"),Assist->GetSpeedMultiplier(),1.8f);
+		Cab->SetTouchHorizontalInput(1);
+		Cab->SetTouchThrustPressed(true);
+		Body->SetPhysicsLinearVelocity(FVector(4000,0,4000));
+		const float TileFuelBefore = Cab->GetFuel();
+		Cab->Tick(.1f);
+		Test->TestTrue(TEXT("Tile applies actual fuel discount"),FMath::IsNearlyEqual(TileFuelBefore-Cab->GetFuel(),.06075f,1.e-4f));
+		Test->TestTrue(TEXT("Tile applies actual speed limits"),Body->GetPhysicsLinearVelocity().Equals(FVector(1890,0,2070),.1));
+		UFlyingCabTouchControls* Hud = nullptr;
+		for (TObjectIterator<UFlyingCabTouchControls> It; It; ++It)
+			if (It->GetWorld()==World && It->IsInViewport()) { Hud = *It; break; }
+		auto* MapLayer = Hud && Hud->WidgetTree ? Cast<UFlyingCabHighwayMapLayer>(Hud->WidgetTree->FindWidget(TEXT("HighwayTileRoads"))) : nullptr;
+		Test->TestNotNull(TEXT("Live HUD includes highway tile overlay"),MapLayer);
+		if (MapLayer)
+			Test->TestEqual(TEXT("Road overlay never intercepts controls"),MapLayer->GetVisibility(),ESlateVisibility::HitTestInvisible);
+		if (Hud && FParse::Param(FCommandLine::Get(),TEXT("FlyingCabCaptureTileMinimap")))
+		{
+			const FVector2D Mid = (FlyingCabCityData::GetMinimapWorldMin()+FlyingCabCityData::GetMinimapWorldMax())*.5;
+			Tile->SetActorLocation(FVector(Mid.X,0,Mid.Y));
+			Tile->SetActorScale3D(FVector(6,1,1));
+			Tile->SetActorRotation(FRotator(45,0,0));
+			UWidget* Map = Hud->WidgetTree->FindWidget(TEXT("MinimapFrame"));
+			if (Test->TestNotNull(TEXT("Map can be rendered"),Map))
+			{
+				FWidgetRenderer Renderer(true);
+				auto* Target = Renderer.DrawWidget(Map->TakeWidget(),FVector2D(320,240));
+				FBufferArchive Png;
+				Test->TestTrue(TEXT("Tile minimap screenshot saved"),Target && FImageUtils::ExportRenderTarget2DAsPNG(Target,Png)
+					&& FFileHelper::SaveArrayToFile(Png,*(FPaths::ProjectSavedDir()/TEXT("Automation/TileMinimap.png"))));
+			}
+		}
+		Tile->Destroy();
+		Assist->Advance(.8f);
+		Test->TestEqual(TEXT("Removing tile restores speed"),Assist->GetSpeedMultiplier(),1.f);
+		Test->TestEqual(TEXT("Removing tile restores fuel cost"),Assist->GetFuelMultiplier(),1.f);
+		Cab->SetTouchHorizontalInput(0);
+		Cab->SetTouchThrustPressed(false);
 		Cab->ResetVehicle();
 		return true;
 	}

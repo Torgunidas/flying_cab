@@ -4,6 +4,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "FlyingCabCityData.h"
+#include "FlyingCabHighwayTile.h"
 #include "FlyingCabPawn.h"
 #include "Materials/MaterialInterface.h"
 #include "UObject/ConstructorHelpers.h"
@@ -64,7 +65,14 @@ void UFlyingCabHighwayAssistComponent::Advance(float DeltaSeconds)
 		ResetAssist();
 		return;
 	}
-	const bool bInHighway = FlyingCabCityData::IsOnHighway(Cab->GetActorLocation());
+	float ZoneSpeed, ZoneFuel;
+	const bool bInHighway = AFlyingCabHighwayTile::GetBonuses(GetWorld(), Cab->GetActorLocation(),
+		SpeedMultiplier, FuelConsumptionMultiplier, ZoneSpeed, ZoneFuel);
+	if (bInHighway)
+	{
+		ActiveSpeedMultiplier = ZoneSpeed;
+		ActiveFuelMultiplier = ZoneFuel;
+	}
 	const float Duration = FMath::Max(.1f, bInHighway ? EntrySeconds : ExitSeconds);
 	Blend = FMath::FInterpConstantTo(Blend, bInHighway ? 1.f : 0.f,
 		FMath::Max(0.f, DeltaSeconds), 1.f / Duration);
@@ -74,17 +82,19 @@ void UFlyingCabHighwayAssistComponent::Advance(float DeltaSeconds)
 
 float UFlyingCabHighwayAssistComponent::GetSpeedMultiplier() const
 {
-	return FMath::Lerp(1.f, FMath::Clamp(SpeedMultiplier, 1.f, 2.f), Blend);
+	return FMath::Lerp(1.f, ActiveSpeedMultiplier, Blend);
 }
 
 float UFlyingCabHighwayAssistComponent::GetFuelMultiplier() const
 {
-	return FMath::Lerp(1.f, FMath::Clamp(FuelConsumptionMultiplier, .1f, 1.f), Blend);
+	return FMath::Lerp(1.f, ActiveFuelMultiplier, Blend);
 }
 
 void UFlyingCabHighwayAssistComponent::ResetAssist()
 {
 	Blend = 0.f;
+	ActiveSpeedMultiplier = 1.f;
+	ActiveFuelMultiplier = 1.f;
 	VisualTime = 0.f;
 	UpdateAppearance(FVector::ZeroVector);
 }

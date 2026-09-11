@@ -15,6 +15,7 @@
 #include "Engine/World.h"
 #include "FlyingCabCharacter.h"
 #include "FlyingCabCityData.h"
+#include "FlyingCabHighwayMapLayer.h"
 #include "FlyingCabPawn.h"
 #include "FlyingCabPlayerController.h"
 #include "FlyingCabQuestHubData.h"
@@ -536,6 +537,17 @@ void UFlyingCabTouchControls::BuildWidgetTree()
 	MapRoad(TEXT("RingNorth"),FVector2D(RingMin.X,RingMax.Y),RingMax);
 	MapRoad(TEXT("RingEast"),RingMax,FVector2D(RingMax.X,RingMin.Y));
 	MapRoad(TEXT("RingSouth"),FVector2D(RingMax.X,RingMin.Y),RingMin);
+
+	// Live authored tiles share the markers' projection and remain below every map pin.
+	auto* TileRoads = WidgetTree->ConstructWidget<UFlyingCabHighwayMapLayer>(
+		UFlyingCabHighwayMapLayer::StaticClass(),TEXT("HighwayTileRoads"));
+	TileRoads->SetVisibility(ESlateVisibility::HitTestInvisible);
+	TileRoads->SetClipping(EWidgetClipping::ClipToBounds);
+	TileRoads->ForceVolatile(true);
+	auto* TileRoadSlot = MinimapCanvas->AddChildToCanvas(TileRoads);
+	TileRoadSlot->SetPosition(FVector2D(MinimapLeft,MinimapTop));
+	TileRoadSlot->SetSize(FVector2D(MinimapRight-MinimapLeft,MinimapBottom-MinimapTop));
+	TileRoadSlot->SetZOrder(-1);
 
 	for (const FFlyingCabQuestHubDefinition& Hub : FlyingCabQuestHubData::GetQuestHubs(GetWorld()))
 	{
