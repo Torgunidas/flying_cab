@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle_definition.gd" id="1"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/basic_cab.tscn" id="2"]
+
+[resource]
+script = ExtResource("1")
+visual_scene = ExtResource("2")
+model_id = &"heavy_shuttle"
+display_name = "Foundry / Shuttle"
+mass_kg = 180.0
+thrust_force = 3500.0
+horizontal_thrust_force = 1900.0
+max_hull = 220.0
+max_passengers = 6
+fuel_capacity = 180.0
+starting_fuel = 150.0
+fuel_vertical_rate = 2.0
+fuel_horizontal_rate = 1.0
+max_horizontal_speed = 9.0
+max_climb_speed = 9.0

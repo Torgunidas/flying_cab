@@ -53,6 +53,7 @@ AFlyingCabAuthoredWorld::AFlyingCabAuthoredWorld()
 }
 AFlyingCabAuthoredWorld* AFlyingCabAuthoredWorld::Find(const UWorld* World)
 {
- if (World) for (TActorIterator<AFlyingCabAuthoredWorld> It(const_cast<UWorld*>(World)); It; ++It) return *It;
- return nullptr;
+ if (!World) return nullptr;
+ TActorIterator<AFlyingCabAuthoredWorld> It(const_cast<UWorld*>(World));
+ return It ? *It : nullptr;
 }

@@ -113,7 +113,7 @@ bool AFlyingCabWorldBootstrap::SpawnCityExpansion()
 {
  if (AFlyingCabAuthoredWorld::Find(GetWorld()))
  {
-  for (TActorIterator<AFlyingCabCityExpansion> It(GetWorld()); It; ++It) { CityExpansion = *It; break; }
+  if (TActorIterator<AFlyingCabCityExpansion> It(GetWorld()); It) { CityExpansion = *It; }
   return CityExpansion && CityExpansion->bBakedToLevel;
  }
 	CityExpansion = GetWorld()->SpawnActor<AFlyingCabCityExpansion>(

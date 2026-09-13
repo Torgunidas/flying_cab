@@ -237,3 +237,20 @@ Windows UE 5.8: build zaliczony. Renderowany `FlyingCab.Functional.PIE.HighwayTu
 macOS: **build i pełny pakiet Automation rozszerzenia minimapy czekają na weryfikację** (brak dostępu w tej sesji). Brak commita i push.
 
 Końcowy pełny pakiet Windows dla minimapy: **52/52 zaliczone**, 41 bez ostrzeżeń, 11 z ostrzeżeniami, 0 błędów, 0 pominiętych, kod procesu 0. Raport `Saved/Automation/TileMinimapFull/index.json`, log `Saved/Logs/TileMinimapFull.log`. Nowy `FlyingCab.Core.City.HighwayTileMinimap` zaliczony bez ostrzeżeń: pozycja, długość, skos, skala, dodanie drugiego odcinka, usunięcie, wyłączony bonus i przycinanie na granicach. Chroniona ścieżka wejścia zachowana.
+
+### Przywrócenie kompilacji macOS — 2026-09-12
+
+Punkt wyjścia: `main`, commit `4fd5694` (`manual edit`), czyste drzewo. MacBook Pro Apple M5, macOS 26.6.2, Xcode 26.1.1, UE 5.8. Daty w logach są w UTC (2026-09-11 22:xx), data sesji lokalnie: 2026-09-12.
+
+Odtworzono cztery błędy `-Werror,-Wunreachable-code-loop-increment`: pętle `TActorIterator` zawsze kończyły się w pierwszym przebiegu przez bezwarunkowe `return` lub `break`. Dotyczyło to `AFlyingCabAuthoredWorld::Find`, wyszukania kontrolera miasta w `SpawnCityExpansion` i dwóch fragmentów testu `AuthoredWorld`. Zastąpiono je odczytem pierwszego poprawnego iteratora, zachowując obsługę braku świata/aktora i dotychczasowe zachowanie. Nie wyłączano ostrzeżeń; poprawka jest wspólna dla Windows i macOS.
+
+| Kontrola | Wynik |
+|---|---|
+| Build edytora Mac Development | **Succeeded**, kod 0, bez błędów i ostrzeżeń kompilatora. Przebudowano i połączono oba moduły. Lokalny log `Saved/Logs/MacBuildFix_Build_2026-09-12.log`. |
+| Pełny pakiet `Automation RunTests FlyingCab`, NullRHI | **52/52 zaliczone**, 41 bez ostrzeżeń, 11 z ostrzeżeniami, 0 niezaliczonych i pominiętych; kod procesu 0, 87,9 s testów. Raport `Saved/Automation/MacBuildFix_2026-09-12/index.json`, log `Saved/Logs/MacBuildFix_2026-09-12.log`. Obejmuje `AuthoredWorld`, Tile_Set, minimapę, oba seedy soaku i `MetroTrafficFlow`. |
+| Ładowanie mapy i modułów | `Compiled modules are current`; 0 wpisów `LoadErrors` i `CreateExport`. Nowe klasy świata są dostępne na Macu. |
+| Metal SM6, `ResidentialAccess`, `-RenderOffscreen -FlyingCabCaptureResidential` | **1/1 zaliczony**, bez ostrzeżeń testu, kod procesu 0; 0 błędów ładowania. Raport `Saved/Automation/MacMetalFix_2026-09-12/index.json`, log `Saved/Logs/MacMetalFix_2026-09-12.log`. Obejrzano `Saved/Automation/ResidentialPlatform.png`: budynek, okna, platforma i napisy obecne. Zrzut SceneCapture ma znany szum tła; nie zastępuje ręcznej sesji gry. |
+| Manifest sterowania przed i po | Te same 9 historycznych różnic, 23/32 zgodne, 0 brakujących; plików chronionego sterowania nie zmieniono. |
+| Windows po tej poprawce | **Ponowny build i pełny pakiet Automation czekają na weryfikację na PC.** Wynik 52/52 z poprzedniej sekcji dotyczy kodu przed obecną poprawką iteratorów. |
+
+W logu startowym Maca nadal występuje 17 wpisów `LogAutomationTest: Error: Condition failed` z wewnętrznego autotestu silnika opisanego w audycie 2026-09-10; nie są porażkami pakietu FlyingCab. Mapa użytkownika, assety, konfiguracja i wersja silnika pozostają bez zmian. Brak commita i push; binaria oraz raporty testów są lokalne i ignorowane przez Git. Po przyszłym pullu przebudować moduły przy zamkniętym edytorze (`scripts/sync-mac.sh` łączy pull z buildem).

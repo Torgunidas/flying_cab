@@ -1,4 +1,18 @@
-# Flying Cab — Unreal Engine
+# Flying Cab
+
+Nowy prototyp Godota ma [pierwszą pętlę taxi](godot/FlyingCabPrototype/docs/FIRST_GAMELOOP_IMPLEMENTATION.md): pasażerowie 3D, kursy, nawigacja, wypłaty, płatne paliwo i zapis. Traffic oraz niezależne podróże mieszkańców są kolejnym etapem.
+
+**Ugh! × GTA2 w pionowej cyberpunkowej metropolii.** Ari lata, kradnie pojazdy mieszkańców i zdobywa zasoby na lek dla śmiertelnie chorej siostry, podejmując coraz bardziej wątpliwe moralnie zadania. Każda dostarczona dawka wydłuża odliczanie, a szansa na trwałe leczenie kryje się na niedostępnych piętrach bogaczy.
+
+[Wizja gry, elevator pitch i fabuła](docs/GAME_VISION.md) — ustalenia autora z 2026-09-12; dokument zawiera również sekret bohatera i rozróżnia wizję od stanu implementacji.
+
+## Pierwszy prototyp Godot 2,5D
+
+Nowy, niezależny [City 02](godot/FlyingCabPrototype/README.md): cztery dzielnice w mieście 150 × 368 m, 25 tarasów na budynkach, neonowe oświetlenie, autostrady i obwodnica. Jeden pojazd, lot, miękki pułap i wymuszony powrót autopilotem spoza miasta. Paliwo zużywa się podczas ciągu; lądowiska tankują zatrzymane auto. Projekt: [godot/FlyingCabPrototype/project.godot](godot/FlyingCabPrototype/project.godot). Na przygotowanym Macu uruchom [Run Flight.command](godot/FlyingCabPrototype/Run%20Flight.command). Sterowanie: **A/D lub strzałki — kierunek, W/↑/Spacja — ciąg w górę, R — reset**; na ekranie są trzy przyciski dotykowe.
+
+Godot ma obecnie [fundamenty architektury i optymalizacje po audycie](godot/FlyingCabPrototype/docs/ARCHITECTURE.md): przygotowanie grafiki przed lotem, profil mobilny, wspólny kontrakt postaci/pojazdu, sesję zachowywaną między mapami oraz moduły dialogów i napraw. Grywalny pokaz nadal skupia się na locie; nowe funkcje wymagają dalszej zawartości i interfejsu.
+
+## Projekt Unreal
 
 Główny projekt gry rozwijamy w **Unreal Engine 5.8 (C++)**. Windows i macOS korzystają z **tego samego repozytorium i gałęzi `main`**.
 
@@ -43,12 +57,13 @@ Mapa startowa: `/Game/Maps/FlightLab`. Moduł gry: `FlyingCabFlightLab`.
 | Ścieżka | Przeznaczenie |
 | --- | --- |
 | `unreal/FlyingCabFlightLab/` | Aktywny projekt: Source, Config, Content i zasoby Build |
+| `godot/FlyingCabPrototype/` | Prototyp 2,5D do prób lotu: cztery dzielnice, autostrady, paliwo i tankowanie |
 | `scripts/` | Budowanie i synchronizacja (pull + build) edytora na obu systemach |
-| `docs/` | Wspólna organizacja pracy i raport porządkowania |
+| `docs/` | Wizja gry i fabuły, wspólna organizacja pracy oraz audyty |
 | `unreal/FlyingCabFlightLab/docs/` | Dokumentacja rozgrywki, autorowania i testów |
 | `archive/godot/` | Stary prototyp Godota, wyłącznie archiwum do inspiracji |
 
-Godota otwiera się osobno przez `archive/godot/project.godot`. Zachowano jego strukturę i dawne instrukcje; nie są instrukcjami głównego projektu.
+Historycznego Godota otwiera się osobno przez `archive/godot/project.godot`; nowy pokaz jest w `godot/FlyingCabPrototype/project.godot`. Zachowano strukturę archiwum i dawne instrukcje; nie są instrukcjami głównego projektu.
 Historyczne audyty Unreal pozostają w katalogu głównym, aby zachować odnośniki.
 
 ## Zasady pracy

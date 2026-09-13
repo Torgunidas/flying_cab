@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle_definition.gd" id="1"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/basic_cab.tscn" id="2"]
+
+[resource]
+script = ExtResource("1")
+visual_scene = ExtResource("2")
+model_id = &"basic_cab"
+display_name = "Ari / Cab"
+mass_kg = 100.0
+thrust_force = 2350.0
+horizontal_thrust_force = 1400.0
+thrust_rise_seconds = 0.18
+thrust_release_seconds = 0.12
+max_hull = 100.0
+max_passengers = 3
+gravity = 9.8
+max_climb_speed = 11.5
+max_fall_speed = 13.0
+max_horizontal_speed = 10.5
+horizontal_coast_damping = 1.7
+upward_coast_damping = 1.5
+linear_damping = 0.05
+airspace_enabled = true
+fuel_enabled = true
+fuel_capacity = 100.0
+fuel_vertical_rate = 1.4
+fuel_horizontal_rate = 0.7
+ceiling_fuel_multiplier = 3.0
+refuel_rate = 25.0

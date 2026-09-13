@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/cab.tscn" id="1"]
+[ext_resource type="Resource" path="res://resources/vehicles/heavy_shuttle.tres" id="2"]
+
+[node name="HeavyShuttle" instance=ExtResource("1")]
+definition = ExtResource("2")
+entity_id = &"shuttle_01"
+initial_owner_id = &"foundry_fleet"

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="VehicleCatalog" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle_catalog.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/vehicle_definition.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/vehicles/basic_cab.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/vehicles/heavy_shuttle.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+models = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4")])

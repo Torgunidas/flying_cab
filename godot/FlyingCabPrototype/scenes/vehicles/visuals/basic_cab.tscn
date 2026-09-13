@@ -1,0 +1,293 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="r1"]
+albedo_color = Color(0.9294117647058824, 0.7058823529411765, 0.3137254901960784, 1)
+roughness = 0.78
+
+
+[sub_resource type="StandardMaterial3D" id="r2"]
+albedo_color = Color(0.08627450980392157, 0.13725490196078433, 0.17254901960784313, 1)
+roughness = 0.78
+
+
+[sub_resource type="StandardMaterial3D" id="r3"]
+albedo_color = Color(0.26666666666666666, 0.5529411764705883, 0.6078431372549019, 1)
+roughness = 0.78
+
+
+[sub_resource type="StandardMaterial3D" id="r4"]
+albedo_color = Color(0.39215686274509803, 0.4627450980392157, 0.4745098039215686, 1)
+roughness = 0.78
+
+
+[sub_resource type="StandardMaterial3D" id="r5"]
+albedo_color = Color(0.4470588235294118, 0.9098039215686274, 0.9254901960784314, 1)
+roughness = 0.78
+shading_mode = 0
+emission_enabled = true
+emission = Color(0.4470588235294118, 0.9098039215686274, 0.9254901960784314, 1)
+
+
+[sub_resource type="StandardMaterial3D" id="r6"]
+albedo_color = Color(0.8862745098039215, 0.9372549019607843, 0.8352941176470589, 1)
+roughness = 0.78
+shading_mode = 0
+emission_enabled = true
+emission = Color(0.8862745098039215, 0.9372549019607843, 0.8352941176470589, 1)
+
+
+[sub_resource type="StandardMaterial3D" id="r7"]
+albedo_color = Color(0.9372549019607843, 0.4627450980392157, 0.3411764705882353, 1)
+roughness = 0.78
+shading_mode = 0
+emission_enabled = true
+emission = Color(0.9372549019607843, 0.4627450980392157, 0.3411764705882353, 1)
+
+
+[sub_resource type="BoxMesh" id="r10"]
+size = Vector3(2.2, 0.3, 0.9)
+
+
+[sub_resource type="BoxMesh" id="r11"]
+size = Vector3(2.15, 0.26, 0.92)
+
+
+[sub_resource type="BoxMesh" id="r12"]
+size = Vector3(0.68, 0.12, 0.83)
+
+
+[sub_resource type="BoxMesh" id="r13"]
+size = Vector3(1.1, 0.45, 0.78)
+
+
+[sub_resource type="BoxMesh" id="r14"]
+size = Vector3(0.9, 0.26, 0.015)
+
+
+[sub_resource type="BoxMesh" id="r15"]
+size = Vector3(0.03, 0.27, 0.74)
+
+
+[sub_resource type="BoxMesh" id="r16"]
+size = Vector3(1.13, 0.07, 0.82)
+
+
+[sub_resource type="BoxMesh" id="r17"]
+size = Vector3(0.045, 0.3, 0.025)
+
+
+[sub_resource type="BoxMesh" id="r18"]
+size = Vector3(0.4, 0.18, 0.22)
+
+
+[sub_resource type="BoxMesh" id="r19"]
+size = Vector3(0.38, 0.28, 0.3)
+
+
+[sub_resource type="BoxMesh" id="r20"]
+size = Vector3(0.23, 0.14, 0.015)
+
+
+[sub_resource type="BoxMesh" id="r21"]
+size = Vector3(0.025, 0.09, 0.2)
+
+
+[sub_resource type="BoxMesh" id="r22"]
+size = Vector3(0.025, 0.08, 0.18)
+
+
+[sub_resource type="CylinderMesh" id="r23"]
+top_radius = 0.11
+bottom_radius = 0.025
+height = 0.65
+radial_segments = 8
+rings = 1
+
+
+[node name="Visual" type="Node3D"]
+
+
+[node name="Chassis" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.12, 0)
+mesh = SubResource("r10")
+material_override = SubResource("r2")
+
+
+[node name="Body" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.06, 0)
+mesh = SubResource("r11")
+material_override = SubResource("r1")
+
+
+[node name="Hood" type="MeshInstance3D" parent="."]
+position = Vector3(0.72, 0.22, 0)
+mesh = SubResource("r12")
+material_override = SubResource("r1")
+
+
+[node name="Cabin" type="MeshInstance3D" parent="."]
+position = Vector3(-0.23, 0.3, 0)
+mesh = SubResource("r13")
+material_override = SubResource("r2")
+
+
+[node name="WindowNear" type="MeshInstance3D" parent="."]
+position = Vector3(-0.2, 0.33, 0.395)
+mesh = SubResource("r14")
+material_override = SubResource("r3")
+
+
+[node name="WindowFar" type="MeshInstance3D" parent="."]
+position = Vector3(-0.2, 0.33, -0.395)
+mesh = SubResource("r14")
+material_override = SubResource("r3")
+
+
+[node name="Windshield" type="MeshInstance3D" parent="."]
+position = Vector3(0.33, 0.33, 0)
+mesh = SubResource("r15")
+material_override = SubResource("r3")
+
+
+[node name="Roof" type="MeshInstance3D" parent="."]
+position = Vector3(-0.23, 0.56, 0)
+mesh = SubResource("r16")
+material_override = SubResource("r1")
+
+
+[node name="Pillar" type="MeshInstance3D" parent="."]
+position = Vector3(-0.32, 0.33, 0.409)
+mesh = SubResource("r17")
+material_override = SubResource("r1")
+
+
+[node name="TaxiSign" type="MeshInstance3D" parent="."]
+position = Vector3(-0.23, 0.67, 0)
+mesh = SubResource("r18")
+material_override = SubResource("r1")
+
+
+[node name="TaxiLetter" type="Label3D" parent="."]
+position = Vector3(-0.23, 0.67, 0.12)
+text = "TAXI"
+font_size = 24
+pixel_size = 0.01
+modulate = Color(0.05,0.09,0.12,1)
+outline_size = 0
+billboard = 1
+no_depth_test = false
+
+
+[node name="Head_0_3" type="MeshInstance3D" parent="."]
+position = Vector3(1.085, 0.075, -0.3)
+mesh = SubResource("r21")
+material_override = SubResource("r6")
+
+
+[node name="Tail_0_3" type="MeshInstance3D" parent="."]
+position = Vector3(-1.084, 0.075, -0.3)
+mesh = SubResource("r22")
+material_override = SubResource("r7")
+
+
+[node name="Head0_3" type="MeshInstance3D" parent="."]
+position = Vector3(1.085, 0.075, 0.3)
+mesh = SubResource("r21")
+material_override = SubResource("r6")
+
+
+[node name="Tail0_3" type="MeshInstance3D" parent="."]
+position = Vector3(-1.084, 0.075, 0.3)
+mesh = SubResource("r22")
+material_override = SubResource("r7")
+
+
+[node name="Thrusters" type="Node3D" parent="."]
+
+[node name="RearFar" type="Node3D" parent="Thrusters"]
+position = Vector3(-0.8, -0.24, -0.43)
+
+[node name="Housing" type="MeshInstance3D" parent="Thrusters/RearFar"]
+mesh = SubResource("r19")
+material_override = SubResource("r2")
+
+[node name="Rim" type="MeshInstance3D" parent="Thrusters/RearFar"]
+position = Vector3(0, -0.01, -0.155)
+mesh = SubResource("r20")
+material_override = SubResource("r4")
+
+[node name="Plume" type="Node3D" parent="Thrusters/RearFar"]
+position = Vector3(0, -0.13, 0)
+visible = false
+
+[node name="Flame" type="MeshInstance3D" parent="Thrusters/RearFar/Plume"]
+position = Vector3(0, -0.325, 0)
+mesh = SubResource("r23")
+material_override = SubResource("r5")
+cast_shadow = 0
+
+[node name="RearNear" type="Node3D" parent="Thrusters"]
+position = Vector3(-0.8, -0.24, 0.43)
+
+[node name="Housing" type="MeshInstance3D" parent="Thrusters/RearNear"]
+mesh = SubResource("r19")
+material_override = SubResource("r2")
+
+[node name="Rim" type="MeshInstance3D" parent="Thrusters/RearNear"]
+position = Vector3(0, -0.01, 0.155)
+mesh = SubResource("r20")
+material_override = SubResource("r4")
+
+[node name="Plume" type="Node3D" parent="Thrusters/RearNear"]
+position = Vector3(0, -0.13, 0)
+visible = false
+
+[node name="Flame" type="MeshInstance3D" parent="Thrusters/RearNear/Plume"]
+position = Vector3(0, -0.325, 0)
+mesh = SubResource("r23")
+material_override = SubResource("r5")
+cast_shadow = 0
+
+[node name="FrontFar" type="Node3D" parent="Thrusters"]
+position = Vector3(0.79, -0.24, -0.43)
+
+[node name="Housing" type="MeshInstance3D" parent="Thrusters/FrontFar"]
+mesh = SubResource("r19")
+material_override = SubResource("r2")
+
+[node name="Rim" type="MeshInstance3D" parent="Thrusters/FrontFar"]
+position = Vector3(0, -0.01, -0.155)
+mesh = SubResource("r20")
+material_override = SubResource("r4")
+
+[node name="Plume" type="Node3D" parent="Thrusters/FrontFar"]
+position = Vector3(0, -0.13, 0)
+visible = false
+
+[node name="Flame" type="MeshInstance3D" parent="Thrusters/FrontFar/Plume"]
+position = Vector3(0, -0.325, 0)
+mesh = SubResource("r23")
+material_override = SubResource("r5")
+cast_shadow = 0
+
+[node name="FrontNear" type="Node3D" parent="Thrusters"]
+position = Vector3(0.79, -0.24, 0.43)
+
+[node name="Housing" type="MeshInstance3D" parent="Thrusters/FrontNear"]
+mesh = SubResource("r19")
+material_override = SubResource("r2")
+
+[node name="Rim" type="MeshInstance3D" parent="Thrusters/FrontNear"]
+position = Vector3(0, -0.01, 0.155)
+mesh = SubResource("r20")
+material_override = SubResource("r4")
+
+[node name="Plume" type="Node3D" parent="Thrusters/FrontNear"]
+position = Vector3(0, -0.13, 0)
+visible = false
+
+[node name="Flame" type="MeshInstance3D" parent="Thrusters/FrontNear/Plume"]
+position = Vector3(0, -0.325, 0)
+mesh = SubResource("r23")
+material_override = SubResource("r5")
+cast_shadow = 0

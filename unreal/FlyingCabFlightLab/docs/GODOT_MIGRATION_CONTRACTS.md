@@ -112,7 +112,7 @@ Test akceptacyjny: grant → wejście do service cab → revoke podczas prowadze
 - `VehiclePersistence` między poziomami, dopóki gra pozostaje na jednym trwałym poziomie.
 - Dialogowa stacja paliw; obecny hold-to-service pozostaje właściwy dla mobile portrait.
 - Refleksyjne `_get_prop/_set_prop` i serializacja po nazwach tekstowych.
-- Timer Mai oraz równoległy reset gry; presję czasową zapewnia Time Attack.
+- Dawny równoległy reset gry. Aktualizacja autorska 2026-09-12: globalny timer życia siostry, wydłużany dostarczanymi dawkami leku, jest wymaganiem [wizji kampanii](../../../docs/GAME_VISION.md). Time Attack nie zastępuje go. Wcześniejsze wyłączenie timera Mai z zakresu migracji jest nieaktualne; zaprojektowanie i wdrożenie zegara kampanii pozostaje osobnym zadaniem, bez kopiowania starej architektury resetu.
 - Pikselowe stałe fizyki i wysokości świata 2D.
 
 ## Zalecana kolejność po audycie

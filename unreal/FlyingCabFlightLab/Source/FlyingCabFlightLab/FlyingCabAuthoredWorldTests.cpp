@@ -43,7 +43,7 @@ public:
   Test->TestEqual(TEXT("All taxi stops are read from this map"),FlyingCabCityData::GetWorldDistricts(World).Num(),24);
   Test->TestEqual(TEXT("No duplicate fuel services spawned"),FlyingCabCityData::GetWorldFuelStations(World).Num(),4);
   Test->TestNotNull(TEXT("Portal destination reference survived serialization"),Authored->Entrance ? Authored->Entrance->DestinationActor.Get() : nullptr);
-  for (TActorIterator<AFlyingCabDistrictAnchor> It(World); It; ++It)
+  if (TActorIterator<AFlyingCabDistrictAnchor> It(World); It)
   {
    const FVector Before = It->GetActorLocation();
    const FVector Delta(100,0,200);
@@ -55,16 +55,14 @@ public:
    const auto* Original = Defaults.FindByPredicate([&It](const auto& D) { return D.DistrictId==It->Definition.DistrictId; });
    Test->TestTrue(TEXT("World edit leaves shared source asset unchanged"),Original && !Original->StopLocation.Equals(Before+Delta));
    It->SetActorLocation(Before);
-   break;
   }
-  for (TActorIterator<AFlyingCabFuelStation> It(World); It; ++It)
+  if (TActorIterator<AFlyingCabFuelStation> It(World); It)
   {
    const FVector Before = It->GetActorLocation();
    It->SetActorLocation(Before+FVector(120,0,80));
    Test->TestTrue(TEXT("Service minimap data follows the actual actor"),FlyingCabCityData::GetWorldFuelStations(World).ContainsByPredicate(
     [&It](const auto& S) { return S.DisplayName==It->GetServiceName() && S.Location.Equals(It->GetActorLocation()); }));
    It->SetActorLocation(Before);
-   break;
   }
   return true;
  }

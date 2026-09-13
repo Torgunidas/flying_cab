@@ -1,0 +1,36 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/cab.gd" id="1"]
+
+[ext_resource type="Resource" path="res://resources/vehicles/basic_cab.tres" id="2"]
+
+[ext_resource type="PackedScene" path="res://scenes/cab_lights.tscn" id="3"]
+
+[ext_resource type="PackedScene" path="res://scenes/cab_flight_fx.tscn" id="4"]
+
+[sub_resource type="BoxShape3D" id="r8"]
+size = Vector3(2.2, 0.7, 0.9)
+
+
+[sub_resource type="PhysicsMaterial" id="r9"]
+friction = 0.7
+bounce = 0.08
+
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/basic_cab.tscn" id="5"]
+
+[node name="Cab" type="RigidBody3D"]
+script = ExtResource("1")
+definition = ExtResource("2")
+physics_material_override = SubResource("r9")
+
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+shape = SubResource("r8")
+
+
+[node name="Visual" parent="." instance=ExtResource("5")]
+
+[node name="Headlights" parent="." instance=ExtResource("3")]
+
+[node name="FlightFX" parent="." instance=ExtResource("4")]
