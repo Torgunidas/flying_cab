@@ -2,6 +2,7 @@ class_name TaxiHud
 extends Control
 ## Minimal flight UI; map and options own a temporary simulation pause.
 signal save_requested
+signal foot_recovery_requested
 var director: TaxiDirector
 var controls: FlightControls
 var overlay := ""
@@ -40,6 +41,7 @@ func _ready() -> void:
 	guidance.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	resized.connect(_layout)
 	_layout()
+	director.context.player.focus_changed.connect(_focus_changed)
 	if not InputMap.has_action("taxi_fuel"):
 		InputMap.add_action("taxi_fuel")
 		var key := InputEventKey.new()
@@ -66,6 +68,12 @@ func _clear() -> void:
 	_key_blocked = true
 	if director:
 		director.fuel_requested = false
+
+func _focus_changed(_previous: Node3D, current: Node3D) -> void:
+	_clear()
+	if current is WalkingActor:
+		director.notice_remaining = 0
+	queue_redraw()
 
 func _notification(what: int) -> void:
 	if what in [NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_WM_WINDOW_FOCUS_OUT]:
@@ -104,6 +112,8 @@ func close_overlay() -> void:
 	queue_redraw()
 
 func _exit_tree() -> void:
+	if director and director.context.player.focus_changed.is_connected(_focus_changed):
+		director.context.player.focus_changed.disconnect(_focus_changed)
 	if not overlay.is_empty():
 		close_overlay()
 
@@ -126,6 +136,9 @@ func _process(dt: float) -> void:
 		_clock = 0
 
 func _update_warning() -> void:
+	if director.context.player.mode == &"on_foot":
+		_last_warning = ""
+		return
 	var warning := ""
 	if controls._autopilot:
 		warning = "Non authorized out of grid movement. Forced return"
@@ -186,7 +199,10 @@ func press(point: Vector2, pointer: int) -> void:
 			save_requested.emit()
 			close_overlay()
 		elif _tow.has_point(point):
-			if _tow_armed:
+			if director.context.player.mode == &"on_foot":
+				close_overlay()
+				foot_recovery_requested.emit()
+			elif _tow_armed:
 				close_overlay()
 				director.request_recovery(true)
 			else:
@@ -275,7 +291,10 @@ func _draw_overlay() -> void:
 		_box(rect)
 	_text(_resume.position + Vector2(18, 30), "Wróć do gry", 16)
 	_text(_save.position + Vector2(18, 30), "Zapisz grę", 16)
-	_text(_tow.position + Vector2(18, 30), "Potwierdź holowanie · %.0f CR" % director.rules.tow_fee if _tow_armed else "Holuj do depotu · %.0f CR" % director.rules.tow_fee, 15, Color("ffc176"))
+	var recovery_text := "Potwierdź holowanie · %.0f CR" % director.rules.tow_fee if _tow_armed else "Holuj do depotu · %.0f CR" % director.rules.tow_fee
+	if director.context.player.mode == &"on_foot":
+		recovery_text = "Wróć do miejsca wysiadania"
+	_text(_tow.position + Vector2(18, 30), recovery_text, 15, Color("ffc176"))
 	if not director.context.rides.active.is_empty():
 		_box(_cancel)
 		_text(_cancel.position + Vector2(18, 30), "Anuluj kurs", 16)

@@ -24,6 +24,11 @@ func prepare(level: Node3D) -> void:
 	var lights := cab.get_node("Headlights")
 	var saved_transform := cab.global_transform
 	var saved_camera := camera.global_transform
+	var saved_distance: float = level._camera_distance
+	var ari: WalkingActor = level.on_foot.actor if level.on_foot else null
+	var ari_pose := ari.global_transform if ari else Transform3D.IDENTITY
+	var ari_visible := ari.visible if ari else false
+	level._camera_distance = level.camera_tuning.camera_distance
 	var was_frozen := cab.freeze
 	cab.freeze = true
 	var points := _points(level.definition)
@@ -34,7 +39,13 @@ func prepare(level: Node3D) -> void:
 	for i in range(points.size()):
 		cab.global_position = points[i]
 		cab.reset_physics_interpolation()
-		level._snap_camera()
+		# Warm the whole city even when a save restores the player on foot.
+		level._camera_target = points[i]
+		level._position_camera()
+		if ari:
+			ari.global_position = points[i] + Vector3(2, 0.65, 0)
+			ari.show()
+			ari.reset_physics_interpolation()
 		atmosphere.apply_height(points[i].y)
 		lights.update_lights(points[i].y, 0.0, true)
 		cab.flight_fx.show_warmup_effects()
@@ -49,6 +60,11 @@ func prepare(level: Node3D) -> void:
 	lights.update_lights(saved_transform.origin.y, 0.0, true)
 	atmosphere.apply_height(saved_transform.origin.y)
 	camera.global_transform = saved_camera
+	level._camera_distance = saved_distance
+	if ari:
+		ari.global_transform = ari_pose
+		ari.visible = ari_visible
+		ari.reset_physics_interpolation()
 	level._snap_camera()
 	await RenderingServer.frame_post_draw
 	cab.freeze = was_frozen

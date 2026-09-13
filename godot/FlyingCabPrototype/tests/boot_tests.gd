@@ -15,6 +15,7 @@ func check(ok: bool, label: String) -> void:
 
 func _run() -> void:
 	var game: Node = load("res://scenes/game.tscn").instantiate()
+	game.save_path = "res://build/boot-test-session.json"
 	root.add_child(game)
 	current_scene = game
 	await process_frame

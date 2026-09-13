@@ -12,6 +12,8 @@ var _hud_elapsed := 0.0
 var workshop := WorkshopInteraction.new()
 var taxi: TaxiDirector
 var taxi_hud: TaxiHud
+var on_foot: OnFootInteraction
+var _camera_distance := 19.0
 
 func _ready() -> void:
 	_fit_desktop_window()
@@ -28,6 +30,7 @@ func _ready() -> void:
 	context.player.focus_changed.connect(_focus_changed)
 	context.player.control_suspended.connect(controls.set_control_suspended)
 	context.player.take_control(cab, &"flight")
+	_camera_distance = camera_tuning.camera_distance
 	# Follow the rendered cab every frame; automatic camera interpolation would
 	# add a second interpolation pass to this manually smoothed camera.
 	camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
@@ -44,6 +47,12 @@ func _ready() -> void:
 		taxi_hud.director = taxi
 		taxi_hud.controls = controls
 		$HUD.add_child(taxi_hud)
+		taxi_hud.foot_recovery_requested.connect(_reset)
+	on_foot = OnFootInteraction.new()
+	on_foot.context = context
+	on_foot.controls = controls
+	add_child(on_foot)
+	on_foot.restore_player()
 
 func prepare_gameplay() -> void:
 	if taxi:
@@ -81,6 +90,8 @@ func _physics_process(dt: float) -> void:
 	var active := context.player.focus as FlightCab
 	if active and active.position.y < definition.ground_height - 20.0:
 		_reset()
+	elif context.player.focus is WalkingActor and context.player.focus.position.y < definition.ground_height - 20.0:
+		_reset()
 
 func _process(dt: float) -> void:
 	var focus := context.player.focus
@@ -90,13 +101,19 @@ func _process(dt: float) -> void:
 	var velocity: Vector3 = focus.get_control_velocity() if focus.has_method("get_control_velocity") else Vector3.ZERO
 	var horizontal_limit := active.definition.max_horizontal_speed if active else 5.0
 	var vertical_limit := (active.definition.max_climb_speed if velocity.y >= 0.0 else active.definition.max_fall_speed) if active else 13.0
-	var target := Vector3(velocity.x / horizontal_limit * camera_tuning.horizontal_look_ahead, velocity.y / vertical_limit * camera_tuning.vertical_look_ahead, 0.0)
+	var horizontal_ahead := camera_tuning.horizontal_look_ahead if active else camera_tuning.on_foot_horizontal_look_ahead
+	var vertical_ahead := camera_tuning.vertical_look_ahead if active else camera_tuning.on_foot_vertical_look_ahead
+	var target := Vector3(velocity.x / horizontal_limit * horizontal_ahead, velocity.y / vertical_limit * vertical_ahead, 0.0)
 	_look_ahead = _look_ahead.lerp(target, minf(1.0, dt * camera_tuning.look_ahead_speed))
 	var displayed_position := focus.get_global_transform_interpolated().origin
+	if focus is WalkingActor:
+		displayed_position.y += camera_tuning.on_foot_target_height
 	_camera_target = _camera_target.lerp(displayed_position + _look_ahead, minf(1.0, dt * camera_tuning.camera_follow_speed))
+	_camera_distance = lerpf(_camera_distance, camera_tuning.camera_distance if active else camera_tuning.on_foot_distance, minf(1, dt * camera_tuning.framing_speed))
 	_position_camera()
 	_hud_elapsed += dt
 	if _hud_elapsed >= 0.1:
+		controls._credits = context.campaign.credits
 		controls.update_readout(velocity.length(), focus.position.y - definition.ground_height - 0.35, active.grounded if active else false)
 		if active:
 			controls.update_flight_status(active.fuel / active.definition.fuel_capacity, active.definition.airspace_enabled and active.airspace.ceiling_pressure(active.position.y, definition) > 0.01, active.refueling)
@@ -106,10 +123,14 @@ func _process(dt: float) -> void:
 
 func _position_camera() -> void:
 	var angle := deg_to_rad(camera_tuning.camera_angle_degrees)
-	camera.position = _camera_target + Vector3(0, sin(angle), cos(angle)) * camera_tuning.camera_distance
+	camera.position = _camera_target + Vector3(0, sin(angle), cos(angle)) * _camera_distance
 
 func _reset() -> void:
 	controls.clear_controls()
+	if on_foot and context.player.focus == on_foot.actor:
+		if on_foot.recover():
+			_snap_camera()
+		return
 	var active := context.player.focus as FlightCab
 	if active:
 		if taxi:
@@ -139,9 +160,13 @@ func _focus_changed(previous: Node3D, current: Node3D) -> void:
 		current.flight_reset.connect(_snap_camera)
 		current.autopilot_changed.connect(controls.set_autopilot)
 	get_node("Atmosphere").set_focus(current)
-	_snap_camera()
+	# Nearby entry/exit blends the framing; teleports and map arrival still snap.
+	if not is_instance_valid(previous) or not is_instance_valid(current) or previous.global_position.distance_to(current.global_position) > 10:
+		_snap_camera()
 
 func capture_map_state() -> Dictionary:
+	if on_foot:
+		on_foot.capture_state()
 	for vehicle in find_children("*", "RigidBody3D", true, false):
 		if vehicle is FlightCab:
 			vehicle.capture_state()

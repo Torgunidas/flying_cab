@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle_definition.gd" id="1_640i0"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/supercar.tscn" id="2_f3dly"]
+
+[resource]
+script = ExtResource("1_640i0")
+model_id = &"supercar"
+display_name = "Supercar"
+visual_scene = ExtResource("2_f3dly")
+collision_size = Vector3(2.2, 1.14, 1.2)
+collision_offset = Vector3(0, 0.19, 0)
+headlight_origin = Vector3(1.12, 0.12, 0)
+mass_kg = 80.0
+thrust_force = 2250.0
+horizontal_thrust_force = 1560.0
+navigation_clearance = Vector3(2.5, 1.67, 1.4)
+max_hull = 85.0
+damage_resistance = 0.05
+max_passengers = 1
+max_horizontal_speed = 14.0
+fuel_capacity = 90.0
+starting_fuel = 90.0
+fuel_vertical_rate = 1.252198067399882
+fuel_horizontal_rate = 0.626099033699941

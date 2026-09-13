@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle_definition.gd" id="1_82keg"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/limousine.tscn" id="2_hnbt4"]
+
+[resource]
+script = ExtResource("1_82keg")
+model_id = &"limousine"
+display_name = "Limousine"
+visual_scene = ExtResource("2_hnbt4")
+size_units = Vector2(2, 1)
+collision_size = Vector3(4.4, 1.14, 1.2)
+collision_offset = Vector3(0, 0.19, 0)
+headlight_origin = Vector3(2.22, 0.12, 0)
+mass_kg = 190.0
+thrust_force = 4000.0
+horizontal_thrust_force = 2280.0
+navigation_clearance = Vector3(4.7000003, 1.67, 1.4)
+max_hull = 180.0
+damage_resistance = 0.15
+max_passengers = 5
+fuel_capacity = 190.0
+starting_fuel = 190.0
+fuel_vertical_rate = 1.9297668252926308
+fuel_horizontal_rate = 0.9648834126463154

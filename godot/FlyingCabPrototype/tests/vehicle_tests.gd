@@ -47,7 +47,7 @@ func body(host: Node, pos: Vector3, size: Vector3) -> StaticBody3D:
 
 func _run() -> void:
 	var catalog: VehicleCatalog = load("res://resources/vehicle_catalog.tres")
-	check(catalog.validation_errors().is_empty() and catalog.models.size() == 2, "two authored models have valid unique IDs and Inspector parameters")
+	check(catalog.validation_errors().is_empty() and catalog.find_model(&"basic_cab") != null and catalog.find_model(&"heavy_shuttle") != null, "catalog retains valid original and legacy models with unique IDs")
 	var sample := load("res://scenes/vehicles/heavy_shuttle.tscn").instantiate() as FlightCab
 	check(sample.definition.model_id == &"heavy_shuttle" and sample.entity_id == &"shuttle_01", "inherited sample scene selects its model without copying the vehicle script")
 	sample.free()

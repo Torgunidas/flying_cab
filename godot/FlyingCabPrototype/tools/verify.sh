@@ -1,6 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 source "$(dirname "$0")/godot-env.sh"
+if [[ "${1:-}" == "on-foot-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 540x960 --disable-vsync --script tests/on_foot_render_tests.gd --log-file "$FC_PROJECT_DIR/build/on-foot-render-tests.log"
+fi
+if [[ "${1:-}" == "on-foot" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --fixed-fps 120 --script tests/on_foot_tests.gd --log-file "$FC_PROJECT_DIR/build/on-foot-tests.log"
+fi
+if [[ "${1:-}" == "models" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --fixed-fps 120 --script tests/vehicle_models_tests.gd --log-file "$FC_PROJECT_DIR/build/vehicle-models-tests.log"
+fi
+if [[ "${1:-}" == "models-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 1400x1100 --disable-vsync --script tests/vehicle_showroom_render_tests.gd --log-file "$FC_PROJECT_DIR/build/vehicle-showroom-render.log"
+fi
 if [[ "${1:-}" == "taxi-guidance" ]]; then
     exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --fixed-fps 120 --script tests/taxi_guidance_tests.gd --log-file "$FC_PROJECT_DIR/build/taxi-guidance-tests.log"
 fi

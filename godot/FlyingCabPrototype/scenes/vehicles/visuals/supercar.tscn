@@ -1,0 +1,298 @@
+[gd_scene format=4]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6cb2t"]
+albedo_color = Color(0.1254902, 0.17254902, 0.22352941, 1)
+metallic = 0.2
+roughness = 0.7
+emission = Color(0.1254902, 0.17254902, 0.22352941, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_4sgvp"]
+size = Vector3(2.2, 0.24, 0.88)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xw8je"]
+albedo_color = Color(0.85882354, 0.21176471, 0.23137255, 1)
+metallic = 0.25
+roughness = 0.5
+emission = Color(0.85882354, 0.21176471, 0.23137255, 1)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_tsedb"]
+_surfaces = [{
+"aabb": AABB(-1.07, -0.03, -0.46, 2.15, 0.37, 0.92),
+"format": 34359738375,
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 48,
+"vertex_data": PackedByteArray("w/WIv4/C9bwfheu+w/WIvylcjz4fheu+AAAAv3sUrj4fheu+w/WIv4/C9bwfhes+AAAAv3sUrj4fhes+w/WIvylcjz4fhes+w/WIv4/C9bwfheu+AAAAv3sUrj4fheu+mplZP83MTD4fheu+w/WIv4/C9bwfhes+mplZP83MTD4fhes+AAAAv3sUrj4fhes+w/WIv4/C9bwfheu+mplZP83MTD4fheu+cT2KPwAAAAAfheu+w/WIv4/C9bwfhes+cT2KPwAAAAAfhes+mplZP83MTD4fhes+w/WIv4/C9bwfheu+w/WIv4/C9bwfhes+w/WIvylcjz4fheu+w/WIvylcjz4fheu+w/WIv4/C9bwfhes+w/WIvylcjz4fhes+w/WIvylcjz4fheu+w/WIvylcjz4fhes+AAAAv3sUrj4fheu+AAAAv3sUrj4fheu+w/WIvylcjz4fhes+AAAAv3sUrj4fhes+AAAAv3sUrj4fheu+AAAAv3sUrj4fhes+mplZP83MTD4fheu+mplZP83MTD4fheu+AAAAv3sUrj4fhes+mplZP83MTD4fhes+mplZP83MTD4fheu+mplZP83MTD4fhes+cT2KPwAAAAAfheu+cT2KPwAAAAAfheu+mplZP83MTD4fhes+cT2KPwAAAAAfhes+cT2KPwAAAAAfheu+cT2KPwAAAAAfhes+w/WIv4/C9bwfheu+w/WIv4/C9bwfheu+cT2KPwAAAAAfhes+w/WIv4/C9bwfhes+1ZTcqq1VaKq3wfFg11Zsq6uC9zSAHBWeneqH1SGxPp0ZS44C70Fms1vD3iRjW02p1ZTcqq1VaKqrgvc0gBwVnk5sWkEpEX2eneqH1SGxPp0kNpsesDk8vhlLjgLvQWaz1ZTcqq1VaKpObFpBKRF9niFEAmmzsyK4neqH1SGxPp1pNhrivDBnnSQ2mx6wOTy+1ZTcqq1VaKqd6ofVIbE+nbfB8WDXVmyrt8HxYNdWbKud6ofVIbE+nVvD3iRjW02pt8HxYNdWbKtbw94kY1tNqauC9zSAHBWeq4L3NIAcFZ5bw94kY1tNqRlLjgLvQWazq4L3NIAcFZ4ZS44C70Fms05sWkEpEX2eTmxaQSkRfZ4ZS44C70FmsyQ2mx6wOTy+TmxaQSkRfZ4kNpsesDk8viFEAmmzsyK4IUQCabOzIrgkNpsesDk8vmk2GuK8MGedIUQCabOzIrhpNhrivDBnndWU3KqtVWiq1ZTcqq1VaKppNhrivDBnnZ3qh9UhsT6d")
+}]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_veu25"]
+albedo_color = Color(0.2627451, 0.43137255, 0.52156866, 1)
+metallic = 0.35
+roughness = 0.22
+emission = Color(0.2627451, 0.43137255, 0.52156866, 1)
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_mqdll"]
+_surfaces = [{
+"aabb": AABB(-0.65, 0.24, -0.36, 1.27, 0.36, 0.72),
+"format": 34359738375,
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 36,
+"vertex_data": PackedByteArray("ZmYmvylcjz7sUbi+zczMvpqZGT/sUbi+KVwPPhSuBz/sUbi+ZmYmvylcjz7sUbg+KVwPPhSuBz/sUbg+zczMvpqZGT/sUbg+ZmYmvylcjz7sUbi+KVwPPhSuBz/sUbi+UrgeP4/CdT7sUbi+ZmYmvylcjz7sUbg+UrgeP4/CdT7sUbg+KVwPPhSuBz/sUbg+ZmYmvylcjz7sUbi+ZmYmvylcjz7sUbg+zczMvpqZGT/sUbi+zczMvpqZGT/sUbi+ZmYmvylcjz7sUbg+zczMvpqZGT/sUbg+zczMvpqZGT/sUbi+zczMvpqZGT/sUbg+KVwPPhSuBz/sUbi+KVwPPhSuBz/sUbi+zczMvpqZGT/sUbg+KVwPPhSuBz/sUbg+KVwPPhSuBz/sUbi+KVwPPhSuBz/sUbg+UrgeP4/CdT7sUbi+UrgeP4/CdT7sUbi+KVwPPhSuBz/sUbg+UrgeP4/CdT7sUbg+UrgeP4/CdT7sUbi+UrgeP4/CdT7sUbg+ZmYmvylcjz7sUbi+ZmYmvylcjz7sUbi+UrgeP4/CdT7sUbg+ZmYmvylcjz7sUbg+uJnQqWNRza2qpxNDSjIWplhuQT83ER6fRPiXNTymjaX9Ol4ZgjjRvHGvdBChOryyuJnQqWNRza1YbkE/NxEen7lQal4Eu/muRPiXNTymjaVVOJ3pHC64mv06XhmCONG8uJnQqWNRza1E+Jc1PKaNpaqnE0NKMhamqqcTQ0oyFqZE+Jc1PKaNpXGvdBChOryyqqcTQ0oyFqZxr3QQoTq8slhuQT83ER6fWG5BPzcRHp9xr3QQoTq8sv06XhmCONG8WG5BPzcRHp/9Ol4ZgjjRvLlQal4Eu/muuVBqXgS7+a79Ol4ZgjjRvFU4nekcLriauVBqXgS7+a5VOJ3pHC64mriZ0KljUc2tuJnQqWNRza1VOJ3pHC64mkT4lzU8po2l")
+}]
+
+[sub_resource type="BoxMesh" id="BoxMesh_hbrll"]
+size = Vector3(0.2, 0.045, 1.04)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ebwrh"]
+size = Vector3(0.055, 0.44, 0.045)
+
+[sub_resource type="BoxMesh" id="BoxMesh_igs3a"]
+size = Vector3(0.35, 0.08, 0.03)
+
+[sub_resource type="BoxMesh" id="BoxMesh_8c64f"]
+size = Vector3(0.055, 0.44, 0.045)
+
+[sub_resource type="BoxMesh" id="BoxMesh_htknv"]
+size = Vector3(0.35, 0.08, 0.03)
+
+[sub_resource type="BoxMesh" id="BoxMesh_jpc8w"]
+size = Vector3(0.75, 0.024, 0.09)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wietf"]
+albedo_color = Color(0.89411765, 1, 0.9411765, 1)
+roughness = 0.7
+emission_enabled = true
+emission = Color(0.89411765, 1, 0.9411765, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_xf3ww"]
+size = Vector3(0.025, 0.1, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6xutn"]
+albedo_color = Color(0.9372549, 0.4627451, 0.34117648, 1)
+roughness = 0.7
+emission_enabled = true
+emission = Color(0.9372549, 0.4627451, 0.34117648, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_xphlt"]
+size = Vector3(0.025, 0.08, 0.18)
+
+[sub_resource type="BoxMesh" id="BoxMesh_0nr1b"]
+size = Vector3(0.025, 0.1, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_3177k"]
+size = Vector3(0.025, 0.08, 0.18)
+
+[sub_resource type="BoxMesh" id="BoxMesh_5xxhl"]
+size = Vector3(0.38, 0.28, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4hkcj"]
+albedo_color = Color(0.5686275, 0.654902, 0.69803923, 1)
+metallic = 0.6
+roughness = 0.3
+emission = Color(0.5686275, 0.654902, 0.69803923, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_rfym7"]
+size = Vector3(0.23, 0.14, 0.015)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g1g2y"]
+shading_mode = 0
+albedo_color = Color(0.44705883, 0.9098039, 0.9254902, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_vmhyi"]
+top_radius = 0.11
+bottom_radius = 0.025
+height = 0.65
+radial_segments = 8
+rings = 1
+
+[sub_resource type="BoxMesh" id="BoxMesh_vmo1o"]
+size = Vector3(0.38, 0.28, 0.3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_c2uke"]
+size = Vector3(0.23, 0.14, 0.015)
+
+[sub_resource type="BoxMesh" id="BoxMesh_kjr6y"]
+size = Vector3(0.38, 0.28, 0.3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_mjim7"]
+size = Vector3(0.23, 0.14, 0.015)
+
+[sub_resource type="BoxMesh" id="BoxMesh_8pm8o"]
+size = Vector3(0.38, 0.28, 0.3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_6jl82"]
+size = Vector3(0.23, 0.14, 0.015)
+
+[node name="Visual" type="Node3D" unique_id=1124508418]
+
+[node name="Chassis" type="MeshInstance3D" parent="." unique_id=1740273804]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
+material_override = SubResource("StandardMaterial3D_6cb2t")
+mesh = SubResource("BoxMesh_4sgvp")
+
+[node name="Body" type="MeshInstance3D" parent="." unique_id=1932838752]
+material_override = SubResource("StandardMaterial3D_xw8je")
+mesh = SubResource("ArrayMesh_tsedb")
+
+[node name="Canopy" type="MeshInstance3D" parent="." unique_id=1101426905]
+material_override = SubResource("StandardMaterial3D_veu25")
+mesh = SubResource("ArrayMesh_mqdll")
+
+[node name="Spoiler" type="MeshInstance3D" parent="." unique_id=132794344]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 0.7375, 0)
+material_override = SubResource("StandardMaterial3D_6cb2t")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_hbrll")
+
+[node name="WingSupport-1" type="MeshInstance3D" parent="." unique_id=1029222014]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 0.495, -0.3)
+material_override = SubResource("StandardMaterial3D_6cb2t")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_ebwrh")
+
+[node name="Vent-1" type="MeshInstance3D" parent="." unique_id=1127018446]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.57, 0.11, -0.475)
+material_override = SubResource("StandardMaterial3D_6cb2t")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_igs3a")
+
+[node name="WingSupport1" type="MeshInstance3D" parent="." unique_id=1116726903]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 0.495, 0.3)
+material_override = SubResource("StandardMaterial3D_6cb2t")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_8c64f")
+
+[node name="Vent1" type="MeshInstance3D" parent="." unique_id=982169183]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.57, 0.11, 0.475)
+material_override = SubResource("StandardMaterial3D_6cb2t")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_htknv")
+
+[node name="Spine" type="MeshInstance3D" parent="." unique_id=1967845364]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.58, 0.238, 0)
+material_override = SubResource("StandardMaterial3D_6cb2t")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_jpc8w")
+
+[node name="Head-1" type="MeshInstance3D" parent="." unique_id=1850045294]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.087, 0.12, -0.3)
+material_override = SubResource("StandardMaterial3D_wietf")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_xf3ww")
+
+[node name="Tail-1" type="MeshInstance3D" parent="." unique_id=718159626]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.087, 0.02, -0.3)
+material_override = SubResource("StandardMaterial3D_6xutn")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_xphlt")
+
+[node name="Head1" type="MeshInstance3D" parent="." unique_id=1349132434]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.087, 0.12, 0.3)
+material_override = SubResource("StandardMaterial3D_wietf")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_0nr1b")
+
+[node name="Tail1" type="MeshInstance3D" parent="." unique_id=1428319377]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.087, 0.02, 0.3)
+material_override = SubResource("StandardMaterial3D_6xutn")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_3177k")
+
+[node name="Thrusters" type="Node3D" parent="." unique_id=662168998]
+
+[node name="RearFar" type="Node3D" parent="Thrusters" unique_id=1832402203]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.792, -0.24, -0.43)
+
+[node name="Housing" type="MeshInstance3D" parent="Thrusters/RearFar" unique_id=1634394338]
+material_override = SubResource("StandardMaterial3D_6cb2t")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_5xxhl")
+
+[node name="Rim" type="MeshInstance3D" parent="Thrusters/RearFar" unique_id=1699590314]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.01, -0.155)
+material_override = SubResource("StandardMaterial3D_4hkcj")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_rfym7")
+
+[node name="Plume" type="Node3D" parent="Thrusters/RearFar" unique_id=1324680088]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.13, 0)
+visible = false
+
+[node name="Flame" type="MeshInstance3D" parent="Thrusters/RearFar/Plume" unique_id=82966222]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.325, 0)
+material_override = SubResource("StandardMaterial3D_g1g2y")
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_vmhyi")
+
+[node name="RearNear" type="Node3D" parent="Thrusters" unique_id=1734574456]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.792, -0.24, 0.43)
+
+[node name="Housing" type="MeshInstance3D" parent="Thrusters/RearNear" unique_id=208744568]
+material_override = SubResource("StandardMaterial3D_6cb2t")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_vmo1o")
+
+[node name="Rim" type="MeshInstance3D" parent="Thrusters/RearNear" unique_id=1794925912]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.01, 0.155)
+material_override = SubResource("StandardMaterial3D_4hkcj")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_c2uke")
+
+[node name="Plume" type="Node3D" parent="Thrusters/RearNear" unique_id=467678933]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.13, 0)
+visible = false
+
+[node name="Flame" type="MeshInstance3D" parent="Thrusters/RearNear/Plume" unique_id=644712238]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.325, 0)
+material_override = SubResource("StandardMaterial3D_g1g2y")
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_vmhyi")
+
+[node name="FrontFar" type="Node3D" parent="Thrusters" unique_id=741804950]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.792, -0.24, -0.43)
+
+[node name="Housing" type="MeshInstance3D" parent="Thrusters/FrontFar" unique_id=1184239560]
+material_override = SubResource("StandardMaterial3D_6cb2t")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_kjr6y")
+
+[node name="Rim" type="MeshInstance3D" parent="Thrusters/FrontFar" unique_id=1024558632]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.01, -0.155)
+material_override = SubResource("StandardMaterial3D_4hkcj")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_mjim7")
+
+[node name="Plume" type="Node3D" parent="Thrusters/FrontFar" unique_id=1271432624]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.13, 0)
+visible = false
+
+[node name="Flame" type="MeshInstance3D" parent="Thrusters/FrontFar/Plume" unique_id=587282855]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.325, 0)
+material_override = SubResource("StandardMaterial3D_g1g2y")
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_vmhyi")
+
+[node name="FrontNear" type="Node3D" parent="Thrusters" unique_id=1692075383]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.792, -0.24, 0.43)
+
+[node name="Housing" type="MeshInstance3D" parent="Thrusters/FrontNear" unique_id=119330012]
+material_override = SubResource("StandardMaterial3D_6cb2t")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_8pm8o")
+
+[node name="Rim" type="MeshInstance3D" parent="Thrusters/FrontNear" unique_id=1188223724]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.01, 0.155)
+material_override = SubResource("StandardMaterial3D_4hkcj")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_6jl82")
+
+[node name="Plume" type="Node3D" parent="Thrusters/FrontNear" unique_id=405774800]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.13, 0)
+visible = false
+
+[node name="Flame" type="MeshInstance3D" parent="Thrusters/FrontNear/Plume" unique_id=1321539072]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.325, 0)
+material_override = SubResource("StandardMaterial3D_g1g2y")
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_vmhyi")

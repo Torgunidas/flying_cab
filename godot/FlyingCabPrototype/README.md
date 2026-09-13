@@ -1,5 +1,9 @@
 # Flying Cab — City 02
 
+**Tryb pieszy Ariego 2026-09-13:** zaparkuj i naciśnij **Q**, chodź A/D, skacz W/spacją, wróć do auta przez Q. Te same działania mają przyciski dotykowe. Kamera przybliża postać; zapis zachowuje tryb pieszy, pozycję Ariego i stan zostawionego auta. W razie utknięcia pieszo: R albo opcja powrotu do miejsca wysiadania. [Zakres, parametry i weryfikacja Windows 603/603](docs/ON_FOOT.md). Wnętrza, drzwi i obrażenia postaci pozostają dalszym etapem.
+
+**Biblioteka pojazdów 2026-09-13:** ukończono dziesięć nowych wariantów 3D, wspólne definicje parametrów, odporność na obrażenia, odtwarzanie wyglądu z zapisu, okresowe lampy policji i model lawety z pustym punktem ładunku. Razem 12 pozycji z cab i starszym shuttle. Otwórz `scenes/vehicle_showroom.tscn` → F6 lub na Windows uruchom `Open Vehicle Library.ps1`. [Modele, parametry i wyniki 651/651 kontroli Windows](docs/VEHICLE_LIBRARY.md). To biblioteka dla przyszłego living world; laweta nie ma jeszcze mechaniki przewozu.
+
 **Pierwsza pętla rozgrywki jest wdrożona:** ludzkie postaci 3D, 25 przystanków, automatyczne kursy, jeden oczekujący na platformie, mapa na żądanie, jednorazowe wypłaty, płatne paliwo i zapis sesji. [Instrukcja, architektura i wyniki](docs/FIRST_GAMELOOP_IMPLEMENTATION.md); [wcześniejszy przegląd Godota i Unreal](docs/FIRST_GAMELOOP_REVIEW_2026-09-13.md). Traffic i niezależne podróże mieszkańców są kolejnym etapem zgodnie z decyzją autora.
 
 **Architektura i wydajność:** [wdrożenie po audycie](docs/ARCHITECTURE.md) — przygotowanie grafiki przed lotem, ograniczenie kosztu cieni i detali, profil Web oraz moduły sesji, sterowania pieszo/autem, map, dialogów i napraw. [Naprawa eksportu z 2026-09-13](docs/WEB_GEOMETRY_FIX_2026-09-13.md) usuwa ukośne płaszczyzny wynikające z niezapisanych transformacji detali. Poprawiony ZIP zbudowano i sprawdzono w przeglądarce; wymaga podmiany na itch.io i testu na S25+. Dokument naprawy zawiera zaktualizowane pomiary wydajności kompletnej sceny.
@@ -19,6 +23,8 @@ Wybierz `Cab` w scenie i rozwiń **Definition** w Inspectorze. Zmienisz tam cią
 Warsztaty są w **depocie Ariego** i **Foundry / TORQUE — REPAIR / BODY SHOP** (X=22, Y=134; około 182 m nad ziemią). Mapa oznacza serwisy plusem. Zaparkuj, puść ciąg i przytrzymaj E lub mały przycisk naprawy. Koszt próbny: 1 CR/HP, szybkość 20 HP/s. Domyślna gra zaczyna się od 120 CR. Paliwo kupisz w tych samych dwóch miejscach za 1 CR/jednostkę (F lub dotyk). Silne uderzenia uszkadzają auto; 0 HP wyłącza napęd. HOLUJ / R kosztuje 35 CR i przywraca awaryjne zasoby; przy pustym portfelu powstaje dług. Szczegóły: [pętla przewozów](docs/FIRST_GAMELOOP_IMPLEMENTATION.md).
 
 ## Uruchomienie na tym Macu
+
+**Windows:** `Open Editor.ps1` otwiera edytor, `Run Flight.ps1` grę, `Open Vehicle Library.ps1` galerię. Lokalną ścieżkę do Godota 4.7.2 można zapisać w ignorowanym `build/godot-path.txt`; zmienna `FC_GODOT_BIN` ma pierwszeństwo. Bez tych ustawień narzędzia sprawdzają `build/tools/godot-4.7.2/` i PATH. [Szczegóły](docs/VEHICLE_LIBRARY.md#oglądanie-i-uruchamianie). Projekt i sceny pozostają wspólne z macOS.
 
 Otwórz **[Run Flight.command](Run%20Flight.command)** — uruchamia grę bez edytora. **[Open Editor.command](Open%20Editor.command)** otwiera projekt do edycji. Stabilny Godot jest przygotowany lokalnie w ignorowanym `build/tools/Godot.app`.
 
@@ -42,6 +48,9 @@ Na innym komputerze zainstaluj Godot 4.7.2, zaimportuj [project.godot](project.g
 | Płatny powrót do depotu | Zębatka → Holuj → Potwierdź | R dwukrotnie |
 | Zapis sesji | Zębatka → Zapisz grę | F5 |
 | Naprawa po zaparkowaniu w warsztacie | Przytrzymaj panel naprawy | Przytrzymaj E |
+| Wejście / wyjście Ariego przy zaparkowanym aucie | Przycisk WSIĄDŹ / WYSIĄDŹ | Q |
+| Chodzenie / skok pieszo | Strzałki / przycisk SKOK | A/D lub ←/→; W, ↑ lub Spacja |
+| Pieszo: powrót do miejsca wysiadania | Zębatka → Wróć do miejsca wysiadania | R |
 
 Zachowano pomysł ze starego Godota: dwa kierunki pod lewym kciukiem i osobny ciąg pod prawym, bez joysticka. Można trzymać kierunek i ciąg jednocześnie oraz przesuwać palec między strzałkami. Puszczenie jednego palca nie zwalnia pozostałych przycisków. Dotyk i klawiatura mają osobne źródła stanu; zmiana okna czyści sterowanie. Po resecie trzymane klawisze trzeba puścić i nacisnąć ponownie.
 

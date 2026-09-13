@@ -1,5 +1,9 @@
 # Architektura i wydajność po audycie — 2026-09-12
 
+**Tryb pieszy 2026-09-13:** [Ari — zakres i weryfikacja](ON_FOOT.md). Widoczny Ari chodzi, skacze, bezpiecznie wysiada i wraca do zaparkowanego pojazdu. Wspólne sterowanie, kamera i HUD przełączają tryb; `PlayerState` zapisuje pozycję i tryb w schemacie 3, zachowując zgodność ze schematami 1/2. `OnFootInteraction` wykonuje zapytania fizyczne i używa `PlayerSession`. Wnętrza, drzwi, dialogi w świecie, kradzież i zdrowie Ariego wymagają dalszej zawartości. Nowe testy: `on-foot`, `on-foot-render`.
+
+**Biblioteka pojazdów 2026-09-13:** [nowy stan wdrożenia](VEHICLE_LIBRARY.md) — dziesięć własnych modeli 3D plus cab i legacy shuttle, wspólny aktor/fizyka, odtwarzanie wyglądu i komponentów z zapisanej definicji, osobna odporność oraz scena przeglądowa. Geometria jest zapisana w scenach; generator działa wyłącznie na jawne polecenie. Laweta ma model i punkt ładunku. Traffic, kradzież, policyjna AI i przewóz ładunku pozostają poza tym etapem. Nowa biblioteka przeszła weryfikację Windows; macOS i telefon czekają na sprawdzenie.
+
 **Rozszerzenie z 2026-09-13:** działają już pasażerowie, kursy, nawigacja, wspólny portfel usług i automatyczny zapis sesji (schemat 2, zgodność ze schematem 1). [Aktualny opis wdrożenia](FIRST_GAMELOOP_IMPLEMENTATION.md). Poniżej historia fundamentów i pomiarów wcześniejszego etapu.
 
 **Pojazdy i warsztaty 2026-09-13:** [nowe wdrożenie](VEHICLES_AND_REPAIR.md) opisuje modele w Inspectorze, fizykę masy, obrażenia i naprawy. Aktualna paczka: `build/city03-59cf0ff42a4a-itch.zip`.
@@ -15,8 +19,8 @@ Zakres zatwierdzony przez autora: lot, tryb pieszy, różne pomieszczenia i mapy
 | Obszar | Działający fundament | Pozostała zawartość i integracja |
 | --- | --- | --- |
 | Start i rendering | Przygotowanie materiałów i efektów przed lotem; selektywne cienie; detale w małych MultiMesh; profile jakości; lokalne pomiary klatek | Eksport i weryfikacja nowej wersji w Chrome na S25+ |
-| Postać i auto | Wspólny kontrakt poleceń, zmiana celu kamery/HUD/atmosfery, osobne ID właściciela, kierowcy i pasażerów | Widoczny Ari, animacje, przyciski wsiadania/wysiadania, zasięg interakcji i reakcja NPC na kradzież |
-| Tryb pieszy | `WalkingActor`: ruch XY, grawitacja, kolizje i przekazanie sterowania; test z rzeczywistą podłogą | Sceny postaci i kompletne sterowanie piesze dostosowane do telefonu |
+| Postać i auto | Wspólny kontrakt poleceń, kamera/HUD/atmosfera, osobne ID właściciela, kierowcy i pasażerów; widoczny Ari, Q/dotyk, sprawdzanie wolnej przestrzeni i zasięgu wejścia | Kradzież i reakcja NPC |
+| Tryb pieszy | `WalkingActor`: ruch XY, grawitacja, kolizje, skok, animacje, klawiatura/dotyk, przekazanie sterowania i zapis pozycji | Grywalne wnętrza, drzwi, zdrowie i ocena sterowania na fizycznym telefonie |
 | Mapy i wnętrza | Katalog scen, nazwane wejścia, wspólna sesja, zachowanie lokalnego stanu pomieszczeń oraz zaparkowanego auta | Autorskie wnętrza, drzwi, przejścia, rozmieszczenie postaci i zasady transportu auta między różnymi mapami |
 | Dialogi | Walidowany graf kwestii/wyborów, sygnały, blokada sterowania | UI, treści rozmów i podłączenie skutków do zleceń/usług |
 | Pojazdy, obrażenia i naprawa | Modele w Inspectorze, ciąg/masa, HP, limit miejsc, zapis modelu, kolizje, wyłączenie napędu przy 0 HP, dwa płatne warsztaty z klawiaturą/dotykiem | Osobna grafika modeli, animowane uszkodzenia, balans gospodarki i odzyskiwania wraku |

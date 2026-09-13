@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle_definition.gd" id="1_v0tyn"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/lorry.tscn" id="2_4fft3"]
+
+[resource]
+script = ExtResource("1_v0tyn")
+model_id = &"lorry"
+display_name = "Lorry"
+visual_scene = ExtResource("2_4fft3")
+size_units = Vector2(1.5, 2)
+collision_size = Vector3(3.3, 2.28, 1.2)
+collision_offset = Vector3(0, 0.76, 0)
+headlight_origin = Vector3(1.67, 0.12, 0)
+mass_kg = 320.0
+thrust_force = 5900.0
+horizontal_thrust_force = 2900.0
+navigation_clearance = Vector3(3.6, 3.95, 1.4)
+max_hull = 400.0
+damage_resistance = 0.4
+max_passengers = 1
+max_horizontal_speed = 8.5
+fuel_capacity = 280.0
+starting_fuel = 280.0
+fuel_vertical_rate = 2.504396134799764
+fuel_horizontal_rate = 1.252198067399882

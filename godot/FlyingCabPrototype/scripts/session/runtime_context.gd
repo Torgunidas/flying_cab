@@ -3,6 +3,7 @@ extends Node
 ## Session lifetime: maps and presentation may be replaced without resetting this.
 signal system_registered(id: StringName)
 var player := PlayerSession.new()
+var player_state := PlayerState.new()
 var campaign := CampaignState.new()
 var ledger := EconomyLedger.new()
 var rides := RideService.new()
@@ -58,7 +59,20 @@ func bind_vehicle(vehicle: Node) -> void:
 	else:
 		vehicles[id] = vehicle.state
 
+func capture_player_state() -> void:
+	if player.focus is WalkingActor:
+		player_state.mode = "on_foot"
+		player_state.map_id = current_map
+		player_state.position = player.focus.global_position
+		player_state.velocity = player.focus.velocity
+		player_state.facing = player.focus.facing
+	elif player.focus is FlightCab:
+		player_state.mode = "flight"
+		player_state.map_id = current_map
+		player_state.vehicle_id = player.focus.entity_id
+
 func snapshot() -> Dictionary:
+	capture_player_state()
 	var level := world.map_root()
 	if level and level.has_method("capture_map_state"):
 		map_states[String(current_map)] = level.capture_map_state()
@@ -68,11 +82,11 @@ func snapshot() -> Dictionary:
 	var saved: Array = []
 	for state: VehicleState in vehicles.values():
 		saved.append(state.snapshot())
-	return {"schema_version": 2, "rides": rides.snapshot(), "map": String(current_map), "campaign": campaign.snapshot(), "vehicles": saved, "maps": map_states.duplicate(true)}
+	return {"schema_version": 3, "player": player_state.snapshot(), "rides": rides.snapshot(), "map": String(current_map), "campaign": campaign.snapshot(), "vehicles": saved, "maps": map_states.duplicate(true)}
 
 func restore(data: Dictionary) -> bool:
 	# Validate the complete payload before committing any part of it.
-	if (data.get("schema_version") != 1 and data.get("schema_version") != 2) or not data.get("map") is String or not data.get("campaign") is Dictionary or not data.get("vehicles") is Array or not data.get("maps") is Dictionary:
+	if (data.get("schema_version") != 1 and data.get("schema_version") != 2 and data.get("schema_version") != 3) or not data.get("map") is String or not data.get("campaign") is Dictionary or not data.get("vehicles") is Array or not data.get("maps") is Dictionary:
 		return false
 	var restored_campaign := CampaignState.from_snapshot(data.campaign)
 	if restored_campaign == null:
@@ -93,10 +107,20 @@ func restore(data: Dictionary) -> bool:
 	var restored_rides := RideService.from_snapshot(data.get("rides", {}), restored_vehicles, restored_campaign.receipts)
 	if restored_rides == null:
 		return false
+	var restored_player := PlayerState.new()
+	if data.schema_version == 3:
+		if not data.get("player") is Dictionary:
+			return false
+		restored_player = PlayerState.from_snapshot(data.player)
+		if restored_player == null:
+			return false
+		if restored_player.mode == "flight" and restored_player.vehicle_id != &"" and not restored_vehicles.has(restored_player.vehicle_id):
+			return false
 	# Load into a detached session, then let the map router bind live actors.
 	if is_instance_valid(player.focus):
 		return false
 	campaign = restored_campaign
+	player_state = restored_player
 	ledger.state = campaign
 	rides = restored_rides
 	systems[&"rides"] = rides

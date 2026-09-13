@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle_definition.gd" id="1_ki7yo"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/tow_car.tscn" id="2_ce11k"]
+
+[resource]
+script = ExtResource("1_ki7yo")
+model_id = &"tow_car"
+display_name = "Tow car"
+visual_scene = ExtResource("2_ce11k")
+size_units = Vector2(1.5, 1.5)
+collision_size = Vector3(3.3, 1.71, 1.2)
+collision_offset = Vector3(0, 0.47500002, 0)
+headlight_origin = Vector3(1.67, 0.12, 0)
+mass_kg = 240.0
+thrust_force = 4700.0
+horizontal_thrust_force = 2400.0
+navigation_clearance = Vector3(3.6, 2.8100002, 1.4)
+max_hull = 300.0
+damage_resistance = 0.35
+max_passengers = 1
+max_horizontal_speed = 8.5
+fuel_capacity = 220.0
+starting_fuel = 220.0
+fuel_vertical_rate = 2.168870673876153
+fuel_horizontal_rate = 1.0844353369380766

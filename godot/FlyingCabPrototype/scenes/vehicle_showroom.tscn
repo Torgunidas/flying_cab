@@ -1,0 +1,613 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle_showroom.gd" id="1_133lp"]
+[ext_resource type="Script" path="res://scripts/cab.gd" id="2_ihvvu"]
+[ext_resource type="Script" path="res://scripts/vehicle_presentation.gd" id="3_g4kqx"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/basic_cab.tscn" id="4_h3bop"]
+[ext_resource type="PackedScene" path="res://scenes/cab_lights.tscn" id="5_rlxj8"]
+[ext_resource type="Script" path="res://scripts/cab_lights.gd" id="6_xf5lm"]
+[ext_resource type="PackedScene" path="res://scenes/cab_flight_fx.tscn" id="7_l12uo"]
+[ext_resource type="Script" path="res://scripts/cab_flight_fx.gd" id="8_2xrq2"]
+[ext_resource type="Resource" path="res://resources/vehicles/heavy_shuttle.tres" id="9_qonpv"]
+[ext_resource type="Resource" path="res://resources/vehicles/lorry.tres" id="10_uieoy"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/lorry.tscn" id="11_owbrx"]
+[ext_resource type="Resource" path="res://resources/vehicles/supercar.tres" id="12_tle1e"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/supercar.tscn" id="13_kvmr0"]
+[ext_resource type="Resource" path="res://resources/vehicles/limousine.tres" id="14_2u7ej"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/limousine.tscn" id="15_ew2fs"]
+[ext_resource type="Resource" path="res://resources/vehicles/luxury_car.tres" id="16_bw7cm"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/luxury_car.tscn" id="17_7avvw"]
+[ext_resource type="Resource" path="res://resources/vehicles/police_car.tres" id="18_acsu0"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/police_car.tscn" id="19_obiew"]
+[ext_resource type="Resource" path="res://resources/vehicles/poor_car.tres" id="20_3aalc"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/poor_car.tscn" id="21_vkcs6"]
+[ext_resource type="Resource" path="res://resources/vehicles/tow_car.tres" id="22_81en7"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/tow_car.tscn" id="23_5jbiy"]
+[ext_resource type="Resource" path="res://resources/vehicles/normal_car_1.tres" id="24_wo2nr"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/normal_car_1.tscn" id="25_h4s5n"]
+[ext_resource type="Resource" path="res://resources/vehicles/normal_car_2.tres" id="26_081q2"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/normal_car_2.tscn" id="27_n87uo"]
+[ext_resource type="Resource" path="res://resources/vehicles/normal_car_3.tres" id="28_cbbgs"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/normal_car_3.tscn" id="29_fx50k"]
+
+[sub_resource type="Environment" id="Environment_4ki7j"]
+background_mode = 1
+background_color = Color(0.0627451, 0.105882354, 0.16862746, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.7294118, 0.79607844, 0.8666667, 1)
+ambient_light_energy = 0.7
+
+[sub_resource type="PhysicsMaterial" id="r9"]
+friction = 0.7
+bounce = 0.08
+
+[sub_resource type="Resource" id="Resource_cygaj"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_k3noj"]
+size = Vector3(2.2, 0.7, 0.9)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qasym"]
+albedo_color = Color(0.14901961, 0.21568628, 0.29803923, 1)
+roughness = 0.7
+emission = Color(0.14901961, 0.21568628, 0.29803923, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_nbn28"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[sub_resource type="Resource" id="Resource_xrlxt"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1otjf"]
+size = Vector3(2.2, 0.7, 0.9)
+
+[sub_resource type="BoxMesh" id="BoxMesh_4nwnu"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[sub_resource type="Resource" id="Resource_c4go8"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_378fv"]
+size = Vector3(3.3, 2.28, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wh3du"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[sub_resource type="Resource" id="Resource_5kvle"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pnbax"]
+size = Vector3(2.2, 1.14, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_415gw"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[sub_resource type="Resource" id="Resource_t2hl8"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_7jbvw"]
+size = Vector3(4.4, 1.14, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ekqdl"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[sub_resource type="Resource" id="Resource_5mr51"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gwxmv"]
+size = Vector3(2.2, 1.14, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_t47ch"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[sub_resource type="Resource" id="Resource_yx2fn"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bqu6h"]
+size = Vector3(2.2, 1.14, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_a5rr2"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[sub_resource type="Resource" id="Resource_pw1re"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jfq2t"]
+size = Vector3(1.1, 1.14, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_si45y"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[sub_resource type="Resource" id="Resource_wwher"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_kniae"]
+size = Vector3(3.3, 1.71, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_4r7b5"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[sub_resource type="Resource" id="Resource_wmw8f"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_iqqav"]
+size = Vector3(2.2, 1.14, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_pv3xd"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[sub_resource type="Resource" id="Resource_td7he"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_dpra0"]
+size = Vector3(2.2, 1.14, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_6trv4"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[sub_resource type="Resource" id="Resource_hr5uv"]
+script = ExtResource("3_g4kqx")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_a34st"]
+size = Vector3(2.2, 1.14, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cku0e"]
+size = Vector3(5.2, 0.045, 1.5)
+
+[node name="VehicleShowroom" type="Node3D" unique_id=792086341]
+script = ExtResource("1_133lp")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1431862489]
+environment = SubResource("Environment_4ki7j")
+
+[node name="KeyLight" type="DirectionalLight3D" parent="." unique_id=467261673]
+transform = Transform3D(0.90630776, 0.19840726, -0.37314978, 0, 0.88294756, 0.46947157, 0.42261827, -0.42548573, 0.8002222, 0, 0, 0)
+light_energy = 1.4
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1014859694]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 25)
+projection = 1
+size = 17.5
+
+[node name="Models" type="Node3D" parent="." unique_id=1913359171]
+
+[node name="basic_cab" type="Node3D" parent="Models" unique_id=396013904]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.8, 5.25, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/basic_cab" unique_id=1639504727]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+entity_id = &"showroom_basic_cab"
+presentation = SubResource("Resource_cygaj")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/basic_cab/Vehicle" unique_id=623997370]
+shape = SubResource("BoxShape3D_k3noj")
+
+[node name="Visual" type="Node3D" parent="Models/basic_cab/Vehicle" unique_id=842926533 instance=ExtResource("4_h3bop")]
+
+[node name="Headlights" type="Node3D" parent="Models/basic_cab/Vehicle" unique_id=1186113534 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/basic_cab/Vehicle" unique_id=1636467154 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/basic_cab" unique_id=91033219]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_nbn28")
+
+[node name="Label" type="Label3D" parent="Models/basic_cab" unique_id=815513059]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "01   Ari / Cab
+1.0 x 1.0 cab"
+outline_size = 0
+
+[node name="heavy_shuttle" type="Node3D" parent="Models" unique_id=1456169110]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.25, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/heavy_shuttle" unique_id=1482474966]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+definition = ExtResource("9_qonpv")
+entity_id = &"showroom_heavy_shuttle"
+presentation = SubResource("Resource_xrlxt")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/heavy_shuttle/Vehicle" unique_id=1249306563]
+shape = SubResource("BoxShape3D_1otjf")
+
+[node name="Visual" type="Node3D" parent="Models/heavy_shuttle/Vehicle" unique_id=1094712633 instance=ExtResource("4_h3bop")]
+
+[node name="Headlights" type="Node3D" parent="Models/heavy_shuttle/Vehicle" unique_id=349496514 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/heavy_shuttle/Vehicle" unique_id=280986093 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/heavy_shuttle" unique_id=711581143]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_4nwnu")
+
+[node name="Label" type="Label3D" parent="Models/heavy_shuttle" unique_id=1379008169]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "02   Foundry / Shuttle
+1.0 x 1.0 cab"
+outline_size = 0
+
+[node name="lorry" type="Node3D" parent="Models" unique_id=951625089]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.8, 5.25, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/lorry" unique_id=436262613]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+definition = ExtResource("10_uieoy")
+entity_id = &"showroom_lorry"
+presentation = SubResource("Resource_c4go8")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/lorry/Vehicle" unique_id=1698643022]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.76, 0)
+shape = SubResource("BoxShape3D_378fv")
+
+[node name="Visual" type="Node3D" parent="Models/lorry/Vehicle" unique_id=1222181242 instance=ExtResource("11_owbrx")]
+
+[node name="Headlights" type="Node3D" parent="Models/lorry/Vehicle" unique_id=1292324066 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/lorry/Vehicle" unique_id=1153303446 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/lorry" unique_id=1754229171]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_wh3du")
+
+[node name="Label" type="Label3D" parent="Models/lorry" unique_id=1073971717]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "03   Lorry
+1.5 x 2.0 cab"
+outline_size = 0
+
+[node name="supercar" type="Node3D" parent="Models" unique_id=1471886987]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.8, 1.75, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/supercar" unique_id=334745243]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+definition = ExtResource("12_tle1e")
+entity_id = &"showroom_supercar"
+presentation = SubResource("Resource_5kvle")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/supercar/Vehicle" unique_id=122198227]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+shape = SubResource("BoxShape3D_pnbax")
+
+[node name="Visual" type="Node3D" parent="Models/supercar/Vehicle" unique_id=1124508418 instance=ExtResource("13_kvmr0")]
+
+[node name="Headlights" type="Node3D" parent="Models/supercar/Vehicle" unique_id=1405420532 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/supercar/Vehicle" unique_id=1536688131 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/supercar" unique_id=118102149]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_415gw")
+
+[node name="Label" type="Label3D" parent="Models/supercar" unique_id=1632600357]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "04   Supercar
+1.0 x 1.0 cab"
+outline_size = 0
+
+[node name="limousine" type="Node3D" parent="Models" unique_id=160339754]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.75, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/limousine" unique_id=2128601758]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+definition = ExtResource("14_2u7ej")
+entity_id = &"showroom_limousine"
+presentation = SubResource("Resource_t2hl8")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/limousine/Vehicle" unique_id=1479941047]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+shape = SubResource("BoxShape3D_7jbvw")
+
+[node name="Visual" type="Node3D" parent="Models/limousine/Vehicle" unique_id=1987361692 instance=ExtResource("15_ew2fs")]
+
+[node name="Headlights" type="Node3D" parent="Models/limousine/Vehicle" unique_id=253342385 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/limousine/Vehicle" unique_id=411552114 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/limousine" unique_id=1623257158]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_ekqdl")
+
+[node name="Label" type="Label3D" parent="Models/limousine" unique_id=571505713]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "05   Limousine
+2.0 x 1.0 cab"
+outline_size = 0
+
+[node name="luxury_car" type="Node3D" parent="Models" unique_id=445801780]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.8, 1.75, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/luxury_car" unique_id=2082970153]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+definition = ExtResource("16_bw7cm")
+entity_id = &"showroom_luxury_car"
+presentation = SubResource("Resource_5mr51")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/luxury_car/Vehicle" unique_id=1215436497]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+shape = SubResource("BoxShape3D_gwxmv")
+
+[node name="Visual" type="Node3D" parent="Models/luxury_car/Vehicle" unique_id=457447416 instance=ExtResource("17_7avvw")]
+
+[node name="Headlights" type="Node3D" parent="Models/luxury_car/Vehicle" unique_id=501676394 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/luxury_car/Vehicle" unique_id=1720352326 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/luxury_car" unique_id=1850175737]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_t47ch")
+
+[node name="Label" type="Label3D" parent="Models/luxury_car" unique_id=596598327]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "06   Luxury car
+1.0 x 1.0 cab"
+outline_size = 0
+
+[node name="police_car" type="Node3D" parent="Models" unique_id=2019661893]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.8, -1.75, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/police_car" unique_id=1268563881]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+definition = ExtResource("18_acsu0")
+entity_id = &"showroom_police_car"
+presentation = SubResource("Resource_yx2fn")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/police_car/Vehicle" unique_id=2052092885]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+shape = SubResource("BoxShape3D_bqu6h")
+
+[node name="Visual" type="Node3D" parent="Models/police_car/Vehicle" unique_id=405721307 instance=ExtResource("19_obiew")]
+
+[node name="Headlights" type="Node3D" parent="Models/police_car/Vehicle" unique_id=1461902015 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/police_car/Vehicle" unique_id=32636136 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/police_car" unique_id=659678235]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_a5rr2")
+
+[node name="Label" type="Label3D" parent="Models/police_car" unique_id=1699065759]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "07   Police car
+1.0 x 1.0 cab"
+outline_size = 0
+
+[node name="poor_car" type="Node3D" parent="Models" unique_id=1724308055]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.75, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/poor_car" unique_id=574365813]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+definition = ExtResource("20_3aalc")
+entity_id = &"showroom_poor_car"
+presentation = SubResource("Resource_pw1re")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/poor_car/Vehicle" unique_id=1762803210]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+shape = SubResource("BoxShape3D_jfq2t")
+
+[node name="Visual" type="Node3D" parent="Models/poor_car/Vehicle" unique_id=789734690 instance=ExtResource("21_vkcs6")]
+
+[node name="Headlights" type="Node3D" parent="Models/poor_car/Vehicle" unique_id=48580052 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/poor_car/Vehicle" unique_id=375788681 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/poor_car" unique_id=2089853581]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_si45y")
+
+[node name="Label" type="Label3D" parent="Models/poor_car" unique_id=1799169269]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "08   Poor car
+0.5 x 1.0 cab"
+outline_size = 0
+
+[node name="tow_car" type="Node3D" parent="Models" unique_id=666455293]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.8, -1.75, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/tow_car" unique_id=347920798]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+definition = ExtResource("22_81en7")
+entity_id = &"showroom_tow_car"
+presentation = SubResource("Resource_wwher")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/tow_car/Vehicle" unique_id=43305578]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.47500002, 0)
+shape = SubResource("BoxShape3D_kniae")
+
+[node name="Visual" type="Node3D" parent="Models/tow_car/Vehicle" unique_id=1984674995 instance=ExtResource("23_5jbiy")]
+
+[node name="Headlights" type="Node3D" parent="Models/tow_car/Vehicle" unique_id=1973622069 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/tow_car/Vehicle" unique_id=1151572428 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/tow_car" unique_id=758490499]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_4r7b5")
+
+[node name="Label" type="Label3D" parent="Models/tow_car" unique_id=604198873]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "09   Tow car
+1.5 x 1.5 cab"
+outline_size = 0
+
+[node name="normal_car_1" type="Node3D" parent="Models" unique_id=581709270]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.8, -5.25, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/normal_car_1" unique_id=220333134]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+definition = ExtResource("24_wo2nr")
+entity_id = &"showroom_normal_car_1"
+presentation = SubResource("Resource_wmw8f")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/normal_car_1/Vehicle" unique_id=1525324010]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+shape = SubResource("BoxShape3D_iqqav")
+
+[node name="Visual" type="Node3D" parent="Models/normal_car_1/Vehicle" unique_id=2046248870 instance=ExtResource("25_h4s5n")]
+
+[node name="Headlights" type="Node3D" parent="Models/normal_car_1/Vehicle" unique_id=721048502 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/normal_car_1/Vehicle" unique_id=67183143 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/normal_car_1" unique_id=192697378]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_pv3xd")
+
+[node name="Label" type="Label3D" parent="Models/normal_car_1" unique_id=795219615]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "10   Normal / Violet
+1.0 x 1.0 cab"
+outline_size = 0
+
+[node name="normal_car_2" type="Node3D" parent="Models" unique_id=989320311]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -5.25, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/normal_car_2" unique_id=779691852]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+definition = ExtResource("26_081q2")
+entity_id = &"showroom_normal_car_2"
+presentation = SubResource("Resource_td7he")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/normal_car_2/Vehicle" unique_id=191731914]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+shape = SubResource("BoxShape3D_dpra0")
+
+[node name="Visual" type="Node3D" parent="Models/normal_car_2/Vehicle" unique_id=558499655 instance=ExtResource("27_n87uo")]
+
+[node name="Headlights" type="Node3D" parent="Models/normal_car_2/Vehicle" unique_id=684678277 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/normal_car_2/Vehicle" unique_id=1503734910 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/normal_car_2" unique_id=777215307]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_6trv4")
+
+[node name="Label" type="Label3D" parent="Models/normal_car_2" unique_id=720830427]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "11   Normal / Graphite
+1.0 x 1.0 cab"
+outline_size = 0
+
+[node name="normal_car_3" type="Node3D" parent="Models" unique_id=1990494184]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.8, -5.25, 0)
+
+[node name="Vehicle" type="RigidBody3D" parent="Models/normal_car_3" unique_id=460347724]
+transform = Transform3D(0.9659258, -0.031542107, -0.25688985, 0, 0.99254614, -0.12186935, 0.25881904, 0.11771675, 0.9587259, 0, 0, 0)
+physics_material_override = SubResource("r9")
+freeze = true
+script = ExtResource("2_ihvvu")
+definition = ExtResource("28_cbbgs")
+entity_id = &"showroom_normal_car_3"
+presentation = SubResource("Resource_hr5uv")
+
+[node name="Collision" type="CollisionShape3D" parent="Models/normal_car_3/Vehicle" unique_id=901690758]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+shape = SubResource("BoxShape3D_a34st")
+
+[node name="Visual" type="Node3D" parent="Models/normal_car_3/Vehicle" unique_id=883206573 instance=ExtResource("29_fx50k")]
+
+[node name="Headlights" type="Node3D" parent="Models/normal_car_3/Vehicle" unique_id=541631159 instance=ExtResource("5_rlxj8")]
+script = ExtResource("6_xf5lm")
+
+[node name="FlightFX" type="Node3D" parent="Models/normal_car_3/Vehicle" unique_id=1205821609 instance=ExtResource("7_l12uo")]
+script = ExtResource("8_2xrq2")
+
+[node name="Plinth" type="MeshInstance3D" parent="Models/normal_car_3" unique_id=347244410]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.55, 0)
+material_override = SubResource("StandardMaterial3D_qasym")
+cast_shadow = 0
+mesh = SubResource("BoxMesh_cku0e")
+
+[node name="Label" type="Label3D" parent="Models/normal_car_3" unique_id=230538700]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.9)
+pixel_size = 0.006
+text = "12   Normal / Copper
+1.0 x 1.0 cab"
+outline_size = 0

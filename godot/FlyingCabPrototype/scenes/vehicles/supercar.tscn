@@ -1,0 +1,40 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/cab.gd" id="1_lojgi"]
+[ext_resource type="Resource" path="res://resources/vehicles/supercar.tres" id="2_jfklb"]
+[ext_resource type="Script" path="res://scripts/vehicle_presentation.gd" id="3_e68gp"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/supercar.tscn" id="4_d7se5"]
+[ext_resource type="PackedScene" path="res://scenes/cab_lights.tscn" id="5_s8je2"]
+[ext_resource type="Script" path="res://scripts/cab_lights.gd" id="6_yqpdc"]
+[ext_resource type="PackedScene" path="res://scenes/cab_flight_fx.tscn" id="7_hhq6u"]
+[ext_resource type="Script" path="res://scripts/cab_flight_fx.gd" id="8_gecjp"]
+
+[sub_resource type="PhysicsMaterial" id="r9"]
+friction = 0.7
+bounce = 0.08
+
+[sub_resource type="Resource" id="Resource_noy83"]
+script = ExtResource("3_e68gp")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_yoii3"]
+size = Vector3(2.2, 1.14, 1.2)
+
+[node name="Cab" type="RigidBody3D" unique_id=1920062126]
+physics_material_override = SubResource("r9")
+script = ExtResource("1_lojgi")
+definition = ExtResource("2_jfklb")
+entity_id = &"supercar_01"
+initial_owner_id = &"unassigned"
+presentation = SubResource("Resource_noy83")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1660610872]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+shape = SubResource("BoxShape3D_yoii3")
+
+[node name="Visual" type="Node3D" parent="." unique_id=1124508418 instance=ExtResource("4_d7se5")]
+
+[node name="Headlights" type="Node3D" parent="." unique_id=1174807611 instance=ExtResource("5_s8je2")]
+script = ExtResource("6_yqpdc")
+
+[node name="FlightFX" type="Node3D" parent="." unique_id=1299682616 instance=ExtResource("7_hhq6u")]
+script = ExtResource("8_gecjp")

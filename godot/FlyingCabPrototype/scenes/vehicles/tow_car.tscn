@@ -1,0 +1,40 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/cab.gd" id="1_5otpj"]
+[ext_resource type="Resource" path="res://resources/vehicles/tow_car.tres" id="2_3wusy"]
+[ext_resource type="Script" path="res://scripts/vehicle_presentation.gd" id="3_qqrwo"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/tow_car.tscn" id="4_bdx8g"]
+[ext_resource type="PackedScene" path="res://scenes/cab_lights.tscn" id="5_nwuih"]
+[ext_resource type="Script" path="res://scripts/cab_lights.gd" id="6_2j8wh"]
+[ext_resource type="PackedScene" path="res://scenes/cab_flight_fx.tscn" id="7_1xfq0"]
+[ext_resource type="Script" path="res://scripts/cab_flight_fx.gd" id="8_6ufch"]
+
+[sub_resource type="PhysicsMaterial" id="r9"]
+friction = 0.7
+bounce = 0.08
+
+[sub_resource type="Resource" id="Resource_ck82t"]
+script = ExtResource("3_qqrwo")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_few0i"]
+size = Vector3(3.3, 1.71, 1.2)
+
+[node name="Cab" type="RigidBody3D" unique_id=319362463]
+physics_material_override = SubResource("r9")
+script = ExtResource("1_5otpj")
+definition = ExtResource("2_3wusy")
+entity_id = &"tow_car_01"
+initial_owner_id = &"unassigned"
+presentation = SubResource("Resource_ck82t")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1847541531]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.47500002, 0)
+shape = SubResource("BoxShape3D_few0i")
+
+[node name="Visual" type="Node3D" parent="." unique_id=1984674995 instance=ExtResource("4_bdx8g")]
+
+[node name="Headlights" type="Node3D" parent="." unique_id=1441343679 instance=ExtResource("5_nwuih")]
+script = ExtResource("6_2j8wh")
+
+[node name="FlightFX" type="Node3D" parent="." unique_id=17176438 instance=ExtResource("7_1xfq0")]
+script = ExtResource("8_6ufch")

@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle_definition.gd" id="1_vlslf"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/normal_car_3.tscn" id="2_b8dp2"]
+
+[resource]
+script = ExtResource("1_vlslf")
+model_id = &"normal_car_3"
+display_name = "Normal / Copper"
+visual_scene = ExtResource("2_b8dp2")
+collision_size = Vector3(2.2, 1.14, 1.2)
+collision_offset = Vector3(0, 0.19, 0)
+headlight_origin = Vector3(1.12, 0.12, 0)
+mass_kg = 95.0
+thrust_force = 2280.0
+horizontal_thrust_force = 1378.0
+navigation_clearance = Vector3(2.5, 1.67, 1.4)
+max_hull = 95.0
+damage_resistance = 0.05
+fuel_capacity = 95.0
+starting_fuel = 95.0
+fuel_vertical_rate = 1.3645512082732547
+fuel_horizontal_rate = 0.6822756041366274

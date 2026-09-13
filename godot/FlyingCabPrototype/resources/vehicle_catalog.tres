@@ -1,10 +1,20 @@
-[gd_resource type="Resource" script_class="VehicleCatalog" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="VehicleCatalog" format=3]
 
 [ext_resource type="Script" path="res://scripts/vehicle_catalog.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/vehicle_definition.gd" id="2"]
 [ext_resource type="Resource" path="res://resources/vehicles/basic_cab.tres" id="3"]
 [ext_resource type="Resource" path="res://resources/vehicles/heavy_shuttle.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/vehicles/lorry.tres" id="4_5kjm6"]
+[ext_resource type="Resource" path="res://resources/vehicles/supercar.tres" id="5_yie6k"]
+[ext_resource type="Resource" path="res://resources/vehicles/limousine.tres" id="6_gwhd3"]
+[ext_resource type="Resource" path="res://resources/vehicles/luxury_car.tres" id="7_lkjvy"]
+[ext_resource type="Resource" path="res://resources/vehicles/police_car.tres" id="8_c5f8o"]
+[ext_resource type="Resource" path="res://resources/vehicles/poor_car.tres" id="9_ehwab"]
+[ext_resource type="Resource" path="res://resources/vehicles/tow_car.tres" id="10_axhwn"]
+[ext_resource type="Resource" path="res://resources/vehicles/normal_car_1.tres" id="11_h78b8"]
+[ext_resource type="Resource" path="res://resources/vehicles/normal_car_2.tres" id="12_qq7i3"]
+[ext_resource type="Resource" path="res://resources/vehicles/normal_car_3.tres" id="13_dujab"]
 
 [resource]
 script = ExtResource("1")
-models = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4")])
+models = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource("4_5kjm6"), ExtResource("5_yie6k"), ExtResource("6_gwhd3"), ExtResource("7_lkjvy"), ExtResource("8_c5f8o"), ExtResource("9_ehwab"), ExtResource("10_axhwn"), ExtResource("11_h78b8"), ExtResource("12_qq7i3"), ExtResource("13_dujab")])

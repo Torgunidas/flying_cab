@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="VehicleDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle_definition.gd" id="1_0k02i"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/normal_car_1.tscn" id="2_rk28m"]
+
+[resource]
+script = ExtResource("1_0k02i")
+model_id = &"normal_car_1"
+display_name = "Normal / Violet"
+visual_scene = ExtResource("2_rk28m")
+collision_size = Vector3(2.2, 1.14, 1.2)
+collision_offset = Vector3(0, 0.19, 0)
+headlight_origin = Vector3(1.12, 0.12, 0)
+navigation_clearance = Vector3(2.5, 1.67, 1.4)
+damage_resistance = 0.05

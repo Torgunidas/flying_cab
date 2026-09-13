@@ -38,6 +38,7 @@ func bind_visual() -> void:
 func reset_visuals() -> void:
 	nozzle_angle = 0.0
 	boost_amount = 0.0
+	_previous_boost = -1.0
 	_time = 0.0
 	_facing = cab.get_node("Visual").scale.x
 	wake.hide()
@@ -50,6 +51,7 @@ func reset_visuals() -> void:
 	var beacons := cab.get_node_or_null("Visual/Beacons")
 	if beacons:
 		beacons.warmup = false
+		beacons.update_lamps()
 
 func update_visuals(dt: float) -> void:
 	_time += dt
@@ -107,7 +109,7 @@ func _update_wake(dt: float) -> void:
 		var ribbon: MeshInstance3D = _ribbons[i]
 		var length := lerpf(1.5,wake_length,boost_amount) * (1.0 if i==1 else 0.78)
 		ribbon.scale.x = length
-		ribbon.position.x = -1.2-length*0.5
+		ribbon.position.x = -_wake_offset()-length*0.5
 		ribbon.material_override.set_shader_parameter("strength",boost_amount)
 	if not was_visible:
 		wake.reset_physics_interpolation()
@@ -123,5 +125,9 @@ func show_warmup_effects() -> void:
 	wake.show()
 	for ribbon in _ribbons:
 		ribbon.scale.x = wake_length
-		ribbon.position.x = -1.2 - wake_length * 0.5
+		ribbon.position.x = -_wake_offset() - wake_length * 0.5
 		ribbon.material_override.set_shader_parameter("strength", 1.0)
+
+func _wake_offset() -> float:
+	# Retains the original cab's 1.2 m offset; long bodies get a clear rear edge.
+	return cab.definition.collision_size.x * 0.5 + 0.1

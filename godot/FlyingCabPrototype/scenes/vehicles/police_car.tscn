@@ -1,0 +1,40 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/cab.gd" id="1_6x06x"]
+[ext_resource type="Resource" path="res://resources/vehicles/police_car.tres" id="2_qvna8"]
+[ext_resource type="Script" path="res://scripts/vehicle_presentation.gd" id="3_wqfyo"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/police_car.tscn" id="4_pshfs"]
+[ext_resource type="PackedScene" path="res://scenes/cab_lights.tscn" id="5_1bsq4"]
+[ext_resource type="Script" path="res://scripts/cab_lights.gd" id="6_kxstv"]
+[ext_resource type="PackedScene" path="res://scenes/cab_flight_fx.tscn" id="7_1wurg"]
+[ext_resource type="Script" path="res://scripts/cab_flight_fx.gd" id="8_8gwxg"]
+
+[sub_resource type="PhysicsMaterial" id="r9"]
+friction = 0.7
+bounce = 0.08
+
+[sub_resource type="Resource" id="Resource_oer6q"]
+script = ExtResource("3_wqfyo")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_sl6jv"]
+size = Vector3(2.2, 1.14, 1.2)
+
+[node name="Cab" type="RigidBody3D" unique_id=543377059]
+physics_material_override = SubResource("r9")
+script = ExtResource("1_6x06x")
+definition = ExtResource("2_qvna8")
+entity_id = &"police_car_01"
+initial_owner_id = &"unassigned"
+presentation = SubResource("Resource_oer6q")
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1546656581]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+shape = SubResource("BoxShape3D_sl6jv")
+
+[node name="Visual" type="Node3D" parent="." unique_id=405721307 instance=ExtResource("4_pshfs")]
+
+[node name="Headlights" type="Node3D" parent="." unique_id=1022627696 instance=ExtResource("5_1bsq4")]
+script = ExtResource("6_kxstv")
+
+[node name="FlightFX" type="Node3D" parent="." unique_id=1284957757 instance=ExtResource("7_1wurg")]
+script = ExtResource("8_8gwxg")

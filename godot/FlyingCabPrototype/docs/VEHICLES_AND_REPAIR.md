@@ -1,5 +1,7 @@
 # Pojazdy, obrażenia i warsztaty — 2026-09-13
 
+**Nowsze wdrożenie — biblioteka pojazdów:** [12 modeli, geometria, odporność, Inspector i zapis](VEHICLE_LIBRARY.md). Dziesięć nowych wariantów ma własne zapisane modele 3D; cab i legacy shuttle zachowano. Dostępna jest `scenes/vehicle_showroom.tscn`. Odporność redukuje obrażenia niezależnie od maksymalnego HP. Ten dokument poniżej opisuje pierwotny etap dwóch modeli oraz jego historyczne pomiary; aktualne parametry i weryfikacja Windows są w dokumencie biblioteki.
+
 **Aktualizacja — pętla przewozów:** domyślna gra ma teraz 120 CR, płatne paliwo na dwóch stacjach i holowanie zamiast darmowego RESET. Wartości testowe 250 CR i pełny RESET poniżej dotyczą wcześniejszej próby pojazdów (nadal dostępnej przez F6). [Aktualna instrukcja](FIRST_GAMELOOP_IMPLEMENTATION.md).
 
 Wdrożone w aktualnym prototypie Godot 4.7.2: definicje różnych modeli aut, rzeczywisty wpływ masy na fizykę, wytrzymałość, obrażenia od kolizji, ograniczenie miejsc pasażerów, zapis modelu i dwa działające warsztaty. Scena demonstracyjna nadal zaczyna się z jedną taksówką. Przykład shuttle ma inne parametry, ale korzysta ze wspólnej grafiki i geometrii auta; nie jest nowym modelem graficznym ani populacją NPC.

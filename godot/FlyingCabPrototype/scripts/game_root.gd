@@ -10,7 +10,7 @@ var _message: Label
 var _progress: ProgressBar
 var _budget_elapsed := 0.0
 var _save_elapsed := 0.0
-const SAVE_PATH := "user://taxi-session.json"
+@export var save_path := "user://taxi-session.json"
 
 func _ready() -> void:
 	context = RuntimeContext.new()
@@ -18,8 +18,8 @@ func _ready() -> void:
 	# Return a string across the bridge: the Web template stalled on a bool.
 	if OS.has_feature("web"):
 		new_game = new_game or JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('new') || ''") == "1"
-	if not new_game and FileAccess.file_exists(SAVE_PATH):
-		context.load_from(SAVE_PATH)
+	if not new_game and FileAccess.file_exists(save_path):
+		context.load_from(save_path)
 	if not context.rides.enabled:
 		context.rides.enabled = true
 		context.campaign.credits = preload("res://resources/taxi/default_rules.tres").starting_credits
@@ -60,6 +60,7 @@ func prepare_map(level: Node3D) -> void:
 		if level.taxi_hud and not level.taxi_hud.save_requested.is_connected(_save):
 			level.taxi_hud.save_requested.connect(_save)
 			level.taxi.checkpoint_requested.connect(_schedule_save)
+			level.on_foot.checkpoint_requested.connect(_schedule_save)
 	quality.apply(get_window(), level, quality.profile)
 	telemetry.profile = quality.profile
 	var warmup := GraphicsWarmup.new()
@@ -82,7 +83,7 @@ func _process(dt: float) -> void:
 func _save(show_notice := true) -> void:
 	if maps.busy or not is_instance_valid(maps.current):
 		return
-	var result := context.save_to(SAVE_PATH)
+	var result := context.save_to(save_path)
 	_save_elapsed = 0
 	if maps.current.taxi and (show_notice or result != OK):
 		maps.current.taxi.message("Zapisano. Po ponownym otwarciu wrócisz do tej gry." if result == OK else "Nie udało się zapisać gry na tym urządzeniu.")

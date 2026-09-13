@@ -8,6 +8,8 @@
 
 [ext_resource type="PackedScene" path="res://scenes/cab_flight_fx.tscn" id="4"]
 
+[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/basic_cab.tscn" id="5"]
+
 [sub_resource type="BoxShape3D" id="r8"]
 size = Vector3(2.2, 0.7, 0.9)
 
@@ -16,8 +18,6 @@ size = Vector3(2.2, 0.7, 0.9)
 friction = 0.7
 bounce = 0.08
 
-
-[ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/basic_cab.tscn" id="5"]
 
 [node name="Cab" type="RigidBody3D"]
 script = ExtResource("1")

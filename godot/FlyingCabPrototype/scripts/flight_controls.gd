@@ -2,6 +2,10 @@ class_name FlightControls
 extends Control
 
 signal reset_requested
+signal interaction_requested
+var interaction_label := ""
+var _interaction_rect := Rect2()
+var _interaction_blocked := true
 
 const INK := Color("0b1724")
 const CYAN := Color("71e5e4")
@@ -90,7 +94,7 @@ func set_control_suspended(value: bool) -> void:
 	clear_controls()
 
 func _install_keys() -> void:
-	var actions := {"flight_left": [KEY_A, KEY_LEFT], "flight_right": [KEY_D, KEY_RIGHT], "flight_up": [KEY_W, KEY_UP, KEY_SPACE], "flight_reset": [KEY_R], "vehicle_repair": [KEY_E]}
+	var actions := {"flight_left": [KEY_A, KEY_LEFT], "flight_right": [KEY_D, KEY_RIGHT], "flight_up": [KEY_W, KEY_UP, KEY_SPACE], "flight_reset": [KEY_R], "vehicle_repair": [KEY_E], "player_interact": [KEY_Q]}
 	for action: String in actions:
 		if not InputMap.has_action(action):
 			InputMap.add_action(action)
@@ -110,6 +114,7 @@ func _layout() -> void:
 	_reset_rect = Rect2() if taxi_mode else Rect2(size.x - 105.0, 24.0, 85.0, 42.0)
 	_footer_y = bottom - thrust - 25.0
 	_repair_rect = Rect2(22, _footer_y - 50, (size.x - 56) * 0.5, 44) if taxi_mode else Rect2(22, _footer_y - 115, size.x - 44, 82)
+	_interaction_rect = Rect2(size.x - margin - maxf(thrust, 150), _footer_y - (108 if taxi_mode else 177), maxf(thrust, 150), 44)
 	clear_controls()
 	queue_redraw()
 
@@ -125,6 +130,7 @@ func clear_controls() -> void:
 	command = Vector2.ZERO
 	repair_held = false
 	_keys_blocked_until_release = true
+	_interaction_blocked = true
 	queue_redraw()
 
 func _button_at(pos: Vector2) -> int:
@@ -137,6 +143,18 @@ func _button_at(pos: Vector2) -> int:
 
 func _input(event: InputEvent) -> void:
 	if _external_lock:
+		return
+	var point := Vector2.INF
+	if event is InputEventScreenTouch and event.pressed:
+		point = event.position
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		point = event.position
+	var interact_key := event.is_action_pressed("player_interact") and not event.is_echo() and not _interaction_blocked
+	if interact_key or (not interaction_label.is_empty() and _interaction_rect.has_point(point)):
+		interaction_requested.emit()
+		if interact_key:
+			_interaction_blocked = true
+		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventScreenTouch:
 		if event.pressed:
@@ -164,6 +182,8 @@ func _input(event: InputEvent) -> void:
 	_update_command()
 
 func _process(dt: float) -> void:
+	if not Input.is_action_pressed("player_interact"):
+		_interaction_blocked = false
 	if _restore_notice > 0.0:
 		_restore_notice = maxf(0.0, _restore_notice - dt)
 		if _restore_notice == 0.0:
@@ -266,7 +286,9 @@ func _draw() -> void:
 					repair_text = "NAPRAWA W TOKU — TRZYMAJ / E"
 				_text(_repair_rect.position + Vector2(14, 56), repair_text, 13, WHITE)
 		var prompt := "Przytrzymaj ↑, aby wzlecieć. Puść, aby opadać."
-		if _hull_ratio <= 0.0 and _control_mode == &"flight":
+		if _control_mode == &"on_foot":
+			prompt = "A / D: ruch · W / spacja: skok · Q: wsiądź"
+		elif _hull_ratio <= 0.0 and _control_mode == &"flight":
 			prompt = "Auto unieruchomione. HOLUJ / R: powrót do depotu."
 		elif _autopilot:
 			prompt = "AUTOPILOT / GRID CONTROL"
@@ -280,11 +302,24 @@ func _draw() -> void:
 		var direction := Vector2.LEFT if i == 0 else (Vector2.RIGHT if i == 1 else Vector2.UP)
 		var across := direction.orthogonal()
 		draw_polyline(PackedVector2Array([center - direction * 6 + across * 12, center + direction * 6, center - direction * 6 - across * 12]), WHITE, 3.0, true)
-		var label := "A" if i == 0 else ("D" if i == 1 else "CIĄG / W")
+		var label := "A" if i == 0 else ("D" if i == 1 else ("SKOK / W" if _control_mode == &"on_foot" else "CIĄG / W"))
 		var width := _font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
 		_text(Vector2(center.x - width * 0.5, rect.end.y - 18), label, 11, WHITE if active else MUTED)
+	if not interaction_label.is_empty() and not _external_lock:
+		_box(_interaction_rect, Color(0.035, 0.09, 0.13, 0.9), CYAN, 12)
+		var width := _font.get_string_size(interaction_label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+		_text(_interaction_rect.get_center() + Vector2(-width * 0.5, 4), interaction_label, 12, WHITE)
+
+func set_interaction_label(value: String) -> void:
+	if interaction_label != value:
+		interaction_label = value
+		queue_redraw()
 
 func _draw_compact_status() -> void:
+	if _control_mode == &"on_foot":
+		_box(Rect2(14, 16, 148, 40), Color(0.025, 0.04, 0.065, 0.75), Color(0.4, 0.7, 0.72, 0.12), 10)
+		_text(Vector2(24, 41), "ARI   ·   %.0f CR" % _credits, 14, WHITE)
+		return
 	var width := minf(228, size.x - 134)
 	_box(Rect2(14, 16, width, 54), Color(0.025, 0.04, 0.065, 0.75), Color(1, 0.3, 0.2, 0.85) if _damage_flash else Color(0.4, 0.7, 0.72, 0.12), 10)
 	_text(Vector2(24, 37), "%.0f CR" % _credits, 15, WHITE)
@@ -329,6 +364,7 @@ func _draw_flight_status() -> void:
 func set_control_mode(mode: StringName) -> void:
 	_control_mode = mode
 	_repair_available = false
+	interaction_label = ""
 	clear_controls()
 
 func update_vehicle_status(vehicle: FlightCab, credits: float, station: RepairStation, repairing: bool) -> void:

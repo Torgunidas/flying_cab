@@ -57,7 +57,7 @@ var highway_fuel := 1.0
 @onready var flight_fx: Node3D = $FlightFX
 
 func _enter_tree() -> void:
-	if definition:
+	if definition and definition.validation_errors().is_empty():
 		_apply_body()
 
 func _apply_body() -> void:
@@ -76,16 +76,22 @@ func _apply_body() -> void:
 	collider.shape = shape
 	collider.position = definition.collision_offset
 
-func apply_model(model: VehicleDefinition) -> void:
+func apply_model(model: VehicleDefinition) -> bool:
 	# Used when restoring a saved model onto an authored vehicle spawn.
+	if model == null or not model.validation_errors().is_empty():
+		return false
 	definition = model.duplicate()
 	mass = definition.mass_kg
+	state.model_id = definition.model_id
+	fuel = minf(fuel, definition.fuel_capacity)
 	_apply_body()
 	visual = get_node("Visual")
 	if is_node_ready():
+		clear_control_input()
 		presentation.reset(visual)
 		get_node("Headlights").bind_visual()
 		flight_fx.bind_visual()
+	return true
 
 func _ready() -> void:
 	if definition == null or not definition.validation_errors().is_empty():
