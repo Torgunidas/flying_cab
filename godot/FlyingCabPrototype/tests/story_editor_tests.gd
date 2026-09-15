@@ -129,9 +129,12 @@ func _disk_roundtrip(payload: Dictionary) -> void:
 	var reloaded := ResourceLoader.load(catalog_path, "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) as NarrativeCatalog
 	check(reloaded != null and reloaded.validation_errors().is_empty(), "catalog and nested resources validate after disk reload")
 	check(reloaded.npc(&"froggy").topics[0].dialogue == reloaded.dialogues[0], "NPC topic and catalog share the same loaded dialogue resource")
+	var stable_uid := ResourceUID.create_id()
+	check(ResourceSaver.set_uid(catalog_path, stable_uid) == OK, "fixture assigns a persistent resource UID")
 	var before := FileAccess.get_file_as_string(catalog_path)
 	result = importer.import_file(INPUT, catalog_path)
 	check(result.ok and FileAccess.get_file_as_string(catalog_path) == before, "reimport is idempotent and does not duplicate catalog entries")
+	check(FileAccess.get_file_as_string(catalog_path).get_slice("\n", 0).contains(ResourceUID.id_to_text(stable_uid)), "reimport preserves existing resource UID even in headless mode")
 	var bad := payload.duplicate(true)
 	bad.dialogues[0].nodes[0].choices[0].next_node = "missing"
 	var invalid_path := TEST_ROOT + "/invalid.json"

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="NpcDefinition" format=3]
+[gd_resource type="Resource" script_class="NpcDefinition" format=3 uid="uid://dulm3dlldk3d"]
 
 [ext_resource type="Script" path="res://scripts/narrative/npc_definition.gd" id="1_17kwf"]
 [ext_resource type="Script" path="res://scripts/narrative/npc_topic.gd" id="2_nw4bu"]

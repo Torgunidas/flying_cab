@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d2t74n2m173u1"]
 
-[ext_resource type="Resource" uid="uid://dulm3dlldk3d" path="res://resources/narrative/authored/fabula_bd40afbbe29e4eacbc41c2bdf313173b/npc_48318a766f204c43a16b36dbd0c40314.tres" id="4_7uabj"]
+[ext_resource type="Resource" path="res://resources/narrative/authored/fabula_bd40afbbe29e4eacbc41c2bdf313173b/npc_48318a766f204c43a16b36dbd0c40314.tres" id="4_7uabj"]
 [ext_resource type="Resource" uid="uid://m81d368dril" path="res://resources/narrative/froggy.tres" id="froggy"]
 [ext_resource type="Resource" uid="uid://chirihfukjwd7" path="res://resources/narrative/maya.tres" id="maya"]
 [ext_resource type="PackedScene" path="res://scenes/narrative/npc.tscn" id="npc"]

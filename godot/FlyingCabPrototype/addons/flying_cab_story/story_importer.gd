@@ -267,9 +267,15 @@ func import_file(input_path: String, catalog_path := "res://resources/narrative/
 	if dry_run: return {"ok": true, "files": writes.size() + 1, "dry_run": true}
 	writes[catalog_path] = catalog
 	var originals := {}
+	var original_uids := {}
+	var uid_pattern := RegEx.new()
+	uid_pattern.compile('uid="(uid://[^\"]+)"')
 	var backup := "res://build/story-import-backups/" + str(Time.get_unix_time_from_system()).replace(".", "_")
 	for path in writes:
 		originals[path] = FileAccess.get_file_as_bytes(path) if FileAccess.file_exists(path) else null
+		# Read the header, not ResourceLoader: headless UID cache may be absent/stale.
+		var uid_match := uid_pattern.search(originals[path].get_string_from_utf8().get_slice("\n", 0)) if originals[path] != null else null
+		original_uids[path] = ResourceUID.text_to_id(uid_match.get_string(1)) if uid_match != null else -1
 		if originals[path] != null:
 			var backup_path: String = backup.path_join(path.trim_prefix("res://"))
 			DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(backup_path.get_base_dir()))
@@ -282,7 +288,11 @@ func import_file(input_path: String, catalog_path := "res://resources/narrative/
 	var written: Array[String] = []
 	for path in writes:
 		written.append(path)
-		if ResourceSaver.save(writes[path], path) != OK:
+		var save_error := ResourceSaver.save(writes[path], path)
+		# Headless ResourceSaver can omit UIDs; existing scene references must survive.
+		if save_error == OK and original_uids[path] != -1:
+			save_error = ResourceSaver.set_uid(path, original_uids[path])
+		if save_error != OK:
 			for restore in written:
 				if originals[restore] == null: DirAccess.remove_absolute(ProjectSettings.globalize_path(restore))
 				else:

@@ -32,3 +32,5 @@ Wyniki lokalne (macOS, Godot 4.7.2): kompilator 26/26, import/runtime 42/42, pod
 Wersja edytora 1.1 dodaje **+ Nowy quest** z kreatorem pustego zadania, wyborem osobnego projektu i nowego NPC oraz kartą **Zacznij tutaj**. Zmiana dotyczy narzędzia autora; schema źródeł i importu pozostaje v1, a runtime i zapis gry nie ulegają zmianie.
 
 Weryfikacja 1.1: kompilator 35/35, import/runtime 42/42, narracja 69/69. Eksport uzupełnionego questa od zera (cel typu stan) przyjęty przez natywny importer w dry-run. W przeglądarce sprawdzono tworzenie w bieżącym i nowym projekcie, nowego NPC, zaznaczanie wskazówek oraz uzupełnienie szkicu do poprawnego eksportu. Test nowego NPC uwzględnia katalog, do którego autor już zaimportował przykład.
+
+Poprawka 2026-09-15: ponowny import zachowuje UID istniejących zasobów z nagłówków `.tres`, także w headless bez aktualnego cache UID. Nieaktualny UID profilu Brunona usunięto z odwołania w scenie; pozostaje prawidłowa ścieżka zasobu. Regresja importera: 44/44, w tym zachowanie UID po ponownym zapisie.
