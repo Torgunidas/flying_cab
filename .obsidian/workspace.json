@@ -1,0 +1,220 @@
+{
+  "main": {
+    "id": "b5976b65478a1491",
+    "type": "split",
+    "children": [
+      {
+        "id": "55f2b1fa3f4e5c5c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fcd42c5128aa1756",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "autorskie/sen.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "sen"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "d944306d0f3da4d5",
+    "type": "split",
+    "children": [
+      {
+        "id": "c3f70526282255e1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7dbe2f9e5a6fdea8",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Przeglądarka plików"
+            }
+          },
+          {
+            "id": "62bb7e1edade30d9",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Wyszukiwarka"
+            }
+          },
+          {
+            "id": "0b91a04ee87d7fde",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Ulubione"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "063632ad423498e7",
+    "type": "split",
+    "children": [
+      {
+        "id": "99b050157df5df43",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d8dfef1fddf19b89",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "godot/FlyingCabPrototype/docs/NARRATIVE_AUTHORING.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Linki zwrotne"
+            }
+          },
+          {
+            "id": "37f9f7bbf2b1eef8",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "godot/FlyingCabPrototype/docs/NARRATIVE_AUTHORING.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Łącza wychodzące"
+            }
+          },
+          {
+            "id": "e430dde740a60984",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tagi"
+            }
+          },
+          {
+            "id": "5f7d4c9028a192a3",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Wszystkie atrybuty"
+            }
+          },
+          {
+            "id": "8c6a9245e5e7ccb8",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "godot/FlyingCabPrototype/docs/NARRATIVE_AUTHORING.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Konspekt"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Otwórz okno szybkiego wyboru": false,
+      "graph:Otwórz podgląd grafu": false,
+      "canvas:Stwórz nową tablicę": false,
+      "daily-notes:Otwórz dzisiejszy dziennik": false,
+      "templates:Wstaw szablon": false,
+      "command-palette:Otwórz paletę poleceń": false,
+      "bases:Stwórz nową bazę danych": false
+    }
+  },
+  "active": "fcd42c5128aa1756",
+  "lastOpenFiles": [
+    "godot/FlyingCabPrototype/build/story-import-backups/1789407239_7117/build/story-editor-test/generated/cab_story/quest_fc_depot_runs.tres",
+    "godot/FlyingCabPrototype/build/story-import-backups/1789407239_7117/build/story-editor-test/generated/cab_story/dialogue_fc_depot_runs_dialogue.tres",
+    "godot/FlyingCabPrototype/build/story-import-backups/1789407239_7117/build/story-editor-test/generated/cab_story",
+    "godot/FlyingCabPrototype/build/story-import-backups/1789407239_7117/build/story-editor-test/generated",
+    "godot/FlyingCabPrototype/build/story-import-backups/1789407239_7117/build/story-editor-test/froggy.tres",
+    "godot/FlyingCabPrototype/build/story-import-backups/1789407239_7117/build/story-editor-test/catalog.tres",
+    "godot/FlyingCabPrototype/build/story-import-backups/1789407239_7117/build/story-editor-test",
+    "godot/FlyingCabPrototype/build/story-import-backups/1789407239_7117/build",
+    "godot/FlyingCabPrototype/build/story-import-backups/1789407239_7117",
+    "godot/FlyingCabPrototype/build/story-import-backups/1789407239_70594/build/story-editor-test/generated/cab_story/quest_fc_depot_runs.tres",
+    "godot/FlyingCabPrototype/build/story-import-backups/1789407239_70594/build/story-editor-test/generated/cab_story/dialogue_fc_depot_runs_dialogue.tres",
+    "godot/FlyingCabPrototype/build/web/index.apple-touch-icon.png",
+    "godot/FlyingCabPrototype/build/web/index.icon.png",
+    "godot/FlyingCabPrototype/build/web/index.png",
+    "autorskie/plan gry.md",
+    "autorskie/sen.md",
+    "tools/quest_editor/README.md",
+    "godot/FlyingCabPrototype/docs/NARRATIVE_AUTHORING.md",
+    "godot/FlyingCabPrototype/build/warning-audit-3brvm9ib/assets/ui/start_poster.png",
+    "godot/FlyingCabPrototype/build/warning-audit-3brvm9ib/assets/icon.svg",
+    "build/translations/aktualizacja_2026-09-15_ru.md",
+    "godot/FlyingCabPrototype/docs/ON_FOOT.md",
+    "godot/FlyingCabPrototype/README.md",
+    "README.md",
+    "Bez nazwy.md",
+    "archive/README.md"
+  ]
+}

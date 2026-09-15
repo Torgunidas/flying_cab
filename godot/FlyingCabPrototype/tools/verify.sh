@@ -1,6 +1,54 @@
 #!/bin/bash
 set -euo pipefail
 source "$(dirname "$0")/godot-env.sh"
+if [[ "${1:-}" == "story-editor" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --script tests/story_editor_tests.gd --log-file "$FC_PROJECT_DIR/build/story-editor-tests.log"
+fi
+if [[ "${1:-}" == "story-editor-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 540x960 --script tests/story_editor_render_tests.gd --log-file "$FC_PROJECT_DIR/build/story-editor-render-tests.log"
+fi
+if [[ "${1:-}" == "platform-camera" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --script tests/platform_camera_tests.gd --log-file "$FC_PROJECT_DIR/build/platform-camera-tests.log"
+fi
+if [[ "${1:-}" == "platform-camera-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 540x960 --disable-vsync --script tests/platform_camera_tests.gd --log-file "$FC_PROJECT_DIR/build/platform-camera-render-tests.log"
+fi
+if [[ "${1:-}" == "start-menu" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --script tests/start_menu_tests.gd --log-file "$FC_PROJECT_DIR/build/start-menu-tests.log"
+fi
+if [[ "${1:-}" == "start-menu-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 540x960 --script tests/start_menu_tests.gd --log-file "$FC_PROJECT_DIR/build/start-menu-render-tests.log" -- --capture-only
+fi
+if [[ "${1:-}" == "narrative-validate" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --script tools/validate_narrative.gd --log-file "$FC_PROJECT_DIR/build/narrative-validation.log"
+fi
+if [[ "${1:-}" == "narrative" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --script tests/narrative_tests.gd --log-file "$FC_PROJECT_DIR/build/narrative-tests.log"
+fi
+if [[ "${1:-}" == "narrative-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 540x960 --script tests/narrative_render_tests.gd --log-file "$FC_PROJECT_DIR/build/narrative-render-tests.log"
+fi
+if [[ "${1:-}" == "test-yard" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --fixed-fps 120 --script tests/test_yard_tests.gd --log-file "$FC_PROJECT_DIR/build/test-yard-tests.log"
+fi
+if [[ "${1:-}" == "test-yard-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 1400x850 --disable-vsync --script tests/test_yard_tests.gd --log-file "$FC_PROJECT_DIR/build/test-yard-render.log" -- --capture-only
+fi
+if [[ "${1:-}" == "living-world-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 540x960 --disable-vsync --script tests/living_world_render_tests.gd --log-file "$FC_PROJECT_DIR/build/living-world-render-tests.log"
+fi
+if [[ "${1:-}" == "perimeter-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 540x960 --fixed-fps "${2:-120}" --disable-vsync --script tests/perimeter_presentation_tests.gd --log-file "$FC_PROJECT_DIR/build/perimeter-presentation-tests.log"
+fi
+if [[ "${1:-}" == "living-world" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --fixed-fps 120 --script tests/living_world_tests.gd --log-file "$FC_PROJECT_DIR/build/living-world-tests.log"
+fi
+if [[ "${1:-}" == "human-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 1400x1100 --disable-vsync --script tests/human_presentation_tests.gd --log-file "$FC_PROJECT_DIR/build/human-presentation.log"
+fi
+if [[ "${1:-}" == "walking" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --fixed-fps 120 --script tests/walking_tests.gd --log-file "$FC_PROJECT_DIR/build/walking-tests.log"
+fi
 if [[ "${1:-}" == "on-foot-render" ]]; then
     exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 540x960 --disable-vsync --script tests/on_foot_render_tests.gd --log-file "$FC_PROJECT_DIR/build/on-foot-render-tests.log"
 fi

@@ -34,12 +34,15 @@ func _run() -> void:
 	var context := RuntimeContext.new()
 	root.add_child(context)
 	context.rides.enabled = true
+	level.living_world_enabled = false # Isolated fixture; full population has its own integration suite.
 	level.context = context
 	root.add_child(level)
 	level.set_physics_process(false)
 	var cab: FlightCab = level.cab
 	var foot: OnFootInteraction = level.on_foot
 	var ari := foot.actor
+	var capsule := ari.get_node("Collision").shape as CapsuleShape3D
+	check(is_equal_approx(capsule.height, HumanRig.HEIGHT) and is_equal_approx(capsule.radius, HumanRig.RADIUS) and is_equal_approx(ari.get_node("Visual").position.y, -capsule.height * 0.5), "physical capsule and sole offset match the shared human anatomy")
 	var controls: FlightControls = level.controls
 	await frames(90)
 	check(cab.grounded and not ari.active and not ari.visible, "normal game starts driving with Ari hidden and non-colliding")
@@ -60,7 +63,7 @@ func _run() -> void:
 	context.rides.active = {}
 	check(foot.try_exit(cab), "Ari exits a parked cab with a passenger still aboard")
 	await frames(12)
-	check(ari.is_on_floor() and context.player.focus == ari and ari.visible and ari.global_position.z == 0, "visible Ari stands on the actual depot terrace in the city plane")
+	check(ari.is_on_floor() and context.player.focus == ari and ari.visible and is_equal_approx(ari.global_position.z, WorldLayers.PEDESTRIAN_Z), "visible Ari stands on the actual depot terrace in the city plane")
 	check(cab.get_instance_id() == identity and cab.fuel == 43 and cab.state.condition == 0.75 and cab.state.passenger_ids.has("test_passenger") and cab.get_driver_id() == &"", "exit retains vehicle identity, fuel, damage and passengers, releasing only the driver")
 	check(controls._control_mode == &"on_foot" and not controls._repair_available, "HUD switches to on-foot controls and hides vehicle service controls")
 	var start := ari.global_position
@@ -72,7 +75,7 @@ func _run() -> void:
 	check(ari.is_on_floor() and absf(ari.global_position.y - start.y) < 0.06, "holding jump through landing does not trigger another jump")
 	context.player.dispatch(Vector2.ZERO)
 	context.player.dispatch(Vector2(1, 1))
-	await frames(8)
+	await frames(12)
 	check(ari.global_position.x > start.x + 0.1 and ari.global_position.y > start.y + 0.3, "airborne movement responds to horizontal steering")
 	context.player.suspend(&"dialogue")
 	var airborne_y := ari.global_position.y
@@ -90,7 +93,7 @@ func _run() -> void:
 	# Capture a real on-foot pose through the full save path and restore the map.
 	var snapshot := context.snapshot()
 	var restored := RuntimeContext.new()
-	check(restored.restore(snapshot) and restored.player_state.mode == "on_foot", "schema 3 restores player mode independently of the car")
+	check(restored.restore(snapshot) and restored.player_state.mode == "on_foot", "schema 4 restores player mode independently of the car")
 	var path := "res://build/on-foot-session-test.json"
 	check(context.save_to(path) == OK and restored.load_from(path), "on-foot state survives JSON numeric conversion and disk round trip")
 	var broken := snapshot.duplicate(true)
@@ -131,7 +134,7 @@ func _run() -> void:
 	check(not foot.try_exit(cab) and context.player.focus == cab, "two blocked exits leave control and vehicle state unchanged")
 	wall_right.queue_free()
 	wall_left.queue_free()
-	await frames()
+	await frames(30) # Let the cab settle after removing physical exit blockers.
 	# Q and touch each request one transfer; held W does not leak into a jump.
 	level.set_physics_process(true)
 	Input.action_press("flight_up")

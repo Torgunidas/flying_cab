@@ -33,6 +33,7 @@ func enter(id: StringName, prepare: Callable = Callable(), entry: StringName = &
 		return false
 	busy = true
 	context.player.suspend(&"map_transition")
+	context.dialogue.end()
 	transition_started.emit(id)
 	if is_instance_valid(current):
 		context.map_states[String(context.current_map)] = current.capture_map_state()

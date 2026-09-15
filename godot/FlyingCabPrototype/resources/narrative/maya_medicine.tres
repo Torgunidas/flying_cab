@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="DialogueDefinition" format=3 uid="uid://b01b3cv5exe7"]
+
+[ext_resource type="Script" uid="uid://bbj1vgka3aqlb" path="res://scripts/narrative/dialogue_entry.gd" id="1_v7nda"]
+[ext_resource type="Script" uid="uid://bxilgskfvq203" path="res://scripts/narrative/dialogue_choice.gd" id="s_dialogue_choice"]
+[ext_resource type="Script" uid="uid://cyk54eteh2oga" path="res://scripts/narrative/dialogue_definition.gd" id="s_dialogue_definition"]
+[ext_resource type="Script" uid="uid://c04a45t5qg5yl" path="res://scripts/narrative/dialogue_node.gd" id="s_dialogue_node"]
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="s_narrative_condition"]
+[ext_resource type="Script" uid="uid://blfaeixmm3cs6" path="res://scripts/narrative/narrative_effect.gd" id="s_narrative_effect"]
+
+[sub_resource type="Resource" id="r0"]
+script = ExtResource("s_narrative_condition")
+kind = "medicine"
+reason = "Nie masz dawki."
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("s_narrative_condition")
+kind = "campaign_active"
+reason = "Odliczanie nie jest aktywne."
+
+[sub_resource type="Resource" id="r2"]
+script = ExtResource("s_narrative_effect")
+kind = "deliver_medicine"
+value = 600.0
+
+[sub_resource type="Resource" id="r3"]
+script = ExtResource("s_dialogue_choice")
+id = &"give"
+text = "Podaj dawkę."
+next_node = &"thanks"
+conditions = Array[ExtResource("s_narrative_condition")]([SubResource("r0"), SubResource("r1")])
+effects = Array[ExtResource("s_narrative_effect")]([SubResource("r2")])
+
+[sub_resource type="Resource" id="r4"]
+script = ExtResource("s_dialogue_node")
+id = &"give"
+text = "Masz lek? Pomóż mi go przyjąć."
+choices = Array[ExtResource("s_dialogue_choice")]([SubResource("r3")])
+
+[sub_resource type="Resource" id="r5"]
+script = ExtResource("s_dialogue_choice")
+id = &"leave"
+text = "Odpocznij."
+
+[sub_resource type="Resource" id="r6"]
+script = ExtResource("s_dialogue_node")
+id = &"thanks"
+text = "Dziękuję. Czuję, że zaczyna działać."
+choices = Array[ExtResource("s_dialogue_choice")]([SubResource("r5")])
+
+[resource]
+script = ExtResource("s_dialogue_definition")
+id = &"maya_medicine"
+start_node = &"give"
+nodes = Array[ExtResource("s_dialogue_node")]([SubResource("r4"), SubResource("r6")])

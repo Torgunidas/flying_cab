@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="QuestDefinition" format=3 uid="uid://b1noxrgvcwkfy"]
+
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="1_nmojc"]
+[ext_resource type="Script" uid="uid://do0u0sf3vh38d" path="res://scripts/narrative/quest_objective.gd" id="2_hi64f"]
+[ext_resource type="Script" uid="uid://ddgyy5cd7si6b" path="res://scripts/narrative/quest_transition.gd" id="3_hi64f"]
+[ext_resource type="Script" uid="uid://blfaeixmm3cs6" path="res://scripts/narrative/narrative_effect.gd" id="3_pfpxf"]
+[ext_resource type="Script" uid="uid://bfjb8q6yjlcky" path="res://scripts/narrative/quest_definition.gd" id="4_ur6sg"]
+
+[sub_resource type="Resource" id="Resource_m0l0n"]
+script = ExtResource("2_hi64f")
+id = &"return_trips"
+required = 2.001
+destination_id = &"depot"
+metadata/_custom_type_script = "uid://do0u0sf3vh38d"
+
+[resource]
+script = ExtResource("4_ur6sg")
+id = &"depot_driver"
+title = "Depot driver"
+description = "Dostarcz dobra do depozytu."
+objectives = Array[ExtResource("2_hi64f")]([SubResource("Resource_m0l0n")])
+prerequisites = PackedStringArray()
+requires_turn_in = true
+turn_in_npc = &"froggy"
+reward_credits = 75.0
+metadata/_custom_type_script = "uid://bfjb8q6yjlcky"

@@ -1,5 +1,7 @@
 # Biblioteka pojazdów — 2026-09-13
 
+**Próby w mieście:** komplet 12 modeli stoi na długiej platformie **FOUNDRY / TEST FLEET**, tuż pod autostradą Crosstown w prawym dolnym kwartale. Wolne miejsce LAND HERE jest na zachodnim końcu; po wysiadaniu można wejść do dowolnego modelu przez Q. [Położenie, zapis i edycja](CITY_02.md#platforma-testowa-foundry--2026-09-13).
+
 Ukończono zadanie „różne pojazdy” rozpoczęte na Macu i przeniesione na Windows w commicie `ffe9915`. Katalog ma 12 modeli: dotychczasowe `basic_cab` i `heavy_shuttle` oraz dziesięć nowych wariantów. To biblioteka dla przyszłego living world. Domyślna gra nadal zaczyna się taksówką; nie dodano ruchu NPC, kradzieży, pościgów ani mechaniki transportu ładunku.
 
 ## Oglądanie i uruchamianie
@@ -21,6 +23,8 @@ Na macOS pozostają dotychczasowe launchery. Galerię można też uruchomić po 
 ## Modele i parametry próbne
 
 Jednostkę potwierdzono pomiarem AABB wszystkich nieruchomych siatek bazowego cab: **2,2 m długości, 1,14 m wysokości**, od Y = −0,38 do 0,76. Pomiar obejmuje obudowy dysz i szyld, pomija płomienie i tekst etykiety. Głębokość wraz z bocznymi obrzeżami dysz wynosi 1,185 m. Bazowy kolider zachowuje dokładnie 2,2 × 0,7 × 0,9 m i zerowe przesunięcie.
+
+Referencja człowieka po korekcie 2026-09-13: 1,16 jednostki od podeszwy do głowy, około 20% ponad dach bazowego cab. Wspólna anatomia Ariego i pasażerów jest w `HumanRig`; wymiary aut i ich relacje 1×1, 1,5×2 itd. pozostają jak wyżej. `bash tools/verify.sh human-render` pokazuje człowieka przy każdym z 12 modeli na wspólnej linii podłoża oraz fazy chodu. Szczegóły: [tryb pieszy](ON_FOOT.md#synchronizacja-chodu--korekta-2026-09-13).
 
 | ID | Wygląd | Długość × wysokość cab | Masa kg | Ciąg pion/poziom N | Paliwo | HP | Odporność | Miejsca pasażerów |
 | --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: |

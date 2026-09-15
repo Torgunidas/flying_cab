@@ -1,0 +1,111 @@
+{
+  "format": "flying-cab-story",
+  "version": 1,
+  "id": "cab_story",
+  "title": "Flying Cab — fabuła",
+  "documents": [
+    {
+      "id": "fc_depot_runs",
+      "kind": "quest",
+      "title": "Dwa powroty do Depot",
+      "description": "Wykonaj dwa kursy do Depot i wróć po zapłatę.",
+      "version": 1,
+      "category": "side",
+      "npc": "froggy",
+      "topic_title": "Masz dla mnie pracę?",
+      "auto_start": false,
+      "requires_turn_in": true,
+      "turn_in_npc": "froggy",
+      "reward_credits": 75,
+      "prerequisites": [],
+      "conditions": [],
+      "rewards": [],
+      "topic_conditions": [],
+      "objectives": [
+        {
+          "id": "cel_20c58eb3bab64477b231c7cd82bb9a03",
+          "description": "Wykonaj dwa kursy do Depot.",
+          "mode": "event",
+          "event": "ride_completed",
+          "required": 2,
+          "destination_id": "depot",
+          "origin_id": "",
+          "target_id": "",
+          "vehicle_id": "",
+          "custom_event": "",
+          "conditions": [],
+          "transitions": []
+        }
+      ],
+      "choices": {
+        "accept": {
+          "conditions": [],
+          "effects": [
+            {
+              "kind": "start_quest",
+              "key": "fc_depot_runs",
+              "amount": 1,
+              "value": 0
+            }
+          ],
+          "once": false,
+          "hide_unavailable": false
+        },
+        "claim": {
+          "conditions": [],
+          "effects": [
+            {
+              "kind": "turn_in",
+              "key": "fc_depot_runs",
+              "amount": 1,
+              "value": 0
+            }
+          ],
+          "once": false,
+          "hide_unavailable": false
+        }
+      },
+      "stages": {
+        "ETAP_1": {
+          "status": "inactive",
+          "conditions": []
+        },
+        "ETAP_2": {
+          "status": "active",
+          "conditions": []
+        },
+        "ETAP_3": {
+          "status": "ready",
+          "conditions": []
+        },
+        "ETAP_4": {
+          "status": "completed",
+          "conditions": []
+        }
+      },
+      "text": "##QUEST###fc_depot_runs\n##NPC\nFROGGY###froggy\n\n###ETAP\nETAP_1 ###Oferta ###Przyjmij zadanie.\n##DIALOG *FROGGY*\n// @fc:node offer\n*FROGGY*\nZrób dwa kursy do Depot. Zapłacę 75 CR.\n// @fc:node offer_menu\n*GRACZ*\n// @fc:choice accept\nZajmę się tym.{ETAP_2}\n// @fc:choice decline\nNie teraz.{-1}\n\n###ETAP\nETAP_2 ###W trakcie ###Wykonaj kursy w mieście.\n##DIALOG *FROGGY*\n// @fc:node active\n*FROGGY*\nWróć po dwóch kursach do Depot.\n// @fc:node active_menu\n*GRACZ*\n// @fc:choice leave_active\nDo zobaczenia.{-1}\n\n###ETAP\nETAP_3 ###Nagroda ###Wróć do zleceniodawcy.\n##DIALOG *FROGGY*\n// @fc:node ready\n*FROGGY*\nDobra robota. Oto zapłata.\n// @fc:node ready_menu\n*GRACZ*\n// @fc:choice claim\nOdbieram zapłatę.{ETAP_4}\n\n###ETAP\nETAP_4 ###Zakończone ###Zadanie ukończone.\n##DIALOG *FROGGY*\n// @fc:node done\n*FROGGY*\nDzięki za pomoc.\n// @fc:node done_menu\n*GRACZ*\n// @fc:choice leave_done\nNa razie.{-1}\n\n##END\n"
+    }
+  ],
+  "npcs": [
+    {
+      "id": "maya",
+      "display_name": "MAYA",
+      "greeting": "Dobrze cię widzieć, Ari.",
+      "existing": true,
+      "portrait": "",
+      "profile_path": "res://resources/narrative/maya.tres"
+    },
+    {
+      "id": "froggy",
+      "display_name": "FROGGY",
+      "greeting": "Czego potrzebujesz, kierowco?",
+      "existing": true,
+      "portrait": "",
+      "profile_path": "res://resources/narrative/froggy.tres"
+    }
+  ],
+  "items": [],
+  "fact_ids": [],
+  "access_ids": [],
+  "custom_events": []
+}

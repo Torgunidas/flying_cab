@@ -24,9 +24,19 @@ window/size/window_height_override=1280
 window/stretch/mode="canvas_items"
 window/handheld/orientation=1
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/flying_cab_story/plugin.cfg")
+
 [input_devices]
 
 pointing/emulate_mouse_from_touch=false
+
+[layer_names]
+
+3d_physics/layer_1="World geometry"
+3d_physics/layer_2="People (non-blocking)"
+3d_physics/layer_3="Vehicles"
 
 [physics]
 

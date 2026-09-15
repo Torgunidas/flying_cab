@@ -46,6 +46,7 @@ func _run() -> void:
 	context.campaign.credits = 120
 	root.add_child(context)
 	level = load("res://scenes/flight_lab.tscn").instantiate()
+	level.living_world_enabled = false # Isolated fixture; full population has its own integration suite.
 	level.context = context
 	root.add_child(level)
 	await level.prepare_gameplay()

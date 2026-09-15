@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="QuestDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrative/narrative_condition.gd" id="1_kihaf"]
+[ext_resource type="Script" path="res://scripts/narrative/quest_objective.gd" id="2_h5umu"]
+[ext_resource type="Script" path="res://scripts/narrative/quest_transition.gd" id="3_ibv73"]
+[ext_resource type="Script" path="res://scripts/narrative/narrative_effect.gd" id="4_let5a"]
+[ext_resource type="Script" path="res://scripts/narrative/quest_definition.gd" id="5_u2ib3"]
+
+[sub_resource type="Resource" id="Resource_kihaf"]
+script = ExtResource("2_h5umu")
+id = &"cel_5f7173be65c84ddea75362a4a3a75ee9"
+description = "Zdobądź czerwony supercar"
+event = "vehicle_entered"
+vehicle_id = &"test_fleet/supercar"
+
+[sub_resource type="Resource" id="Resource_h5umu"]
+script = ExtResource("1_kihaf")
+kind = "vehicle_id"
+key = &"test_fleet/supercar"
+
+[sub_resource type="Resource" id="Resource_ibv73"]
+script = ExtResource("2_h5umu")
+id = &"cel_eeb5b16eaa6444aba9efdc8a31f6c417"
+description = "Dowieź auto do Bruno"
+event = "area_entered"
+target_id = &"bruno_delivery"
+vehicle_id = &"test_fleet/supercar"
+conditions = Array[ExtResource("1_kihaf")]([SubResource("Resource_h5umu")])
+
+[sub_resource type="Resource" id="Resource_let5a"]
+script = ExtResource("4_let5a")
+key = &"promised_froggy"
+
+[resource]
+script = ExtResource("5_u2ib3")
+id = &"quest_85815f3b769f4aaabd844376e2becc21"
+version = 3
+title = "Trzy słowa do ojca prowadzącego"
+description = "Bruno prosi o dostarczenie szybkiego pojazdu."
+objectives = Array[ExtResource("2_h5umu")]([SubResource("Resource_kihaf"), SubResource("Resource_ibv73")])
+prerequisites = PackedStringArray()
+requires_turn_in = true
+turn_in_npc = &"npc_48318a766f204c43a16b36dbd0c40314"
+reward_credits = 500.0
+rewards = Array[ExtResource("4_let5a")]([SubResource("Resource_let5a")])
+metadata/fc_story_project = "fabula_bd40afbbe29e4eacbc41c2bdf313173b"

@@ -1,0 +1,222 @@
+{
+  "format": "flying-cab-narrative",
+  "version": 1,
+  "project_id": "cab_story",
+  "quests": [
+    {
+      "id": "fc_depot_runs",
+      "title": "Dwa powroty do Depot",
+      "description": "Wykonaj dwa kursy do Depot i wróć po zapłatę.",
+      "version": 1,
+      "category": "side",
+      "auto_start": false,
+      "requires_turn_in": true,
+      "turn_in_npc": "froggy",
+      "reward_credits": 75,
+      "prerequisites": [],
+      "conditions": [],
+      "rewards": [],
+      "objectives": [
+        {
+          "id": "cel_20c58eb3bab64477b231c7cd82bb9a03",
+          "description": "Wykonaj dwa kursy do Depot.",
+          "mode": "event",
+          "event": "ride_completed",
+          "required": 2,
+          "destination_id": "depot",
+          "origin_id": "",
+          "target_id": "",
+          "vehicle_id": "",
+          "custom_event": "",
+          "conditions": [],
+          "transitions": []
+        }
+      ]
+    }
+  ],
+  "dialogues": [
+    {
+      "id": "fc_depot_runs_dialogue",
+      "start_node": "offer",
+      "nodes": [
+        {
+          "id": "offer",
+          "speaker": "FROGGY",
+          "text": "Zrób dwa kursy do Depot. Zapłacę 75 CR.",
+          "choices": [
+            {
+              "id": "accept",
+              "text": "Zajmę się tym.",
+              "next_node": "active",
+              "conditions": [],
+              "effects": [
+                {
+                  "kind": "start_quest",
+                  "key": "fc_depot_runs",
+                  "amount": 1,
+                  "value": 0
+                }
+              ],
+              "once": false,
+              "hide_unavailable": false
+            },
+            {
+              "id": "decline",
+              "text": "Nie teraz.",
+              "next_node": "",
+              "conditions": [],
+              "effects": [],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        },
+        {
+          "id": "active",
+          "speaker": "FROGGY",
+          "text": "Wróć po dwóch kursach do Depot.",
+          "choices": [
+            {
+              "id": "leave_active",
+              "text": "Do zobaczenia.",
+              "next_node": "",
+              "conditions": [],
+              "effects": [],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        },
+        {
+          "id": "ready",
+          "speaker": "FROGGY",
+          "text": "Dobra robota. Oto zapłata.",
+          "choices": [
+            {
+              "id": "claim",
+              "text": "Odbieram zapłatę.",
+              "next_node": "done",
+              "conditions": [],
+              "effects": [
+                {
+                  "kind": "turn_in",
+                  "key": "fc_depot_runs",
+                  "amount": 1,
+                  "value": 0
+                }
+              ],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        },
+        {
+          "id": "done",
+          "speaker": "FROGGY",
+          "text": "Dzięki za pomoc.",
+          "choices": [
+            {
+              "id": "leave_done",
+              "text": "Na razie.",
+              "next_node": "",
+              "conditions": [],
+              "effects": [],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        }
+      ],
+      "entries": [
+        {
+          "node_id": "offer",
+          "conditions": [
+            {
+              "kind": "quest_status",
+              "key": "fc_depot_runs",
+              "amount": 1,
+              "comparison": ">=",
+              "status": "inactive",
+              "invert": false,
+              "reason": "Warunek nie został spełniony."
+            }
+          ]
+        },
+        {
+          "node_id": "active",
+          "conditions": [
+            {
+              "kind": "quest_status",
+              "key": "fc_depot_runs",
+              "amount": 1,
+              "comparison": ">=",
+              "status": "active",
+              "invert": false,
+              "reason": "Warunek nie został spełniony."
+            }
+          ]
+        },
+        {
+          "node_id": "ready",
+          "conditions": [
+            {
+              "kind": "quest_status",
+              "key": "fc_depot_runs",
+              "amount": 1,
+              "comparison": ">=",
+              "status": "ready",
+              "invert": false,
+              "reason": "Warunek nie został spełniony."
+            }
+          ]
+        },
+        {
+          "node_id": "done",
+          "conditions": [
+            {
+              "kind": "quest_status",
+              "key": "fc_depot_runs",
+              "amount": 1,
+              "comparison": ">=",
+              "status": "completed",
+              "invert": false,
+              "reason": "Warunek nie został spełniony."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "npcs": [
+    {
+      "id": "maya",
+      "display_name": "MAYA",
+      "greeting": "Dobrze cię widzieć, Ari.",
+      "existing": true,
+      "portrait": "",
+      "profile_path": "res://resources/narrative/maya.tres",
+      "topics": []
+    },
+    {
+      "id": "froggy",
+      "display_name": "FROGGY",
+      "greeting": "Czego potrzebujesz, kierowco?",
+      "existing": true,
+      "portrait": "",
+      "profile_path": "res://resources/narrative/froggy.tres",
+      "topics": [
+        {
+          "id": "fc_depot_runs",
+          "title": "Masz dla mnie pracę?",
+          "dialogue": "fc_depot_runs_dialogue",
+          "conditions": [],
+          "hide_unavailable": false
+        }
+      ]
+    }
+  ],
+  "items": [],
+  "fact_ids": [],
+  "access_ids": [],
+  "custom_events": []
+}

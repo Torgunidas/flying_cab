@@ -1,0 +1,178 @@
+[gd_resource type="Resource" script_class="LivingWorldProfile" format=3 uid="uid://bytblvhghngd0"]
+
+[ext_resource type="Script" uid="uid://dtxsl0eruj1mh" path="res://scripts/living_world/living_world_profile.gd" id="profile"]
+[ext_resource type="Script" uid="uid://dycwjiseyim2u" path="res://scripts/living_world/resident_schedule.gd" id="resident"]
+[ext_resource type="Script" uid="uid://bqd3pb2por4kh" path="res://scripts/living_world/living_route.gd" id="route"]
+
+[sub_resource type="Resource" id="velvet_commuter"]
+script = ExtResource("resident")
+resident_id = "velvet_commuter"
+stops = PackedStringArray("depot", "velvet_club")
+corridor_x = -13.7
+dwell_seconds = 12
+look = 1
+
+[sub_resource type="Resource" id="foundry_commuter"]
+script = ExtResource("resident")
+resident_id = "foundry_commuter"
+model_id = "normal_car_2"
+stops = PackedStringArray("foundry_market", "foundry_docks")
+
+[sub_resource type="Resource" id="eden_commuter"]
+script = ExtResource("resident")
+resident_id = "eden_commuter"
+model_id = "luxury_car"
+stops = PackedStringArray("eden_01", "eden_02")
+corridor_x = -13.7
+dwell_seconds = 16
+look = 3
+
+[sub_resource type="Resource" id="aurelia_commuter"]
+script = ExtResource("resident")
+resident_id = "aurelia_commuter"
+model_id = "normal_car_3"
+stops = PackedStringArray("aurelia_01", "aurelia_02")
+dwell_seconds = 22
+look = 2
+
+[sub_resource type="Resource" id="hotel_owner"]
+script = ExtResource("resident")
+resident_id = "hotel_owner"
+model_id = "poor_car"
+stops = PackedStringArray("velvet_04")
+parked_only = true
+dwell_seconds = 20
+
+[sub_resource type="Resource" id="club_owner"]
+script = ExtResource("resident")
+resident_id = "club_owner"
+model_id = "supercar"
+stops = PackedStringArray("velvet_03")
+parked_only = true
+dwell_seconds = 20
+look = 2
+
+[sub_resource type="Resource" id="mechanic"]
+script = ExtResource("resident")
+resident_id = "mechanic"
+model_id = "tow_car"
+stops = PackedStringArray("foundry_04")
+parked_only = true
+berth_x = 3
+dwell_seconds = 20
+
+[sub_resource type="Resource" id="hauler"]
+script = ExtResource("resident")
+resident_id = "hauler"
+model_id = "lorry"
+stops = PackedStringArray("foundry_06")
+parked_only = true
+berth_x = 2.7
+dwell_seconds = 20
+look = 1
+
+[sub_resource type="Resource" id="clinic_owner"]
+script = ExtResource("resident")
+resident_id = "clinic_owner"
+stops = PackedStringArray("eden_04")
+parked_only = true
+dwell_seconds = 20
+look = 3
+
+[sub_resource type="Resource" id="surgeon"]
+script = ExtResource("resident")
+resident_id = "surgeon"
+model_id = "luxury_car"
+stops = PackedStringArray("eden_06")
+parked_only = true
+dwell_seconds = 20
+look = 1
+
+[sub_resource type="Resource" id="banker"]
+script = ExtResource("resident")
+resident_id = "banker"
+model_id = "limousine"
+stops = PackedStringArray("aurelia_04")
+parked_only = true
+berth_x = 2.6
+dwell_seconds = 20
+look = 3
+
+[sub_resource type="Resource" id="patrol_owner"]
+script = ExtResource("resident")
+resident_id = "patrol_owner"
+model_id = "police_car"
+stops = PackedStringArray("aurelia_06")
+parked_only = true
+dwell_seconds = 20
+look = 2
+
+[sub_resource type="Resource" id="outer_clockwise"]
+script = ExtResource("route")
+route_id = "outer_clockwise"
+points = PackedVector3Array(-69, 13.5, 0, 70, 13.5, 0, 70, 306.5, 0, -69, 306.5, 0)
+population = 10
+speed = 12.5
+models = PackedStringArray("lorry", "normal_car_1", "normal_car_2", "police_car", "tow_car")
+
+[sub_resource type="Resource" id="outer_counterclockwise"]
+script = ExtResource("route")
+route_id = "outer_counterclockwise"
+points = PackedVector3Array(-64, 18.5, 0, -64, 301.5, 0, 65, 301.5, 0, 65, 18.5, 0)
+population = 8
+speed = 12
+models = PackedStringArray("supercar", "normal_car_3", "luxury_car", "limousine")
+
+[sub_resource type="Resource" id="spine"]
+script = ExtResource("route")
+route_id = "spine"
+points = PackedVector3Array(-2.5, 18.5, 0, -2.5, 301.5, 0, 3.5, 301.5, 0, 3.5, 18.5, 0)
+population = 6
+speed = 11.5
+models = PackedStringArray("normal_car_1", "police_car", "poor_car")
+
+[sub_resource type="Resource" id="crosstown"]
+script = ExtResource("route")
+route_id = "crosstown"
+points = PackedVector3Array(-69, 157, 0, 70, 157, 0, 70, 163, 0, -69, 163, 0)
+population = 6
+speed = 11.5
+models = PackedStringArray("normal_car_2", "tow_car", "normal_car_3")
+
+[sub_resource type="Resource" id="velvet"]
+script = ExtResource("route")
+route_id = "velvet"
+points = PackedVector3Array(-47.5, 40, 0, -10, 40, 0, -10, 144, 0, -47.5, 144, 0)
+population = 2
+speed = 6
+models = PackedStringArray("poor_car", "normal_car_3")
+
+[sub_resource type="Resource" id="foundry"]
+script = ExtResource("route")
+route_id = "foundry"
+points = PackedVector3Array(10, 24, 0, 47.5, 24, 0, 47.5, 146, 0, 10, 146, 0)
+population = 2
+speed = 6
+models = PackedStringArray("normal_car_2", "tow_car")
+
+[sub_resource type="Resource" id="eden"]
+script = ExtResource("route")
+route_id = "eden"
+points = PackedVector3Array(-47.5, 176, 0, -10, 176, 0, -10, 294, 0, -47.5, 294, 0)
+population = 2
+speed = 6
+models = PackedStringArray("luxury_car", "normal_car_1")
+
+[sub_resource type="Resource" id="aurelia"]
+script = ExtResource("route")
+route_id = "aurelia"
+points = PackedVector3Array(10, 176, 0, 47.5, 176, 0, 47.5, 294, 0, 10, 294, 0)
+population = 2
+speed = 6
+models = PackedStringArray("limousine", "supercar")
+
+[resource]
+script = ExtResource("profile")
+routes = Array[ExtResource("route")]([SubResource("outer_clockwise"), SubResource("outer_counterclockwise"), SubResource("spine"), SubResource("crosstown"), SubResource("velvet"), SubResource("foundry"), SubResource("eden"), SubResource("aurelia")])
+residents = Array[ExtResource("resident")]([SubResource("velvet_commuter"), SubResource("foundry_commuter"), SubResource("eden_commuter"), SubResource("aurelia_commuter"), SubResource("hotel_owner"), SubResource("club_owner"), SubResource("mechanic"), SubResource("hauler"), SubResource("clinic_owner"), SubResource("surgeon"), SubResource("banker"), SubResource("patrol_owner")])
+junctions = PackedVector3Array(-66.5, 16, 0, 67.5, 16, 0, -66.5, 304, 0, 67.5, 304, 0, 0.5, 16, 0, 0.5, 304, 0, -66.5, 160, 0, 67.5, 160, 0, 0.5, 160, 0)

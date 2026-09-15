@@ -1,8 +1,8 @@
 class_name CityDefinition
 extends MapDefinition
 ## World data shared by movement, services, the map and presentation.
-@export var city_left := -74.5
-@export var city_right := 75.5
+@export var city_left := -99.5
+@export var city_right := 100.5
 @export var ground_height := -48.0
 @export var max_altitude := 320.0
 @export var soft_ceiling_range := 10.0

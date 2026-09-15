@@ -1,0 +1,87 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/cab.tscn" id="car0"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/heavy_shuttle.tscn" id="car1"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/lorry.tscn" id="car2"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/supercar.tscn" id="car3"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/limousine.tscn" id="car4"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/luxury_car.tscn" id="car5"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/police_car.tscn" id="car6"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/poor_car.tscn" id="car7"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/tow_car.tscn" id="car8"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/normal_car_1.tscn" id="car9"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/normal_car_2.tscn" id="car10"]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/normal_car_3.tscn" id="car11"]
+
+[node name="FoundryTestFleet" type="Node3D"]
+
+[node name="basic_cab" parent="." groups=["test_fleet"] instance=ExtResource("car0")]
+position = Vector3(17.1000, 150.3850, 0.0000)
+entity_id = &"test_fleet/basic_cab"
+initial_owner_id = &""
+
+[node name="heavy_shuttle" parent="." groups=["test_fleet"] instance=ExtResource("car1")]
+position = Vector3(20.5000, 150.3850, 0.0000)
+entity_id = &"test_fleet/heavy_shuttle"
+initial_owner_id = &""
+
+[node name="lorry" parent="." groups=["test_fleet"] instance=ExtResource("car2")]
+position = Vector3(24.4500, 150.4150, 0.0000)
+entity_id = &"test_fleet/lorry"
+initial_owner_id = &""
+
+[node name="supercar" parent="." groups=["test_fleet"] instance=ExtResource("car3")]
+position = Vector3(28.4000, 150.4150, 0.0000)
+entity_id = &"test_fleet/supercar"
+initial_owner_id = &""
+
+[node name="limousine" parent="." groups=["test_fleet"] instance=ExtResource("car4")]
+position = Vector3(32.9000, 150.4150, 0.0000)
+entity_id = &"test_fleet/limousine"
+initial_owner_id = &""
+
+[node name="luxury_car" parent="." groups=["test_fleet"] instance=ExtResource("car5")]
+position = Vector3(37.4000, 150.4150, 0.0000)
+entity_id = &"test_fleet/luxury_car"
+initial_owner_id = &""
+
+[node name="police_car" parent="." groups=["test_fleet"] instance=ExtResource("car6")]
+position = Vector3(40.8000, 150.4150, 0.0000)
+entity_id = &"test_fleet/police_car"
+initial_owner_id = &""
+
+[node name="poor_car" parent="." groups=["test_fleet"] instance=ExtResource("car7")]
+position = Vector3(43.6500, 150.4150, 0.0000)
+entity_id = &"test_fleet/poor_car"
+initial_owner_id = &""
+
+[node name="tow_car" parent="." groups=["test_fleet"] instance=ExtResource("car8")]
+position = Vector3(47.0500, 150.4150, 0.0000)
+entity_id = &"test_fleet/tow_car"
+initial_owner_id = &""
+
+[node name="normal_car_1" parent="." groups=["test_fleet"] instance=ExtResource("car9")]
+position = Vector3(51.0000, 150.4150, 0.0000)
+entity_id = &"test_fleet/normal_car_1"
+initial_owner_id = &""
+
+[node name="normal_car_2" parent="." groups=["test_fleet"] instance=ExtResource("car10")]
+position = Vector3(54.4000, 150.4150, 0.0000)
+entity_id = &"test_fleet/normal_car_2"
+initial_owner_id = &""
+
+[node name="normal_car_3" parent="." groups=["test_fleet"] instance=ExtResource("car11")]
+position = Vector3(57.8000, 150.4150, 0.0000)
+entity_id = &"test_fleet/normal_car_3"
+initial_owner_id = &""

@@ -1,0 +1,127 @@
+[gd_resource type="Resource" script_class="DialogueDefinition" format=3 uid="uid://ch3j0a0gyos8"]
+
+[ext_resource type="Script" uid="uid://bxilgskfvq203" path="res://scripts/narrative/dialogue_choice.gd" id="s_dialogue_choice"]
+[ext_resource type="Script" uid="uid://cyk54eteh2oga" path="res://scripts/narrative/dialogue_definition.gd" id="s_dialogue_definition"]
+[ext_resource type="Script" uid="uid://bbj1vgka3aqlb" path="res://scripts/narrative/dialogue_entry.gd" id="s_dialogue_entry"]
+[ext_resource type="Script" uid="uid://c04a45t5qg5yl" path="res://scripts/narrative/dialogue_node.gd" id="s_dialogue_node"]
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="s_narrative_condition"]
+[ext_resource type="Script" uid="uid://blfaeixmm3cs6" path="res://scripts/narrative/narrative_effect.gd" id="s_narrative_effect"]
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("s_narrative_condition")
+kind = "quest_status"
+key = &"froggy_favor"
+
+[sub_resource type="Resource" id="r18"]
+script = ExtResource("s_dialogue_entry")
+node_id = &"active"
+conditions = Array[ExtResource("s_narrative_condition")]([SubResource("r1")])
+
+[sub_resource type="Resource" id="r2"]
+script = ExtResource("s_narrative_condition")
+kind = "quest_status"
+key = &"froggy_favor"
+status = "ready"
+
+[sub_resource type="Resource" id="r19"]
+script = ExtResource("s_dialogue_entry")
+node_id = &"ready"
+conditions = Array[ExtResource("s_narrative_condition")]([SubResource("r2")])
+
+[sub_resource type="Resource" id="r3"]
+script = ExtResource("s_narrative_condition")
+kind = "quest_status"
+key = &"froggy_favor"
+status = "completed"
+
+[sub_resource type="Resource" id="r20"]
+script = ExtResource("s_dialogue_entry")
+node_id = &"done"
+conditions = Array[ExtResource("s_narrative_condition")]([SubResource("r3")])
+
+[sub_resource type="Resource" id="r4"]
+script = ExtResource("s_narrative_effect")
+kind = "start_quest"
+key = &"froggy_favor"
+
+[sub_resource type="Resource" id="r5"]
+script = ExtResource("s_narrative_effect")
+key = &"promised_froggy"
+
+[sub_resource type="Resource" id="r6"]
+script = ExtResource("s_dialogue_choice")
+id = &"accept"
+text = "Możesz na mnie liczyć."
+next_node = &"accepted"
+effects = Array[ExtResource("s_narrative_effect")]([SubResource("r4"), SubResource("r5")])
+once = true
+
+[sub_resource type="Resource" id="r7"]
+script = ExtResource("s_dialogue_choice")
+id = &"decline"
+text = "Nie teraz."
+
+[sub_resource type="Resource" id="r8"]
+script = ExtResource("s_dialogue_node")
+id = &"offer"
+text = "Chcesz dorobić? Wykonaj dwa kursy. Potem wróć po 60 CR."
+choices = Array[ExtResource("s_dialogue_choice")]([SubResource("r6"), SubResource("r7")])
+
+[sub_resource type="Resource" id="r9"]
+script = ExtResource("s_dialogue_choice")
+id = &"leave"
+text = "Do zobaczenia."
+
+[sub_resource type="Resource" id="r10"]
+script = ExtResource("s_dialogue_node")
+id = &"accepted"
+text = "Umowa stoi. Do zobaczenia po kursach."
+choices = Array[ExtResource("s_dialogue_choice")]([SubResource("r9")])
+
+[sub_resource type="Resource" id="r11"]
+script = ExtResource("s_dialogue_choice")
+id = &"leave"
+text = "Jasne."
+
+[sub_resource type="Resource" id="r12"]
+script = ExtResource("s_dialogue_node")
+id = &"active"
+text = "Najpierw dokończ oba kursy. Potem się rozliczymy."
+choices = Array[ExtResource("s_dialogue_choice")]([SubResource("r11")])
+
+[sub_resource type="Resource" id="r13"]
+script = ExtResource("s_narrative_effect")
+kind = "turn_in"
+key = &"froggy_favor"
+
+[sub_resource type="Resource" id="r14"]
+script = ExtResource("s_dialogue_choice")
+id = &"claim"
+text = "Odbierz 60 CR."
+next_node = &"done"
+effects = Array[ExtResource("s_narrative_effect")]([SubResource("r13")])
+once = true
+
+[sub_resource type="Resource" id="r15"]
+script = ExtResource("s_dialogue_node")
+id = &"ready"
+text = "Oba kursy zrobione. Rozliczamy się?"
+choices = Array[ExtResource("s_dialogue_choice")]([SubResource("r14")])
+
+[sub_resource type="Resource" id="r16"]
+script = ExtResource("s_dialogue_choice")
+id = &"leave"
+text = "Dzięki."
+
+[sub_resource type="Resource" id="r17"]
+script = ExtResource("s_dialogue_node")
+id = &"done"
+text = "Dotrzymałeś słowa. Zachowaj moją notatkę."
+choices = Array[ExtResource("s_dialogue_choice")]([SubResource("r16")])
+
+[resource]
+script = ExtResource("s_dialogue_definition")
+id = &"froggy_job"
+start_node = &"offer"
+entries = Array[ExtResource("s_dialogue_entry")]([SubResource("r18"), SubResource("r19"), SubResource("r20")])
+nodes = Array[ExtResource("s_dialogue_node")]([SubResource("r8"), SubResource("r10"), SubResource("r12"), SubResource("r15"), SubResource("r17")])

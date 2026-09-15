@@ -2,12 +2,14 @@ class_name TaxiHud
 extends Control
 ## Minimal flight UI; map and options own a temporary simulation pause.
 signal save_requested
+signal new_game_requested
 signal foot_recovery_requested
 var director: TaxiDirector
 var controls: FlightControls
 var overlay := ""
 var reference_map: CityReferenceMap
 var guidance: TaxiGuidanceArrow
+var notice_bubble: TaxiNoticeBubble
 var _font: Font
 var _map_button := Rect2()
 var _gear := Rect2()
@@ -16,6 +18,7 @@ var _resume := Rect2()
 var _save := Rect2()
 var _tow := Rect2()
 var _cancel := Rect2()
+var _new_game := Rect2()
 var _fuel := Rect2()
 var _fuel_pointers: Dictionary = {}
 var _key_blocked := true
@@ -23,6 +26,7 @@ var _clock := 0.0
 var _owns_pause := false
 var _controls_visible := true
 var _tow_armed := false
+var _new_game_armed := false
 var _last_warning := ""
 var _styles: Dictionary = {}
 
@@ -39,6 +43,11 @@ func _ready() -> void:
 	guidance.director = director
 	add_child(guidance)
 	guidance.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	notice_bubble = TaxiNoticeBubble.new()
+	notice_bubble.director = director
+	notice_bubble.guidance = guidance
+	add_child(notice_bubble)
+	notice_bubble.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	resized.connect(_layout)
 	_layout()
 	director.context.player.focus_changed.connect(_focus_changed)
@@ -60,6 +69,7 @@ func _layout() -> void:
 	_save = Rect2(x, y + 60, width, 48)
 	_tow = Rect2(x, y + 120, width, 48)
 	_cancel = Rect2(x, y + 180, width, 48)
+	_new_game = Rect2(x, y + 240, width, 48)
 	_clear()
 	queue_redraw()
 
@@ -85,7 +95,9 @@ func open_overlay(kind: String) -> void:
 		return
 	overlay = kind
 	guidance.hide()
+	notice_bubble.hide()
 	_tow_armed = false
+	_new_game_armed = false
 	_clear()
 	controls.clear_controls()
 	_controls_visible = controls.visible
@@ -210,6 +222,12 @@ func press(point: Vector2, pointer: int) -> void:
 		elif _cancel.has_point(point) and not director.context.rides.active.is_empty():
 			close_overlay()
 			director.abort()
+		elif _new_game.has_point(point) and new_game_requested.has_connections():
+			if _new_game_armed:
+				close_overlay()
+				new_game_requested.emit()
+			else:
+				_new_game_armed = true
 	elif director.context.player.is_suspended():
 		return
 	elif _map_button.has_point(point):
@@ -252,8 +270,6 @@ func _draw() -> void:
 		_box(_fuel, Color("ffc176"))
 		_text(_fuel.position + Vector2(12, 18), "PALIWO / F · %.0f CR/j." % director.rules.fuel_price, 11, Color("ffc176"))
 		_text(_fuel.position + Vector2(12, 34), "TRZYMAJ" if director.context.campaign.credits > 0 else "BRAK KREDYTÓW", 10, Color("8babae"))
-	if director.notice_remaining > 0:
-		_draw_bubble()
 
 func _can_refuel() -> bool:
 	var cab := director.context.player.focus as FlightCab
@@ -298,33 +314,14 @@ func _draw_overlay() -> void:
 	if not director.context.rides.active.is_empty():
 		_box(_cancel)
 		_text(_cancel.position + Vector2(18, 30), "Anuluj kurs", 16)
-	var y := _cancel.end.y + 32
+	if new_game_requested.has_connections():
+		_box(_new_game, Color("dd64bc"))
+		_text(_new_game.position + Vector2(18, 30), "Potwierdź nową grę" if _new_game_armed else "Nowa gra", 16)
+	var y := (_new_game.end.y if new_game_requested.has_connections() else _cancel.end.y) + 32
 	_text(Vector2(_save.position.x, y), "Kursy: %d    Zarobek: %.2f CR" % [director.context.rides.completed, director.context.rides.income], 12, Color("8babae"))
 	if director.context.rides.recovery_debt > 0:
 		_text(Vector2(_save.position.x, y + 22), "Dług: %.2f CR" % director.context.rides.recovery_debt, 12, Color("ffc176"))
 	if _tow_armed:
 		_text(Vector2(_save.position.x, y + 50), "Brakującą kwotę spłacisz z kolejnych kursów.", 12, Color("8babae"))
-
-func _draw_bubble() -> void:
-	var width := minf(size.x - 48, 370)
-	var lines: Array[String] = [""]
-	for word: String in director.notice.split(" "):
-		var next := (lines[-1] + " " + word).strip_edges()
-		if _font.get_string_size(next, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x > width - 28 and not lines[-1].is_empty():
-			lines.append(word)
-		else:
-			lines[-1] = next
-	var anchor := size * Vector2(0.5, 0.46)
-	var cab := director.context.player.focus as Node3D
-	var camera := get_viewport().get_camera_3d()
-	if cab and camera and not camera.is_position_behind(cab.global_position):
-		anchor = camera.unproject_position(cab.global_position) - Vector2(0, 55)
-	if guidance.visible:
-		anchor.y -= 26
-	var height := 22 + lines.size() * 20
-	var rect := Rect2(Vector2(clampf(anchor.x - width * 0.5, 24, size.x - width - 24), clampf(anchor.y - height, 90, size.y - height - 200)), Vector2(width, height))
-	_box(rect)
-	var tip_x := clampf(anchor.x, rect.position.x + 16, rect.end.x - 16)
-	draw_colored_polygon(PackedVector2Array([Vector2(tip_x - 7, rect.end.y - 1), Vector2(tip_x + 7, rect.end.y - 1), Vector2(tip_x, rect.end.y + 8)]), Color("09151e"))
-	for i in range(lines.size()):
-		_text(rect.position + Vector2(14, 25 + i * 20), lines[i], 14)
+	elif _new_game_armed:
+		_text(Vector2(_save.position.x, y + 50), "Zastąpi bieżący zapis i cały postęp.", 12, Color("ffa8dc"))

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="QuestDefinition" format=3 uid="uid://dgdcmc2qrd64m"]
+
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="1_82oyg"]
+[ext_resource type="Script" uid="uid://ddgyy5cd7si6b" path="res://scripts/narrative/quest_transition.gd" id="3_hhuxh"]
+[ext_resource type="Script" uid="uid://blfaeixmm3cs6" path="res://scripts/narrative/narrative_effect.gd" id="s_narrative_effect"]
+[ext_resource type="Script" uid="uid://bfjb8q6yjlcky" path="res://scripts/narrative/quest_definition.gd" id="s_quest_definition"]
+[ext_resource type="Script" uid="uid://do0u0sf3vh38d" path="res://scripts/narrative/quest_objective.gd" id="s_quest_objective"]
+
+[sub_resource type="Resource" id="r0"]
+script = ExtResource("s_quest_objective")
+id = &"rides"
+description = "Wykonaj dwa zwykłe kursy, a potem wróć do Froggy’ego."
+required = 2.0
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("s_narrative_effect")
+kind = "grant_item"
+key = &"froggy_note"
+
+[resource]
+script = ExtResource("s_quest_definition")
+id = &"froggy_favor"
+title = "Zaufanie Froggy’ego"
+description = "Froggy chce zobaczyć, czy można na tobie polegać. Wykonaj dwa kursy i wróć po zapłatę."
+objectives = Array[ExtResource("s_quest_objective")]([SubResource("r0")])
+prerequisites = PackedStringArray("first_dose")
+requires_turn_in = true
+turn_in_npc = &"froggy"
+reward_credits = 60.0
+rewards = Array[ExtResource("s_narrative_effect")]([SubResource("r1")])

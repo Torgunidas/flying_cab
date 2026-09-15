@@ -1,23 +1,11 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/walking_actor.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/people/passenger_1.tscn" id="2"]
-[ext_resource type="Script" path="res://scripts/actors/ari_visual.gd" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/people/ari_visual.tscn" id="2"]
 
 [sub_resource type="CapsuleShape3D" id="capsule"]
-radius = 0.28
-height = 1.9
-
-[sub_resource type="StandardMaterial3D" id="jacket"]
-albedo_color = Color(1, 0.68, 0.17, 1)
-roughness = 0.8
-emission_enabled = true
-emission = Color(0.5, 0.23, 0.035, 1)
-emission_energy_multiplier = 0.4
-
-[sub_resource type="BoxMesh" id="stripe"]
-size = Vector3(0.39, 0.13, 0.43)
-material = SubResource("jacket")
+radius = 0.17
+height = 1.16
 
 [node name="Ari" type="CharacterBody3D"]
 collision_layer = 2
@@ -31,9 +19,4 @@ script = ExtResource("1")
 shape = SubResource("capsule")
 
 [node name="Visual" parent="." instance=ExtResource("2")]
-position = Vector3(0, -0.95, 0)
-script = ExtResource("3")
-
-[node name="JacketStripe" type="MeshInstance3D" parent="Visual"]
-position = Vector3(0, 1.24, 0)
-mesh = SubResource("stripe")
+position = Vector3(0, -0.58, 0)

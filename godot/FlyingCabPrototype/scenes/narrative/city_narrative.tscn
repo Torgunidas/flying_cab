@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://d2t74n2m173u1"]
+
+[ext_resource type="Resource" uid="uid://dulm3dlldk3d" path="res://resources/narrative/authored/fabula_bd40afbbe29e4eacbc41c2bdf313173b/npc_48318a766f204c43a16b36dbd0c40314.tres" id="4_7uabj"]
+[ext_resource type="Resource" uid="uid://m81d368dril" path="res://resources/narrative/froggy.tres" id="froggy"]
+[ext_resource type="Resource" uid="uid://chirihfukjwd7" path="res://resources/narrative/maya.tres" id="maya"]
+[ext_resource type="PackedScene" path="res://scenes/narrative/npc.tscn" id="npc"]
+
+[node name="CityNarrative" type="Node3D" unique_id=1112963276]
+
+[node name="Maya" parent="." unique_id=1877984693 instance=ExtResource("npc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25.5, 54, 1.2)
+profile = ExtResource("maya")
+
+[node name="Froggy" parent="." unique_id=1202194464 instance=ExtResource("npc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.5, 134, 1.2)
+profile = ExtResource("froggy")
+
+[node name="Bruno" parent="." unique_id=1632693911 instance=ExtResource("npc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 135.34622, 153.15164, 245.19998)
+profile = ExtResource("4_7uabj")

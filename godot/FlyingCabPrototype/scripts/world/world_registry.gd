@@ -4,6 +4,7 @@ extends RefCounted
 signal changed
 signal vehicle_registered(vehicle: Node)
 var definition: MapDefinition
+var living_world: Node
 var lanes: Array[Node] = []
 var pads: Array[Node] = []
 var vehicles: Array[Node] = []
@@ -32,6 +33,7 @@ func unbind() -> void:
 			_tree.node_added.disconnect(_added)
 		if _tree.node_removed.is_connected(_removed):
 			_tree.node_removed.disconnect(_removed)
+	living_world = null
 	lanes.clear()
 	pads.clear()
 	vehicles.clear()
@@ -72,8 +74,8 @@ func _added(node: Node) -> void:
 	# created and removed within the same frame (e.g. cancelled map transitions).
 	_register_later.call_deferred(weakref(node))
 
-func _register_later(reference: WeakRef) -> void:
-	var node = reference.get_ref()
+func _register_later(node_ref: WeakRef) -> void:
+	var node = node_ref.get_ref()
 	if node:
 		register(node)
 

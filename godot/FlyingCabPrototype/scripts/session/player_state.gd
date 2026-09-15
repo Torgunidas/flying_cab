@@ -24,7 +24,10 @@ static func from_snapshot(data: Dictionary) -> PlayerState:
 		for value in data[field]:
 			if not (value is float or value is int) or not is_finite(float(value)):
 				return null
-		if not is_zero_approx(float(data[field][2])):
+		if field == "velocity" and not is_zero_approx(float(data[field][2])):
+			return null
+		# Legacy saves put Ari on the flight plane. New saves use the pedestrian strip.
+		if field != "velocity" and not (is_zero_approx(float(data[field][2])) or is_equal_approx(float(data[field][2]), WorldLayers.PEDESTRIAN_Z)):
 			return null
 	if not (data.get("facing") is float or data.get("facing") is int) or absf(float(data.facing)) != 1.0:
 		return null
@@ -32,8 +35,8 @@ static func from_snapshot(data: Dictionary) -> PlayerState:
 	state.mode = data.mode
 	state.vehicle_id = data.vehicle
 	state.map_id = data.map
-	state.position = Vector3(data.position[0], data.position[1], 0)
+	state.position = Vector3(data.position[0], data.position[1], WorldLayers.PEDESTRIAN_Z)
 	state.velocity = Vector3(data.velocity[0], data.velocity[1], 0)
-	state.exit_position = Vector3(data.exit_position[0], data.exit_position[1], 0)
+	state.exit_position = Vector3(data.exit_position[0], data.exit_position[1], WorldLayers.PEDESTRIAN_Z)
 	state.facing = data.facing
 	return state

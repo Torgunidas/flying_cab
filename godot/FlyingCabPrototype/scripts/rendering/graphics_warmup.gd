@@ -25,12 +25,17 @@ func prepare(level: Node3D) -> void:
 	var saved_transform := cab.global_transform
 	var saved_camera := camera.global_transform
 	var saved_distance: float = level._camera_distance
+	var saved_angle: float = level._camera_angle
 	var ari: WalkingActor = level.on_foot.actor if level.on_foot else null
 	var ari_pose := ari.global_transform if ari else Transform3D.IDENTITY
 	var ari_visible := ari.visible if ari else false
 	level._camera_distance = level.camera_tuning.camera_distance
-	var was_frozen := cab.freeze
-	cab.freeze = true
+	level._camera_angle = level.camera_tuning.camera_angle_degrees
+	var frozen_states := {}
+	for vehicle: FlightCab in level.context.world.vehicles:
+		frozen_states[vehicle] = vehicle.freeze
+		vehicle.freeze = true
+		vehicle.flight_fx.show_warmup_effects()
 	var points := _points(level.definition)
 	# Include the final spawn first and last, so startup shaders are covered and
 	# the final lighting/culling combination has already rendered before handover.
@@ -61,13 +66,16 @@ func prepare(level: Node3D) -> void:
 	atmosphere.apply_height(saved_transform.origin.y)
 	camera.global_transform = saved_camera
 	level._camera_distance = saved_distance
+	level._camera_angle = saved_angle
 	if ari:
 		ari.global_transform = ari_pose
 		ari.visible = ari_visible
 		ari.reset_physics_interpolation()
 	level._snap_camera()
 	await RenderingServer.frame_post_draw
-	cab.freeze = was_frozen
+	for vehicle: FlightCab in frozen_states:
+		vehicle.flight_fx.reset_visuals()
+		vehicle.freeze = frozen_states[vehicle]
 	level.process_mode = previous_mode
 
 func _points(definition: CityDefinition) -> PackedVector3Array:

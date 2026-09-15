@@ -63,6 +63,7 @@ func _run() -> void:
 	var first_id: String = legacy.party[0].id
 	root.add_child(context)
 	level = load("res://scenes/flight_lab.tscn").instantiate()
+	level.living_world_enabled = false # Isolated fixture; full population has its own integration suite.
 	level.context = context
 	root.add_child(level)
 	level.set_physics_process(false)
@@ -150,6 +151,7 @@ func _run() -> void:
 	context = restored
 	root.add_child(context)
 	level = load("res://scenes/flight_lab.tscn").instantiate()
+	level.living_world_enabled = false # Isolated fixture; full population has its own integration suite.
 	level.context = context
 	root.add_child(level)
 	level.set_physics_process(false)

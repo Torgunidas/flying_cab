@@ -112,6 +112,8 @@ func _ready() -> void:
 	fuel = minf(definition.starting_fuel, definition.fuel_capacity)
 	set_meta("entity_id", String(entity_id))
 	add_to_group("vehicle")
+	collision_layer = WorldLayers.VEHICLES
+	collision_mask = WorldLayers.GEOMETRY | WorldLayers.VEHICLES
 	custom_integrator = true
 	can_sleep = true
 	continuous_cd = true
@@ -148,14 +150,14 @@ func _on_body_exited(_body: Node) -> void:
 	if sleeping:
 		sleeping = false
 
-func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+func _integrate_forces(physics_state: PhysicsDirectBodyState3D) -> void:
 	# One source of mass for both thrust/mass integration and contact resolution.
 	if not is_equal_approx(mass, definition.mass_kg):
 		mass = maxf(1.0, definition.mass_kg)
 	if resetting:
-		state.transform = spawn_transform
-		state.linear_velocity = Vector3.ZERO
-		state.angular_velocity = Vector3.ZERO
+		physics_state.transform = spawn_transform
+		physics_state.linear_velocity = Vector3.ZERO
+		physics_state.angular_velocity = Vector3.ZERO
 		# Synchronize the node before clearing both renderer and camera histories.
 		# The body's regular state sync runs after this callback.
 		global_transform = spawn_transform
@@ -172,9 +174,9 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		applied_command = Vector2.ZERO
 		highway_speed = 1.0
 		highway_fuel = 1.0
-		var was_returning := airspace.returning
+		var returning_before_reset := airspace.returning
 		airspace.reset()
-		if was_returning:
+		if returning_before_reset:
 			autopilot_changed.emit(false)
 		_visual_acceleration = 0.0
 		_previous_velocity = Vector3.ZERO
@@ -190,23 +192,23 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	support_body = null
 	var still_support := false
 	var strongest_impact := 0.0
-	for i in range(state.get_contact_count()):
-		var normal := state.get_contact_local_normal(i)
+	for i in range(physics_state.get_contact_count()):
+		var normal := physics_state.get_contact_local_normal(i)
 		# Godot Physics reports zero impulse on some first-contact frames. Compare
 		# recent outgoing velocities with the solver's result along the normal.
 		# CCD can brake a fast body one step BEFORE it exposes a contact manifold.
 		# Mass is already reflected in that result. One manifold is one impact,
 		# and tangential travel/braking along a wall contributes no damage.
-		strongest_impact = maxf(strongest_impact, (state.linear_velocity - _previous_velocity).dot(normal))
-		strongest_impact = maxf(strongest_impact, (state.linear_velocity - _pre_contact_velocity).dot(normal))
+		strongest_impact = maxf(strongest_impact, (physics_state.linear_velocity - _previous_velocity).dot(normal))
+		strongest_impact = maxf(strongest_impact, (physics_state.linear_velocity - _pre_contact_velocity).dot(normal))
 		if normal.y > 0.65:
 			grounded = true
-			var collider := state.get_contact_collider_object(i)
+			var collider := physics_state.get_contact_collider_object(i)
 			if collider is Node:
 				support_body = collider
 			if collider is Node and collider.is_in_group("refuel_pad"):
 				_on_refuel_pad = true
-		if normal.y > 0.99 and state.get_contact_collider_velocity_at_position(i).length() < 0.001:
+		if normal.y > 0.99 and physics_state.get_contact_collider_velocity_at_position(i).length() < 0.001:
 			still_support = true
 	vitals.impact(self.state, definition, strongest_impact)
 	var was_returning := airspace.returning
@@ -214,45 +216,45 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	if disabled:
 		airspace.reset()
 	else:
-		requested = airspace.command_for(state.transform.origin, state.linear_velocity, command, definition, world_definition)
+		requested = airspace.command_for(physics_state.transform.origin, physics_state.linear_velocity, command, definition, world_definition)
 	if was_returning != airspace.returning:
 		if not airspace.returning:
 			thrust_response.reset()
 		autopilot_changed.emit(airspace.returning)
-	_update_highway(state.transform.origin, state.step)
+	_update_highway(physics_state.transform.origin, physics_state.step)
 	if disabled or (definition.fuel_enabled and fuel <= 0.0 and not airspace.returning):
 		thrust_response.reset()
 		requested = Vector2.ZERO
 	else:
-		requested = thrust_response.advance(requested, state.step, definition)
-	_apply_fuel(requested, state.transform.origin.y, state.step)
+		requested = thrust_response.advance(requested, physics_state.step, definition)
+	_apply_fuel(requested, physics_state.transform.origin.y, physics_state.step)
 	# Zero vertical speed at the ceiling is still powered flight, not parking.
 	# Keep airborne bodies active so releasing thrust always restores free fall.
 	can_sleep = still_support and applied_command.is_zero_approx()
 	# The custom integrator adds next-step gravity after the contact solver.
 	# Let a settled, unpowered body sleep before that creates another tiny bounce.
 	# Check the solver's actual motion; never infer rest from absent input alone.
-	if still_support and applied_command.is_zero_approx() and state.linear_velocity.length() < REST_SPEED:
-		_rest_time += state.step
+	if still_support and applied_command.is_zero_approx() and physics_state.linear_velocity.length() < REST_SPEED:
+		_rest_time += physics_state.step
 	else:
 		_rest_time = 0.0
 	if _rest_time >= REST_DELAY:
 		highway_speed = 1.0
 		highway_fuel = 1.0
-		state.linear_velocity = Vector3.ZERO
-		state.angular_velocity = Vector3.ZERO
-		state.sleeping = true
+		physics_state.linear_velocity = Vector3.ZERO
+		physics_state.angular_velocity = Vector3.ZERO
+		physics_state.sleeping = true
 		_previous_velocity = Vector3.ZERO
 		_pre_contact_velocity = Vector3.ZERO
 		_visual_acceleration = 0.0
 		return
-	state.linear_velocity = FlightModel.step_velocity(state.linear_velocity, applied_command, state.step, definition, highway_speed)
-	state.linear_velocity = airspace.limit_climb(state.linear_velocity, state.transform.origin, state.step, definition, world_definition, highway_speed)
-	_visual_acceleration = (state.linear_velocity.x - _previous_velocity.x) / state.step
+	physics_state.linear_velocity = FlightModel.step_velocity(physics_state.linear_velocity, applied_command, physics_state.step, definition, highway_speed)
+	physics_state.linear_velocity = airspace.limit_climb(physics_state.linear_velocity, physics_state.transform.origin, physics_state.step, definition, world_definition, highway_speed)
+	_visual_acceleration = (physics_state.linear_velocity.x - _previous_velocity.x) / physics_state.step
 	_pre_contact_velocity = _previous_velocity
-	_previous_velocity = state.linear_velocity
+	_previous_velocity = physics_state.linear_velocity
 
-func _update_highway(position: Vector3, dt: float) -> void:
+func _update_highway(world_position: Vector3, dt: float) -> void:
 	# Zones adjust limits and cost, never input, acceleration or coast damping.
 	# Autopilot uses its own controlled return speed. Empty fuel disables assist.
 	if disabled or not definition.highway_enabled or airspace.returning or (definition.fuel_enabled and fuel <= 0.0):
@@ -263,7 +265,7 @@ func _update_highway(position: Vector3, dt: float) -> void:
 	var target_fuel := 1.0
 	var lanes: Array[Node] = world_registry.lanes if world_registry else _standalone_lanes
 	for lane in lanes:
-		if is_instance_valid(lane) and lane.contains_point(position):
+		if is_instance_valid(lane) and lane.contains_point(world_position):
 			target_speed = maxf(target_speed, lane.speed_multiplier)
 			target_fuel = minf(target_fuel, lane.fuel_multiplier)
 	var seconds := definition.highway_entry_seconds if target_speed > highway_speed else definition.highway_exit_seconds

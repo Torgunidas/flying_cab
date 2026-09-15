@@ -1,0 +1,178 @@
+[gd_resource type="Resource" script_class="DialogueDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrative/dialogue_entry.gd" id="1_4wyjf"]
+[ext_resource type="Script" path="res://scripts/narrative/narrative_condition.gd" id="2_o2ntx"]
+[ext_resource type="Script" path="res://scripts/narrative/dialogue_node.gd" id="3_2tqcx"]
+[ext_resource type="Script" path="res://scripts/narrative/dialogue_choice.gd" id="4_4wyjf"]
+[ext_resource type="Script" path="res://scripts/narrative/narrative_effect.gd" id="5_o2ntx"]
+[ext_resource type="Script" path="res://scripts/narrative/dialogue_definition.gd" id="6_gpp2s"]
+
+[sub_resource type="Resource" id="Resource_2tqcx"]
+script = ExtResource("2_o2ntx")
+kind = "quest_status"
+key = &"quest_85815f3b769f4aaabd844376e2becc21"
+status = "inactive"
+
+[sub_resource type="Resource" id="Resource_jk8qv"]
+script = ExtResource("1_4wyjf")
+node_id = &"offer"
+conditions = Array[ExtResource("2_o2ntx")]([SubResource("Resource_2tqcx")])
+
+[sub_resource type="Resource" id="Resource_a6sqe"]
+script = ExtResource("2_o2ntx")
+kind = "quest_status"
+key = &"quest_85815f3b769f4aaabd844376e2becc21"
+
+[sub_resource type="Resource" id="Resource_gpp2s"]
+script = ExtResource("1_4wyjf")
+node_id = &"active"
+conditions = Array[ExtResource("2_o2ntx")]([SubResource("Resource_a6sqe")])
+
+[sub_resource type="Resource" id="Resource_qf74w"]
+script = ExtResource("2_o2ntx")
+kind = "quest_status"
+key = &"quest_85815f3b769f4aaabd844376e2becc21"
+status = "ready"
+
+[sub_resource type="Resource" id="Resource_0qef3"]
+script = ExtResource("1_4wyjf")
+node_id = &"ready"
+conditions = Array[ExtResource("2_o2ntx")]([SubResource("Resource_qf74w")])
+
+[sub_resource type="Resource" id="Resource_3osgr"]
+script = ExtResource("2_o2ntx")
+kind = "quest_status"
+key = &"quest_85815f3b769f4aaabd844376e2becc21"
+status = "completed"
+
+[sub_resource type="Resource" id="Resource_hap6r"]
+script = ExtResource("1_4wyjf")
+node_id = &"done"
+conditions = Array[ExtResource("2_o2ntx")]([SubResource("Resource_3osgr")])
+
+[sub_resource type="Resource" id="Resource_mbwst"]
+script = ExtResource("4_4wyjf")
+id = &"c_5ad291c3ef29488eac9c251932fa35ab"
+text = "Ja? Nie powiedziałbym."
+next_node = &"n_94436462e37040a5b2c305db3a0fe599"
+
+[sub_resource type="Resource" id="Resource_ewt7h"]
+script = ExtResource("3_2tqcx")
+id = &"offer"
+speaker = "BRUNO"
+text = "Więc to ty jesteś tym nowym macherem w mieście."
+choices = Array[ExtResource("4_4wyjf")]([SubResource("Resource_mbwst")])
+
+[sub_resource type="Resource" id="Resource_wnnp3"]
+script = ExtResource("4_4wyjf")
+id = &"c_1eea799db5a441e2b2903940724ab6a1"
+text = "Czemu mam coś dla ciebie robić?"
+next_node = &"n_acaaca596fb34daba5667ed341bca1d7"
+
+[sub_resource type="Resource" id="Resource_lpyg0"]
+script = ExtResource("3_2tqcx")
+id = &"n_94436462e37040a5b2c305db3a0fe599"
+speaker = "BRUNO"
+text = "Dobra,dobra. Widzę,jak ci z oczu patrzy. Zrobisz coś dla mnie."
+choices = Array[ExtResource("4_4wyjf")]([SubResource("Resource_wnnp3")])
+
+[sub_resource type="Resource" id="Resource_dy4w6"]
+script = ExtResource("4_4wyjf")
+id = &"c_c58fb9bf232e43978940876ecddc076a"
+text = "[sb]Wzdychasz.[/sb] Niech będzie. Czego chcesz?"
+next_node = &"n_ae081305a33d42dab1245f200fe0f83d"
+
+[sub_resource type="Resource" id="Resource_od0dd"]
+script = ExtResource("3_2tqcx")
+id = &"n_acaaca596fb34daba5667ed341bca1d7"
+speaker = "BRUNO"
+text = "Przecież wiesz, jak to działa. Ty zrobisz coś dla mnie, ja zrobię coś dla ciebie i tak to się kręci."
+choices = Array[ExtResource("4_4wyjf")]([SubResource("Resource_dy4w6")])
+
+[sub_resource type="Resource" id="Resource_ac5mg"]
+script = ExtResource("4_4wyjf")
+id = &"c_552a3f321efc4e368bebcdfadbb2a0f3"
+text = "Mam kraść?"
+next_node = &"n_1a555b5cda7f4a2699135396fbe9b2a1"
+
+[sub_resource type="Resource" id="Resource_qqfny"]
+script = ExtResource("3_2tqcx")
+id = &"n_ae081305a33d42dab1245f200fe0f83d"
+speaker = "BRUNO"
+text = "Widziałem na mieście nowy model wozu. CHWDP 14V. Muszę go mieć i tymi go zdobędziesz."
+choices = Array[ExtResource("4_4wyjf")]([SubResource("Resource_ac5mg")])
+
+[sub_resource type="Resource" id="Resource_28a3f"]
+script = ExtResource("5_o2ntx")
+kind = "start_quest"
+key = &"quest_85815f3b769f4aaabd844376e2becc21"
+
+[sub_resource type="Resource" id="Resource_mysgt"]
+script = ExtResource("4_4wyjf")
+id = &"accept"
+text = "Dobra, zajmę się tym."
+next_node = &"active"
+effects = Array[ExtResource("5_o2ntx")]([SubResource("Resource_28a3f")])
+
+[sub_resource type="Resource" id="Resource_cjunr"]
+script = ExtResource("4_4wyjf")
+id = &"decline"
+text = "Nie teraz."
+
+[sub_resource type="Resource" id="Resource_djqq3"]
+script = ExtResource("3_2tqcx")
+id = &"n_1a555b5cda7f4a2699135396fbe9b2a1"
+speaker = "BRUNO"
+text = "Kraść? Oczywiście, że nie. Ty tylko przywrócisz dziejową sprawiedliwość."
+choices = Array[ExtResource("4_4wyjf")]([SubResource("Resource_mysgt"), SubResource("Resource_cjunr")])
+
+[sub_resource type="Resource" id="Resource_4s78a"]
+script = ExtResource("4_4wyjf")
+id = &"leave_active"
+text = "Będzie, nie martw się."
+
+[sub_resource type="Resource" id="Resource_caqv1"]
+script = ExtResource("3_2tqcx")
+id = &"active"
+speaker = "BRUNO"
+text = "Gdzie moje autko?"
+choices = Array[ExtResource("4_4wyjf")]([SubResource("Resource_4s78a")])
+
+[sub_resource type="Resource" id="Resource_yhqya"]
+script = ExtResource("5_o2ntx")
+kind = "turn_in"
+key = &"quest_85815f3b769f4aaabd844376e2becc21"
+
+[sub_resource type="Resource" id="Resource_llmyg"]
+script = ExtResource("4_4wyjf")
+id = &"claim"
+text = "Zadanie wykonane."
+next_node = &"done"
+effects = Array[ExtResource("5_o2ntx")]([SubResource("Resource_yhqya")])
+
+[sub_resource type="Resource" id="Resource_2jtum"]
+script = ExtResource("3_2tqcx")
+id = &"ready"
+speaker = "BRUNO"
+text = "Mmm, piękne."
+choices = Array[ExtResource("4_4wyjf")]([SubResource("Resource_llmyg")])
+
+[sub_resource type="Resource" id="Resource_w3jts"]
+script = ExtResource("4_4wyjf")
+id = &"leave_done"
+text = "Na razie."
+
+[sub_resource type="Resource" id="Resource_p3eir"]
+script = ExtResource("3_2tqcx")
+id = &"done"
+speaker = "BRUNO"
+text = "Dobry z ciebie chłopak."
+choices = Array[ExtResource("4_4wyjf")]([SubResource("Resource_w3jts")])
+
+[resource]
+script = ExtResource("6_gpp2s")
+id = &"quest_85815f3b769f4aaabd844376e2becc21_dialogue"
+start_node = &"offer"
+entries = Array[ExtResource("1_4wyjf")]([SubResource("Resource_jk8qv"), SubResource("Resource_gpp2s"), SubResource("Resource_0qef3"), SubResource("Resource_hap6r")])
+nodes = Array[ExtResource("3_2tqcx")]([SubResource("Resource_ewt7h"), SubResource("Resource_lpyg0"), SubResource("Resource_od0dd"), SubResource("Resource_qqfny"), SubResource("Resource_djqq3"), SubResource("Resource_caqv1"), SubResource("Resource_2jtum"), SubResource("Resource_p3eir")])
+metadata/fc_story_project = "fabula_bd40afbbe29e4eacbc41c2bdf313173b"

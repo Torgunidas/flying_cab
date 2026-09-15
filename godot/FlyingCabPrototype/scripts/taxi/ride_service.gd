@@ -2,6 +2,7 @@ class_name RideService
 extends RefCounted
 ## Session-owned journeys. Nodes, animation and the current pilot own no fares.
 signal changed
+signal journey_event(event: String, payload: Dictionary, receipt: String)
 var enabled := false
 var offers: Array = []
 var active: Dictionary = {}
@@ -78,6 +79,7 @@ func board(vehicle: VehicleState, model: VehicleDefinition) -> bool:
 	active.phase = "riding"
 	active.progress = 0.0
 	changed.emit()
+	journey_event.emit("passenger_boarded", {"origin": active.origin, "destination": active.destination, "vehicle": active.vehicle}, "board/" + active.id)
 	return true
 
 func complete(vehicle: VehicleState, ledger: EconomyLedger) -> bool:
@@ -87,8 +89,9 @@ func complete(vehicle: VehicleState, ledger: EconomyLedger) -> bool:
 		if not vehicle.passenger_ids.has(id):
 			return false
 	# The receipt, wallet and manifest mutate synchronously; snapshots see all or none.
-	if not ledger.credit_once(active.id, active.fare):
+	if not ledger.credit_once(active.id, active.fare, false):
 		return false
+	var completed_trip := active.duplicate(true)
 	for id in party_ids(active):
 		vehicle.passenger_ids.erase(id)
 	completed += 1
@@ -99,7 +102,11 @@ func complete(vehicle: VehicleState, ledger: EconomyLedger) -> bool:
 	recovery_debt -= repayment
 	active = {}
 	selected = ""
+	ledger.changed.emit()
+	if completed_trip.fare > 0:
+		ledger.credited.emit(completed_trip.id, completed_trip.fare, "fare")
 	changed.emit()
+	journey_event.emit("ride_completed", {"origin": completed_trip.origin, "destination": completed_trip.destination, "vehicle": completed_trip.vehicle}, "delivery/" + completed_trip.id)
 	return true
 
 func cancel(vehicles: Dictionary) -> void:

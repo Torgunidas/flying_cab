@@ -1,0 +1,126 @@
+[gd_resource type="Resource" script_class="DialogueDefinition" format=3 uid="uid://bnnmc3pdlskhh"]
+
+[ext_resource type="Script" uid="uid://bbj1vgka3aqlb" path="res://scripts/narrative/dialogue_entry.gd" id="1_3ybbx"]
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="2_28hcr"]
+[ext_resource type="Script" uid="uid://c04a45t5qg5yl" path="res://scripts/narrative/dialogue_node.gd" id="3_1bw3p"]
+[ext_resource type="Script" uid="uid://bxilgskfvq203" path="res://scripts/narrative/dialogue_choice.gd" id="4_k4sbn"]
+[ext_resource type="Script" uid="uid://blfaeixmm3cs6" path="res://scripts/narrative/narrative_effect.gd" id="5_dpwvf"]
+[ext_resource type="Script" uid="uid://cyk54eteh2oga" path="res://scripts/narrative/dialogue_definition.gd" id="6_810ow"]
+
+[sub_resource type="Resource" id="Resource_ww6cq"]
+script = ExtResource("2_28hcr")
+kind = "quest_status"
+key = &"fc_depot_runs"
+status = "inactive"
+
+[sub_resource type="Resource" id="Resource_agawr"]
+script = ExtResource("1_3ybbx")
+node_id = &"offer"
+conditions = Array[ExtResource("2_28hcr")]([SubResource("Resource_ww6cq")])
+
+[sub_resource type="Resource" id="Resource_ldky8"]
+script = ExtResource("2_28hcr")
+kind = "quest_status"
+key = &"fc_depot_runs"
+
+[sub_resource type="Resource" id="Resource_oqpwb"]
+script = ExtResource("1_3ybbx")
+node_id = &"active"
+conditions = Array[ExtResource("2_28hcr")]([SubResource("Resource_ldky8")])
+
+[sub_resource type="Resource" id="Resource_oxn05"]
+script = ExtResource("2_28hcr")
+kind = "quest_status"
+key = &"fc_depot_runs"
+status = "ready"
+
+[sub_resource type="Resource" id="Resource_xds81"]
+script = ExtResource("1_3ybbx")
+node_id = &"ready"
+conditions = Array[ExtResource("2_28hcr")]([SubResource("Resource_oxn05")])
+
+[sub_resource type="Resource" id="Resource_6debe"]
+script = ExtResource("2_28hcr")
+kind = "quest_status"
+key = &"fc_depot_runs"
+status = "completed"
+
+[sub_resource type="Resource" id="Resource_bfgjn"]
+script = ExtResource("1_3ybbx")
+node_id = &"done"
+conditions = Array[ExtResource("2_28hcr")]([SubResource("Resource_6debe")])
+
+[sub_resource type="Resource" id="Resource_lo8eq"]
+script = ExtResource("5_dpwvf")
+kind = "start_quest"
+key = &"fc_depot_runs"
+
+[sub_resource type="Resource" id="Resource_7j84c"]
+script = ExtResource("4_k4sbn")
+id = &"accept"
+text = "Zajmę się tym."
+next_node = &"active"
+effects = Array[ExtResource("5_dpwvf")]([SubResource("Resource_lo8eq")])
+
+[sub_resource type="Resource" id="Resource_63auq"]
+script = ExtResource("4_k4sbn")
+id = &"decline"
+text = "Nie teraz."
+
+[sub_resource type="Resource" id="Resource_t1hy7"]
+script = ExtResource("3_1bw3p")
+id = &"offer"
+speaker = "FROGGY"
+text = "Zrób dwa kursy do Depot. Zapłacę 75 CR."
+choices = Array[ExtResource("4_k4sbn")]([SubResource("Resource_7j84c"), SubResource("Resource_63auq")])
+
+[sub_resource type="Resource" id="Resource_duwdp"]
+script = ExtResource("4_k4sbn")
+id = &"leave_active"
+text = "Do zobaczenia."
+
+[sub_resource type="Resource" id="Resource_kmvnl"]
+script = ExtResource("3_1bw3p")
+id = &"active"
+speaker = "FROGGY"
+text = "Wróć po dwóch kursach do Depot."
+choices = Array[ExtResource("4_k4sbn")]([SubResource("Resource_duwdp")])
+
+[sub_resource type="Resource" id="Resource_ccvxs"]
+script = ExtResource("5_dpwvf")
+kind = "turn_in"
+key = &"fc_depot_runs"
+
+[sub_resource type="Resource" id="Resource_0kne6"]
+script = ExtResource("4_k4sbn")
+id = &"claim"
+text = "Odbieram zapłatę."
+next_node = &"done"
+effects = Array[ExtResource("5_dpwvf")]([SubResource("Resource_ccvxs")])
+
+[sub_resource type="Resource" id="Resource_4ec20"]
+script = ExtResource("3_1bw3p")
+id = &"ready"
+speaker = "FROGGY"
+text = "Dobra robota. Oto zapłata."
+choices = Array[ExtResource("4_k4sbn")]([SubResource("Resource_0kne6")])
+
+[sub_resource type="Resource" id="Resource_qhaxn"]
+script = ExtResource("4_k4sbn")
+id = &"leave_done"
+text = "Na razie."
+
+[sub_resource type="Resource" id="Resource_44sua"]
+script = ExtResource("3_1bw3p")
+id = &"done"
+speaker = "FROGGY"
+text = "Dzięki za pomoc."
+choices = Array[ExtResource("4_k4sbn")]([SubResource("Resource_qhaxn")])
+
+[resource]
+script = ExtResource("6_810ow")
+id = &"fc_depot_runs_dialogue"
+start_node = &"offer"
+entries = Array[ExtResource("1_3ybbx")]([SubResource("Resource_agawr"), SubResource("Resource_oqpwb"), SubResource("Resource_xds81"), SubResource("Resource_bfgjn")])
+nodes = Array[ExtResource("3_1bw3p")]([SubResource("Resource_t1hy7"), SubResource("Resource_kmvnl"), SubResource("Resource_4ec20"), SubResource("Resource_44sua")])
+metadata/fc_story_project = "cab_story"

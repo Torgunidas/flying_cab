@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="QuestDefinition" format=3 uid="uid://burbalf8jai3w"]
+
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="1_xynwl"]
+[ext_resource type="Script" uid="uid://do0u0sf3vh38d" path="res://scripts/narrative/quest_objective.gd" id="2_l326s"]
+[ext_resource type="Script" uid="uid://ddgyy5cd7si6b" path="res://scripts/narrative/quest_transition.gd" id="3_vp7cr"]
+[ext_resource type="Script" uid="uid://blfaeixmm3cs6" path="res://scripts/narrative/narrative_effect.gd" id="4_qvk4u"]
+[ext_resource type="Script" uid="uid://bfjb8q6yjlcky" path="res://scripts/narrative/quest_definition.gd" id="5_d83a2"]
+
+[sub_resource type="Resource" id="Resource_2tdub"]
+script = ExtResource("2_l326s")
+id = &"cel_20c58eb3bab64477b231c7cd82bb9a03"
+description = "Wykonaj dwa kursy do Depot."
+required = 2.0
+destination_id = &"depot"
+
+[resource]
+script = ExtResource("5_d83a2")
+id = &"fc_depot_runs"
+title = "Dwa powroty do Depot"
+description = "Wykonaj dwa kursy do Depot i wróć po zapłatę."
+objectives = Array[ExtResource("2_l326s")]([SubResource("Resource_2tdub")])
+prerequisites = PackedStringArray()
+requires_turn_in = true
+turn_in_npc = &"froggy"
+reward_credits = 75.0
+metadata/fc_story_project = "cab_story"

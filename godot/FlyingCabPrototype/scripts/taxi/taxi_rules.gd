@@ -14,7 +14,8 @@ extends Resource
 @export var max_offers := 25
 @export_range(0, 0.5) var lifetime_jitter := 0.25
 @export var offer_seconds := 150.0
-@export var walking_speed := 1.6
+## Metres per second on every pedestrian segment, including car doors.
+@export var walking_speed := 1.5
 @export var population_seed := 1977
 
 func quote(distance: float, count: int) -> float:

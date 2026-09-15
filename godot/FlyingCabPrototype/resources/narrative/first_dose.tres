@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="QuestDefinition" format=3 uid="uid://cmguwtdfhyrp1"]
+
+[ext_resource type="Script" uid="uid://blfaeixmm3cs6" path="res://scripts/narrative/narrative_effect.gd" id="3_h53hn"]
+[ext_resource type="Script" uid="uid://ddgyy5cd7si6b" path="res://scripts/narrative/quest_transition.gd" id="3_wqkyb"]
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="s_narrative_condition"]
+[ext_resource type="Script" uid="uid://bfjb8q6yjlcky" path="res://scripts/narrative/quest_definition.gd" id="s_quest_definition"]
+[ext_resource type="Script" uid="uid://do0u0sf3vh38d" path="res://scripts/narrative/quest_objective.gd" id="s_quest_objective"]
+
+[sub_resource type="Resource" id="r0"]
+script = ExtResource("s_narrative_condition")
+kind = "medicine"
+reason = "Potrzebujesz dawki leku."
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("s_quest_objective")
+id = &"obtain"
+description = "Kup dawkę leku u Froggy’ego na tarasie Torque w Foundry (160 CR)."
+mode = "state"
+conditions = Array[ExtResource("s_narrative_condition")]([SubResource("r0")])
+
+[sub_resource type="Resource" id="r2"]
+script = ExtResource("s_quest_objective")
+id = &"deliver"
+description = "Wróć do Mai w depocie i podaj lek."
+event = "medicine_delivered"
+target_id = &"maya"
+
+[resource]
+script = ExtResource("s_quest_definition")
+id = &"first_dose"
+title = "Czas dla siostry"
+description = "Maya potrzebuje leku. Froggy sprzedaje go na tarasie Torque w Foundry. Zakup nie wystarczy — wróć i podaj dawkę."
+category = "main"
+objectives = Array[ExtResource("s_quest_objective")]([SubResource("r1"), SubResource("r2")])
+prerequisites = PackedStringArray()

@@ -35,6 +35,7 @@ func _run() -> void:
 	cab.position = Vector3(-55, 40, 0)
 	root.add_child(scene)
 	current_scene = scene
+	await scene.prepare_gameplay()
 	# Drive the body directly so OS focus changes cannot cancel the test input.
 	# The regular flight suite separately exercises the actual input path.
 	scene.set_physics_process(false)
@@ -50,6 +51,8 @@ func _run() -> void:
 	var min_speed := INF
 	var max_speed := 0.0
 	while elapsed < 10.0:
+		# Model held input throughout the capture, including after a window-focus event.
+		cab.command = Vector2.RIGHT
 		await RenderingServer.frame_post_draw
 		elapsed += root.get_process_delta_time()
 		var screen_x := camera.unproject_position(displayed_position(cab)).x

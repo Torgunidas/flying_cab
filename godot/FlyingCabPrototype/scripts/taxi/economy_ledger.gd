@@ -2,14 +2,18 @@ class_name EconomyLedger
 extends RefCounted
 ## Wallet owns receipts. Continuous services retain fractions until display.
 signal changed
+signal credited(id: String, amount: float, source: String)
 var state: CampaignState
 
-func credit_once(id: String, amount: float) -> bool:
+func credit_once(id: String, amount: float, notify := true, source := "other") -> bool:
 	if state == null or not is_finite(state.credits) or state.credits < 0 or id.is_empty() or not is_finite(amount) or amount < 0 or state.receipts.has(id) or not is_finite(state.credits + amount):
 		return false
 	state.receipts[id] = amount
 	state.credits += amount
-	changed.emit()
+	if notify:
+		changed.emit()
+		if amount > 0:
+			credited.emit(id, amount, source)
 	return true
 
 func spend(amount: float) -> bool:

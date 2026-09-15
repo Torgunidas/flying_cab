@@ -1,8 +1,16 @@
 # Architektura i wydajność po audycie — 2026-09-12
 
-**Tryb pieszy 2026-09-13:** [Ari — zakres i weryfikacja](ON_FOOT.md). Widoczny Ari chodzi, skacze, bezpiecznie wysiada i wraca do zaparkowanego pojazdu. Wspólne sterowanie, kamera i HUD przełączają tryb; `PlayerState` zapisuje pozycję i tryb w schemacie 3, zachowując zgodność ze schematami 1/2. `OnFootInteraction` wykonuje zapytania fizyczne i używa `PlayerSession`. Wnętrza, drzwi, dialogi w świecie, kradzież i zdrowie Ariego wymagają dalszej zawartości. Nowe testy: `on-foot`, `on-foot-render`.
+**Kamera 2026-09-14:** [podejście i kadr pieszy](PLATFORM_CAMERA.md). `PlatformCameraFraming` wylicza bliskość górnej powierzchni platformy z jej kolizji i prędkości auta. Poziom płynnie łączy szeroki lot, lądowanie i bliski, poziomy kadr pieszy z obszarem swobodnego skoku. Parametry są w `FlightCameraTuning`; odtworzenie zapisu i przygotowanie grafiki ustawiają kadr właściwy dla aktualnego aktora. Testy: `platform-camera`, `platform-camera-render`, `on-foot-render`, `presentation`, `boot`.
 
-**Biblioteka pojazdów 2026-09-13:** [nowy stan wdrożenia](VEHICLE_LIBRARY.md) — dziesięć własnych modeli 3D plus cab i legacy shuttle, wspólny aktor/fizyka, odtwarzanie wyglądu i komponentów z zapisanej definicji, osobna odporność oraz scena przeglądowa. Geometria jest zapisana w scenach; generator działa wyłącznie na jawne polecenie. Laweta ma model i punkt ładunku. Traffic, kradzież, policyjna AI i przewóz ładunku pozostają poza tym etapem. Nowa biblioteka przeszła weryfikację Windows; macOS i telefon czekają na sprawdzenie.
+**Ekran startowy 2026-09-14:** [menu i pełny reset](START_SCREEN.md). `game.tscn` pokazuje edytowalną scenę menu z grafiką starego Godota. `RuntimeContext` i miasto są tworzone dopiero po Kontynuuj / Nowa gra. Reset od razu zapisuje nową sesję, zachowuje konfigurację punktu wejścia i odrzuca opóźniony zapis starej gry. `TaxiHud` udostępnia tę samą akcję z potwierdzeniem w opcjach. Testy: `start-menu`, `start-menu-render`, `boot`.
+
+**Dialogi i questy 2026-09-14:** [autorowanie i zakres](NARRATIVE_AUTHORING.md). `RuntimeContext` posiada `NarrativeService` i `DialogueSession`; definicje są zasobami `.tres`, a stan postępu oddzielnym snapshotem. Cele reagują na zdarzenia, stan i fakty. Efekty odpowiedzi zatwierdzają wspólnie portfel, kampanię, przedmioty i questy. `NarrativeNpc`, `NarrativeArea` i adaptery taxi/paliwa/napraw/pojazdów łączą system ze światem. `NarrativePanel` prezentuje pionowy dialog i dziennik, pauzuje świat i nie przejmuje logiki questów. Schemat 5 dodaje stan narracji; odczyt 1–4 zachowuje dotychczasowe dane. Zaimplementowano przykładową dostawę leku i zadanie poboczne, nie pełną kampanię. Testy: `narrative-validate`, `narrative`, `narrative-render`.
+
+**Living world 2026-09-13:** [wdrożenie, autorowanie i testy](LIVING_WORLD.md). Sesja posiada `LivingWorldState`, mapa `LivingWorldDirector`, a `TrafficDriver` prowadzi zwykły `FlightCab` przez kontrakt kierowcy. Działają pętle aut, piesi, pełne podróże mieszkańców i przejęcie zaparkowanego auta z anulowaniem planu właściciela. Schemat 4 odtwarza populację i skradziony pojazd. `WorldLayers` oddziela geometrię, ludzi i pojazdy; Ari i NPC chodzą na Z = 1,2 bez wzajemnych kolizji. Nowe testy: `living-world`, `living-world-render`. Poniższe wpisy zachowują historię wcześniejszych etapów.
+
+**Tryb pieszy 2026-09-13:** [Ari — zakres i weryfikacja](ON_FOOT.md). Widoczny Ari chodzi, skacze, bezpiecznie wysiada i wraca do zaparkowanego pojazdu. Wspólne sterowanie, kamera i HUD przełączają tryb; `PlayerState` zapisuje pozycję i tryb od schematu 3; schemat 4 dodał populację; aktualny schemat 5 opisano powyżej. `OnFootInteraction` wykonuje zapytania fizyczne i używa `PlayerSession`. Wnętrza, drzwi i zdrowie Ariego wymagają dalszej zawartości. Pierwsze dialogi w świecie dodano w etapie narracji. Nowe testy: `on-foot`, `on-foot-render`.
+
+**Biblioteka pojazdów 2026-09-13:** [nowy stan wdrożenia](VEHICLE_LIBRARY.md) — dziesięć własnych modeli 3D plus cab i legacy shuttle, wspólny aktor/fizyka, odtwarzanie wyglądu i komponentów z zapisanej definicji, osobna odporność oraz scena przeglądowa. Geometria jest zapisana w scenach; generator działa wyłącznie na jawne polecenie. Laweta ma model i punkt ładunku. Traffic i kradzież dodano w etapie living world. Policyjna AI i przewóz ładunku pozostają poza obecnym zakresem. Nowa biblioteka przeszła weryfikację Windows; macOS i telefon czekają na sprawdzenie.
 
 **Rozszerzenie z 2026-09-13:** działają już pasażerowie, kursy, nawigacja, wspólny portfel usług i automatyczny zapis sesji (schemat 2, zgodność ze schematem 1). [Aktualny opis wdrożenia](FIRST_GAMELOOP_IMPLEMENTATION.md). Poniżej historia fundamentów i pomiarów wcześniejszego etapu.
 
@@ -10,7 +18,7 @@
 
 **Aktualizacja geometrii 2026-09-13:** [naprawa eksportu](WEB_GEOMETRY_FIX_2026-09-13.md) usuwa utratę transformacji grup detali podczas kompilacji headless. Wcześniejsze pomiary po optymalizacji nie obejmowały kompletnej geometrii; aktualne wartości i status paczki podano poniżej oraz w raporcie naprawy.
 
-Wdrożono stabilizację renderowania i fundamenty potrzebne do rozszerzania prototypu. Pokaz nadal pozwala latać po City 02. Ma nowy ekran przygotowania grafiki, ograniczenie kosztu renderowania na Web oraz sesję niezależną od aktualnego auta i mapy. Działają już także obrażenia od kolizji i warsztaty z naprawą pod E/dotykiem. Chodzenie po wnętrzach i rozmowy nadal wymagają grywalnej zawartości. Szczegóły nowych modeli: [pojazdy i naprawa](VEHICLES_AND_REPAIR.md).
+Wdrożono stabilizację renderowania i fundamenty potrzebne do rozszerzania prototypu. Pokaz nadal pozwala latać po City 02. Ma nowy ekran przygotowania grafiki, ograniczenie kosztu renderowania na Web oraz sesję niezależną od aktualnego auta i mapy. Działają już także obrażenia od kolizji i warsztaty z naprawą pod E/dotykiem. Chodzenie po wnętrzach nadal wymaga grywalnej zawartości; pierwsze rozmowy opisano w aktualizacji narracji. Szczegóły nowych modeli: [pojazdy i naprawa](VEHICLES_AND_REPAIR.md).
 
 Zakres zatwierdzony przez autora: lot, tryb pieszy, różne pomieszczenia i mapy, dialogi, naprawa auta, living world, kradzież pojazdów i kampania z lekiem. System walki ma zostać dodany w przyszłości; jego reguły nadal są nieustalone. [Wizja gry](../../../docs/GAME_VISION.md) opisuje cel, a ten dokument stan implementacji. [Audyt](ARCHITECTURE_PERFORMANCE_AUDIT_2026-09-12.md) zachowuje pomiary sprzed zmian.
 
@@ -22,16 +30,16 @@ Zakres zatwierdzony przez autora: lot, tryb pieszy, różne pomieszczenia i mapy
 | Postać i auto | Wspólny kontrakt poleceń, kamera/HUD/atmosfera, osobne ID właściciela, kierowcy i pasażerów; widoczny Ari, Q/dotyk, sprawdzanie wolnej przestrzeni i zasięgu wejścia | Kradzież i reakcja NPC |
 | Tryb pieszy | `WalkingActor`: ruch XY, grawitacja, kolizje, skok, animacje, klawiatura/dotyk, przekazanie sterowania i zapis pozycji | Grywalne wnętrza, drzwi, zdrowie i ocena sterowania na fizycznym telefonie |
 | Mapy i wnętrza | Katalog scen, nazwane wejścia, wspólna sesja, zachowanie lokalnego stanu pomieszczeń oraz zaparkowanego auta | Autorskie wnętrza, drzwi, przejścia, rozmieszczenie postaci i zasady transportu auta między różnymi mapami |
-| Dialogi | Walidowany graf kwestii/wyborów, sygnały, blokada sterowania | UI, treści rozmów i podłączenie skutków do zleceń/usług |
+| Dialogi i questy | Zasoby autora, transakcje skutków, warunki/fakty, sekwencyjne cele, pionowy UI, dziennik, walidator i podgląd | Finalny scenariusz, portrety i rozbudowa kampanii |
 | Pojazdy, obrażenia i naprawa | Modele w Inspectorze, ciąg/masa, HP, limit miejsc, zapis modelu, kolizje, wyłączenie napędu przy 0 HP, dwa płatne warsztaty z klawiaturą/dotykiem | Osobna grafika modeli, animowane uszkodzenia, balans gospodarki i odzyskiwania wraku |
-| Kampania i zapis | Wersjonowany JSON, stan aut i map, globalny czas, dawka przedłużająca czas dokładnie raz | Menu zapisu/wczytania, migracje kolejnych schematów, gospodarka, questy i grywalna dostawa leku |
-| NPC i walka | Wspólne sterowanie autem, stan obsady, rejestr dynamicznych obiektów, wejście dla zmiany stanu technicznego | Populacja, graf podróży, rezerwacje i poziomy symulacji; projekt oraz implementacja walki |
+| Kampania i zapis | JSON 5 z odczytem 1–4, stan aut/map/NPC/narracji, zakup i powtarzalna dostawa leku, trwałe potwierdzenia nagród i koniec czasu | Finalny balans, migracje przyszłych zmian treści i pozostała kampania |
+| NPC i walka | Ruch na autostradach i w dzielnicach, piesi, pełne podróże, kolejki skrzyżowań, przejmowanie aut i zapis planów | Omijanie dowolnych blokad, sprzątanie wraków, ekonomia NPC i poziomy szczegółowości symulacji; projekt oraz implementacja walki |
 
 ## Granice systemów
 
 Reakcja silników (2026-09-13): `FlightCab` ma prywatny `ThrustResponse`. Kolejność obliczeń to polecenie kierowcy/autopilota → odpowiedź silnika → ograniczenie paliwem → integracja prędkości → prezentacja. Czasy narastania i wygaszania pochodzą z `VehicleDefinition`; wejście klawiatury/dotyku pozostaje bez zwłoki. `FlightModel` płynnie dołącza tłumienie dryfu przy malejącej mocy. Aktor z pamięcią sterowania może implementować `clear_control_input()`; `PlayerSession.suspend()` wywołuje je przy blokadzie. Zwykłe zerowe polecenie jest puszczeniem gazu, a reset/blokada/zmiana kierowcy usuwa zakumulowaną moc natychmiast. Test integracji: `bash tools/verify.sh thrust`.
 
-Sceną startową projektu jest `scenes/game.tscn`. Jej `scripts/game_root.gd` składa zależności: tworzy `RuntimeContext`, rejestruje mapy i dialogi; sesja udostępnia naprawy także przy F6, a scena startowa ustala jakość, przygotowuje grafikę, następnie oddaje sterowanie. F5 i zwykłe uruchomienie korzystają z tej ścieżki. F6 w `flight_lab.tscn` pozostaje skrótem do samego poziomu, z lokalną sesją, bez pełnego przygotowania grafiki.
+Sceną startową projektu jest `scenes/game.tscn`. Po wyborze w menu jej `scripts/game_root.gd` składa zależności: tworzy `RuntimeContext`, rejestruje mapy i dialogi; sesja udostępnia naprawy także przy F6, a scena startowa ustala jakość, przygotowuje grafikę, następnie oddaje sterowanie. F5 i zwykłe uruchomienie korzystają z tej ścieżki. F6 w `flight_lab.tscn` pozostaje skrótem do samego poziomu, z lokalną sesją, bez pełnego przygotowania grafiki.
 
 ```mermaid
 flowchart TD
@@ -54,9 +62,9 @@ flowchart TD
 
 `PlayerSession.take_control(actor, mode)` obsługuje pojazd i postać. Aktor udostępnia `assign_driver(id) -> revision`, `receive_command(vector, id, revision)` i opcjonalnie `driver_changed`, `get_driver_id`, `get_control_velocity`. Polecenie ze starym ID lub numerem przejęcia jest odrzucane; zmiana kierowcy zeruje poprzednie polecenie. NPC ma korzystać z tego samego kontraktu co gracz. `cab.command` pozostaje dostępne dla dotychczasowych izolowanych testów fizyki, ale nowe kontrolery nie powinny wpisywać go bezpośrednio.
 
-Właściciel, kierowca i pasażerowie są odrębnymi polami `VehicleState`. Przejęcie sterowania nie podmienia auta i nie resetuje jego stanu. Mechanika kradzieży będzie musiała dodatkowo sprawdzić warunki, anulować podróż NPC oraz uruchomić jego reakcję. Tej warstwy jeszcze nie ma.
+Właściciel, kierowca i pasażerowie są odrębnymi polami `VehicleState`. Przejęcie sterowania nie podmienia auta i nie resetuje jego stanu. `OnFootInteraction` sprawdza postój i dostępność auta NPC, a `LivingWorldDirector.take_vehicle()` anuluje jego podróż i odsyła właściciela do budynku. Konsekwencje fabularne, dialog i policyjna reakcja pozostają dalszym etapem.
 
-Kamera, HUD i atmosfera śledzą `PlayerSession.focus`. Przy zmianie celu odpinane są sygnały poprzedniego pojazdu i czyszczone sterowanie. Blokady `dialogue`, `map_transition` i `application_focus` są niezależne: zwolnienie jednej nie zwalnia pozostałych. Blokada wejścia nie oznacza zatrzymania całej fizyki świata.
+Kamera, HUD i atmosfera śledzą `PlayerSession.focus`. Przy zmianie celu odpinane są sygnały poprzedniego pojazdu i czyszczone sterowanie. Blokady `dialogue`, `map_transition` i `application_focus` są niezależne: zwolnienie jednej nie zwalnia pozostałych. Blokada wejścia nie zatrzymuje ogólnie całej fizyki świata. Populacja subskrybuje ją jawnie: zatrzymuje plany i zamraża auta NPC do czasu zwolnienia wszystkich blokad. Menu dodatkowo pauzuje drzewo sceny.
 
 `FlightCab` nadal odpowiada za integrację fizyki, kontakt i wykonanie polecenia z autopilotem. `VehicleFuel` rozlicza paliwo, `VehiclePresentation` przechył modelu, a istniejące komponenty świateł i dysz czytają wynik lotu. Parametry mają osobne zasoby: `VehicleDefinition` — ID modelu, masa, siły ciągu, wytrzymałość, miejsca, lot i paliwo; `CityDefinition` — miasto i reguły przestrzeni; `FlightCameraTuning` — kamera; `VehiclePresentation` — wygląd ruchu. Prywatny stan animacji nie jest współdzielony między autami.
 
@@ -82,7 +90,7 @@ Rejestr śledzi również węzły dodane i usunięte po starcie. Listy autostrad
 
 `CampaignState` jest domyślnie nieaktywny w pokazie lotu. Dostarczenie leku zużywa dawkę i wydłuża pozostały czas; ID dostawy uniemożliwia ponowne zaliczenie, również po wczytaniu. Wygaśnięcie zgłaszane jest raz. Robocza polityka liczy wyłącznie czas aktywnej gry, z pauzą przy utracie fokusu i blokadzie sterowania, bez naliczania czasu offline. Ostateczna polityka czasu podczas dialogów nadal wymaga decyzji projektowej.
 
-`RuntimeContext.save_to()` zapisuje JSON przez plik tymczasowy i zmianę nazwy. `restore()` sprawdza cały obsługiwany schemat przed zmianą stanu i wymaga sesji bez aktywnie sterowanego aktora. Docelowa ścieżka wczytania to nowa, odłączona sesja, potem wejście przez katalog map. Nie ma jeszcze menu, autosave, migracji nowszych schematów ani potwierdzenia trwałości zapisu w przeglądarce.
+`RuntimeContext.save_to()` zapisuje JSON przez plik tymczasowy i zmianę nazwy. `restore()` sprawdza cały obsługiwany schemat przed zmianą stanu i wymaga sesji bez aktywnie sterowanego aktora. Docelowa ścieżka wczytania to nowa, odłączona sesja, potem wejście przez katalog map. Menu startowe, autosave i odczyt schematów 1–5 opisano w aktualizacjach powyżej. Nowe zmiany struktury treści wymagają osobnych migracji.
 
 ## Optymalizacje grafiki
 
@@ -150,7 +158,7 @@ Nie dodawaj `--fixed-fps` i nie uruchamiaj równolegle innych testów z renderer
 
 Po autoryzowanym eksporcie trzeba sprawdzić nową paczkę na S25+: świeży start, dwukrotnie depot → smog z reflektorami → express → górne dzielnice, następnie przynajmniej 10 minut gry. Osobno powrót z tła, zmiana rozmiaru i tryb pełnoekranowy itch.io. Roboczy cel to 60 FPS, p95 ≤ 16,7 ms i p99 ≤ 25 ms oraz wyjaśnienie każdej klatki ponad 100 ms po przygotowaniu. Te cele nie zostały jeszcze potwierdzone na telefonie.
 
-Kolejny grywalny etap powinien połączyć widocznego Ariego, jedno wnętrze i dialog z działającym już warsztatem, a następnie małą populację z pełnym cyklem podróży i reakcją na kradzież. Stan logiczny odległych NPC, rezerwacje i graf tras należy dodać przed mnożeniem fizycznych aut. Nowe systemy podpinać do sesji, identyfikatorów i jawnych usług, zachowując pomiary telefonu jako warunek zwiększania populacji.
+Po wdrożeniu living world kolejne etapy to pomiar populacji na telefonie oraz połączenie widocznego Ariego, wnętrza i dialogu z działającym warsztatem. Stan logiczny NPC, pętle i kolejki skrzyżowań już istnieją. Poziomy szczegółowości symulacji należy dodać przed dalszym mnożeniem fizycznych aut. Nowe systemy podpinać do sesji, identyfikatorów i jawnych usług, zachowując pomiary telefonu jako warunek zwiększania populacji.
 
 
 ### UI po decyzji autora 2026-09-13

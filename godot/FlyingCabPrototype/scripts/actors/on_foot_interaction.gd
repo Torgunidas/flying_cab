@@ -9,6 +9,7 @@ var context: RuntimeContext
 var controls: FlightControls
 var actor: WalkingActor
 var target: FlightCab
+var conversation_target: NarrativeNpc
 var _pending := false
 var _refresh := 0.0
 var _cooldown := 0.0
@@ -42,6 +43,8 @@ func _physics_process(dt: float) -> void:
 		_pending = false
 		if context.player.focus is FlightCab:
 			try_exit(context.player.focus)
+		elif context.player.focus == actor and is_instance_valid(conversation_target):
+			conversation_target.interact(context, actor)
 		elif context.player.focus == actor and is_instance_valid(target):
 			try_enter(target)
 		_cooldown = 0.25
@@ -68,7 +71,7 @@ func is_clear(at: Vector3) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = _capsule()
 	query.transform = Transform3D(Basis.IDENTITY, at)
-	query.collision_mask = 1
+	query.collision_mask = WorldLayers.GEOMETRY
 	query.exclude = _exclusions()
 	query.margin = 0.01
 	return actor.get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
@@ -88,7 +91,7 @@ func exit_points(cab: FlightCab) -> Array[Vector3]:
 		var marker := cab.get_node_or_null("Visual/EntryRight" if side > 0 else "Visual/EntryLeft") as Node3D
 		if marker:
 			x = marker.global_position.x
-		var ray := PhysicsRayQueryParameters3D.create(Vector3(x, bottom + 0.5, 0), Vector3(x, bottom - 1.25, 0), 1, _exclusions())
+		var ray := PhysicsRayQueryParameters3D.create(Vector3(x, bottom + 0.5, WorldLayers.PEDESTRIAN_Z), Vector3(x, bottom - 1.25, WorldLayers.PEDESTRIAN_Z), WorldLayers.GEOMETRY, _exclusions())
 		var hit := actor.get_world_3d().direct_space_state.intersect_ray(ray)
 		if hit.is_empty() or hit.normal.y < 0.7 or not hit.collider is StaticBody3D:
 			continue
@@ -99,6 +102,7 @@ func exit_points(cab: FlightCab) -> Array[Vector3]:
 
 func refresh_target() -> void:
 	target = null
+	conversation_target = null
 	var label := ""
 	var cab := context.player.focus as FlightCab
 	if cab:
@@ -106,6 +110,16 @@ func refresh_target() -> void:
 			target = cab
 			label = "WYSIĄDŹ / Q"
 	elif context.player.focus == actor and actor.is_on_floor():
+		var npc_distance := INF
+		for candidate in get_tree().get_nodes_in_group("narrative_npc"):
+			if candidate is NarrativeNpc and candidate.available(context, actor):
+				var distance: float = candidate.global_position.distance_to(actor.global_position)
+				if distance < npc_distance:
+					npc_distance = distance
+					conversation_target = candidate
+		if conversation_target:
+			controls.set_interaction_label("ROZMOWA / Q")
+			return
 		var nearest := INF
 		for vehicle: FlightCab in context.world.vehicles:
 			var distance := entry_distance(vehicle)
@@ -113,11 +127,14 @@ func refresh_target() -> void:
 				nearest = distance
 				target = vehicle
 		if target:
-			label = "WSIĄDŹ / Q"
+			label = "PRZEJMIJ / Q" if target.state.owner_id not in [&"", context.player.actor_id] else "WSIĄDŹ / Q"
 	controls.set_interaction_label(label)
 
 func entry_distance(cab: FlightCab) -> float:
-	if not parked(cab) or cab.get_driver_id() != &"" or cab.state.owner_id not in [&"", context.player.actor_id]:
+	if not parked(cab) or cab.get_driver_id() != &"":
+		return INF
+	var population := context.world.living_world
+	if cab.state.owner_id not in [&"", context.player.actor_id] and not (is_instance_valid(population) and population.can_take_vehicle(cab)):
 		return INF
 	var nearest := INF
 	for at in exit_points(cab):
@@ -144,15 +161,19 @@ func try_exit(cab: FlightCab) -> bool:
 	context.player.take_control(actor, &"on_foot")
 	cab.capture_state()
 	capture_state()
+	context.narrative.record_event("vehicle_exited", {"vehicle": String(cab.entity_id), "target": String(cab.entity_id)})
 	checkpoint_requested.emit()
 	return true
 
 func try_enter(cab: FlightCab) -> bool:
 	if context.player.is_suspended() or context.player.focus != actor or not actor.is_on_floor() or not is_finite(entry_distance(cab)):
 		return false
+	if is_instance_valid(context.world.living_world):
+		context.world.living_world.take_vehicle(cab)
 	context.player.take_control(cab, &"flight")
 	actor.set_active(false)
 	capture_state()
+	context.narrative.record_event("vehicle_entered", {"vehicle": String(cab.entity_id), "target": String(cab.entity_id)})
 	checkpoint_requested.emit()
 	return true
 

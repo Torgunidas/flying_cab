@@ -94,7 +94,7 @@ func _run() -> void:
 	foot.set_physics_process(true)
 	context.player.dispatch(Vector2.RIGHT)
 	await frames(120)
-	check(foot.is_on_floor() and foot.position.x > 135 and foot.position.x < 139 and foot.position.z == 0, "on-foot adapter walks on a real collider while retaining the 2.5D plane")
+	check(foot.is_on_floor() and foot.position.x > 134 and foot.position.x < 136 and is_equal_approx(foot.position.z, WorldLayers.PEDESTRIAN_Z), "on-foot adapter walks on a real collider while retaining the 2.5D plane")
 	context.player.take_control(second, &"flight")
 	await frames(30)
 	check(is_zero_approx(foot.velocity.x), "entering a car releases the walking actor's input and brings it to rest")

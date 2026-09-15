@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="NarrativeItem" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrative/narrative_item.gd" id="s_narrative_item"]
+
+[resource]
+script = ExtResource("s_narrative_item")
+id = "froggy_note"
+display_name = "Notatka Froggy’ego"

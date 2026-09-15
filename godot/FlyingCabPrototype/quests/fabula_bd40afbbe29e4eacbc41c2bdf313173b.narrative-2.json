@@ -1,0 +1,325 @@
+{
+  "format": "flying-cab-narrative",
+  "version": 1,
+  "project_id": "fabula_bd40afbbe29e4eacbc41c2bdf313173b",
+  "quests": [
+    {
+      "id": "quest_85815f3b769f4aaabd844376e2becc21",
+      "title": "Trzy słowa do ojca prowadzącego",
+      "description": "Bruno prosi o dostarczenie szybkiego pojazdu.",
+      "version": 3,
+      "category": "side",
+      "auto_start": false,
+      "requires_turn_in": true,
+      "turn_in_npc": "npc_48318a766f204c43a16b36dbd0c40314",
+      "reward_credits": 500,
+      "prerequisites": [],
+      "conditions": [],
+      "rewards": [
+        {
+          "kind": "set_fact",
+          "key": "promised_froggy",
+          "amount": 1,
+          "value": 0
+        }
+      ],
+      "objectives": [
+        {
+          "id": "cel_5f7173be65c84ddea75362a4a3a75ee9",
+          "description": "Zdobądź czerwony supercar",
+          "mode": "event",
+          "event": "vehicle_entered",
+          "required": 1,
+          "destination_id": "",
+          "origin_id": "",
+          "target_id": "",
+          "vehicle_id": "test_fleet/supercar",
+          "custom_event": "",
+          "conditions": [],
+          "transitions": []
+        },
+        {
+          "id": "cel_eeb5b16eaa6444aba9efdc8a31f6c417",
+          "description": "Dowieź auto do Bruno",
+          "mode": "event",
+          "event": "area_entered",
+          "required": 1,
+          "destination_id": "",
+          "origin_id": "",
+          "target_id": "bruno_delivery",
+          "vehicle_id": "test_fleet/supercar",
+          "custom_event": "",
+          "conditions": [
+            {
+              "kind": "vehicle_id",
+              "key": "test_fleet/supercar",
+              "amount": 1,
+              "comparison": ">=",
+              "status": "active",
+              "invert": false,
+              "reason": "Warunek nie został spełniony."
+            }
+          ],
+          "transitions": []
+        }
+      ]
+    }
+  ],
+  "dialogues": [
+    {
+      "id": "quest_85815f3b769f4aaabd844376e2becc21_dialogue",
+      "start_node": "offer",
+      "nodes": [
+        {
+          "id": "offer",
+          "speaker": "BRUNO",
+          "text": "Więc to ty jesteś tym nowym macherem w mieście.",
+          "choices": [
+            {
+              "id": "c_5ad291c3ef29488eac9c251932fa35ab",
+              "text": "Ja? Nie powiedziałbym.",
+              "next_node": "n_94436462e37040a5b2c305db3a0fe599",
+              "conditions": [],
+              "effects": [],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        },
+        {
+          "id": "n_94436462e37040a5b2c305db3a0fe599",
+          "speaker": "BRUNO",
+          "text": "Dobra,dobra. Widzę,jak ci z oczu patrzy. Zrobisz coś dla mnie.",
+          "choices": [
+            {
+              "id": "c_1eea799db5a441e2b2903940724ab6a1",
+              "text": "Czemu mam coś dla ciebie robić?",
+              "next_node": "n_acaaca596fb34daba5667ed341bca1d7",
+              "conditions": [],
+              "effects": [],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        },
+        {
+          "id": "n_acaaca596fb34daba5667ed341bca1d7",
+          "speaker": "BRUNO",
+          "text": "Przecież wiesz, jak to działa. Ty zrobisz coś dla mnie, ja zrobię coś dla ciebie i tak to się kręci.",
+          "choices": [
+            {
+              "id": "c_c58fb9bf232e43978940876ecddc076a",
+              "text": "[sb]Wzdychasz.[/sb] Niech będzie. Czego chcesz?",
+              "next_node": "n_ae081305a33d42dab1245f200fe0f83d",
+              "conditions": [],
+              "effects": [],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        },
+        {
+          "id": "n_ae081305a33d42dab1245f200fe0f83d",
+          "speaker": "BRUNO",
+          "text": "Widziałem na mieście nowy model wozu. CHWDP 14V. Muszę go mieć i tymi go zdobędziesz.",
+          "choices": [
+            {
+              "id": "c_552a3f321efc4e368bebcdfadbb2a0f3",
+              "text": "Mam kraść?",
+              "next_node": "n_1a555b5cda7f4a2699135396fbe9b2a1",
+              "conditions": [],
+              "effects": [],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        },
+        {
+          "id": "n_1a555b5cda7f4a2699135396fbe9b2a1",
+          "speaker": "BRUNO",
+          "text": "Kraść? Oczywiście, że nie. Ty tylko przywrócisz dziejową sprawiedliwość.",
+          "choices": [
+            {
+              "id": "accept",
+              "text": "Dobra, zajmę się tym.",
+              "next_node": "active",
+              "conditions": [],
+              "effects": [
+                {
+                  "kind": "start_quest",
+                  "key": "quest_85815f3b769f4aaabd844376e2becc21",
+                  "amount": 1,
+                  "value": 0
+                }
+              ],
+              "once": false,
+              "hide_unavailable": false
+            },
+            {
+              "id": "decline",
+              "text": "Nie teraz.",
+              "next_node": "",
+              "conditions": [],
+              "effects": [],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        },
+        {
+          "id": "active",
+          "speaker": "BRUNO",
+          "text": "Gdzie moje autko?",
+          "choices": [
+            {
+              "id": "leave_active",
+              "text": "Będzie, nie martw się.",
+              "next_node": "",
+              "conditions": [],
+              "effects": [],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        },
+        {
+          "id": "ready",
+          "speaker": "BRUNO",
+          "text": "Mmm, piękne.",
+          "choices": [
+            {
+              "id": "claim",
+              "text": "Zadanie wykonane.",
+              "next_node": "done",
+              "conditions": [],
+              "effects": [
+                {
+                  "kind": "turn_in",
+                  "key": "quest_85815f3b769f4aaabd844376e2becc21",
+                  "amount": 1,
+                  "value": 0
+                }
+              ],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        },
+        {
+          "id": "done",
+          "speaker": "BRUNO",
+          "text": "Dobry z ciebie chłopak.",
+          "choices": [
+            {
+              "id": "leave_done",
+              "text": "Na razie.",
+              "next_node": "",
+              "conditions": [],
+              "effects": [],
+              "once": false,
+              "hide_unavailable": false
+            }
+          ]
+        }
+      ],
+      "entries": [
+        {
+          "node_id": "offer",
+          "conditions": [
+            {
+              "kind": "quest_status",
+              "key": "quest_85815f3b769f4aaabd844376e2becc21",
+              "amount": 1,
+              "comparison": ">=",
+              "status": "inactive",
+              "invert": false,
+              "reason": "Warunek nie został spełniony."
+            }
+          ]
+        },
+        {
+          "node_id": "active",
+          "conditions": [
+            {
+              "kind": "quest_status",
+              "key": "quest_85815f3b769f4aaabd844376e2becc21",
+              "amount": 1,
+              "comparison": ">=",
+              "status": "active",
+              "invert": false,
+              "reason": "Warunek nie został spełniony."
+            }
+          ]
+        },
+        {
+          "node_id": "ready",
+          "conditions": [
+            {
+              "kind": "quest_status",
+              "key": "quest_85815f3b769f4aaabd844376e2becc21",
+              "amount": 1,
+              "comparison": ">=",
+              "status": "ready",
+              "invert": false,
+              "reason": "Warunek nie został spełniony."
+            }
+          ]
+        },
+        {
+          "node_id": "done",
+          "conditions": [
+            {
+              "kind": "quest_status",
+              "key": "quest_85815f3b769f4aaabd844376e2becc21",
+              "amount": 1,
+              "comparison": ">=",
+              "status": "completed",
+              "invert": false,
+              "reason": "Warunek nie został spełniony."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "npcs": [
+    {
+      "id": "maya",
+      "display_name": "MAYA",
+      "greeting": "Dobrze cię widzieć, Ari.",
+      "existing": true,
+      "portrait": "",
+      "profile_path": "res://resources/narrative/maya.tres",
+      "topics": []
+    },
+    {
+      "id": "froggy",
+      "display_name": "FROGGY",
+      "greeting": "Czego potrzebujesz, kierowco?",
+      "existing": true,
+      "portrait": "",
+      "profile_path": "res://resources/narrative/froggy.tres",
+      "topics": []
+    },
+    {
+      "id": "npc_48318a766f204c43a16b36dbd0c40314",
+      "display_name": "BRUNO",
+      "greeting": "O czym chcesz porozmawiać?",
+      "existing": false,
+      "portrait": "",
+      "topics": [
+        {
+          "id": "quest_85815f3b769f4aaabd844376e2becc21",
+          "title": "Szybki i wściekły",
+          "dialogue": "quest_85815f3b769f4aaabd844376e2becc21_dialogue",
+          "conditions": [],
+          "hide_unavailable": false
+        }
+      ]
+    }
+  ],
+  "items": [],
+  "fact_ids": [],
+  "access_ids": [],
+  "custom_events": []
+}

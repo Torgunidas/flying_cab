@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="NarrativeCatalog" format=3]
+
+[ext_resource type="Resource" path="res://resources/narrative/authored/cab_story/dialogue_fc_depot_runs_dialogue.tres" id="7_q5rky"]
+[ext_resource type="Resource" path="res://resources/narrative/authored/fabula_bd40afbbe29e4eacbc41c2bdf313173b/dialogue_quest_85815f3b769f4aaabd844376e2becc21_dialogue.tres" id="8_ducpb"]
+[ext_resource type="Resource" path="res://resources/narrative/authored/fabula_bd40afbbe29e4eacbc41c2bdf313173b/npc_48318a766f204c43a16b36dbd0c40314.tres" id="14_gqb33"]
+[ext_resource type="Resource" path="res://resources/narrative/depot_driver.tres" id="15_xoc68"]
+[ext_resource type="Resource" path="res://resources/narrative/authored/cab_story/quest_fc_depot_runs.tres" id="17_odrp1"]
+[ext_resource type="Resource" path="res://resources/narrative/authored/fabula_bd40afbbe29e4eacbc41c2bdf313173b/quest_quest_85815f3b769f4aaabd844376e2becc21.tres" id="20_k6tui"]
+[ext_resource type="Resource" path="res://resources/narrative/city_talk.tres" id="f_city_talk"]
+[ext_resource type="Resource" path="res://resources/narrative/first_dose.tres" id="f_first_dose"]
+[ext_resource type="Resource" path="res://resources/narrative/froggy.tres" id="f_froggy"]
+[ext_resource type="Resource" path="res://resources/narrative/froggy_favor.tres" id="f_froggy_favor"]
+[ext_resource type="Resource" path="res://resources/narrative/froggy_job.tres" id="f_froggy_job"]
+[ext_resource type="Resource" path="res://resources/narrative/froggy_note.tres" id="f_froggy_note"]
+[ext_resource type="Resource" path="res://resources/narrative/froggy_shop.tres" id="f_froggy_shop"]
+[ext_resource type="Resource" path="res://resources/narrative/maya.tres" id="f_maya"]
+[ext_resource type="Resource" path="res://resources/narrative/maya_help.tres" id="f_maya_help"]
+[ext_resource type="Resource" path="res://resources/narrative/maya_medicine.tres" id="f_maya_medicine"]
+[ext_resource type="Script" path="res://scripts/narrative/dialogue_definition.gd" id="s_dialogue_definition"]
+[ext_resource type="Script" path="res://scripts/narrative/narrative_catalog.gd" id="s_narrative_catalog"]
+[ext_resource type="Script" path="res://scripts/narrative/narrative_item.gd" id="s_narrative_item"]
+[ext_resource type="Script" path="res://scripts/narrative/npc_definition.gd" id="s_npc_definition"]
+[ext_resource type="Script" path="res://scripts/narrative/quest_definition.gd" id="s_quest_definition"]
+
+[resource]
+script = ExtResource("s_narrative_catalog")
+quests = Array[ExtResource("s_quest_definition")]([ExtResource("f_first_dose"), ExtResource("f_froggy_favor"), ExtResource("15_xoc68"), ExtResource("17_odrp1"), ExtResource("20_k6tui")])
+dialogues = Array[ExtResource("s_dialogue_definition")]([ExtResource("f_maya_help"), ExtResource("f_maya_medicine"), ExtResource("f_froggy_shop"), ExtResource("f_froggy_job"), ExtResource("f_city_talk"), ExtResource("7_q5rky"), ExtResource("8_ducpb")])
+npcs = Array[ExtResource("s_npc_definition")]([ExtResource("f_maya"), ExtResource("f_froggy"), ExtResource("14_gqb33")])
+items = Array[ExtResource("s_narrative_item")]([ExtResource("f_froggy_note")])
+fact_ids = PackedStringArray("promised_froggy")
+access_ids = PackedStringArray()
+custom_events = PackedStringArray()

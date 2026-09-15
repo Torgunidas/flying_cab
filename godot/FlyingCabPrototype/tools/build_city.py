@@ -302,7 +302,7 @@ for i,x in enumerate(range(-60,70,10)):
 node('Smog','Node3D')
 for i,z in enumerate((-25,-3,5)):
     mat = sub('ShaderMaterial',f'shader = ExtResource("smog")\nshader_parameter/phase = {i*8}.0\nshader_parameter/opacity = {0.32 if i==0 else 0.22}')
-    mesh = sub('QuadMesh',f'size = {vec((174,64))}')
+    mesh = sub('QuadMesh',f'size = {vec((224,64))}')
     node(f'Bank{i+1}','MeshInstance3D','Smog',f'position = {vec((.5,GROUND_Y+18,z))}\nmesh = {mesh}\nmaterial_override = {mat}\ncast_shadow = 0',('smog_bank',))
 
 # Six open air lanes: the Unreal cross and ring, with shared visible/gameplay extents.
@@ -325,16 +325,26 @@ for side in (-1,1):
         label(parent,f'{district}Gateway',(0,y,front+.7),district.upper(),d['tint'],.038,64)
         label(parent,f'{district}Motto',(0,y-2,front+.7),d['title'].split(' // ')[1],'c4d1db',.012,34)
 
-for side,x in ((-1,-74.5),(1,75.5)):
+for side,x in ((-1,-99.5),(1,100.5)):
     for y in range(GROUND_Y+8,321,16):
         box('Highways',f'GridBoundary{side}_{y}',(x,y,-2),(.10,1.0,.08),AMBER)
 
+# Shared, baked signs hang behind the flight plane, 20 m before each boundary.
+node('PerimeterWarnings', 'Node3D')
+for side, x in (('West', -79.5), ('East', 80.5)):
+    for i, y in enumerate(range(GROUND_Y+16, 321, 24)):
+        nodes.append(f'[node name="{side}{i:02d}" parent="PerimeterWarnings" instance=ExtResource("perimeter_sign")]\nposition = {vec((x,y,-2.5))}\n')
+
+nodes.append('[node name="FoundryTestPlatform" parent="." instance=ExtResource("test_platform")]\nposition = Vector3(34.5, 149.6, 0)\n')
+
 header = '[gd_scene format=3]\n\n' + '\n'.join([
+    '[ext_resource type="PackedScene" path="res://scenes/foundry_test_platform.tscn" id="test_platform"]',
     '[ext_resource type="Shader" path="res://shaders/facade.gdshader" id="facade"]',
     '[ext_resource type="Shader" path="res://shaders/air_lane.gdshader" id="lane"]',
     '[ext_resource type="Shader" path="res://shaders/smog_bank.gdshader" id="smog"]',
     '[ext_resource type="Script" path="res://scripts/highway.gd" id="highway"]',
     '[ext_resource type="Script" path="res://scripts/taxi/taxi_stop.gd" id="taxi_stop"]',
-    '[ext_resource type="PackedScene" path="res://scenes/repair_station.tscn" id="workshop"]']) + '\n\n'
+    '[ext_resource type="PackedScene" path="res://scenes/repair_station.tscn" id="workshop"]',
+    '[ext_resource type="PackedScene" path="res://scenes/perimeter_sign.tscn" id="perimeter_sign"]']) + '\n\n'
 (PROJECT/'scenes/city.tscn').write_text(header+'\n'.join(resources)+'\n'+'\n'.join(nodes))
 print(f'Authored city.tscn: {len(nodes)} editable nodes, {len(resources)} shared resources, 25 attached fuel terraces, 6 air lanes')

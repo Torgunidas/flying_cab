@@ -27,6 +27,7 @@ func _run() -> void:
 	context.campaign.credits = 120
 	root.add_child(context)
 	level = load("res://scenes/flight_lab.tscn").instantiate()
+	level.living_world_enabled = false # Isolated fixture; full population has its own integration suite.
 	level.context = context
 	root.add_child(level)
 	level.set_physics_process(false)
@@ -56,7 +57,12 @@ func _run() -> void:
 	rides.offers = [rides.offers[0]]
 	director.rules = director.rules.duplicate()
 	director.rules.max_offers = 0
-	await frames(280)
+	# Hold pickup until the transaction checks, independently of walk speed.
+	depot.unlocked = false
+	for i in range(600):
+		if rides.offers[0].walk >= 1.0:
+			break
+		await frames(1)
 	var lifetime: float = rides.offers[0].remaining
 	context.player.suspend(&"taxi_test")
 	director.fuel_requested = true
@@ -76,11 +82,12 @@ func _run() -> void:
 	var ids := rides.party_ids(original)
 	var fare: float = original.fare
 	var wallet := context.campaign.credits
+	depot.unlocked = true
 	await frames(20)
 	check(not rides.active.is_empty() and rides.active.phase == "boarding" and VehicleOccupancy.reserved_count(cab.state) == 1, "stopped taxi reserves the passenger's seat while they walk to the cab")
 	check(not cab.board_passenger(StringName(ids[0])), "the public cab API cannot board a person whose seat is still reserved")
 	cab.command = Vector2(0, 1)
-	await frames(10)
+	await frames(1)
 	check(rides.active.is_empty() and cab.state.reservations.is_empty() and cab.state.passenger_ids.is_empty(), "takeoff during boarding cancels the reservation without losing the offer")
 	check(original.get("return_remaining", 0.0) > 0 and original.return_points.size() == ids.size(), "interrupted boarding retains the person's current position for their walk back")
 	cab.command = Vector2.ZERO
@@ -132,7 +139,10 @@ func _run() -> void:
 	cab.freeze = false
 	cab.sleeping = false
 	cab.reset_physics_interpolation()
-	await frames(220)
+	for tick in range(220):
+		await frames(1)
+		if rides.active.is_empty():
+			break
 	check(rides.active.is_empty() and rides.completed == 1 and cab.state.passenger_ids.is_empty(), "landing on the destination pad completes physical disembarkation")
 	check(is_equal_approx(context.campaign.credits, wallet + fare) and context.campaign.receipts.has(original.id), "completed ride pays its exact quote once")
 	check(not context.ledger.credit_once(original.id, fare) and not rides.complete(cab.state, context.ledger), "duplicate completion and receipt replay cannot pay twice")

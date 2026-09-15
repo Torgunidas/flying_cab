@@ -1,10 +1,13 @@
 [gd_scene format=3 uid="uid://bohe2gpvogblp"]
 
-[ext_resource type="Script" path="res://scripts/flight_lab.gd" id="1"]
+[ext_resource type="Script" uid="uid://ctgvv0px0ap0g" path="res://scripts/flight_lab.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/cab.tscn" id="2"]
-[ext_resource type="Script" path="res://scripts/flight_controls.gd" id="3"]
+[ext_resource type="Script" uid="uid://b78ia70xu8fh6" path="res://scripts/flight_controls.gd" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/city_runtime.tscn" id="4"]
-[ext_resource type="Script" path="res://scripts/city_atmosphere.gd" id="5"]
+[ext_resource type="Script" uid="uid://cay20hit7eeav" path="res://scripts/city_atmosphere.gd" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/narrative/quest_area.tscn" id="5_amere"]
+[ext_resource type="PackedScene" uid="uid://d2t74n2m173u1" path="res://scenes/narrative/city_narrative.tscn" id="narrative"]
+[ext_resource type="PackedScene" path="res://scenes/foundry_test_fleet.tscn" id="test_fleet"]
 
 [sub_resource type="Environment" id="environment"]
 background_mode = 1
@@ -14,13 +17,13 @@ ambient_light_color = Color(0.45, 0.49, 0.69, 1)
 ambient_light_energy = 0.48
 reflected_light_source = 2
 tonemap_mode = 2
+ssao_enabled = true
+ssao_radius = 1.5
+ssao_intensity = 1.2
 glow_enabled = true
 glow_intensity = 0.65
 glow_bloom = 0.08
 glow_hdr_threshold = 0.9
-ssao_enabled = true
-ssao_radius = 1.5
-ssao_intensity = 1.2
 fog_enabled = true
 fog_light_color = Color(0.16, 0.125, 0.22, 1)
 fog_density = 0.007
@@ -37,51 +40,59 @@ size = Vector3(240, 2, 110)
 [sub_resource type="BoxShape3D" id="ground_shape"]
 size = Vector3(240, 2, 110)
 
-[node name="FlightLab" type="Node3D"]
+[node name="FlightLab" type="Node3D" unique_id=1288065465]
 script = ExtResource("1")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2134420150]
 environment = SubResource("environment")
 
-[node name="Moonlight" type="DirectionalLight3D" parent="."]
-rotation_degrees = Vector3(-32, -25, 0)
+[node name="Moonlight" type="DirectionalLight3D" parent="." unique_id=1107902192]
+transform = Transform3D(0.90630776, 0.22395356, -0.3584006, 0, 0.8480481, 0.52991927, 0.42261827, -0.48026994, 0.76859254, 0, 0, 0)
 light_color = Color(0.65, 0.71, 0.92, 1)
 light_energy = 0.55
 shadow_enabled = true
-shadow_bias = 0.1
-shadow_normal_bias = 2.0
 directional_shadow_max_distance = 65.0
 
-[node name="City" parent="." instance=ExtResource("4")]
+[node name="City" parent="." unique_id=488714302 instance=ExtResource("4")]
 
-[node name="Atmosphere" type="Node3D" parent="."]
+[node name="FoundryTestFleet" parent="." unique_id=197152739 instance=ExtResource("test_fleet")]
+
+[node name="Narrative" parent="." unique_id=238441769 instance=ExtResource("narrative")]
+
+[node name="Bruno" parent="Narrative" index="2" unique_id=1632693911]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36.502, 206.045, 1.2)
+
+[node name="bruno_delivery" parent="Narrative" unique_id=377586207 instance=ExtResource("5_amere")]
+transform = Transform3D(1, 0, 0, 0, 0.976862, -0.21387053, 0, 0.21387053, 0.976862, 39.5, 206.1, 1.2)
+area_id = &"bruno_delivery"
+
+[node name="Atmosphere" type="Node3D" parent="." unique_id=385304967]
 script = ExtResource("5")
 
-[node name="Floor" type="StaticBody3D" parent="."]
-position = Vector3(0, -49, -30)
+[node name="Floor" type="StaticBody3D" parent="." unique_id=1512537389]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -49, -30)
 
-[node name="Body" type="MeshInstance3D" parent="Floor"]
-mesh = SubResource("ground_mesh")
+[node name="Body" type="MeshInstance3D" parent="Floor" unique_id=1941497845]
 material_override = SubResource("ground_mat")
+mesh = SubResource("ground_mesh")
 
-[node name="Collision" type="CollisionShape3D" parent="Floor"]
+[node name="Collision" type="CollisionShape3D" parent="Floor" unique_id=292147406]
 shape = SubResource("ground_shape")
 
-[node name="Cab" parent="." instance=ExtResource("2")]
-position = Vector3(-22, 54.4, 0)
+[node name="Cab" parent="." unique_id=1535485352 instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 54.4, 0)
 
-[node name="Camera3D" type="Camera3D" parent="."]
-position = Vector3(0, 4.25, 18.93)
-rotation_degrees = Vector3(-5, 0, 0)
+[node name="Camera3D" type="Camera3D" parent="." unique_id=2062926589]
+transform = Transform3D(1, 0, 0, 0, 0.9961947, 0.08715574, 0, -0.08715574, 0.9961947, 0, 4.25, 18.93)
 keep_aspect = 0
 current = true
 fov = 55.0
 near = 0.1
 far = 500.0
 
-[node name="HUD" type="CanvasLayer" parent="."]
+[node name="HUD" type="CanvasLayer" parent="." unique_id=2017584296]
 
-[node name="Controls" type="Control" parent="HUD"]
+[node name="Controls" type="Control" parent="HUD" unique_id=1902916949]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -89,3 +100,5 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("3")
+
+[editable path="Narrative"]

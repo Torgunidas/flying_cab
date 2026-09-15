@@ -7,6 +7,7 @@ extends Area3D
 @export_range(0.1, 1000.0, 0.1, "or_greater") var hull_per_second := 20.0
 
 func _ready() -> void:
+	collision_mask = WorldLayers.VEHICLES
 	add_to_group("repair_station")
 	set_meta("entity_id", "workshop/" + String(station_id))
 	set_physics_process(false)

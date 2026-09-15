@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="NpcDefinition" format=3 uid="uid://chirihfukjwd7"]
+
+[ext_resource type="Resource" uid="uid://b5k1swwl0sc4g" path="res://resources/narrative/maya_help.tres" id="f_maya_help"]
+[ext_resource type="Resource" uid="uid://b01b3cv5exe7" path="res://resources/narrative/maya_medicine.tres" id="f_maya_medicine"]
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="s_narrative_condition"]
+[ext_resource type="Script" uid="uid://dlkvf83owsqn3" path="res://scripts/narrative/npc_definition.gd" id="s_npc_definition"]
+[ext_resource type="Script" uid="uid://b55fqqpa6wk2o" path="res://scripts/narrative/npc_topic.gd" id="s_npc_topic"]
+
+[sub_resource type="Resource" id="r0"]
+script = ExtResource("s_npc_topic")
+id = &"help"
+title = "Jak się czujesz?"
+dialogue = ExtResource("f_maya_help")
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("s_narrative_condition")
+kind = "medicine"
+reason = "Nie masz dawki leku."
+
+[sub_resource type="Resource" id="r2"]
+script = ExtResource("s_narrative_condition")
+kind = "campaign_active"
+reason = "Najpierw porozmawiaj z Mayą."
+
+[sub_resource type="Resource" id="r3"]
+script = ExtResource("s_npc_topic")
+id = &"medicine"
+title = "Mam lek."
+dialogue = ExtResource("f_maya_medicine")
+conditions = Array[ExtResource("s_narrative_condition")]([SubResource("r1"), SubResource("r2")])
+hide_unavailable = true
+
+[resource]
+script = ExtResource("s_npc_definition")
+id = &"maya"
+display_name = "MAYA"
+greeting = "Dobrze cię widzieć, Ari."
+topics = Array[ExtResource("s_npc_topic")]([SubResource("r0"), SubResource("r3")])

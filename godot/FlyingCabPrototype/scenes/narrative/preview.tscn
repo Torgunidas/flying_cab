@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/narrative/narrative_preview.gd" id="preview"]
+
+[node name="NarrativePreview" type="Node"]
+script = ExtResource("preview")
+campaign_seconds = 0.0

@@ -1,0 +1,19 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/narrative/narrative_npc.gd" id="npc"]
+[ext_resource type="PackedScene" path="res://scenes/people/passenger_3.tscn" id="visual"]
+
+[node name="NarrativeNpc" type="Node3D"]
+script = ExtResource("npc")
+
+[node name="Visual" parent="." instance=ExtResource("visual")]
+
+[node name="Name" type="Label3D" parent="."]
+position = Vector3(0, 1.55, 0)
+billboard = 1
+text = "NPC"
+font_size = 40
+pixel_size = 0.004
+modulate = Color(1, 0.76, 0.42, 1)
+outline_size = 10
+no_depth_test = false

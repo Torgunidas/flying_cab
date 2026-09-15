@@ -35,10 +35,27 @@ func _run() -> void:
 	current_scene = scene
 	scene.set_physics_process(false)
 	await frames(90)
-	check(is_equal_approx(cab.world_definition.city_right - cab.world_definition.city_left, 150.0) and cab.world_definition.max_altitude == 320.0 and cab.world_definition.ground_height == -48.0, "city retains its 150 m width and ceiling, with 48 m of additional low city")
+	check(is_equal_approx(cab.world_definition.city_right - cab.world_definition.city_left, 200.0) and cab.world_definition.max_altitude == 320.0 and cab.world_definition.ground_height == -48.0, "city has 200 m of flight space with the existing ceiling and low-city floor")
 	var pads := get_nodes_in_group("refuel_pad")
 	var lanes := get_nodes_in_group("highway")
 	check(pads.size() == 25 and lanes.size() == 6, "four districts have 24 fuel terraces, a start depot and six express lanes")
+	var lane_left := INF
+	var lane_right := -INF
+	for lane in lanes:
+		lane_left = minf(lane_left, lane.global_position.x - lane.size.x * 0.5)
+		lane_right = maxf(lane_right, lane.global_position.x + lane.size.x * 0.5)
+	check(lane_left - cab.world_definition.city_left >= 28 and cab.world_definition.city_right - lane_right >= 28, "both highway edges have at least 28 metres of maneuvering space before forced return")
+	var signs := get_nodes_in_group("perimeter_warning")
+	var sign_placement_ok := signs.size() == 30
+	var sign_content_ok := sign_placement_ok
+	var signs_clear := sign_placement_ok
+	for sign: Node3D in signs:
+		var edge := cab.world_definition.city_left if sign.global_position.x < 0 else cab.world_definition.city_right
+		sign_placement_ok = sign_placement_ok and is_equal_approx(absf(sign.global_position.x - edge), 20.0)
+		sign_content_ok = sign_content_ok and sign.get_node("Perimeter").text == "CITY PERIMETER" and sign.get_node("Instruction").text == "TURN BACK"
+		signs_clear = signs_clear and sign.global_position.z <= -2.5 and sign.find_children("*", "CollisionObject3D", true, false).is_empty()
+	check(sign_placement_ok and sign_content_ok, "thirty municipal signs warn 20 m before both boundaries throughout the city height")
+	check(signs_clear, "suspended signs are behind the flight plane and cannot block traffic")
 	var space := scene.get_world_3d().direct_space_state
 	var attachments_ok := true
 	var foundations_ok := true

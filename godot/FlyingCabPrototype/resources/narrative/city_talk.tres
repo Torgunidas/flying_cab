@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="DialogueDefinition" format=3 uid="uid://43xogtnwph3q"]
+
+[ext_resource type="Script" uid="uid://bbj1vgka3aqlb" path="res://scripts/narrative/dialogue_entry.gd" id="1_gxl70"]
+[ext_resource type="Script" uid="uid://bxilgskfvq203" path="res://scripts/narrative/dialogue_choice.gd" id="s_dialogue_choice"]
+[ext_resource type="Script" uid="uid://cyk54eteh2oga" path="res://scripts/narrative/dialogue_definition.gd" id="s_dialogue_definition"]
+[ext_resource type="Script" uid="uid://c04a45t5qg5yl" path="res://scripts/narrative/dialogue_node.gd" id="s_dialogue_node"]
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="s_narrative_condition"]
+[ext_resource type="Script" uid="uid://blfaeixmm3cs6" path="res://scripts/narrative/narrative_effect.gd" id="s_narrative_effect"]
+
+[sub_resource type="Resource" id="r0"]
+script = ExtResource("s_narrative_condition")
+key = &"promised_froggy"
+reason = "Nie składano jeszcze obietnicy."
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("s_dialogue_choice")
+id = &"promise"
+text = "Pamiętam o naszej umowie."
+conditions = Array[ExtResource("s_narrative_condition")]([SubResource("r0")])
+hide_unavailable = true
+
+[sub_resource type="Resource" id="r2"]
+script = ExtResource("s_dialogue_choice")
+id = &"leave"
+text = "Rozejrzę się."
+
+[sub_resource type="Resource" id="r3"]
+script = ExtResource("s_dialogue_node")
+id = &"talk"
+text = "W tym mieście zawsze ktoś czeka na przejazd. Pilnuj paliwa i wracaj do ludzi, którym coś obiecałeś."
+choices = Array[ExtResource("s_dialogue_choice")]([SubResource("r1"), SubResource("r2")])
+
+[resource]
+script = ExtResource("s_dialogue_definition")
+id = &"city_talk"
+start_node = &"talk"
+nodes = Array[ExtResource("s_dialogue_node")]([SubResource("r3")])

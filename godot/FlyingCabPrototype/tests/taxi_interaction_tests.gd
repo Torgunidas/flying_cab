@@ -5,6 +5,9 @@ var level: Node3D
 var context: RuntimeContext
 var cab: FlightCab
 var director: TaxiDirector
+var walk_samples := {"boarding": 0, "alighting": 0}
+var walk_speed_ok := {"boarding": true, "alighting": true}
+var walk_facing_ok := true
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -23,7 +26,19 @@ func frames(count: int) -> void:
 		# A deterministic fixture must not depend on which desktop window has
 		# focus. Production suspension is covered separately by taxi_tests.
 		context.player.resume(&"application_focus")
+		var trip := context.rides.active
+		var phase: String = trip.get("phase", "")
+		var person: PassengerVisual
+		var before := Vector3.ZERO
+		if walk_samples.has(phase) and trip.party.size() == 1 and trip.progress > 0:
+			person = director._pool[director._assigned[trip.party[0].id]] as PassengerVisual
+			before = person.global_position
 		director.advance(1.0 / 60.0)
+		if person and not context.rides.active.is_empty() and context.rides.active.phase == phase:
+			var travel := person.global_position - before
+			walk_samples[phase] += 1
+			walk_speed_ok[phase] = walk_speed_ok[phase] and absf(travel.length() * 60.0 - 1.5) < 0.005
+			walk_facing_ok = walk_facing_ok and person.basis.z.dot(travel.normalized()) > 0.999
 	await process_frame
 
 func place(stop: TaxiStop, offset: float) -> void:
@@ -55,6 +70,7 @@ func _run() -> void:
 	context.campaign.credits = 120
 	root.add_child(context)
 	level = load("res://scenes/flight_lab.tscn").instantiate()
+	level.living_world_enabled = false # Isolated fixture; full population has its own integration suite.
 	level.context = context
 	root.add_child(level)
 	level.set_physics_process(false)
@@ -142,6 +158,9 @@ func _run() -> void:
 	await place(depot, 0)
 	await frames(120)
 	check(depot.can_board(cab), "the same wider vehicle can board when fully parked on the terrace")
+	for phase: String in walk_samples:
+		check(walk_samples[phase] > 5 and walk_speed_ok[phase], phase + " uses 1.5 m/s on actual rendered door paths at both edge berths")
+	check(walk_facing_ok, "passengers face their movement through boarding and both left/right exits")
 	level.queue_free()
 	await process_frame
 	context.queue_free()

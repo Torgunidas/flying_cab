@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="NpcDefinition" format=3 uid="uid://m81d368dril"]
+
+[ext_resource type="Resource" uid="uid://bnnmc3pdlskhh" path="res://resources/narrative/authored/cab_story/dialogue_fc_depot_runs_dialogue.tres" id="7_1ahwq"]
+[ext_resource type="Resource" uid="uid://43xogtnwph3q" path="res://resources/narrative/city_talk.tres" id="f_city_talk"]
+[ext_resource type="Resource" uid="uid://ch3j0a0gyos8" path="res://resources/narrative/froggy_job.tres" id="f_froggy_job"]
+[ext_resource type="Resource" uid="uid://boc38net1uceo" path="res://resources/narrative/froggy_shop.tres" id="f_froggy_shop"]
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="s_narrative_condition"]
+[ext_resource type="Script" uid="uid://dlkvf83owsqn3" path="res://scripts/narrative/npc_definition.gd" id="s_npc_definition"]
+[ext_resource type="Script" uid="uid://b55fqqpa6wk2o" path="res://scripts/narrative/npc_topic.gd" id="s_npc_topic"]
+
+[sub_resource type="Resource" id="r0"]
+script = ExtResource("s_npc_topic")
+id = &"shop"
+title = "Potrzebuję leku dla Mai."
+dialogue = ExtResource("f_froggy_shop")
+
+[sub_resource type="Resource" id="r1"]
+script = ExtResource("s_narrative_condition")
+kind = "quest_status"
+key = &"first_dose"
+status = "completed"
+reason = "Najpierw pomóż Mai."
+
+[sub_resource type="Resource" id="r2"]
+script = ExtResource("s_npc_topic")
+id = &"work"
+title = "Masz dla mnie pracę?"
+dialogue = ExtResource("f_froggy_job")
+conditions = Array[ExtResource("s_narrative_condition")]([SubResource("r1")])
+hide_unavailable = true
+
+[sub_resource type="Resource" id="r3"]
+script = ExtResource("s_npc_topic")
+id = &"city"
+title = "Co słychać w mieście?"
+dialogue = ExtResource("f_city_talk")
+
+[sub_resource type="Resource" id="Resource_g2tu7"]
+script = ExtResource("s_npc_topic")
+id = &"fc_depot_runs"
+title = "Masz dla mnie pracę?"
+dialogue = ExtResource("7_1ahwq")
+metadata/fc_story_project = "cab_story"
+
+[resource]
+script = ExtResource("s_npc_definition")
+id = &"froggy"
+display_name = "FROGGY"
+greeting = "Czego potrzebujesz, kierowco?"
+topics = Array[ExtResource("s_npc_topic")]([SubResource("r0"), SubResource("r2"), SubResource("r3"), SubResource("Resource_g2tu7")])
+metadata/fc_story_path = "res://resources/narrative/froggy.tres"

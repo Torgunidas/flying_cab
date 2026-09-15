@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="DialogueDefinition" format=3 uid="uid://dbcbkyyic13au"]
+
+[ext_resource type="Script" uid="uid://bbj1vgka3aqlb" path="res://scripts/narrative/dialogue_entry.gd" id="1_kh12q"]
+[ext_resource type="Script" uid="uid://c04a45t5qg5yl" path="res://scripts/narrative/dialogue_node.gd" id="2_r4xou"]
+[ext_resource type="Script" uid="uid://bxilgskfvq203" path="res://scripts/narrative/dialogue_choice.gd" id="3_r4xou"]
+[ext_resource type="Script" uid="uid://cyk54eteh2oga" path="res://scripts/narrative/dialogue_definition.gd" id="3_y543u"]
+
+[sub_resource type="Resource" id="Resource_xclwp"]
+script = ExtResource("2_r4xou")
+id = &"offer"
+text = "Czesc. "
+metadata/_custom_type_script = "uid://c04a45t5qg5yl"
+
+[resource]
+script = ExtResource("3_y543u")
+id = &"depot_driver_dialogue"
+start_node = &"offer"
+nodes = Array[ExtResource("2_r4xou")]([SubResource("Resource_xclwp")])
+metadata/_custom_type_script = "uid://cyk54eteh2oga"

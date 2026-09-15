@@ -40,11 +40,28 @@ func _run() -> void:
 	check(foot.try_exit(level.cab), "rendered city allows safe depot exit")
 	await frames(90)
 	check(absf(level._camera_distance - level.camera_tuning.on_foot_distance) < 0.1, "camera blends into the closer on-foot frame")
+	var height_pixels: float = absf(level.camera.unproject_position(foot.actor.global_position + Vector3.UP * 0.58).y - level.camera.unproject_position(foot.actor.global_position - Vector3.UP * 0.58).y)
+	check(height_pixels / root.get_visible_rect().size.y >= 0.14, "Ari occupies at least fourteen percent of the portrait frame height")
+	check(absf(level.camera.rotation.x) < 0.002, "walking uses a level side view for readable platform edges")
 	check(foot.actor.visible and level.controls.interaction_label == "WSIĄDŹ / Q", "rendered Ari and contextual entry control are visible")
 	await capture("on-foot-depot")
+	var walk_start := foot.actor.global_position
+	context.player.dispatch(Vector2.RIGHT) # Walk away from the parked cab collider.
+	await frames(18)
+	var gait := foot.actor.get_node("Visual") as PassengerVisual
+	check(foot.actor.movement_state == &"walk" and gait._gait_weight > 0.9 and foot.actor.global_position.x > walk_start.x + 0.25, "rendered Ari uses the distance-driven gait while walking briskly")
+	await capture("on-foot-walking")
+	context.player.dispatch(Vector2.ZERO)
+	await frames(30)
+	check(gait._gait_weight == 0 and foot.actor.movement_state == &"idle", "rendered feet return to rest after braking")
+	foot.recover()
+	await frames(12)
+	var jump_camera_y: float = level._camera_target.y
+	var jump_start_y := foot.actor.global_position.y
 	context.player.dispatch(Vector2(1, 1))
 	await frames(10)
 	check(foot.actor.movement_state == &"jump", "rendered Ari uses the airborne pose")
+	check(foot.actor.global_position.y - jump_start_y > 0.2 and absf(level._camera_target.y - jump_camera_y) < 0.12, "short jumps move Ari inside a stable platformer frame")
 	await capture("on-foot-jump")
 	context.player.dispatch(Vector2.ZERO)
 	await frames(60)
@@ -62,7 +79,7 @@ func _run() -> void:
 	context.save_to("res://build/on-foot-boot-session.json")
 	check(foot.try_enter(level.cab), "rendered character returns to the same cab")
 	await frames(90)
-	check(absf(level._camera_distance - level.camera_tuning.camera_distance) < 0.1 and not foot.actor.visible, "driving camera returns and the seated character is hidden")
+	check(absf(level._camera_distance - level.camera_tuning.landing_distance) < 0.1 and not foot.actor.visible, "boarding retains the close platform frame and hides the seated character")
 	await capture("on-foot-back-in-cab")
 	level.queue_free()
 	context.queue_free()
@@ -71,6 +88,7 @@ func _run() -> void:
 	game.save_path = "res://build/on-foot-boot-session.json"
 	root.add_child(game)
 	current_scene = game
+	game.continue_game()
 	await process_frame
 	var deadline := Time.get_ticks_msec() + 60000
 	while game.maps.busy and Time.get_ticks_msec() < deadline:

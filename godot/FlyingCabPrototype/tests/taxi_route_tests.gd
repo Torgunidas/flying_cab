@@ -21,6 +21,7 @@ func _run() -> void:
 	context.campaign.credits = 120
 	root.add_child(context)
 	var level: Node3D = load("res://scenes/flight_lab.tscn").instantiate()
+	level.living_world_enabled = false # Isolated fixture; full population has its own integration suite.
 	level.context = context
 	root.add_child(level)
 	level.set_physics_process(false)

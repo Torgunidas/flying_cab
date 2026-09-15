@@ -1,0 +1,153 @@
+{
+  "format": "flying-cab-story",
+  "version": 1,
+  "id": "fabula_bd40afbbe29e4eacbc41c2bdf313173b",
+  "title": "Trzy słowa do ojca prowadzącego",
+  "documents": [
+    {
+      "id": "quest_85815f3b769f4aaabd844376e2becc21",
+      "kind": "quest",
+      "title": "Trzy słowa do ojca prowadzącego",
+      "description": "Bruno prosi o dostarczenie szybkiego pojazdu.",
+      "version": 3,
+      "category": "side",
+      "npc": "npc_48318a766f204c43a16b36dbd0c40314",
+      "topic_title": "Szybki i wściekły",
+      "auto_start": false,
+      "requires_turn_in": true,
+      "turn_in_npc": "npc_48318a766f204c43a16b36dbd0c40314",
+      "reward_credits": 500,
+      "prerequisites": [],
+      "conditions": [],
+      "rewards": [
+        {
+          "kind": "set_fact",
+          "key": "promised_froggy",
+          "amount": 1,
+          "value": 0
+        }
+      ],
+      "topic_conditions": [],
+      "objectives": [
+        {
+          "id": "cel_5f7173be65c84ddea75362a4a3a75ee9",
+          "description": "Zdobądź czerwony supercar",
+          "mode": "event",
+          "event": "vehicle_entered",
+          "required": 1,
+          "destination_id": "",
+          "origin_id": "",
+          "target_id": "",
+          "vehicle_id": "test_fleet/supercar",
+          "custom_event": "",
+          "conditions": [],
+          "transitions": []
+        },
+        {
+          "id": "cel_eeb5b16eaa6444aba9efdc8a31f6c417",
+          "description": "Dowieź auto do Bruno",
+          "mode": "event",
+          "event": "area_entered",
+          "required": 1,
+          "destination_id": "",
+          "origin_id": "",
+          "target_id": "bruno_delivery",
+          "vehicle_id": "test_fleet/supercar",
+          "custom_event": "",
+          "conditions": [
+            {
+              "kind": "vehicle_id",
+              "key": "test_fleet/supercar",
+              "amount": 1,
+              "comparison": ">=",
+              "status": "active",
+              "invert": false,
+              "reason": "Warunek nie został spełniony."
+            }
+          ],
+          "transitions": []
+        }
+      ],
+      "choices": {
+        "accept": {
+          "conditions": [],
+          "effects": [
+            {
+              "kind": "start_quest",
+              "key": "quest_85815f3b769f4aaabd844376e2becc21",
+              "amount": 1,
+              "value": 0
+            }
+          ],
+          "once": false,
+          "hide_unavailable": false
+        },
+        "claim": {
+          "conditions": [],
+          "effects": [
+            {
+              "kind": "turn_in",
+              "key": "quest_85815f3b769f4aaabd844376e2becc21",
+              "amount": 1,
+              "value": 0
+            }
+          ],
+          "once": false,
+          "hide_unavailable": false
+        }
+      },
+      "stages": {
+        "ETAP_1": {
+          "status": "inactive",
+          "conditions": []
+        },
+        "ETAP_2": {
+          "status": "active",
+          "conditions": []
+        },
+        "ETAP_3": {
+          "status": "ready",
+          "conditions": []
+        },
+        "ETAP_4": {
+          "status": "completed",
+          "conditions": []
+        }
+      },
+      "text": "##QUEST###quest_85815f3b769f4aaabd844376e2becc21\n##NPC\nBRUNO###npc_48318a766f204c43a16b36dbd0c40314\n\n###ETAP\nETAP_1 ###Oferta ###\n##DIALOG *BRUNO*\n// @fc:node offer\n*BRUNO*\nWięc to ty jesteś tym nowym macherem w mieście.\n// @fc:node n_1d29e43f9b764dba80458851978a6b21\nGRACZ\n// @fc:choice c_5ad291c3ef29488eac9c251932fa35ab\nJa? Nie powiedziałbym.\n// @fc:node n_94436462e37040a5b2c305db3a0fe599\nBRUNO\nDobra,dobra. Widzę,jak ci z oczu patrzy. Zrobisz coś dla mnie.\n// @fc:node n_f55f0b487483439f9c451ca2578f0587\nGRACZ\n// @fc:choice c_1eea799db5a441e2b2903940724ab6a1\nCzemu mam coś dla ciebie robić?\n// @fc:node n_acaaca596fb34daba5667ed341bca1d7\nBRUNO\nPrzecież wiesz, jak to działa. Ty zrobisz coś dla mnie, ja zrobię coś dla ciebie i tak to się kręci.\n// @fc:node n_83f86a44e2cb44f7acca759df705c095\nGRACZ\n// @fc:choice c_c58fb9bf232e43978940876ecddc076a\n[sb]Wzdychasz.[/sb] Niech będzie. Czego chcesz?\n// @fc:node n_ae081305a33d42dab1245f200fe0f83d\nBRUNO\nWidziałem na mieście nowy model wozu. CHWDP 14V. Muszę go mieć i tymi go zdobędziesz.\n// @fc:node n_32bfaf59e8ef418788d2479e34b79f8b\nGRACZ\n// @fc:choice c_552a3f321efc4e368bebcdfadbb2a0f3\nMam kraść?\n// @fc:node n_1a555b5cda7f4a2699135396fbe9b2a1\nBRUNO\nKraść? Oczywiście, że nie. Ty tylko przywrócisz dziejową sprawiedliwość.\n// @fc:node offer_menu\n*GRACZ*\n// @fc:choice accept\nDobra, zajmę się tym.{ETAP_2}\n// @fc:choice decline\nNie teraz.{-1}\n\n###ETAP\nETAP_2 ###W trakcie ###\n##DIALOG *BRUNO*\n// @fc:node active\n*BRUNO*\nGdzie moje autko?\n// @fc:node active_menu\n*GRACZ*\n// @fc:choice leave_active\nBędzie, nie martw się.{-1}\n\n###ETAP\nETAP_3 ###Oddanie ###\n##DIALOG *BRUNO*\n// @fc:node ready\n*BRUNO*\nMmm, piękne.\n// @fc:node ready_menu\n*GRACZ*\n// @fc:choice claim\nZadanie wykonane.{ETAP_4}\n\n###ETAP\nETAP_4 ###Zakończone ###\n##DIALOG *BRUNO*\n// @fc:node done\n*BRUNO*\nDobry z ciebie chłopak.\n// @fc:node done_menu\n*GRACZ*\n// @fc:choice leave_done\nNa razie.{-1}\n\n##END\n",
+      "authoring": {
+        "from_scratch": true,
+        "guide_dismissed": false
+      }
+    }
+  ],
+  "npcs": [
+    {
+      "id": "maya",
+      "display_name": "MAYA",
+      "greeting": "Dobrze cię widzieć, Ari.",
+      "existing": true,
+      "portrait": "",
+      "profile_path": "res://resources/narrative/maya.tres"
+    },
+    {
+      "id": "froggy",
+      "display_name": "FROGGY",
+      "greeting": "Czego potrzebujesz, kierowco?",
+      "existing": true,
+      "portrait": "",
+      "profile_path": "res://resources/narrative/froggy.tres"
+    },
+    {
+      "id": "npc_48318a766f204c43a16b36dbd0c40314",
+      "display_name": "BRUNO",
+      "greeting": "O czym chcesz porozmawiać?",
+      "existing": false,
+      "portrait": ""
+    }
+  ],
+  "items": [],
+  "fact_ids": [],
+  "access_ids": [],
+  "custom_events": []
+}

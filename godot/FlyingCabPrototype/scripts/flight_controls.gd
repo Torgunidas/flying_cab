@@ -52,7 +52,7 @@ var _refueling := false
 var _restore_notice := 0.0
 var _district_name := "FOUNDRY / CAB DEPOT"
 var _city_position := Vector2.ZERO
-var _city_bounds := Rect2(-74.5, -48, 150, 368)
+var _city_bounds := Rect2(-99.5, -48, 200, 368)
 var _low_city_top := 11.0
 var _city_lanes: Array[Node] = []
 var _city_pads: Array[Node] = []
@@ -81,12 +81,12 @@ func _world_changed() -> void:
 	_low_city_top = city.low_city_top if city else _city_bounds.position.y
 	queue_redraw()
 
-func update_city(position: Vector3, definition: MapDefinition, highway_speed: float, headlights_on := false) -> void:
-	_city_position = Vector2(position.x, position.y)
+func update_city(world_position: Vector3, definition: MapDefinition, highway_speed: float, headlights_on := false) -> void:
+	_city_position = Vector2(world_position.x, world_position.y)
 	_city_bounds = definition.bounds()
 	_highway_speed = highway_speed
 	_automatic_lights = headlights_on
-	_district_name = definition.district_at(position, SMOG.top_height)
+	_district_name = definition.district_at(world_position, SMOG.top_height)
 	queue_redraw()
 
 func set_control_suspended(value: bool) -> void:
@@ -100,7 +100,7 @@ func _install_keys() -> void:
 			InputMap.add_action(action)
 			for key: int in actions[action]:
 				var event := InputEventKey.new()
-				event.physical_keycode = key
+				event.physical_keycode = key as Key
 				InputMap.action_add_event(action, event)
 
 func _layout() -> void:

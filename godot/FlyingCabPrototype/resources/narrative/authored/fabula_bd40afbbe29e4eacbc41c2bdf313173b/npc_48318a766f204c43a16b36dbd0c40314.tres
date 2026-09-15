@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="NpcDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrative/npc_definition.gd" id="1_17kwf"]
+[ext_resource type="Script" path="res://scripts/narrative/npc_topic.gd" id="2_nw4bu"]
+[ext_resource type="Script" path="res://scripts/narrative/narrative_condition.gd" id="3_61mg0"]
+[ext_resource type="Resource" path="res://resources/narrative/authored/fabula_bd40afbbe29e4eacbc41c2bdf313173b/dialogue_quest_85815f3b769f4aaabd844376e2becc21_dialogue.tres" id="4_akqkb"]
+
+[sub_resource type="Resource" id="Resource_ti6py"]
+script = ExtResource("2_nw4bu")
+id = &"quest_85815f3b769f4aaabd844376e2becc21"
+title = "Szybki i wściekły"
+dialogue = ExtResource("4_akqkb")
+metadata/fc_story_project = "fabula_bd40afbbe29e4eacbc41c2bdf313173b"
+
+[resource]
+script = ExtResource("1_17kwf")
+id = &"npc_48318a766f204c43a16b36dbd0c40314"
+display_name = "BRUNO"
+topics = Array[ExtResource("2_nw4bu")]([SubResource("Resource_ti6py")])
+metadata/fc_story_project = "fabula_bd40afbbe29e4eacbc41c2bdf313173b"
+metadata/fc_story_path = "res://resources/narrative/authored/fabula_bd40afbbe29e4eacbc41c2bdf313173b/npc_48318a766f204c43a16b36dbd0c40314.tres"

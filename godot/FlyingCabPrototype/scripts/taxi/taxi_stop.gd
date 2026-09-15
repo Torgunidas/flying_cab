@@ -17,10 +17,10 @@ func _ready() -> void:
 	set_meta("entity_id", "taxi_stop/" + stop_id)
 
 func waiting_point(index := 0) -> Vector3:
-	return to_global(Vector3(waiting_x + index * 0.65, 0, 1.2))
+	return to_global(Vector3(waiting_x + index * 0.65, 0, WorldLayers.PEDESTRIAN_Z))
 
 func door_point() -> Vector3:
-	return to_global(Vector3(door_x, 0, 1.2))
+	return to_global(Vector3(door_x, 0, WorldLayers.PEDESTRIAN_Z))
 
 func landing_point() -> Vector3:
 	return to_global(Vector3(0, 0.9, 0))
@@ -57,4 +57,4 @@ func exit_point(vehicle: FlightCab, index := 0) -> Vector3:
 	var x := to_local(vehicle.global_position).x
 	# Pick the side with room for the whole party, retaining a clear walking strip.
 	var side := -1.0 if x > 0.0 else 1.0
-	return to_global(Vector3(clampf(x + side * (1.55 + index * 0.55), -half_width + 0.3, half_width - 0.3), 0, 1.2))
+	return to_global(Vector3(clampf(x + side * (1.55 + index * 0.55), -half_width + 0.3, half_width - 0.3), 0, WorldLayers.PEDESTRIAN_Z))

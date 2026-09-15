@@ -18,6 +18,7 @@ func _run() -> void:
 	game.save_path = "res://build/boot-test-session.json"
 	root.add_child(game)
 	current_scene = game
+	game.restart_game()
 	await process_frame
 	check(game.maps.busy and game.context.player.is_suspended(), "render preparation locks control before gameplay")
 	var start := Time.get_ticks_msec()

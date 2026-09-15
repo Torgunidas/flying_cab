@@ -16,6 +16,7 @@ var departures: Array = []
 var _pool: Array[Node3D] = []
 var _appearances: Array[Mesh] = []
 var _assigned: Dictionary = {}
+var _shown_last_frame: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _spawn_time := 0.0
 var _recover_armed := 0.0
@@ -111,9 +112,12 @@ func advance(dt: float) -> void:
 	_exit_blocked = false
 	_update_services(cab, dt)
 	for offer: Dictionary in rides.offers.duplicate():
-		offer.walk = minf(1, offer.walk + dt * rules.walking_speed / 8.0)
-		if offer.has("return_remaining"):
-			offer.return_remaining = maxf(0, offer.return_remaining - dt / 2.0)
+		var stop: TaxiStop = network.stops.get(offer.origin)
+		if stop:
+			if offer.walk < 1:
+				offer.walk = minf(1, offer.walk + _walk_step(_waiting_distance(stop, offer.party.size()), dt))
+			if offer.get("return_remaining", 0.0) > 0:
+				offer.return_remaining = maxf(0, offer.return_remaining - _walk_step(_waiting_distance(stop, offer.party.size(), offer.return_points), dt))
 		offer.remaining = maxf(0, offer.remaining - dt)
 		if offer.remaining == 0:
 			_depart(offer, offer.origin)
@@ -141,10 +145,6 @@ func advance(dt: float) -> void:
 			if not rides.begin_boarding(cab.state, cab.definition):
 				rides.selected = ""
 				continue
-			var distance := 0.0
-			for i in range(rides.active.party.size()):
-				distance = maxf(distance, stop.waiting_point(i).distance_to(stop.exit_point(cab, i)))
-			rides.active.duration = maxf(1.0, distance / rules.walking_speed)
 			message("Do %s, proszę.  %.2f CR" % [network.stops[offer.destination].display_name, offer.fare], 5)
 			break
 	if not rides.active.is_empty():
@@ -190,6 +190,8 @@ func _update_journey(focused: FlightCab, dt: float) -> void:
 			rides.interrupt_boarding(state)
 			message("Wsiadanie przerwane. Zatrzymaj się przy pasażerze.")
 			return
+		# Recompute from the same endpoints as presentation, also for old saves.
+		trip.duration = maxf(0.001, _car_walk_distance(stop, cab, trip.party.size(), true) / rules.walking_speed)
 		trip.progress = minf(1, trip.progress + dt / trip.duration)
 		if trip.progress >= 1:
 			if rides.board(state, cab.definition):
@@ -206,7 +208,8 @@ func _update_journey(focused: FlightCab, dt: float) -> void:
 			trip.progress = 0.0
 			return
 		trip.phase = "alighting"
-		trip.progress = minf(1, trip.progress + dt / 1.5)
+		trip.duration = maxf(0.001, _car_walk_distance(stop, cab, trip.party.size(), false) / rules.walking_speed)
+		trip.progress = minf(1, trip.progress + dt / trip.duration)
 		if trip.progress >= 1:
 			var finished := trip.duplicate(true)
 			var before := context.campaign.credits
@@ -215,14 +218,37 @@ func _update_journey(focused: FlightCab, dt: float) -> void:
 				message("Kurs zakończony  +%.2f CR" % (context.campaign.credits - before), 6)
 				checkpoint_requested.emit()
 
+func _walk_step(distance: float, dt: float) -> float:
+	return dt * rules.walking_speed / maxf(distance, 0.001)
+
+func _waiting_distance(stop: TaxiStop, count: int, return_points: Array = []) -> float:
+	var distance := 0.0
+	for i in range(count):
+		var start := stop.door_point()
+		if not return_points.is_empty():
+			var p: Array = return_points[i]
+			start = Vector3(p[0], p[1], p[2])
+		distance = maxf(distance, start.distance_to(stop.waiting_point(i)))
+	return distance
+
+func _car_door(stop: TaxiStop, cab: FlightCab) -> Vector3:
+	return stop.to_global(Vector3(stop.to_local(cab.global_position).x, 0, 0.7))
+
+func _car_walk_distance(stop: TaxiStop, cab: FlightCab, count: int, boarding: bool) -> float:
+	var distance := 0.0
+	var door := _car_door(stop, cab)
+	for i in range(count):
+		distance = maxf(distance, door.distance_to(stop.waiting_point(i) if boarding else stop.exit_point(cab, i)))
+	return distance
+
 func _exit_clear(stop: TaxiStop, cab: FlightCab, count: int) -> bool:
-	var shape := BoxShape3D.new()
-	shape.size = Vector3(0.42, 1.65, 0.38)
+	var shape := HumanRig.clearance_shape()
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = shape
+	query.collision_mask = WorldLayers.GEOMETRY
 	query.exclude = [cab.get_rid()]
 	for i in range(count):
-		query.transform = Transform3D(Basis.IDENTITY, stop.exit_point(cab, i) + Vector3(0, 0.86, 0))
+		query.transform = Transform3D(Basis.IDENTITY, stop.exit_point(cab, i) + Vector3(0, HumanRig.HEIGHT * 0.5 + 0.02, 0))
 		if not network.space.intersect_shape(query, 1).is_empty():
 			return false
 	return true
@@ -241,6 +267,8 @@ func _update_services(cab: FlightCab, dt: float) -> void:
 		cab.fuel += units
 		context.rides.service_spent += units * rules.fuel_price
 		fueling = units > 0
+		if units > 0:
+			context.narrative.record_event("fuel_purchased", {"amount": units, "target": String(fuel_station.stop_id), "vehicle": String(cab.entity_id)})
 
 func _update_local_hint(cab: FlightCab, dt: float) -> void:
 	# Only explain a stable local blockage once; no permanent instruction panel.
@@ -266,7 +294,11 @@ func _depart(trip: Dictionary, stop_id: String, cab: FlightCab = null) -> void:
 	var stop: TaxiStop = network.stops[stop_id]
 	var starts: Array[Vector3] = []
 	for i in range(trip.party.size()):
-		starts.append(stop.exit_point(cab, i) if cab else stop.waiting_point(i))
+		var p := stop.exit_point(cab, i) if cab else stop.waiting_point(i)
+		var id: String = trip.party[i].id
+		if cab == null and _shown_last_frame.has(id) and _assigned.has(id):
+			p = _pool[_assigned[id]].global_position
+		starts.append(p)
 	departures.append({"party": trip.party.duplicate(true), "stop": stop_id, "starts": starts, "progress": 0.0})
 
 func abort(reason := "Kurs anulowany. Pasażer wróci do przystanku.") -> void:
@@ -287,7 +319,15 @@ func request_recovery(force := false) -> bool:
 		message("Holowanie %.0f CR — naciśnij ponownie. Brakującą kwotę spłacisz z kursów." % rules.tow_fee, 4)
 		return false
 	_recover_armed = 0
-	abort("Powrót do depotu. Awaryjne paliwo i częściowa naprawa.")
+	var destination := "DEPOT"
+	if is_instance_valid(context.world.living_world):
+		var berth: Dictionary = context.world.living_world.recovery_berth(cab)
+		if berth.is_empty():
+			message("Brak wolnego miejsca dla holownika. Spróbuj ponownie za chwilę.")
+			return false
+		cab.spawn_transform = Transform3D(Basis.IDENTITY, berth.position)
+		destination = berth.name
+	abort("Holowanie: %s. Awaryjne paliwo i częściowa naprawa." % destination)
 	var paid := minf(context.campaign.credits, rules.tow_fee)
 	context.ledger.spend(paid)
 	context.rides.recovery_debt += rules.tow_fee - paid
@@ -386,7 +426,7 @@ func _render_people(dt: float) -> void:
 				if returning:
 					var previous: Array = offer.return_points[i]
 					p = Vector3(previous[0], previous[1], previous[2]).lerp(stop.waiting_point(i), 1.0 - offer.return_remaining)
-				_show_person(offer.party[i], p, offer.walk < 1 or returning, offer.walk >= 1 and not returning, -1, dt, used)
+				_show_person(offer.party[i], p, offer.walk >= 1 and not returning, -1, dt, used)
 	var trip := context.rides.active
 	if not trip.is_empty() and trip.phase != "riding":
 		var stop: TaxiStop = network.stops.get(trip.origin if trip.phase == "boarding" else trip.destination)
@@ -397,20 +437,24 @@ func _render_people(dt: float) -> void:
 		if stop and cab:
 			for i in range(trip.party.size()):
 				var entry := stop.exit_point(cab, i)
-				var door := stop.to_global(Vector3(stop.to_local(cab.global_position).x, 0, 0.7))
+				var door := _car_door(stop, cab)
 				var p := stop.waiting_point(i).lerp(door, trip.progress) if trip.phase == "boarding" else door.lerp(entry, trip.progress)
-				_show_person(trip.party[i], p, true, false, signf(entry.x - stop.waiting_point(i).x) if trip.phase == "boarding" else 1, dt, used)
+				_show_person(trip.party[i], p, false, signf(door.x - stop.waiting_point(i).x) if trip.phase == "boarding" else signf(entry.x - door.x), dt, used)
 	for departure: Dictionary in departures.duplicate():
-		departure.progress = minf(1, departure.progress + dt * rules.walking_speed / 8.0)
 		var stop: TaxiStop = network.stops.get(departure.stop)
 		if stop:
+			var distance := 0.0
+			for start: Vector3 in departure.starts:
+				distance = maxf(distance, start.distance_to(stop.door_point()))
+			departure.progress = minf(1, departure.progress + _walk_step(distance, dt))
 			for i in range(departure.party.size()):
 				var p: Vector3 = departure.starts[i].lerp(stop.door_point(), departure.progress)
-				_show_person(departure.party[i], p, true, false, signf(stop.door_point().x - p.x), dt, used)
+				_show_person(departure.party[i], p, false, signf(stop.door_point().x - p.x), dt, used)
 		if departure.progress >= 1:
 			departures.erase(departure)
+	_shown_last_frame = used
 
-func _show_person(data: Dictionary, p: Vector3, walking: bool, waving: bool, direction: float, dt: float, used: Dictionary) -> void:
+func _show_person(data: Dictionary, p: Vector3, waving: bool, direction: float, dt: float, used: Dictionary) -> void:
 	var slot: int = _assigned.get(data.id, -1)
 	if slot == -1:
 		for i in range(_pool.size()):
@@ -422,9 +466,18 @@ func _show_person(data: Dictionary, p: Vector3, walking: bool, waving: bool, dir
 				_pool[i].get_node("Skeleton3D/Body").mesh = _appearances[int(data.look)]
 				break
 	if slot >= 0:
-		used[slot] = true
-		var person := _pool[slot]
+		used[data.id] = true
+		var person := _pool[slot] as PassengerVisual
+		var travel := Vector3.ZERO
+		var continuous := _shown_last_frame.has(data.id) and dt > 0
+		if continuous:
+			travel = p - person.global_position
+		else:
+			# A pool reuse, load or emergence from a car is not a walking step.
+			person.reset_gait()
 		person.show()
 		person.global_position = p
+		if not continuous:
+			person.reset_physics_interpolation()
 		person.set_meta("actor_id", data.id)
-		person.pose(dt, walking, waving, direction)
+		person.pose(dt, travel, waving, direction)

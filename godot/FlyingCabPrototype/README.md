@@ -1,14 +1,28 @@
 # Flying Cab — City 02
 
+**Kamera 2026-09-14:** zbliżenie zaczyna się przy zwalnianiu i podejściu do tarasu: 19 m w locie → 6 m przy lądowaniu → 4,2 m pieszo. Tryb pieszy ma bliski, poziomy kadr platformówkowy i spokojne ujęcie krótkich skoków. [Parametry w Inspectorze i weryfikacja](docs/PLATFORM_CAMERA.md).
+
+**Ekran startowy i reset 2026-09-14:** F5 pokazuje plakat ze starego Godota oraz **Kontynuuj / Nowa gra**. Nowa gra resetuje cały postęp i od razu zastępuje autosave. Dostępna również pod **zębatką → Nowa gra → Potwierdź nową grę**. [Obsługa, grafika i testy](docs/START_SCREEN.md). Scena menu do edycji: `scenes/ui/start_screen.tscn`.
+
+**Dialogi i questy 2026-09-14:** zasoby `.tres` do edycji w Inspectorze, walidator katalogu, podgląd F6 i pionowe okno rozmowy. Maya czeka w Depot, Froggy na Torque / Foundry03. Wysiądź, podejdź i wybierz Q / ROZMOWA. Przykłady obejmują zakup i dostawę leku, odliczanie kampanii oraz poboczne zadanie z oddaniem nagrody. Dziennik: J / ≡. [Instrukcja tworzenia własnych zadań i dialogów](docs/NARRATIVE_AUTHORING.md). Stan narracji należy do schematu 5; wcześniejsze zapisy 1–4 są obsługiwane. Jest to pierwszy wycinek, nie pełna kampania.
+
+**Platforma do prób pojazdów:** na górze Foundry, tuż pod Crosstown, znajduje się 53-metrowy taras **FOUNDRY / TEST FLEET**. Na zachodnim końcu jest miejsce LAND HERE; dalej stoi komplet 12 modeli, z trzema kolorami normal car i starszym shuttle. Wyląduj, wysiądź i podejdź do wybranego auta — Q / WSIĄDŹ. Działa także po wczytaniu istniejącej gry. [Położenie i edycja](docs/CITY_02.md#platforma-testowa-foundry--2026-09-13).
+
+**Living world 2026-09-13:** 38 aut na pętlach, czterech mieszkańców z pełnymi podróżami, osiem zaparkowanych aut do przejęcia i spacerowicze na wszystkich 25 platformach. Ari chodzi na tym samym planie co NPC i przechodzi przed autami bez kolizji; Q pozwala przejąć pusty pojazd. Stan populacji i kradzieży zapisuje się w sesji. [Zakres, Inspector, ograniczenia i weryfikacja](docs/LIVING_WORLD.md).
+
+**Dymki i granice — korekta 2026-09-13:** dymki śledzą renderowaną pozycję auta w każdej klatce. Boczne granice odsunięto o 25 m; od skraju autostrady do wymuszonego powrotu jest 28 m. Wiszące tablice **AIRSPACE CONTROL / CITY PERIMETER / TURN BACK** ostrzegają 20 m przed granicą. [Układ, edycja i weryfikacja](docs/CITY_02.md#granice-i-tablice-ostrzegawcze--2026-09-13).
+
+**Skala i chód postaci — korekta 2026-09-13:** ludzie mają 1,16 jednostki wzrostu, około 20% więcej niż dach bazowego cab. Nowe modele mają osobne kolana, kostki i łokcie; stopa stoi płasko i pozostaje w miejscu podczas podparcia. Pasażerowie idą zdecydowanie, Ari lekko truchta, a rytm wynika z pokonanego dystansu. Zaktualizowano również kolizję postaci. [Parametry, porównanie z 12 autami i lokalna weryfikacja 476/476](docs/ON_FOOT.md#synchronizacja-chodu--korekta-2026-09-13).
+
 **Tryb pieszy Ariego 2026-09-13:** zaparkuj i naciśnij **Q**, chodź A/D, skacz W/spacją, wróć do auta przez Q. Te same działania mają przyciski dotykowe. Kamera przybliża postać; zapis zachowuje tryb pieszy, pozycję Ariego i stan zostawionego auta. W razie utknięcia pieszo: R albo opcja powrotu do miejsca wysiadania. [Zakres, parametry i weryfikacja Windows 603/603](docs/ON_FOOT.md). Wnętrza, drzwi i obrażenia postaci pozostają dalszym etapem.
 
-**Biblioteka pojazdów 2026-09-13:** ukończono dziesięć nowych wariantów 3D, wspólne definicje parametrów, odporność na obrażenia, odtwarzanie wyglądu z zapisu, okresowe lampy policji i model lawety z pustym punktem ładunku. Razem 12 pozycji z cab i starszym shuttle. Otwórz `scenes/vehicle_showroom.tscn` → F6 lub na Windows uruchom `Open Vehicle Library.ps1`. [Modele, parametry i wyniki 651/651 kontroli Windows](docs/VEHICLE_LIBRARY.md). To biblioteka dla przyszłego living world; laweta nie ma jeszcze mechaniki przewozu.
+**Biblioteka pojazdów 2026-09-13:** ukończono dziesięć nowych wariantów 3D, wspólne definicje parametrów, odporność na obrażenia, odtwarzanie wyglądu z zapisu, okresowe lampy policji i model lawety z pustym punktem ładunku. Razem 12 pozycji z cab i starszym shuttle. Otwórz `scenes/vehicle_showroom.tscn` → F6 lub na Windows uruchom `Open Vehicle Library.ps1`. [Modele, parametry i wyniki 651/651 kontroli Windows](docs/VEHICLE_LIBRARY.md). Bibliotekę wykorzystuje już living world; laweta nie ma jeszcze mechaniki przewozu.
 
-**Pierwsza pętla rozgrywki jest wdrożona:** ludzkie postaci 3D, 25 przystanków, automatyczne kursy, jeden oczekujący na platformie, mapa na żądanie, jednorazowe wypłaty, płatne paliwo i zapis sesji. [Instrukcja, architektura i wyniki](docs/FIRST_GAMELOOP_IMPLEMENTATION.md); [wcześniejszy przegląd Godota i Unreal](docs/FIRST_GAMELOOP_REVIEW_2026-09-13.md). Traffic i niezależne podróże mieszkańców są kolejnym etapem zgodnie z decyzją autora.
+**Pierwsza pętla rozgrywki jest wdrożona:** ludzkie postaci 3D, 25 przystanków, automatyczne kursy, jeden oczekujący na platformie, mapa na żądanie, jednorazowe wypłaty, płatne paliwo i zapis sesji. [Instrukcja, architektura i wyniki](docs/FIRST_GAMELOOP_IMPLEMENTATION.md); [wcześniejszy przegląd Godota i Unreal](docs/FIRST_GAMELOOP_REVIEW_2026-09-13.md). Traffic i niezależne podróże mieszkańców są opisane w aktualizacji living world powyżej.
 
 **Architektura i wydajność:** [wdrożenie po audycie](docs/ARCHITECTURE.md) — przygotowanie grafiki przed lotem, ograniczenie kosztu cieni i detali, profil Web oraz moduły sesji, sterowania pieszo/autem, map, dialogów i napraw. [Naprawa eksportu z 2026-09-13](docs/WEB_GEOMETRY_FIX_2026-09-13.md) usuwa ukośne płaszczyzny wynikające z niezapisanych transformacji detali. Poprawiony ZIP zbudowano i sprawdzono w przeglądarce; wymaga podmiany na itch.io i testu na S25+. Dokument naprawy zawiera zaktualizowane pomiary wydajności kompletnej sceny.
 
-Pierwszy nowy prototyp **Godot 4.7.2 / GDScript / 2,5D**, utworzony od podstaw 2026-09-12. Obecny etap **City 02**: miasto 150 × 368 m, cztery dzielnice, 25 tarasów lądowiskowych na budynkach sięgających ziemi, krzyż i obwodnica tras szybkiego ruchu, jeden pojazd, miękki pułap, kontrola granic, paliwo i tankowanie, obrażenia od kolizji oraz dwa płatne warsztaty. Pokaz obejmuje też pasażerów i pętlę zarabiania. To pierwszy krok do [wizji gry](../../docs/GAME_VISION.md). Niezależny ruch mieszkańców, kradzież, walka, questy i timer kampanii są dalszymi etapami.
+Pierwszy nowy prototyp **Godot 4.7.2 / GDScript / 2,5D**, utworzony od podstaw 2026-09-12. Obecny etap **City 02**: miasto 200 × 368 m, cztery dzielnice, 25 tarasów lądowiskowych na budynkach sięgających ziemi, krzyż i obwodnica tras szybkiego ruchu, różne pojazdy i ruch NPC, miękki pułap, kontrola granic, paliwo i tankowanie, obrażenia od kolizji oraz dwa płatne warsztaty. Pokaz obejmuje też pasażerów i pętlę zarabiania. To pierwszy krok do [wizji gry](../../docs/GAME_VISION.md). Działają też niezależne podróże mieszkańców i przejmowanie zaparkowanych aut. Questy i timer mają pierwszy grywalny wycinek opisany powyżej; pełna kampania i walka pozostają dalszymi etapami.
 
 Szczegóły nowego poziomu, oświetlenia, premii autostradowej i edycji: **[City 02](docs/CITY_02.md)**. Góra jest dostępna od początku próby; mapa pod osobną ikonką pokazuje dzielnice, autostrady, lądowiska i pas smogu. Ari startuje na tarasie wieżowca na Y = 54 m, czyli 102 m nad pogłębionym dnem miasta. Poniżej dolnej autostrady znajduje się LowLife: zdegradowane podmiasto pogłębione o 48 m. Mgła i automatyczne reflektory zaczynają się niżej niż trasa. Oznaczenia wszystkich autostrad pozostają nieruchome. Przy rzeczywiście zwiększonej prędkości auto zostawia krótkie turkusowe smugi, a jego płomienie wydłużają się i jaśnieją. Cztery dopalacze płynnie skręcają do 16° względem karoserii, przeciwnie do kierunku ciągu, i wracają do pionu po puszczeniu sterowania.
 
@@ -103,7 +117,7 @@ Parametry paliwa są w [resources/vehicles/basic_cab.tres](resources/vehicles/ba
 
 | Parametr | Wartość testowa |
 | --- | --- |
-| Lewa / prawa granica X | −74,5 / 75,5 m |
+| Lewa / prawa granica X | −99,5 / 100,5 m |
 | Miękkie hamowanie / maksymalna wysokość Y | 310–320 / 320 m |
 | Punkt powrotu | 6 m wewnątrz granicy |
 | Docelowa prędkość powrotu | Do 5 m/s |
@@ -190,3 +204,7 @@ Wszystkie cztery kontrole prezentacji przeszły w trzech ustawieniach po poprawc
 Powtórzenie na Macu: `bash tools/verify.sh presentation 120`, następnie opcjonalnie `bash tools/verify.sh presentation 144` lub diagnostycznie `bash tools/verify.sh presentation 120 10`. Test otwiera własne okno i kończy je automatycznie. Po zmianie ustawień projektu uruchom grę ponownie; już działająca instancja nie wczyta poprawki.
 
 Godot 4.7.2 podczas zakończenia headless importu edytora zgłosił błąd zamykania wątku dokumentacji i sygnał 11. Import zasobów zakończył się; osobne uruchomienia gry, renderowania i testów działały poprawnie. Zapisujemy ten problem narzędzia, aby kod zakończenia importera nie był uznawany za samodzielny dowód poprawności projektu. Windows i urządzenia mobilne nie były testowane.
+
+## Zewnętrzny edytor fabuły
+
+[Story Editor 1.1](docs/STORY_EDITOR.md) — kopia autorskiego edytora z formularzami questów, warunków, rozwidleń, postaci oraz importem do Godota. Uruchomienie: Projekt → Narzędzia → Flying Cab — otwórz edytor fabuły.
