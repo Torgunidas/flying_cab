@@ -439,12 +439,13 @@ func _fill_journal() -> void:
 			_button("%s  × %d" % [item.display_name, amount]).disabled = true
 
 func _state_changed() -> void:
-	if context.campaign.flags.get("__campaign_expired", false):
+	if context.player_state.health <= 0 or context.campaign.flags.get("__campaign_expired", false):
+		if _mode == "game_over": return
 		if not _mode.is_empty(): close()
 		_open("game_over")
-		heading.text = "CZAS SIĘ SKOŃCZYŁ"
+		heading.text = "ARI NIE ŻYJE" if context.player_state.health <= 0 else "CZAS SIĘ SKOŃCZYŁ"
 		close_button.hide()
-		line.text = "Nie udało się dostarczyć leku na czas."
+		line.text = "Upadek okazał się śmiertelny." if context.player_state.health <= 0 else "Nie udało się dostarczyć leku na czas."
 		line.visible_characters = -1
 		_clear_options()
 		var maps: MapRouter = context.systems.get(&"maps")

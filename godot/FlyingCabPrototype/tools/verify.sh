@@ -1,6 +1,24 @@
 #!/bin/bash
 set -euo pipefail
 source "$(dirname "$0")/godot-env.sh"
+if [[ "${1:-}" == "vehicle-access" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --fixed-fps 120 --script tests/vehicle_access_tests.gd --log-file "$FC_PROJECT_DIR/build/vehicle-access-tests.log"
+fi
+if [[ "${1:-}" == "vehicle-access-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 540x960 --fixed-fps 120 --script tests/vehicle_access_tests.gd --log-file "$FC_PROJECT_DIR/build/vehicle-access-render-tests.log"
+fi
+if [[ "${1:-}" == "map-tracking" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --script tests/map_tracking_tests.gd --log-file "$FC_PROJECT_DIR/build/map-tracking-tests.log"
+fi
+if [[ "${1:-}" == "map-tracking-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 540x960 --script tests/map_tracking_tests.gd --log-file "$FC_PROJECT_DIR/build/map-tracking-render-tests.log"
+fi
+if [[ "${1:-}" == "quest-map" ]]; then
+    exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --script tests/quest_map_tests.gd --log-file "$FC_PROJECT_DIR/build/quest-map-tests.log"
+fi
+if [[ "${1:-}" == "quest-map-render" ]]; then
+    exec "$FC_GODOT_BIN" --path "$FC_PROJECT_DIR" --resolution 540x960 --script tests/quest_map_tests.gd --log-file "$FC_PROJECT_DIR/build/quest-map-render-tests.log"
+fi
 if [[ "${1:-}" == "story-editor" ]]; then
     exec "$FC_GODOT_BIN" --headless --path "$FC_PROJECT_DIR" --script tests/story_editor_tests.gd --log-file "$FC_PROJECT_DIR/build/story-editor-tests.log"
 fi

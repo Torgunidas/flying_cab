@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/lorry.tscn" id="2_4fft3"]
 
 [resource]
+driver_door_x = 1.12
 script = ExtResource("1_v0tyn")
 model_id = &"lorry"
 display_name = "Lorry"

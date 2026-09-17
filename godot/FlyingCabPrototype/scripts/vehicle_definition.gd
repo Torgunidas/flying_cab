@@ -13,6 +13,8 @@ extends Resource
 @export var collision_size := Vector3(2.2, 0.7, 0.9)
 @export var collision_offset := Vector3.ZERO
 @export var headlight_origin := Vector3(1.12, 0.08, 0)
+## Driver's door along the visual's X axis; mirrors with the car's facing.
+@export var driver_door_x := 0.25
 @export_group("Physics — kg and newtons")
 @export_range(1.0, 10000.0, 1.0, "or_greater", "suffix:kg") var mass_kg := 100.0
 @export_range(1.0, 100000.0, 1.0, "or_greater", "suffix:N") var thrust_force := 2350.0
@@ -86,6 +88,8 @@ func validation_errors() -> PackedStringArray:
 		errors.append("Damage resistance must be between 0 and 0.95")
 	if not size_units.is_finite() or size_units.x <= 0 or size_units.y <= 0:
 		errors.append("Body size units must be finite and positive")
+	if not is_finite(driver_door_x) or absf(driver_door_x) > collision_size.x * 0.5:
+		errors.append("Driver door must be within the vehicle body")
 	if not collision_size.is_finite() or collision_size.x <= 0 or collision_size.y <= 0 or collision_size.z <= 0 or not collision_offset.is_finite() or not headlight_origin.is_finite():
 		errors.append("Body collision and light geometry must be finite and valid")
 	return errors

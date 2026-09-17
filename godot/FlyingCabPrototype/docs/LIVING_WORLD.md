@@ -2,6 +2,12 @@
 
 Wdrożenie 2026-09-13 w Godot 4.7.2. Domyślna gra i F6 poziomu tworzą populację przed rozpoczęciem rozgrywki. Nie trzeba otwierać sceny przeglądowej pojazdów ani włączać trybu debugowania.
 
+## Aktualizacja 2026-09-16
+
+Środkowa pionowa autostrada ma ruch prawostronny: wznoszenie po X = 3,5, opadanie po X = −2,5. Jej połączenia z obwodnicą używają górnego pasa Y = 306,5 dla ruchu w lewo i dolnego Y = 13,5 dla ruchu w prawo. Pozostałe autostrady zachowują poprawne strony. Zmieniono zasób tras, bez przebudowy geometrii miasta. ID aut i indeksy punktów pozostają zgodne; samochody ze starszego zapisu dołączają do nowych punktów swojej pętli.
+
+Wsiadanie/przejęcie wymaga teraz stania przy kabinie kierowcy, z uwzględnieniem obrócenia modelu. Wysiadanie działa również w locie, a upadek może zranić lub zabić Ariego. Szczegóły i zapis zdrowia: [tryb pieszy](ON_FOOT.md).
+
 ## Zawartość miasta
 
 | Populacja w nowej grze | Liczba | Zachowanie |

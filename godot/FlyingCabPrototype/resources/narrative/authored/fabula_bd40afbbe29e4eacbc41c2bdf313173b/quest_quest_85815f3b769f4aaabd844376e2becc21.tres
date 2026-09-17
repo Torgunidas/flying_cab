@@ -1,10 +1,10 @@
-[gd_resource type="Resource" script_class="QuestDefinition" format=3]
+[gd_resource type="Resource" script_class="QuestDefinition" format=3 uid="uid://bi10jid5i3kjk"]
 
-[ext_resource type="Script" path="res://scripts/narrative/narrative_condition.gd" id="1_kihaf"]
-[ext_resource type="Script" path="res://scripts/narrative/quest_objective.gd" id="2_h5umu"]
-[ext_resource type="Script" path="res://scripts/narrative/quest_transition.gd" id="3_ibv73"]
-[ext_resource type="Script" path="res://scripts/narrative/narrative_effect.gd" id="4_let5a"]
-[ext_resource type="Script" path="res://scripts/narrative/quest_definition.gd" id="5_u2ib3"]
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="1_kihaf"]
+[ext_resource type="Script" uid="uid://do0u0sf3vh38d" path="res://scripts/narrative/quest_objective.gd" id="2_h5umu"]
+[ext_resource type="Script" uid="uid://ddgyy5cd7si6b" path="res://scripts/narrative/quest_transition.gd" id="3_ibv73"]
+[ext_resource type="Script" uid="uid://blfaeixmm3cs6" path="res://scripts/narrative/narrative_effect.gd" id="4_let5a"]
+[ext_resource type="Script" uid="uid://bfjb8q6yjlcky" path="res://scripts/narrative/quest_definition.gd" id="5_u2ib3"]
 
 [sub_resource type="Resource" id="Resource_kihaf"]
 script = ExtResource("2_h5umu")

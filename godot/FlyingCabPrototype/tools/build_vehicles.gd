@@ -199,6 +199,7 @@ func _build() -> void:
 		save_scene(visual, OUT + "visuals/" + id + ".tscn")
 		visual.free()
 		var definition: VehicleDefinition = BASE.duplicate()
+		definition.driver_door_x = 1.12 if id in ["lorry", "tow_car"] else (0.6 if id == "limousine" else 0.25)
 		definition.model_id = id
 		definition.display_name = spec[1]
 		definition.visual_scene = load(OUT + "visuals/" + id + ".tscn")

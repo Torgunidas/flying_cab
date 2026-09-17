@@ -157,6 +157,18 @@ Zarejestruj `parcel_delivered` jako własne zdarzenie. Ostatni argument jest trw
 3. Umieść korzeń na nawierzchni tarasu, na **Z = 1.2**. Korzeń oznacza stopy. Ustaw **Interaction Distance**, domyślnie 1.8 m. Sprawdź w grze, czy gracz stoi na podłodze, jest w zasięgu i nie oddziela go ściana.
 4. Narracyjne postacie przykładów są poza generowanymi detalami miasta. Nie dodawaj ich przez `build_city.py`. Samo ustawienie NPC/obszaru nie wymaga kompilacji miasta; zmiana geometrii `city.tscn` nadal wymaga jawnego `compile_city.gd`.
 
+## Huby questowe na mapie
+
+Mapa miasta pokazuje okrągły znacznik z pierwszą literą **Display Name** każdego obecnego, widocznego NPC, u którego można teraz rozpocząć zadanie, oddać gotowe zadanie albo posunąć aktywne zadanie przez rozmowę. Obejmuje też dostarczenie kolejnej dawki leku Mai. Dotknięcie litery pokazuje imię i dostępne tematy. Zwykła pogawędka lub sam sklep nie włączają znacznika.
+
+Nie ma osobnej listy hubów do utrzymywania: wystarczą profil w katalogu, instancja `NarrativeNpc` na mapie i poprawnie podłączone tematy. Mapa korzysta z rzeczywistej pozycji instancji, również z nadpisań w scenie poziomu. Dla obecnej zawartości są to **M / F / B** — Maya, Froggy i Bruno.
+
+Dostępność uwzględnia warunki tematu, pierwszą pasującą regułę **Entries**, kolejne osiągalne odpowiedzi, warunki questa, koszty i zużyte wybory **Once**. Samo istnienie `start_quest` w niedostępnej gałęzi nie włącza hubu. Podczas wykonywania zadania znacznik gaśnie, jeżeli NPC nie ma innej dostępnej sprawy; wraca po spełnieniu warunków oddania. Odczyt mapy planuje efekty na kopiach danych, bez rozpoczynania rozmowy, zmiany postępu ani zapisu. Istniejący zapis schema 5 wystarcza do odtworzenia dostępności.
+
+Sprawdzenie: `bash tools/verify.sh quest-map` oraz `bash tools/verify.sh quest-map-render`. Druga próba zapisuje `build/quest-map-active.png` i widoki 360×640 / 960×540. Test obejmuje trzy obecne postacie, przykładowego nowego NPC, warunkowe gałęzie i pętle rozmów, włączanie/wyłączanie, oddanie, ponowną dawkę, odtworzenie sesji oraz dotyk i pauzę mapy.
+
+Weryfikacja 2026-09-15, Godot 4.7.2 / macOS: **271/271** — `quest-map` 36/36, `quest-map-render` 38/38, `narrative` 69/69, `narrative-render` 25/25, `taxi-ui` 21/21, `living-world` 82/82. Katalog: 0 błędów, 5 questów / 7 dialogów / 3 NPC. Import edytora bez błędów; widoki mapy sprawdzono wizualnie w trzech rozmiarach. Windows i fizyczny telefon nie były testowane. Bez eksportu i pakowania.
+
 ## Podgląd i sprawdzanie
 
 Otwórz **`scenes/narrative/preview.tscn` → F6**. Na górze wybierz NPC, zadanie i stan, potem „Zastosuj stan i rozpocznij rozmowę”. Zmiana stanu resetuje wyłącznie sesję podglądu. Przy zadaniu pobocznym podgląd może oznaczyć wymagane wcześniejsze zadania jako ukończone. `ready` dla zadania bez oddania oznacza `completed`.

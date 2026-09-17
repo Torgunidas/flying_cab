@@ -1,5 +1,7 @@
 # Flying Cab — repozytorium główne
 
+- Wejście i upadki Godota 2026-09-16: wsiadanie przy kabinie (`VehicleDefinition.driver_door_x`, odbijanej z modelem), wysiadanie także w locie z prędkością auta. Ari ma 100 HP, obrażenia przy lądowaniu i ekran śmierci; opcjonalne `player.health` w schemacie 5, starsze zapisy domyślnie 100. R nie ratuje w trakcie upadku. Pionowa trasa `spine`: w górę X=3,5, w dół X=−2,5. Dokument: `godot/FlyingCabPrototype/docs/ON_FOOT.md`. Testy `vehicle-access`, `vehicle-access-render`, `on-foot`, `start-menu`; po zmianach tras/przejmowania/zapisu pełny `living-world`.
+
 - Edytor fabuły Godota 2026-09-14: niezależna wersja w `tools/quest_editor/`, źródła `.fcstory`, eksport JSON v1, wtyczka `addons/flying_cab_story`. Nie zmieniaj oryginału w repo `quest_editor`. Dokument: `godot/FlyingCabPrototype/docs/STORY_EDITOR.md`. Cele mogą mieć warunkowe `QuestTransition`; zapis gałęzi `path`, nadal schema 5. Testy `story-editor`, `story-editor-render`, `narrative`; po zmianach postępu/zapisu pełny `living-world`. Przykład w folderze edytora nie jest automatycznie dodawany do kampanii.
 
 

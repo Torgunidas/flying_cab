@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/vehicles/visuals/tow_car.tscn" id="2_ce11k"]
 
 [resource]
+driver_door_x = 1.12
 script = ExtResource("1_ki7yo")
 model_id = &"tow_car"
 display_name = "Tow car"

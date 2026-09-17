@@ -1,6 +1,6 @@
 # Ari — pierwszy grywalny tryb pieszy
 
-Wdrożenie 2026-09-13, Godot 4.7.2. Zakres: zaparkuj → wysiądź → chodź i skacz po tarasie → wróć do tego samego auta → odleć. Działa w domyślnej grze przez `scenes/game.tscn` oraz w próbie F6 `scenes/flight_lab.tscn`.
+Wdrożenie 2026-09-13, aktualizacja wejścia, wysiadania w locie i obrażeń 2026-09-16, Godot 4.7.2. Ari może opuścić pojazd także podczas lotu, chodzić i skakać oraz wejść do zaparkowanego auta przy jego kabinie. Działa w domyślnej grze przez `scenes/game.tscn` oraz w próbie F6 `scenes/flight_lab.tscn`.
 
 ## Sterowanie
 
@@ -12,9 +12,9 @@ Wdrożenie 2026-09-13, Godot 4.7.2. Zakres: zaparkuj → wysiądź → chodź i 
 | Powrót do miejsca wysiadania | R | Zębatka → Wróć do miejsca wysiadania |
 | Zapis | F5 | Zębatka → Zapisz grę |
 
-Najpierw zatrzymaj auto i puść ciąg. Przycisk wysiadania pojawia się, kiedy podłoże i wolna przestrzeń pozwalają postawić Ariego obok auta. Podczas wsiadania lub wysiadania pasażera trzeba poczekać na zakończenie tej czynności. Pasażer już siedzący w aucie nie blokuje opuszczenia pojazdu przez Ariego; kurs i pasażer zostają przy zaparkowanym aucie.
+Wysiadanie jest dostępne również w ruchu, w powietrzu, przy włączonym ciągu i podczas obsługi pasażerów. Ari dziedziczy prędkość pojazdu, a auto nie zostaje zatrzymane ani naprawione. Q i przycisk dotykowy używają tej samej akcji. Menu i dialog nadal blokują interakcje. Podczas opuszczenia auta w trakcie wsiadania pasażera dotychczasowy system taxi przerywa boarding; siedzący pasażer pozostaje związany ze swoim pojazdem.
 
-Wejście wymaga stania na podłożu blisko wolnego punktu przy aucie. Dostępne są własne auta, pojazdy bez właściciela i zaparkowane auta NPC bez kierowcy. Przycisk PRZEJMIJ / Q przerywa plan właściciela, zachowując stan tego samego auta. [Living world i zasady kradzieży](LIVING_WORLD.md). Naprawa pod E i tankowanie pod F zachowują dotychczasowe działanie podczas sterowania autem.
+Wejście wymaga stania na podłożu przy kabinie kierowcy w przedniej części auta. Tył i boczne punkty awaryjnego wyjścia nie są miejscami wejścia. Dostępne są własne auta, pojazdy bez właściciela i zaparkowane auta NPC bez kierowcy. Przycisk PRZEJMIJ / Q przerywa plan właściciela, zachowując stan tego samego auta. [Living world i zasady kradzieży](LIVING_WORLD.md). Naprawa pod E i tankowanie pod F zachowują dotychczasowe działanie podczas sterowania autem.
 
 Skok reaguje na nowe naciśnięcie. Przytrzymanie przycisku przez całe lądowanie nie powoduje kolejnego skoku. Przy zmianie trybu i zamykaniu menu trzeba puścić wcześniej trzymane klawisze. Dotykowe palce są śledzone niezależnie; zmiana trybu usuwa ich wcześniejsze polecenia.
 
@@ -55,23 +55,39 @@ Ari koliduje z podłożem i zabudową, a przechodzi przed samochodami oraz przez
 
 Ruch po kolizjach steruje fazą i kierunkiem: przy ścianie nogi zatrzymują się, a zmiana przycisku nie obraca Ariego tyłem do trwającego hamowania. Postój łagodnie wygasza krok. Skok i spadanie mają oddzielne pozy. Teleport, wczytanie, wejście do auta i ponowne użycie pasażera z puli resetują fazę.
 
-Jedna kamera śledzi aktualnego aktora. Aktualizacja 2026-09-14 wprowadza [podejście do platformy i kadr platformówkowy](PLATFORM_CAMERA.md): odległość 19 m w locie, płynne zbliżenie do 6 m przy lądowaniu i 4,2 m pieszo. Ari zajmuje około 15% wysokości pionowego kadru, krótkie skoki mieszczą się w spokojnym ujęciu, a kamera pokazuje więcej miejsca przed biegnącą postacią. Ustawienia są w `FlightCameraTuning`. HUD pieszy pokazuje Ariego i portfel, ukrywa paliwo, stan auta i pasażerów. Nie dodano minimapy ani stałego panelu instrukcji do domyślnej gry.
+Jedna kamera śledzi aktualnego aktora. Aktualizacja 2026-09-14 wprowadza [podejście do platformy i kadr platformówkowy](PLATFORM_CAMERA.md): odległość 19 m w locie, płynne zbliżenie do 6 m przy lądowaniu i 4,2 m pieszo. Ari zajmuje około 15% wysokości pionowego kadru, krótkie skoki mieszczą się w spokojnym ujęciu, a kamera pokazuje więcej miejsca przed biegnącą postacią. Ustawienia są w `FlightCameraTuning`. HUD pieszy pokazuje Ariego, portfel i zdrowie, ukrywa paliwo, stan auta i pasażerów. Nie dodano minimapy ani stałego panelu instrukcji do domyślnej gry.
 
 ## Przejmowanie sterowania i zapis
 
 `OnFootInteraction` wykonuje zapytania fizyczne i przekazuje sterowanie przez `PlayerSession`. Jeden węzeł Ariego pozostaje w mapie przez kolejne wejścia i wyjścia; w aucie jest niewidoczny, bez aktywnej fizyki i kolizji. Auto nadal istnieje i zachowuje swój model, identyfikator, właściciela, paliwo, HP oraz pasażerów.
 
-Wyjście wymaga kontaktu auta z podłożem, prędkości nie większej niż 0,25 m/s, neutralnego polecenia i wygaszonego ciągu. Autopilot i reset wykluczają interakcję. Po obu stronach bryły kolizji danego modelu sprawdzane są podłoże statyczne, nachylenie i pełna kapsuła postaci. Gdy jedna strona jest zasłonięta, używana jest druga; gdy obie są zablokowane, gracz pozostaje w aucie. Modele mogą nadpisać boczne pozycje markerami `Visual/EntryLeft` i `Visual/EntryRight`; domyślne pozycje wynikają z indywidualnej bryły kolizji. Nie ma generatora uruchamianego przy Play.
+Wyjście preferuje kabinę na pasie pieszym Z = 1,2. Sprawdzana jest pełna kapsuła postaci względem geometrii; przy zasłoniętej kabinie możliwe są pozycje przed i za bryłą auta. Brak podłoża nie blokuje wysiadania. Gdy wszystkie miejsca wypełnia stała geometria, postać nie jest tworzona wewnątrz ściany.
 
-Wejście sprawdza odległość do dostępnego punktu (1,35 m), różnicę wysokości, wolnego kierowcę i przeszkody między postacią a punktem. Wskazówka i wykonana akcja używają tego samego pojazdu; jego dostępność jest ponownie sprawdzana przed przekazaniem sterowania.
+Wejście nadal wymaga pustego, zaparkowanego pojazdu (prędkość do 0,25 m/s, neutralny ciąg), kontaktu Ariego z podłożem, różnicy wysokości do 0,4 m i braku ściany pomiędzy nim a kabiną. Zasięg wynosi do 0,85 m, ograniczony do 35% długości nadwozia dla krótkich modeli. `VehicleDefinition.driver_door_x` opisuje pozycję kierowcy w osi wizualnego modelu; jego odbicie przenosi drzwi na właściwą stronę. Ciężarówka i laweta mają kabinę przesuniętą do przodu, limuzyna własny punkt. Wskazówka i akcja korzystają z tej samej kontroli zasięgu.
 
-`PlayerState` jest niezależny od węzła postaci i auta. Schemat zapisu 4 przechowuje dodatkowo living world; dane pieszego wprowadzone w schemacie 3 obejmują tryb, mapę, auto, pozycję, prędkość, kierunek patrzenia i miejsce ostatniego wysiadania. Schematy 1 i 2 nadal są wczytywane jako jazda autem; zapis 3 migruje stare położenie Ariego z Z = 0 na wspólny pas pieszych Z = 1,2. Walidacja danych Ariego odbywa się przed zmianą sesji. Autosave i zapis w opcjach działają również pieszo. Testy używają osobnych plików w `build/`, aby nie zastępować zapisu użytkownika.
+`PlayerState` jest niezależny od węzła postaci i auta. Aktualny schemat zapisu 5 przechowuje narrację, a od schematu 4 także living world; dane pieszego wprowadzone w schemacie 3 obejmują tryb, mapę, auto, pozycję, prędkość, kierunek patrzenia i miejsce ostatniego wysiadania. Schematy 1 i 2 nadal są wczytywane jako jazda autem; zapis 3 migruje stare położenie Ariego z Z = 0 na wspólny pas pieszych Z = 1,2. Walidacja danych Ariego odbywa się przed zmianą sesji. Autosave i zapis w opcjach działają również pieszo. Testy używają osobnych plików w `build/`, aby nie zastępować zapisu użytkownika.
 
 Przygotowanie grafiki renderuje także Ariego i odwiedza pełną trasę próbek miasta również po wczytaniu zapisu pieszego. Przywraca potem jego pozycję, widoczność, kamerę i stan zaparkowanego auta.
 
+## Upadki i zdrowie — 2026-09-16
+
+Ari ma 100 HP w nowej grze. `WalkingActor` zgłasza prędkość uderzenia przy rzeczywistym kontakcie z podłożem; `OnFootInteraction` nalicza `1,5 × max(0, prędkość − 8 m/s)²` obrażeń. Zwykły skok i krótkie spadnięcie są bezpieczne. Przy spadaniu z bezruchu bezpieczny próg to około 2,6 m, śmiertelny dla pełnego zdrowia około 10,7 m; prędkość odziedziczona po aucie zmienia te wartości. Są to parametry prototypowe (`SAFE_FALL_SPEED`, `FALL_DAMAGE_FACTOR`).
+
+Uraz wyświetla krótki dymek i zmniejsza zdrowie widoczne w HUD pieszym. Zero HP oraz wypadnięcie poniżej dolnej granicy świata kończą grę. Ekran „ARI NIE ŻYJE” pauzuje świat i udostępnia „Nowa gra” w pełnym punkcie wejścia. Wczytanie śmiertelnego zapisu zachowuje ten stan.
+
+Opcjonalne pole `player.health` rozszerza schemat 5 bez zmiany dotychczasowej struktury; wcześniejsze zapisy bez pola otrzymują 100 HP. Wartości spoza 0–100 i dane nieliczbowe są odrzucane przed zmianą sesji. Obrażenia uruchamiają pilny autosave. Prędkość postaci jest zapisywana także w locie, więc wczytanie nie zeruje zagrożenia.
+
+R / powrót z opcji pozostaje pomocą prototypową na podłożu. Nie działa w trakcie spadania ani po śmierci, nie odnawia HP i używa ostatniego podpartego miejsca wysiadania. Wysiadanie w powietrzu nie nadpisuje tego miejsca.
+
 ## Granice tego etapu
 
-Nie dodano jeszcze wnętrz, drzwi, interakcji dialogowych, obrażeń Ariego, konsekwencji śmierci ani wyskakiwania z lecącego auta. Dotychczasowy `MapRouter` pozostaje podstawą przyszłych pomieszczeń. R / opcja powrotu przenosi Ariego do wolnego miejsca ostatniego wysiadania bez zmiany kredytów i stanu auta; to pomoc prototypowa, nie ustalony system zdrowia lub ratunku. Przekroczenie dolnego marginesu świata również próbuje tego powrotu.
+Walka, leczenie, pełne wnętrza i drzwi pozostają poza zakresem. Pierwsze dialogi działają zgodnie z `NARRATIVE_AUTHORING.md`. Obrażenia opisane powyżej dotyczą upadków Ariego, a nie systemu walki.
+
+## Weryfikacja aktualizacji 2026-09-16
+
+macOS / Godot 4.7.2: `vehicle-access` 107/107 oraz wariant graficzny 107/107, `on-foot` 49/49, `walking` 85/85, pełny `living-world` 82/82, `narrative` 69/69, `architecture` 41/41, `start-menu` 61/61, `on-foot-render` 15/15. Obejrzano HUD po urazie i ekran śmierci. Windows i fizyczny telefon nie były sprawdzane w tej iteracji.
+
+`vehicle-access` sprawdza wszystkie 12 modeli w obu kierunkach, brak wejścia od tyłu, wysiadanie z pędem, rzeczywiste upadki, zdrowie i zapis oraz prawostronność wszystkich segmentów autostrad. `vehicle-access-render` zapisuje `build/access-*.png`. Regresje: `on-foot`, `walking`, pełny `living-world`, `narrative`, `architecture`, `start-menu`, `on-foot-render`, `boot`. Nie wykonuje się eksportu.
 
 ## Weryfikacja
 

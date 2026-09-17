@@ -2,6 +2,7 @@ class_name RuntimeContext
 extends Node
 ## Session lifetime: maps and presentation may be replaced without resetting this.
 signal system_registered(id: StringName)
+signal player_damaged(amount: float)
 var player := PlayerSession.new()
 var player_state := PlayerState.new()
 var campaign := CampaignState.new()
@@ -72,6 +73,19 @@ func _campaign_expired() -> void:
 	player.suspend(&"campaign_over")
 	narrative.changed.emit()
 	narrative.checkpoint_requested.emit(true)
+
+func damage_player(amount: float) -> float:
+	if not is_finite(amount) or amount <= 0 or player_state.health <= 0:
+		return 0.0
+	var removed := minf(amount, player_state.health)
+	player_state.health -= removed
+	if player_state.health <= 0:
+		dialogue.end()
+		player.suspend(&"player_dead")
+	player_damaged.emit(removed)
+	narrative.changed.emit()
+	narrative.checkpoint_requested.emit(true)
+	return removed
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
@@ -191,6 +205,10 @@ func restore(data: Dictionary) -> bool:
 	campaign.expired.connect(_campaign_expired)
 	narrative.data = restored_narrative
 	player_state = restored_player
+	if player_state.health <= 0:
+		player.suspend(&"player_dead")
+	else:
+		player.resume(&"player_dead")
 	ledger.state = campaign
 	rides = restored_rides
 	rides.journey_event.connect(_journey_event)

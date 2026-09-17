@@ -75,6 +75,7 @@ func _ready() -> void:
 	narrative_panel.controls = controls
 	add_child(narrative_panel)
 	context.narrative.notice.connect(_narrative_notice)
+	context.player_damaged.connect(_player_damaged)
 	if standalone:
 		prepare_gameplay.call_deferred()
 
@@ -140,7 +141,11 @@ func _physics_process(dt: float) -> void:
 	if active and active.position.y < definition.ground_height - 20.0:
 		_reset()
 	elif context.player.focus is WalkingActor and context.player.focus.position.y < definition.ground_height - 20.0:
-		_reset()
+		context.damage_player(PlayerState.MAX_HEALTH)
+
+func _player_damaged(amount: float) -> void:
+	if taxi and context.player_state.health > 0:
+		taxi.message("Upadek: −%.0f HP · zdrowie %.0f%%" % [amount, context.player_state.health], 4)
 
 func _process(dt: float) -> void:
 	var focus := context.player.focus
@@ -180,6 +185,7 @@ func _process(dt: float) -> void:
 	_hud_elapsed += dt
 	if _hud_elapsed >= 0.1:
 		controls._credits = context.campaign.credits
+		controls.player_health = context.player_state.health
 		controls.update_readout(velocity.length(), focus.position.y - definition.ground_height - 0.35, active.grounded if active else false)
 		if active:
 			controls.update_flight_status(active.fuel / active.definition.fuel_capacity, active.definition.airspace_enabled and active.airspace.ceiling_pressure(active.position.y, definition) > 0.01, active.refueling)

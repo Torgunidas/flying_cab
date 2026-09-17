@@ -2,6 +2,7 @@ class_name WalkingActor
 extends CharacterBody3D
 ## Shared actor contract; input is supplied by PlayerSession, never polled here.
 signal driver_changed(previous: StringName, current: StringName)
+signal landed(impact_speed: float)
 @export var actor_id: StringName = &"ari"
 ## Keep travel and acceleration brisk relative to the 1.16-unit human body.
 @export var walking_speed := 2.5
@@ -18,6 +19,7 @@ var _command := Vector2.ZERO
 var _jump_held := false
 var _jump_pending := false
 var _landing_time := 0.0
+var _placed := true
 
 func assign_driver(id: StringName) -> int:
 	var previous := _driver
@@ -56,6 +58,7 @@ func set_active(value: bool) -> void:
 	_reset_visual()
 
 func place(at: Vector3, motion := Vector3.ZERO) -> void:
+	_placed = true # A previous floor contact must not erase ejection/save velocity.
 	global_position = Vector3(at.x, at.y, WorldLayers.PEDESTRIAN_Z)
 	velocity = Vector3(motion.x, motion.y, 0)
 	clear_control_input()
@@ -71,7 +74,8 @@ func get_control_velocity() -> Vector3:
 	return velocity
 
 func _physics_process(dt: float) -> void:
-	var grounded := is_on_floor()
+	var grounded := is_on_floor() and not _placed
+	_placed = false
 	velocity.x = move_toward(velocity.x, _command.x * walking_speed, acceleration * (1.0 if grounded else air_control) * dt)
 	if not grounded:
 		velocity.y -= gravity * dt
@@ -82,6 +86,7 @@ func _physics_process(dt: float) -> void:
 	_jump_pending = false
 	velocity.z = 0
 	var previous := global_position
+	var incoming := velocity
 	move_and_slide()
 	position.z = WorldLayers.PEDESTRIAN_Z
 	var travel := global_position - previous
@@ -90,6 +95,7 @@ func _physics_process(dt: float) -> void:
 	_landing_time = maxf(0, _landing_time - dt)
 	if not grounded and is_on_floor():
 		_landing_time = 0.12
+		landed.emit(maxf(0, -incoming.dot(get_floor_normal())))
 	movement_state = &"jump" if velocity.y > 0 else &"fall"
 	if is_on_floor():
 		movement_state = &"land" if _landing_time > 0 else (&"walk" if absf(travel.x) > 0.00001 else &"idle")

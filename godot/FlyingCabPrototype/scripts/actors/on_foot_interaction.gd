@@ -3,7 +3,9 @@ extends Node
 ## Physics queries and transfers of control; the same actor survives every ride.
 signal checkpoint_requested
 const ARI = preload("res://scenes/people/ari.tscn")
-const ENTRY_RANGE := 1.35
+const ENTRY_RANGE := 0.85
+const SAFE_FALL_SPEED := 8.0
+const FALL_DAMAGE_FACTOR := 1.5
 const MAX_PARKED_SPEED := 0.25
 var context: RuntimeContext
 var controls: FlightControls
@@ -18,6 +20,7 @@ func _ready() -> void:
 	actor = ARI.instantiate()
 	add_child(actor)
 	actor.set_active(false)
+	actor.landed.connect(_landed)
 	controls.interaction_requested.connect(request_interaction)
 	context.player.control_suspended.connect(_suspended)
 
@@ -57,9 +60,11 @@ func _physics_process(dt: float) -> void:
 func parked(cab: FlightCab) -> bool:
 	return is_instance_valid(cab) and cab.grounded and cab.linear_velocity.length() <= MAX_PARKED_SPEED and cab.command.is_zero_approx() and cab.applied_command.length() < 0.01 and not cab.airspace.returning and not cab.resetting
 
-func _passengers_moving(cab: FlightCab) -> bool:
-	var trip := context.rides.active
-	return not trip.is_empty() and trip.vehicle == String(cab.entity_id) and trip.phase in ["boarding", "alighting"]
+func _landed(impact_speed: float) -> void:
+	if context.player.focus != actor:
+		return
+	var excess := maxf(0, impact_speed - SAFE_FALL_SPEED)
+	context.damage_player(excess * excess * FALL_DAMAGE_FACTOR)
 
 func _capsule() -> CapsuleShape3D:
 	return actor.get_node("Collision").shape
@@ -76,29 +81,33 @@ func is_clear(at: Vector3) -> bool:
 	query.margin = 0.01
 	return actor.get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
 
-func exit_points(cab: FlightCab) -> Array[Vector3]:
-	var points: Array[Vector3] = []
-	var shape := _capsule()
+func entry_point(cab: FlightCab) -> Vector3:
 	var collider := cab.get_node("Collision") as CollisionShape3D
 	var box := collider.shape as BoxShape3D
-	if box == null:
-		return points
-	var center := collider.global_position
-	var bottom := center.y - box.size.y * 0.5
-	for side: float in [1.0, -1.0]:
-		var x := center.x + side * (box.size.x * 0.5 + shape.radius + 0.22)
-		# Models may author their own side markers; bounds cover every catalog car.
-		var marker := cab.get_node_or_null("Visual/EntryRight" if side > 0 else "Visual/EntryLeft") as Node3D
-		if marker:
-			x = marker.global_position.x
-		var ray := PhysicsRayQueryParameters3D.create(Vector3(x, bottom + 0.5, WorldLayers.PEDESTRIAN_Z), Vector3(x, bottom - 1.25, WorldLayers.PEDESTRIAN_Z), WorldLayers.GEOMETRY, _exclusions())
-		var hit := actor.get_world_3d().direct_space_state.intersect_ray(ray)
-		if hit.is_empty() or hit.normal.y < 0.7 or not hit.collider is StaticBody3D:
-			continue
-		var at: Vector3 = hit.position + Vector3.UP * (shape.height * 0.5 + 0.04)
-		if is_clear(at):
-			points.append(at)
+	var visual := cab.get_node("Visual") as Node3D
+	var door := visual.to_global(Vector3(cab.definition.driver_door_x, 0, 0))
+	return Vector3(door.x, collider.global_position.y - box.size.y * 0.5 + _capsule().height * 0.5 + 0.04, WorldLayers.PEDESTRIAN_Z)
+
+func exit_points(cab: FlightCab) -> Array[Vector3]:
+	var points: Array[Vector3] = []
+	var at := entry_point(cab)
+	var collider := cab.get_node("Collision") as CollisionShape3D
+	var box := collider.shape as BoxShape3D
+	var side := 1.0 if cab.get_node("Visual").scale.x > 0 else -1.0
+	var candidates: Array[Vector3] = [at]
+	for direction in [side, -side]:
+		candidates.append(Vector3(collider.global_position.x + direction * (box.size.x * 0.5 + _capsule().radius + 0.22), at.y, WorldLayers.PEDESTRIAN_Z))
+	# Prefer the cabin. Other clear exits are fallbacks, never entry hotspots.
+	for point in candidates:
+		if is_clear(point):
+			points.append(point)
 	return points
+
+func _supported(at: Vector3) -> bool:
+	var bottom := at - Vector3.UP * (_capsule().height * 0.5 - 0.02)
+	var ray := PhysicsRayQueryParameters3D.create(bottom, bottom - Vector3.UP * 0.18, WorldLayers.GEOMETRY, _exclusions())
+	var hit := actor.get_world_3d().direct_space_state.intersect_ray(ray)
+	return not hit.is_empty() and hit.normal.y > 0.7
 
 func refresh_target() -> void:
 	target = null
@@ -106,7 +115,7 @@ func refresh_target() -> void:
 	var label := ""
 	var cab := context.player.focus as FlightCab
 	if cab:
-		if parked(cab) and not _passengers_moving(cab) and not exit_points(cab).is_empty():
+		if not exit_points(cab).is_empty():
 			target = cab
 			label = "WYSIĄDŹ / Q"
 	elif context.player.focus == actor and actor.is_on_floor():
@@ -136,27 +145,26 @@ func entry_distance(cab: FlightCab) -> float:
 	var population := context.world.living_world
 	if cab.state.owner_id not in [&"", context.player.actor_id] and not (is_instance_valid(population) and population.can_take_vehicle(cab)):
 		return INF
-	var nearest := INF
-	for at in exit_points(cab):
-		var distance := actor.global_position.distance_to(at)
-		if distance > ENTRY_RANGE or absf(actor.global_position.y - at.y) > 0.4:
-			continue
-		var ray := PhysicsRayQueryParameters3D.create(actor.global_position, at, 1, _exclusions())
-		if actor.get_world_3d().direct_space_state.intersect_ray(ray).is_empty():
-			nearest = minf(nearest, distance)
-	return nearest
+	var at := entry_point(cab)
+	var distance := actor.global_position.distance_to(at)
+	var reach := minf(ENTRY_RANGE, cab.definition.collision_size.x * 0.35)
+	if distance > reach or absf(actor.global_position.y - at.y) > 0.4 or not is_clear(at):
+		return INF
+	var ray := PhysicsRayQueryParameters3D.create(actor.global_position, at, WorldLayers.GEOMETRY, _exclusions())
+	return distance if actor.get_world_3d().direct_space_state.intersect_ray(ray).is_empty() else INF
 
 func try_exit(cab: FlightCab) -> bool:
-	if context.player.is_suspended() or context.player.focus != cab or not parked(cab) or _passengers_moving(cab):
+	if context.player.is_suspended() or context.player.focus != cab:
 		return false
 	var points := exit_points(cab)
 	if points.is_empty():
 		return false
 	actor.set_active(true)
-	actor.place(points[0])
-	actor.facing = signf(points[0].x - cab.global_position.x)
+	actor.place(points[0], cab.linear_velocity)
+	actor.facing = 1.0 if cab.get_node("Visual").scale.x > 0 else -1.0
 	actor.get_node("Visual").rotation.y = PI * 0.5 * actor.facing
-	context.player_state.exit_position = points[0]
+	if _supported(points[0]):
+		context.player_state.exit_position = points[0]
 	context.player_state.vehicle_id = cab.entity_id
 	context.player.take_control(actor, &"on_foot")
 	cab.capture_state()
@@ -197,8 +205,8 @@ func restore_player() -> void:
 				break
 
 func recover() -> bool:
-	# Prototype recovery, separate from car towing and future health/death rules.
-	if context.player.focus != actor or context.player.is_suspended() or not is_clear(context.player_state.exit_position):
+	# Recovery uses the last supported exit, never the airborne ejection point.
+	if context.player.focus != actor or context.player.is_suspended() or not actor.is_on_floor() or not _supported(actor.global_position) or not is_clear(context.player_state.exit_position) or not _supported(context.player_state.exit_position):
 		return false
 	actor.place(context.player_state.exit_position)
 	controls.clear_controls()

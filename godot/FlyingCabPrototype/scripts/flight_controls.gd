@@ -30,6 +30,7 @@ var _credits := 0.0
 var _passengers := 0
 var _seats := 0
 var _damage_flash := false
+var player_health := PlayerState.MAX_HEALTH
 var _pointers: Dictionary = {}
 var _keys_blocked_until_release := false
 var _mouse_down := false
@@ -317,8 +318,9 @@ func set_interaction_label(value: String) -> void:
 
 func _draw_compact_status() -> void:
 	if _control_mode == &"on_foot":
-		_box(Rect2(14, 16, 148, 40), Color(0.025, 0.04, 0.065, 0.75), Color(0.4, 0.7, 0.72, 0.12), 10)
-		_text(Vector2(24, 41), "ARI   ·   %.0f CR" % _credits, 14, WHITE)
+		_box(Rect2(14, 16, 148, 54), Color(0.025, 0.04, 0.065, 0.75), Color(0.4, 0.7, 0.72, 0.12), 10)
+		_text(Vector2(24, 37), "ARI   ·   %.0f CR" % _credits, 14, WHITE)
+		_text(Vector2(24, 58), "ZDROWIE %.0f%%" % player_health, 11, AMBER if player_health < 35 else CYAN)
 		return
 	var width := minf(228, size.x - 134)
 	_box(Rect2(14, 16, width, 54), Color(0.025, 0.04, 0.065, 0.75), Color(1, 0.3, 0.2, 0.85) if _damage_flash else Color(0.4, 0.7, 0.72, 0.12), 10)

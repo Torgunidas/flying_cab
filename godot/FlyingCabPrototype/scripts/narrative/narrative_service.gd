@@ -77,6 +77,55 @@ func can_start(id: StringName, state: Dictionary = data, campaign: CampaignState
 func preview_effects(effects: Array[NarrativeEffect], once_id := "", npc_id := "") -> String:
 	return _plan(effects, once_id, npc_id)
 
+## Read-only map query. Follow the actual entry and reachable choices, including
+## introductions before an offer. A separate planner never touches live work.
+func available_quest_topics(npc: NpcDefinition) -> PackedStringArray:
+	var result := PackedStringArray()
+	if context == null or catalog == null or npc == null or catalog.npc(npc.id) != npc or context.campaign.flags.get("__campaign_expired", false):
+		return result
+	for topic in npc.topics:
+		if topic == null or topic.dialogue == null or not reason(topic.conditions).is_empty():
+			continue
+		var entry := topic.dialogue.start_node
+		for rule in topic.dialogue.entries:
+			if reason(rule.conditions).is_empty():
+				entry = rule.node_id
+				break
+		if _has_quest_action(topic.dialogue, entry, String(npc.id), data, context.campaign, []):
+			result.append(topic.title)
+	return result
+
+func _has_quest_action(dialogue: DialogueDefinition, node_id: StringName, npc_id: String, state: Dictionary, campaign: CampaignState, path: Array) -> bool:
+	var node := dialogue.find_node(node_id)
+	if node == null or path.size() >= 128:
+		return false
+	# Ignore the planning serial, but revisit a node when a prior choice changed
+	# its conditions. Bound repeatable economic loops in malformed authored data.
+	var visit := [node_id, state.quests, state.items, state.access, state.receipts, campaign.snapshot()]
+	if path.has(visit):
+		return false
+	var visited := path.duplicate()
+	visited.append(visit)
+	var probe := NarrativeService.new()
+	probe.context = context
+	probe.catalog = catalog
+	probe.data = state
+	for choice in node.choices:
+		if not reason(choice.conditions, state, campaign).is_empty():
+			continue
+		var once_id := "%s/%s/%s" % [dialogue.id, node.id, choice.id] if choice.once else ""
+		if not probe._plan(choice.effects, once_id, npc_id, campaign).is_empty():
+			continue
+		for effect in choice.effects:
+			if effect.kind in ["start_quest", "turn_in", "deliver_medicine"]:
+				return true
+		# Authored fact/item choices may also advance an active objective.
+		if probe._work.quests != state.quests:
+			return true
+		if choice.next_node != &"" and _has_quest_action(dialogue, choice.next_node, npc_id, probe._work, probe._campaign, visited):
+			return true
+	return false
+
 func execute(effects: Array[NarrativeEffect], once_id := "", npc_id := "") -> String:
 	if _busy:
 		return "Poczekaj na zakończenie działania."
@@ -87,10 +136,11 @@ func execute(effects: Array[NarrativeEffect], once_id := "", npc_id := "") -> St
 	_busy = false
 	return error
 
-func _plan(effects: Array[NarrativeEffect], once_id: String, npc_id: String) -> String:
+func _plan(effects: Array[NarrativeEffect], once_id: String, npc_id: String, campaign_source: CampaignState = null) -> String:
 	if context == null or catalog == null:
 		return "Brak katalogu narracji."
-	if context.campaign.flags.get("__campaign_expired", false):
+	var source := campaign_source if campaign_source else context.campaign
+	if source.flags.get("__campaign_expired", false):
 		return "Czas się skończył."
 	if not once_id.is_empty() and data.receipts.has(once_id):
 		return "To działanie zostało już wykonane."
@@ -99,7 +149,7 @@ func _plan(effects: Array[NarrativeEffect], once_id: String, npc_id: String) -> 
 		catalog._effect(effect, "Action", errors)
 	if not errors.is_empty():
 		return "\n".join(errors)
-	_begin_work()
+	_begin_work(source)
 	for effect in effects:
 		var effect_error := _effect(effect, npc_id)
 		if not effect_error.is_empty():
@@ -111,10 +161,10 @@ func _plan(effects: Array[NarrativeEffect], once_id: String, npc_id: String) -> 
 		return "Nieprawidłowy wynik działania. Sprawdź wartości zasobów."
 	return error
 
-func _begin_work() -> void:
+func _begin_work(campaign_source: CampaignState = null) -> void:
 	_work = data.duplicate(true)
 	_work.serial += 1
-	_campaign = CampaignState.from_snapshot(context.campaign.snapshot())
+	_campaign = CampaignState.from_snapshot((campaign_source if campaign_source else context.campaign).snapshot())
 	_wallet = EconomyLedger.new()
 	_wallet.state = _campaign
 	_pending.clear()

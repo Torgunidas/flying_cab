@@ -9,6 +9,7 @@ var controls: FlightControls
 var overlay := ""
 var reference_map: CityReferenceMap
 var guidance: TaxiGuidanceArrow
+var tracking_guidance: TaxiGuidanceArrow
 var notice_bubble: TaxiNoticeBubble
 var _font: Font
 var _map_button := Rect2()
@@ -43,6 +44,12 @@ func _ready() -> void:
 	guidance.director = director
 	add_child(guidance)
 	guidance.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tracking_guidance = TaxiGuidanceArrow.new()
+	tracking_guidance.director = director
+	tracking_guidance.tracked_map = reference_map
+	tracking_guidance.color = CityReferenceMap.TRACK_COLOR
+	add_child(tracking_guidance)
+	tracking_guidance.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	notice_bubble = TaxiNoticeBubble.new()
 	notice_bubble.director = director
 	notice_bubble.guidance = guidance
@@ -95,6 +102,7 @@ func open_overlay(kind: String) -> void:
 		return
 	overlay = kind
 	guidance.hide()
+	tracking_guidance.hide()
 	notice_bubble.hide()
 	_tow_armed = false
 	_new_game_armed = false
@@ -174,11 +182,13 @@ func _input(event: InputEvent) -> void:
 		return
 	var modal := not overlay.is_empty()
 	if event is InputEventScreenTouch:
-		if event.pressed:
+		if event.pressed and not event.canceled:
 			press(event.position, event.index)
 		else:
 			_fuel_pointers.erase(event.index)
+			reference_map.end_hold(event.index)
 	elif event is InputEventScreenDrag:
+		reference_map.move_hold(event.position, event.index)
 		if _fuel_pointers.has(event.index) and not _fuel.has_point(event.position):
 			_fuel_pointers.erase(event.index)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -186,6 +196,9 @@ func _input(event: InputEvent) -> void:
 			press(event.position, -1)
 		else:
 			_fuel_pointers.erase(-1)
+			reference_map.end_hold(-1)
+	elif event is InputEventMouseMotion:
+		reference_map.move_hold(event.position, -1)
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.physical_keycode in [KEY_M, KEY_ESCAPE]:
 			if modal:
@@ -206,7 +219,7 @@ func press(point: Vector2, pointer: int) -> void:
 		if _close.has_point(point) or (overlay == "options" and _resume.has_point(point)):
 			close_overlay()
 		elif overlay == "map":
-			reference_map.inspect(point)
+			reference_map.begin_hold(point, pointer)
 		elif _save.has_point(point):
 			save_requested.emit()
 			close_overlay()

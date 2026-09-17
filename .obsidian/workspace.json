@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "autorskie/sen.md",
+                "file": "autorskie/plan gry.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "sen"
+              "title": "plan gry"
             }
           }
         ]
@@ -46,7 +46,7 @@
                 "searchQuery": ""
               },
               "icon": "lucide-folder-closed",
-              "title": "Przeglądarka plików"
+              "title": "Files"
             }
           },
           {
@@ -179,37 +179,44 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Otwórz okno szybkiego wyboru": false,
-      "graph:Otwórz podgląd grafu": false,
-      "canvas:Stwórz nową tablicę": false,
-      "daily-notes:Otwórz dzisiejszy dziennik": false,
-      "templates:Wstaw szablon": false,
-      "command-palette:Otwórz paletę poleceń": false,
-      "bases:Stwórz nową bazę danych": false
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
     }
   },
   "active": "fcd42c5128aa1756",
   "lastOpenFiles": [
-    "godot/FlyingCabPrototype/build/story-import-backups/1789467971_07231/build/story-editor-test/generated/cab_story/quest_fc_depot_runs.tres",
-    "godot/FlyingCabPrototype/build/story-import-backups/1789467971_07231/build/story-editor-test/generated/cab_story/dialogue_fc_depot_runs_dialogue.tres",
-    "godot/FlyingCabPrototype/build/story-import-backups/1789467971_07231/build/story-editor-test/generated/cab_story",
-    "godot/FlyingCabPrototype/build/story-import-backups/1789467971_07231/build/story-editor-test/generated",
-    "godot/FlyingCabPrototype/build/story-import-backups/1789467971_07231/build/story-editor-test/froggy.tres",
-    "godot/FlyingCabPrototype/build/story-import-backups/1789467971_07231/build/story-editor-test/catalog.tres",
-    "godot/FlyingCabPrototype/build/story-import-backups/1789467971_07231/build/story-editor-test",
-    "godot/FlyingCabPrototype/build/story-import-backups/1789467971_07231/build",
-    "godot/FlyingCabPrototype/build/story-import-backups/1789467971_07231",
-    "godot/FlyingCabPrototype/build/story-import-backups/1789467971_06755/build/story-editor-test/generated/cab_story/quest_fc_depot_runs.tres",
-    "godot/FlyingCabPrototype/build/story-import-backups/1789467971_06755/build/story-editor-test/generated/cab_story/dialogue_fc_depot_runs_dialogue.tres",
-    "godot/FlyingCabPrototype/build/web/index.apple-touch-icon.png",
-    "godot/FlyingCabPrototype/build/web/index.icon.png",
-    "godot/FlyingCabPrototype/build/web/index.png",
+    "godot/FlyingCabPrototype/build/on-foot-access-render.log",
+    "godot/FlyingCabPrototype/build/on-foot-access-render-output.log",
+    "godot/FlyingCabPrototype/build/access-death.png",
+    "godot/FlyingCabPrototype/build/access-injured.png",
+    "godot/FlyingCabPrototype/build/living-world-entry-fall-final.log",
+    "godot/FlyingCabPrototype/build/start-menu-invalid-1640642.json",
+    "godot/FlyingCabPrototype/build/start-menu-session-508625.json.tmp",
+    "godot/FlyingCabPrototype/build/start-menu-session-508625.json",
+    "godot/FlyingCabPrototype/build/vehicle-access-render-tests.log",
+    "godot/FlyingCabPrototype/build/vehicle-access-render-output.log",
+    "godot/FlyingCabPrototype/build/start-menu-invalid-1674514.json",
+    "godot/FlyingCabPrototype/build/start-menu-session-457281.json",
+    "godot/FlyingCabPrototype/build/architecture-access-output.log",
+    "godot/FlyingCabPrototype/build/tracking-hub-hold.png",
+    "godot/FlyingCabPrototype/docs/MAP_TRACKING.md",
+    "autorskie/pierwszy quest.md",
     "autorskie/plan gry.md",
     "autorskie/sen.md",
     "tools/quest_editor/README.md",
+    "godot/FlyingCabPrototype/build/tracking-two-arrows.png",
+    "godot/FlyingCabPrototype/build/tracking-map-960x540.png",
+    "godot/FlyingCabPrototype/build/tracking-map-360x640.png",
+    "godot/FlyingCabPrototype/build/tracking-selected.png",
+    "godot/FlyingCabPrototype/build/tracking-hold-3.png",
+    "godot/FlyingCabPrototype/build/tracking-hold--1.png",
+    "godot/FlyingCabPrototype/build/quest-map-960x540.png",
     "godot/FlyingCabPrototype/docs/NARRATIVE_AUTHORING.md",
-    "godot/FlyingCabPrototype/build/warning-audit-3brvm9ib/assets/ui/start_poster.png",
-    "godot/FlyingCabPrototype/build/warning-audit-3brvm9ib/assets/icon.svg",
     "build/translations/aktualizacja_2026-09-15_ru.md",
     "godot/FlyingCabPrototype/docs/ON_FOOT.md",
     "godot/FlyingCabPrototype/README.md",

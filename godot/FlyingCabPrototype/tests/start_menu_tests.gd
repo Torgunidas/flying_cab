@@ -40,6 +40,7 @@ func capture(name: String) -> void:
 
 func fresh_state() -> void:
 	var c: RuntimeContext = game.context
+	check(c.player_state.health == PlayerState.MAX_HEALTH, "new game restores Ari's health")
 	check(c.campaign.credits == 120 and not c.campaign.active and c.campaign.remaining_seconds == 0 and c.campaign.medicine_doses == 0 and c.campaign.flags.is_empty(), "new game resets wallet, sister timer, doses and facts")
 	check(c.narrative.data == NarrativeService.empty_state(), "new game removes quests, inventory, access and narrative receipts")
 	check(c.rides.completed == 0 and c.rides.income == 0 and c.rides.recovery_debt == 0 and c.rides.active.is_empty(), "new game resets taxi progress and debt")
@@ -68,6 +69,7 @@ func _run() -> void:
 	check(game.get_children().filter(func(node): return node is RuntimeContext).size() == 1, "double click creates only one session")
 	var c: RuntimeContext = game.context
 	c.campaign.credits = 777
+	c.player_state.health = 63
 	c.campaign.medicine_doses = 3
 	c.campaign.active = true
 	c.campaign.remaining_seconds = 500
@@ -95,6 +97,7 @@ func _run() -> void:
 	game._overlay.continue_button.pressed.emit()
 	await wait_ready()
 	c = game.context
+	check(c.player_state.health == 63, "Continue restores Ari's injuries")
 	check(c.campaign.credits == 777 and c.campaign.medicine_doses == 3 and c.narrative.status(&"first_dose") == "active" and c.narrative.data.items.froggy_note == 2 and c.rides.completed == 7 and c.rides.recovery_debt == 35, "Continue restores campaign, quest, item and taxi progress")
 	check(game.maps.current.cab.fuel == 32 and game.maps.current.cab.state.condition == 0.4, "Continue restores saved vehicle condition")
 	var hud: TaxiHud = game.maps.current.taxi_hud
@@ -120,6 +123,20 @@ func _run() -> void:
 	game.context.campaign.remaining_seconds = 1
 	game.context.campaign.advance(2)
 	check(paused and game.maps.current.narrative_panel._mode == "game_over", "campaign end keeps its paused presentation")
+	game.maps.current.narrative_panel.answers.get_child(0).pressed.emit()
+	await wait_ready()
+	fresh_state()
+	game.context.damage_player(100)
+	await frames(3)
+	check(paused and game.maps.current.narrative_panel.heading.text == "ARI NIE ŻYJE", "player death opens its own game-over screen")
+	var death_save := RuntimeContext.new()
+	check(death_save.load_from(save_path) and death_save.player_state.health == 0, "death immediately reaches autosave despite the pause")
+	death_save.free()
+	await close_game()
+	await open_game(save_path)
+	game._overlay.continue_button.pressed.emit()
+	await wait_ready()
+	check(paused and game.context.player_state.health == 0 and game.maps.current.narrative_panel.heading.text == "ARI NIE ŻYJE", "full Continue from a fatal save keeps the death screen and pause")
 	game.maps.current.narrative_panel.answers.get_child(0).pressed.emit()
 	await wait_ready()
 	fresh_state()

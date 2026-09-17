@@ -8,9 +8,11 @@ var position := Vector3.ZERO
 var velocity := Vector3.ZERO
 var exit_position := Vector3.ZERO
 var facing := 1.0
+const MAX_HEALTH := 100.0
+var health := MAX_HEALTH
 
 func snapshot() -> Dictionary:
-	return {"mode": mode, "vehicle": String(vehicle_id), "map": String(map_id), "position": _array(position), "velocity": _array(velocity), "exit_position": _array(exit_position), "facing": facing}
+	return {"mode": mode, "vehicle": String(vehicle_id), "map": String(map_id), "position": _array(position), "velocity": _array(velocity), "exit_position": _array(exit_position), "facing": facing, "health": health}
 
 static func _array(v: Vector3) -> Array:
 	return [v.x, v.y, v.z]
@@ -32,6 +34,10 @@ static func from_snapshot(data: Dictionary) -> PlayerState:
 	if not (data.get("facing") is float or data.get("facing") is int) or absf(float(data.facing)) != 1.0:
 		return null
 	var state := PlayerState.new()
+	var hp = data.get("health", MAX_HEALTH)
+	if not (hp is float or hp is int) or not is_finite(float(hp)) or hp < 0 or hp > MAX_HEALTH:
+		return null
+	state.health = hp
 	state.mode = data.mode
 	state.vehicle_id = data.vehicle
 	state.map_id = data.map

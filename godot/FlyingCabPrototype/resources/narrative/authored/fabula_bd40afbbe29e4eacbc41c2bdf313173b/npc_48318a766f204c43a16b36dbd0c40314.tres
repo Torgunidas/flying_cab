@@ -1,9 +1,9 @@
 [gd_resource type="Resource" script_class="NpcDefinition" format=3 uid="uid://dulm3dlldk3d"]
 
-[ext_resource type="Script" path="res://scripts/narrative/npc_definition.gd" id="1_17kwf"]
-[ext_resource type="Script" path="res://scripts/narrative/npc_topic.gd" id="2_nw4bu"]
-[ext_resource type="Script" path="res://scripts/narrative/narrative_condition.gd" id="3_61mg0"]
-[ext_resource type="Resource" path="res://resources/narrative/authored/fabula_bd40afbbe29e4eacbc41c2bdf313173b/dialogue_quest_85815f3b769f4aaabd844376e2becc21_dialogue.tres" id="4_akqkb"]
+[ext_resource type="Script" uid="uid://dlkvf83owsqn3" path="res://scripts/narrative/npc_definition.gd" id="1_17kwf"]
+[ext_resource type="Script" uid="uid://b55fqqpa6wk2o" path="res://scripts/narrative/npc_topic.gd" id="2_nw4bu"]
+[ext_resource type="Script" uid="uid://dps33dkdjcmlf" path="res://scripts/narrative/narrative_condition.gd" id="3_61mg0"]
+[ext_resource type="Resource" uid="uid://cxf81i1xggbmo" path="res://resources/narrative/authored/fabula_bd40afbbe29e4eacbc41c2bdf313173b/dialogue_quest_85815f3b769f4aaabd844376e2becc21_dialogue.tres" id="4_akqkb"]
 
 [sub_resource type="Resource" id="Resource_ti6py"]
 script = ExtResource("2_nw4bu")

@@ -46,20 +46,24 @@ func _run() -> void:
 	var controls: FlightControls = level.controls
 	await frames(90)
 	check(cab.grounded and not ari.active and not ari.visible, "normal game starts driving with Ari hidden and non-colliding")
-	check(foot.parked(cab) and foot.exit_points(cab).size() == 2, "both depot exit positions have real ground and capsule clearance")
+	check(foot.parked(cab) and foot.exit_points(cab).size() == 3, "cabin and fallback depot exits have capsule clearance")
 	var identity := cab.get_instance_id()
 	cab.fuel = 43.0
 	cab.state.condition = 0.75
 	cab.state.passenger_ids.append("test_passenger")
 	var cash := context.campaign.credits
 	cab.command = Vector2(0, 1)
-	check(not foot.try_exit(cab), "held thrust blocks exit even before the vehicle leaves the ground")
+	check(foot.try_exit(cab), "held thrust no longer blocks leaving the vehicle")
+	await frames(12)
+	check(foot.try_enter(cab), "Ari re-enters at the cabin after releasing thrust")
 	cab.clear_control_input()
 	context.player.suspend(&"dialogue")
 	check(not foot.try_exit(cab), "dialogue lock blocks interaction")
 	context.player.resume(&"dialogue")
 	context.rides.active = {"vehicle": String(cab.entity_id), "phase": "boarding"}
-	check(not foot.try_exit(cab), "boarding transition completes before Ari can leave")
+	check(foot.try_exit(cab), "passenger boarding does not trap the driver")
+	await frames(12)
+	check(foot.try_enter(cab), "driver returns while the passenger boarding record is preserved")
 	context.rides.active = {}
 	check(foot.try_exit(cab), "Ari exits a parked cab with a passenger still aboard")
 	await frames(12)
@@ -120,21 +124,25 @@ func _run() -> void:
 	check(foot.try_enter(cab) and cab.get_instance_id() == identity and cab.state.passenger_ids.has("test_passenger"), "entering returns control to the original car and keeps its occupants")
 	check(not ari.visible and ari.collision_layer == 0 and ari.collision_mask == 0 and not ari.is_physics_processing(), "seated Ari has neither a visible duplicate nor a live collider")
 	check(context.snapshot().player.mode == "flight", "save tracks return to driving")
-	# Geometry, not the visual center, determines whether an exit is safe.
+	# A blocked door can use a clear ejection point, but is not an entry hotspot.
 	var points := foot.exit_points(cab)
-	var wall_right := box(level, points[0], Vector3(0.9, 3, 2))
+	var wall_door := box(level, points[0], Vector3(0.6, 3, 0.6))
 	await frames()
-	check(foot.exit_points(cab).size() == 1 and foot.try_exit(cab), "blocked right side falls back to the clear left side")
+	check(foot.exit_points(cab).size() == 2 and foot.try_exit(cab), "blocked cabin falls back to a clear side")
 	await frames(12)
-	check(ari.global_position.x < cab.global_position.x, "fallback physically places Ari on the opposite side")
-	foot.try_enter(cab)
-	var left_at := context.player_state.exit_position
-	var wall_left := box(level, left_at, Vector3(0.9, 3, 2))
+	check(not foot.try_enter(cab), "side fallback does not allow entry through a blocked cabin")
+	wall_door.queue_free()
+	await frames(12)
+	ari.place(foot.entry_point(cab))
+	await frames(12)
+	check(foot.try_enter(cab), "clearing the cabin restores entry")
+	var blockers: Array[Node] = []
+	for point in foot.exit_points(cab):
+		blockers.append(box(level, point, Vector3(0.6, 3, 0.6)))
 	await frames()
-	check(not foot.try_exit(cab) and context.player.focus == cab, "two blocked exits leave control and vehicle state unchanged")
-	wall_right.queue_free()
-	wall_left.queue_free()
-	await frames(30) # Let the cab settle after removing physical exit blockers.
+	check(not foot.try_exit(cab) and context.player.focus == cab, "fully enclosed vehicle cannot spawn Ari inside solid geometry")
+	for blocker in blockers: blocker.queue_free()
+	await frames(30)
 	# Q and touch each request one transfer; held W does not leak into a jump.
 	level.set_physics_process(true)
 	Input.action_press("flight_up")
@@ -183,11 +191,11 @@ func _run() -> void:
 		other.queue_free()
 		await frames()
 	test_floor.queue_free()
-	# A car suspended far above any surface must never offer an exit.
+	# Leaving a vehicle no longer requires a landing platform.
 	cab.freeze = true
-	cab.global_position.y += 30
+	cab.global_position = Vector3(3.5, 120, 0)
 	cab.grounded = false
-	check(not foot.try_exit(cab), "airborne exits are unavailable in the first on-foot slice")
+	check(foot.try_exit(cab), "airborne exit is available without ground below the car")
 	level.queue_free()
 	context.queue_free()
 	await process_frame

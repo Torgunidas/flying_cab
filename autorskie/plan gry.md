@@ -19,3 +19,11 @@ Ari - to skrót od Aristotle - linia androidów, które miały być wszechstronn
 To może być krótka historia, żeby zrobić vertical slice całej gry.
 
 Moce Ariego: w miarę jak postępują błędy w jego oprogramowaniu zdejmuje z siebie kolejne ograniczenia w stosowaniu przemocy. Najpierw może tylko obezwładniać i tylko w obronie własnej. Potem atakować, ale nieśmiertelnie. Potem zabijać, ale tylko w obronie, potem w ataku - ale tylko za pomocą własnych rąk. Na końcu może już używać broni i broni w którą będą wyposażone pojazdy.
+
+
+
+
+Szybkie poprawki:
+- w ciągu pionowym autostrady zamienić strony, aby wszędzie konsekwentnie odbywał się ruch prawostronny
+- poprawić wsiadanie do pojazdu - przejęcie pojazdu powinno być możliwe kiedy ludzik się blisko kabiny pojazdu (przedniej jego części)
+- gracz powinien w każdej chwili móc wysiąść z pojazdu. Nawet w powietrzu, ryzykując wtedy odniesienie obrażeń lub śmierć

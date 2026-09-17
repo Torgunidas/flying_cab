@@ -1,5 +1,7 @@
 # Architektura i wydajność po audycie — 2026-09-12
 
+**Wejście i upadki 2026-09-16:** [tryb pieszy](ON_FOOT.md) używa punktu kabiny `VehicleDefinition.driver_door_x`, pozwala opuścić auto w locie z jego prędkością i nalicza obrażenia przy lądowaniu. `PlayerState.health` jest opcjonalnym polem schematu 5 (starsze zapisy: 100 HP); zero HP blokuje sterowanie, zapisuje śmierć i otwiera ekran nowej gry. Nie jest to system walki. Pionowa trasa `spine` ma ruch prawostronny. Testy: `vehicle-access`, `vehicle-access-render`, `on-foot`, pełny `living-world`, `start-menu`.
+
 **Kamera 2026-09-14:** [podejście i kadr pieszy](PLATFORM_CAMERA.md). `PlatformCameraFraming` wylicza bliskość górnej powierzchni platformy z jej kolizji i prędkości auta. Poziom płynnie łączy szeroki lot, lądowanie i bliski, poziomy kadr pieszy z obszarem swobodnego skoku. Parametry są w `FlightCameraTuning`; odtworzenie zapisu i przygotowanie grafiki ustawiają kadr właściwy dla aktualnego aktora. Testy: `platform-camera`, `platform-camera-render`, `on-foot-render`, `presentation`, `boot`.
 
 **Ekran startowy 2026-09-14:** [menu i pełny reset](START_SCREEN.md). `game.tscn` pokazuje edytowalną scenę menu z grafiką starego Godota. `RuntimeContext` i miasto są tworzone dopiero po Kontynuuj / Nowa gra. Reset od razu zapisuje nową sesję, zachowuje konfigurację punktu wejścia i odrzuca opóźniony zapis starej gry. `TaxiHud` udostępnia tę samą akcję z potwierdzeniem w opcjach. Testy: `start-menu`, `start-menu-render`, `boot`.
